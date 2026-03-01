@@ -1,0 +1,30 @@
+---
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} | 무모한 시식가</title>
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="/">홈</a>
+        <a href="/map">지도</a>
+        <a href="/my-list">내 리스트</a>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer>
+      <p>&copy; 2026 무모한 시식가</p>
+    </footer>
+  </body>
+</html>

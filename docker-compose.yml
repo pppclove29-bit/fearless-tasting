@@ -1,0 +1,72 @@
+services:
+  mysql-writer:
+    image: mysql:8.0
+    container_name: fearless-tasting-mysql-writer
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: fearless_tasting
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app1234
+    volumes:
+      - mysql-writer-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --server-id=1 --log-bin=mysql-bin --binlog-format=ROW
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mysql-reader:
+    image: mysql:8.0
+    container_name: fearless-tasting-mysql-reader
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: fearless_tasting
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app1234
+    volumes:
+      - mysql-reader-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --server-id=2
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    command: pnpm --filter @repo/api dev
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - ./packages/types/src:/app/packages/types/src
+      - ./packages/utils/src:/app/packages/utils/src
+    environment:
+      DATABASE_URL: mysql://app:app1234@mysql-writer:3306/fearless_tasting
+      DATABASE_READER_URL: mysql://app:app1234@mysql-reader:3306/fearless_tasting
+    depends_on:
+      mysql-writer:
+        condition: service_healthy
+      mysql-reader:
+        condition: service_healthy
+
+  web:
+    build: .
+    command: pnpm --filter @repo/web dev --host 0.0.0.0
+    ports:
+      - "4321:4321"
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
+      - ./packages/types/src:/app/packages/types/src
+      - ./packages/utils/src:/app/packages/utils/src
+    environment:
+      PUBLIC_API_URL: http://localhost:4000
+
+volumes:
+  mysql-writer-data:
+  mysql-reader-data:

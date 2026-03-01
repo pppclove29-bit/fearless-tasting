@@ -1,0 +1,10 @@
+{
+  "extends": "@repo/typescript-config/astro.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", ".astro/types.d.ts"]
+}

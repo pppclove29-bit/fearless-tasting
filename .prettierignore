@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.next/
+.astro/
+.turbo/
+pnpm-lock.yaml

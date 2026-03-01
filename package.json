@@ -1,0 +1,22 @@
+{
+  "name": "reckless-food-taster",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,mjs,astro,json,md,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,mjs,astro,json,md,yaml}\"",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.0",
+    "prettier-plugin-astro": "^0.14.0",
+    "turbo": "^2.8.0"
+  },
+  "packageManager": "pnpm@10.30.3",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp"]
+  }
+}

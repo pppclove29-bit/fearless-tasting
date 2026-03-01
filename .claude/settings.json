@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Program Files/MySQL/**)",
+      "Bash(\"/c/Users/pppcl/OneDrive/바탕 화면/무모한:*)"
+    ]
+  }
+}

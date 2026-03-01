@@ -1,24 +1,43 @@
-# Nestjs specific
-/dist
-/node_modules
-/build
-/tmp
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+.astro/
+
+# Turborepo
+.turbo/
+
+# Environment
+.env
+.env.local
+.env.development
+.env.production
+!.env.example
+
+# IDE
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
 
 # Logs
-logs
 *.log
 npm-debug.log*
 pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
 
-# dotenv environment variable files
-.env
-.env.development
-.env.test
-.env.production
+# Docker
+docker-compose.override.yml
 
-# temp directory
-.temp
-.tmp
+# Prisma
+apps/api/prisma/*.db
+
+# Claude Code
+settings.local.json
