@@ -2,6 +2,11 @@ import type { Restaurant, Review } from '@repo/types';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
 
+/** credentials: 'include' 기본 포함 fetch 래퍼 */
+function apiFetch(url: string, init?: RequestInit): Promise<Response> {
+  return fetch(url, { credentials: 'include', ...init });
+}
+
 export interface AreaCount {
   name: string;
   count: number;
@@ -16,7 +21,7 @@ export async function fetchAreaCounts(
   if (province) params.set('province', province);
   if (city) params.set('city', city);
 
-  const res = await fetch(`${API_BASE}/restaurants/areas/counts?${params.toString()}`);
+  const res = await apiFetch(`${API_BASE}/restaurants/areas/counts?${params.toString()}`);
   if (!res.ok) return [];
   return res.json();
 }
@@ -28,42 +33,52 @@ export async function fetchRestaurants(
   neighborhood: string,
 ): Promise<Restaurant[]> {
   const params = new URLSearchParams({ province, city, neighborhood });
-  const res = await fetch(`${API_BASE}/restaurants?${params.toString()}`);
+  const res = await apiFetch(`${API_BASE}/restaurants?${params.toString()}`);
   if (!res.ok) return [];
   return res.json();
 }
 
-interface User {
+interface AuthUser {
   id: string;
-  nickname: string;
+  email: string;
 }
 
-/** 닉네임으로 사용자 조회 또는 생성 */
-export async function findOrCreateUser(nickname: string): Promise<User> {
-  const res = await fetch(`${API_BASE}/users`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nickname }),
-  });
-
-  if (!res.ok) {
-    throw new Error('사용자 처리에 실패했습니다.');
+/** 현재 로그인 유저 조회 (비로그인 시 null) */
+export async function fetchCurrentUser(): Promise<AuthUser | null> {
+  try {
+    const res = await apiFetch(`${API_BASE}/auth/me`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
   }
+}
 
-  return res.json();
+/** 토큰 갱신 */
+export async function refreshToken(): Promise<boolean> {
+  try {
+    const res = await apiFetch(`${API_BASE}/auth/refresh`, { method: 'POST' });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** 로그아웃 */
+export async function logout(): Promise<void> {
+  await apiFetch(`${API_BASE}/auth/logout`, { method: 'POST' });
 }
 
 /** 리뷰 작성 */
 export async function createReview(
   restaurantId: string,
-  userId: string,
   rating: number,
   content: string,
 ): Promise<Review> {
-  const res = await fetch(`${API_BASE}/reviews`, {
+  const res = await apiFetch(`${API_BASE}/reviews`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ restaurantId, userId, rating, content, imageUrls: [] }),
+    body: JSON.stringify({ restaurantId, rating, content, imageUrls: [] }),
   });
 
   if (!res.ok) {
@@ -77,7 +92,7 @@ export type CreateRestaurantInput = Omit<Restaurant, 'id' | 'createdAt' | 'updat
 
 /** 식당 등록 */
 export async function createRestaurant(data: CreateRestaurantInput): Promise<Restaurant> {
-  const res = await fetch(`${API_BASE}/restaurants`, {
+  const res = await apiFetch(`${API_BASE}/restaurants`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),

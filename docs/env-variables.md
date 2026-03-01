@@ -4,6 +4,8 @@
 
 ## apps/api (백엔드)
 
+### 데이터베이스
+
 | 변수명 | 필수 | 설명 | 로컬 기본값 |
 |--------|------|------|-------------|
 | `DATABASE_URL` | O | MySQL Writer 접속 URL (쓰기용) | `mysql://app:app1234@localhost:3306/fearless_tasting` |
@@ -14,6 +16,22 @@
 ```
 mysql://[사용자]:[비밀번호]@[호스트]:[포트]/[데이터베이스명]
 ```
+
+### 카카오 OAuth
+
+| 변수명 | 필수 | 설명 | 로컬 기본값 |
+|--------|------|------|-------------|
+| `KAKAO_CLIENT_ID` | O | 카카오 REST API 키 ([카카오 디벨로퍼](https://developers.kakao.com)에서 발급) | - |
+| `KAKAO_CLIENT_SECRET` | O | 카카오 Client Secret | - |
+| `KAKAO_CALLBACK_URL` | O | OAuth 콜백 URL. 카카오 앱 설정의 Redirect URI와 일치해야 함 | `http://localhost:4000/auth/kakao/callback` |
+
+### JWT 인증
+
+| 변수명 | 필수 | 설명 | 로컬 기본값 |
+|--------|------|------|-------------|
+| `JWT_ACCESS_SECRET` | O | Access Token 서명 시크릿 | `dev-access-secret-change-in-prod` |
+| `JWT_REFRESH_SECRET` | O | Refresh Token 서명 시크릿 | `dev-refresh-secret-change-in-prod` |
+| `FRONTEND_URL` | X | 프론트엔드 URL (CORS origin, OAuth 리다이렉트용) | `http://localhost:4321` |
 
 ## apps/web (프론트엔드)
 
@@ -31,6 +49,12 @@ Docker로 실행 시 환경변수가 `docker-compose.yml`에 이미 설정되어
 |--------|------|----|
 | api | `DATABASE_URL` | `mysql://app:app1234@mysql-writer:3306/fearless_tasting` |
 | api | `DATABASE_READER_URL` | `mysql://app:app1234@mysql-reader:3306/fearless_tasting` |
+| api | `KAKAO_CLIENT_ID` | `${KAKAO_CLIENT_ID}` (호스트 환경변수에서 주입) |
+| api | `KAKAO_CLIENT_SECRET` | `${KAKAO_CLIENT_SECRET}` (호스트 환경변수에서 주입) |
+| api | `KAKAO_CALLBACK_URL` | `http://localhost:4000/auth/kakao/callback` |
+| api | `JWT_ACCESS_SECRET` | `${JWT_ACCESS_SECRET}` (기본값: `dev-access-secret-change-in-prod`) |
+| api | `JWT_REFRESH_SECRET` | `${JWT_REFRESH_SECRET}` (기본값: `dev-refresh-secret-change-in-prod`) |
+| api | `FRONTEND_URL` | `http://localhost:4321` |
 | web | `PUBLIC_API_URL` | `http://localhost:4000` |
 | mysql-writer | `MYSQL_ROOT_PASSWORD` | `root` |
 | mysql-writer | `MYSQL_DATABASE` | `fearless_tasting` |

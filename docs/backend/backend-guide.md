@@ -6,11 +6,19 @@
 
 ```
 apps/api/src/
-├── main.ts                         # 앱 엔트리포인트
+├── main.ts                         # 앱 엔트리포인트 (cookie-parser, CORS 설정)
 ├── app.module.ts                   # 루트 모듈
 ├── prisma/
 │   ├── prisma.module.ts            # Prisma 모듈 (Global)
 │   └── prisma.service.ts           # Prisma 서비스 (Reader/Writer)
+├── auth/
+│   ├── auth.module.ts              # 인증 모듈 (JwtModule 설정)
+│   ├── auth.service.ts             # 카카오 OAuth, JWT 토큰 관리
+│   ├── auth.controller.ts          # 인증 엔드포인트 (/auth/*)
+│   ├── guards/
+│   │   └── jwt-auth.guard.ts       # JWT 쿠키 검증 Guard
+│   └── decorators/
+│       └── current-user.decorator.ts # @CurrentUser() 데코레이터
 ├── restaurants/
 │   ├── restaurants.module.ts
 │   ├── restaurants.controller.ts
@@ -35,3 +43,4 @@ apps/api/src/
 | [prisma-rules.md](prisma-rules.md) | Prisma ORM, Reader/Writer 분리, 쿼리 작성, 마이그레이션 |
 | [api-design.md](api-design.md) | REST API 설계, DTO 패턴, 응답 코드 |
 | [security.md](security.md) | 보안 규칙 (SQL Injection, 인증, 민감정보) |
+| [authentication.md](authentication.md) | 카카오 OAuth + JWT 인증 아키텍처 |

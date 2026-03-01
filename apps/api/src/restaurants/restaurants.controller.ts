@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RestaurantsService } from './restaurants.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { AreaCountsQueryDto } from './dto/area-counts-query.dto';
@@ -33,8 +34,9 @@ export class RestaurantsController {
     return this.restaurantsService.findOne(id);
   }
 
-  /** 식당 등록 */
+  /** 식당 등록 (로그인 필수) */
   @Post()
+  @UseGuards(JwtAuthGuard)
   create(@Body() dto: CreateRestaurantDto) {
     return this.restaurantsService.create(
       dto.name,

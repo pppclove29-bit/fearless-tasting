@@ -3,18 +3,27 @@
 ## 시스템 구성도
 
 ```
-┌──────────────┐     HTTP      ┌──────────────┐
-│              │  ──────────>  │              │
-│  Astro Web   │               │  NestJS API  │
-│  (포트 4321)  │  <──────────  │  (포트 4000)  │
-│              │     JSON      │              │
-└──────────────┘               └──────┬───────┘
-                                      │
-                                      │ (추후)
+┌──────────────┐     HTTP      ┌──────────────┐     Prisma    ┌─────────────────┐
+│              │  ──────────>  │              │  ──────────>  │  MySQL Writer    │
+│  Astro Web   │  (쿠키 포함)   │  NestJS API  │     Write     │  (포트 3306)      │
+│  (포트 4321)  │  <──────────  │  (포트 4000)  │               └─────────────────┘
+│              │     JSON      │              │     Read      ┌─────────────────┐
+└──────────────┘               └──────┬───────┘  ──────────>  │  MySQL Reader    │
+                                      │                       │  (포트 3307)      │
+                                      │ OAuth                 └─────────────────┘
                                       ▼
                                ┌──────────────┐
-                               │   Database   │
+                               │  카카오 API    │
                                └──────────────┘
+```
+
+## 인증 흐름
+
+```
+[카카오 로그인 버튼] → GET /auth/kakao → 카카오 동의 화면
+                                              ↓
+Frontend ← 302 /login?success ← GET /auth/kakao/callback ← 카카오 redirect
+(httpOnly 쿠키에 Access Token / Refresh Token 설정)
 ```
 
 ## 앱 역할
@@ -22,14 +31,14 @@
 ### apps/web (Astro)
 - 사용자에게 보여지는 프론트엔드
 - SSG/SSR 지원
-- 지도 표시, 리뷰 목록, 식당 상세 등 UI 담당
-- API 서버와 HTTP 통신
+- 지도 기반 지역별 식당 탐색, 리뷰 목록, 식당 등록 UI
+- API 서버와 HTTP 통신 (쿠키 기반 인증, `credentials: 'include'`)
 
 ### apps/api (NestJS)
 - REST API 제공
 - 비즈니스 로직 처리
-- 데이터베이스 연동 (추후)
-- 인증/인가 처리 (추후)
+- MySQL 데이터베이스 연동 (Prisma ORM, Reader/Writer 분리)
+- 카카오 OAuth + JWT 인증/인가 처리
 
 ## 공유 패키지
 
@@ -55,3 +64,5 @@
 |--------|------|
 | Astro (web) | 4321 |
 | NestJS (api) | 4000 |
+| MySQL Writer | 3306 |
+| MySQL Reader | 3307 |

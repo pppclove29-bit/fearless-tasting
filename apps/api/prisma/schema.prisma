@@ -7,46 +7,105 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// 서비스 사용자 (프로필 정보만 보관, 인증 정보는 Account에 분리)
 model User {
-  id              String   @id @default(cuid())
-  nickname        String   @unique
-  profileImageUrl String?  @db.VarChar(500)
+  /// 고유 식별자
+  id              String    @id @default(cuid())
+  /// OAuth 제공자에서 받은 이메일
+  email           String    @unique
+  /// 리뷰 등에 표시되는 닉네임
+  nickname        String    @unique
+  /// 프로필 이미지 URL
+  profileImageUrl String?   @db.VarChar(500)
+  /// 연결된 OAuth 계정 (카카오 등)
+  accounts        Account[]
+  /// 작성한 리뷰 목록
   reviews         Review[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  /// 가입일
+  createdAt       DateTime  @default(now())
+  /// 최종 수정일
+  updatedAt       DateTime  @updatedAt
 }
 
-model Restaurant {
+/// OAuth 계정 정보 (User와 1:N, 다중 소셜 로그인 확장 가능)
+model Account {
+  /// 고유 식별자
   id           String   @id @default(cuid())
-  name         String   @db.VarChar(200)
-  address      String   @db.VarChar(500)
-  province     String   @db.VarChar(50)
-  city         String   @db.VarChar(50)
-  neighborhood String   @db.VarChar(100)
-  latitude     Float
-  longitude    Float
-  category     String   @db.VarChar(100)
-  imageUrl     String?  @db.VarChar(500)
-  reviews      Review[]
+  /// OAuth 제공자 ('kakao', 'google' 등)
+  provider     String   @db.VarChar(20)
+  /// 제공자 측 고유 사용자 ID
+  providerId   String
+  /// bcrypt 해싱된 JWT Refresh Token
+  refreshToken String?  @db.Text
+  /// 연결된 사용자
+  user         User     @relation(fields: [userId], references: [id])
+  /// 사용자 ID (FK)
+  userId       String
+  /// 생성일
   createdAt    DateTime @default(now())
+  /// 최종 수정일
   updatedAt    DateTime @updatedAt
 
-  @@index([province])
-  @@index([province, city])
+  /// 동일 제공자의 동일 계정 중복 방지
+  @@unique([provider, providerId])
+  @@index([userId])
+}
+
+/// 식당 정보
+model Restaurant {
+  /// 고유 식별자
+  id           String   @id @default(cuid())
+  /// 식당 이름
+  name         String   @db.VarChar(200)
+  /// 도로명/지번 주소
+  address      String   @db.VarChar(500)
+  /// 시/도
+  province     String   @db.VarChar(50)
+  /// 시/군/구
+  city         String   @db.VarChar(50)
+  /// 읍/면/동
+  neighborhood String   @db.VarChar(100)
+  /// 위도
+  latitude     Float
+  /// 경도
+  longitude    Float
+  /// 카테고리 (한식, 중식, 일식 등)
+  category     String   @db.VarChar(100)
+  /// 대표 이미지 URL
+  imageUrl     String?  @db.VarChar(500)
+  /// 식당에 달린 리뷰 목록
+  reviews      Review[]
+  /// 등록일
+  createdAt    DateTime @default(now())
+  /// 최종 수정일
+  updatedAt    DateTime @updatedAt
+
+  /// 지역 검색용 복합 인덱스 (leftmost prefix로 province, province+city 검색도 커버)
   @@index([province, city, neighborhood])
   @@index([category])
 }
 
+/// 식당 리뷰 (1~5점 평점 + 텍스트)
 model Review {
+  /// 고유 식별자
   id           String     @id @default(cuid())
+  /// 1~5 평점
   rating       Int
+  /// 리뷰 본문
   content      String     @db.Text
+  /// 리뷰 이미지 URL 배열 (JSON)
   imageUrls    Json       @default("[]")
+  /// 리뷰 대상 식당
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  /// 식당 ID (FK)
   restaurantId String
+  /// 작성자
   user         User       @relation(fields: [userId], references: [id])
+  /// 작성자 ID (FK)
   userId       String
+  /// 작성일
   createdAt    DateTime   @default(now())
+  /// 최종 수정일
   updatedAt    DateTime   @updatedAt
 
   @@index([restaurantId])

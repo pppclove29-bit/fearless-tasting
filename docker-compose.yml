@@ -52,6 +52,12 @@ services:
       DATABASE_URL: mysql://app:app1234@mysql-writer:3306/fearless_tasting
       # 로컬 개발: 복제 미설정이므로 Reader도 Writer를 가리킴
       DATABASE_READER_URL: mysql://app:app1234@mysql-writer:3306/fearless_tasting
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-your_kakao_client_id}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-your_kakao_client_secret}
+      KAKAO_CALLBACK_URL: http://localhost:4000/auth/kakao/callback
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret-change-in-prod}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-prod}
+      FRONTEND_URL: http://localhost:4321
     depends_on:
       mysql-writer:
         condition: service_healthy

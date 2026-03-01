@@ -63,13 +63,26 @@ export class CreateRestaurantDto {
 
 ## URL 설계 예시
 
-| Method | URL | 설명 |
-|--------|-----|------|
-| GET | `/restaurants` | 식당 목록 |
-| GET | `/restaurants/:id` | 식당 상세 |
-| POST | `/restaurants` | 식당 등록 |
-| PATCH | `/restaurants/:id` | 식당 수정 |
-| DELETE | `/restaurants/:id` | 식당 삭제 |
-| GET | `/restaurants/:id/reviews` | 특정 식당의 리뷰 목록 |
-| POST | `/reviews` | 리뷰 작성 |
-| GET | `/users/:id` | 사용자 조회 |
+### 식당/리뷰/사용자
+
+| Method | URL | 인증 | 설명 |
+|--------|-----|------|------|
+| GET | `/restaurants` | X | 식당 목록 |
+| GET | `/restaurants/:id` | X | 식당 상세 |
+| POST | `/restaurants` | O | 식당 등록 |
+| PATCH | `/restaurants/:id` | O | 식당 수정 |
+| DELETE | `/restaurants/:id` | O | 식당 삭제 |
+| GET | `/restaurants/areas/counts` | X | 지역별 식당 수 |
+| GET | `/reviews/restaurant/:restaurantId` | X | 특정 식당의 리뷰 목록 |
+| POST | `/reviews` | O | 리뷰 작성 |
+| GET | `/users/:id` | X | 사용자 조회 |
+
+### 인증 (Auth)
+
+| Method | URL | 인증 | 설명 |
+|--------|-----|------|------|
+| GET | `/auth/kakao` | X | 카카오 OAuth 시작 (302 리다이렉트) |
+| GET | `/auth/kakao/callback` | X | 카카오 콜백 → JWT 발급 → 프론트 리다이렉트 |
+| GET | `/auth/me` | O | 현재 로그인 유저 정보 |
+| POST | `/auth/refresh` | X | Refresh Token으로 Access Token 갱신 |
+| POST | `/auth/logout` | O | 로그아웃 (쿠키 삭제 + DB RT 무효화) |

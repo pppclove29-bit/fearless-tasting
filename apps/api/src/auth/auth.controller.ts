@@ -1,0 +1,94 @@
+import { Controller, Get, Post, Query, Res, Req, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Response, Request } from 'express';
+import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
+
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+};
+
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  /** 카카오 OAuth 시작: 카카오 인가 페이지로 리다이렉트 */
+  @Get('kakao')
+  kakaoLogin(@Res() res: Response) {
+    const url = this.authService.getKakaoAuthUrl();
+    res.redirect(url);
+  }
+
+  /** 카카오 OAuth 콜백: 인가 코드 → 토큰 교환 → JWT 발급 → 프론트 리다이렉트 */
+  @Get('kakao/callback')
+  async kakaoCallback(@Query('code') code: string, @Res() res: Response) {
+    if (!code) {
+      throw new UnauthorizedException('인가 코드가 없습니다');
+    }
+
+    const kakaoToken = await this.authService.exchangeKakaoCode(code);
+    const kakaoUser = await this.authService.getKakaoUser(kakaoToken.access_token);
+    const user = await this.authService.findOrCreateFromKakao(kakaoUser);
+    const tokens = await this.authService.generateTokens(user.id, user.email);
+
+    res.cookie('access_token', tokens.accessToken, {
+      ...COOKIE_OPTIONS,
+      maxAge: 15 * 60 * 1000, // 15분
+    });
+
+    res.cookie('refresh_token', tokens.refreshToken, {
+      ...COOKIE_OPTIONS,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4321';
+    res.redirect(`${frontendUrl}/login?success=true`);
+  }
+
+  /** 현재 로그인 유저 정보 */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  me(@CurrentUser() user: { id: string; email: string }) {
+    return user;
+  }
+
+  /** Refresh Token으로 Access Token 갱신 */
+  @Post('refresh')
+  async refresh(@Req() req: Request, @Res() res: Response) {
+    const refreshToken = req.cookies?.refresh_token;
+    if (!refreshToken) {
+      throw new UnauthorizedException('리프레시 토큰이 없습니다');
+    }
+
+    const tokens = await this.authService.refreshAccessToken(refreshToken);
+
+    res.cookie('access_token', tokens.accessToken, {
+      ...COOKIE_OPTIONS,
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie('refresh_token', tokens.refreshToken, {
+      ...COOKIE_OPTIONS,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({ message: '토큰 갱신 완료' });
+  }
+
+  /** 로그아웃: 쿠키 삭제 + DB RT 무효화 */
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  async logout(
+    @CurrentUser() user: { id: string },
+    @Res() res: Response,
+  ) {
+    await this.authService.logout(user.id);
+
+    res.clearCookie('access_token', COOKIE_OPTIONS);
+    res.clearCookie('refresh_token', COOKIE_OPTIONS);
+    res.json({ message: '로그아웃 완료' });
+  }
+}

@@ -4,9 +4,6 @@ export class CreateReviewDto {
   @IsString()
   restaurantId!: string;
 
-  @IsString()
-  userId!: string;
-
   @IsNumber()
   @Min(1)
   @Max(5)

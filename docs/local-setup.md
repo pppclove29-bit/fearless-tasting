@@ -61,14 +61,34 @@ cd fearless-tasting
 cp apps/api/.env.example apps/api/.env
 ```
 
-`.env` 파일을 열어서 필요 시 수정한다. 로컬 Docker 기본값으로 바로 사용 가능하다.
+`.env` 파일을 열어서 필요 시 수정한다. DB 관련 값은 로컬 Docker 기본값으로 바로 사용 가능하다.
 
 ```env
 DATABASE_URL="mysql://app:app1234@localhost:3306/fearless_tasting"
 DATABASE_READER_URL="mysql://app:app1234@localhost:3307/fearless_tasting"
+
+# 카카오 OAuth (아래 "카카오 OAuth 설정" 섹션 참고)
+KAKAO_CLIENT_ID=your_kakao_client_id
+KAKAO_CLIENT_SECRET=your_kakao_client_secret
+KAKAO_CALLBACK_URL=http://localhost:4000/auth/kakao/callback
+
+# JWT
+JWT_ACCESS_SECRET=dev-access-secret-change-in-prod
+JWT_REFRESH_SECRET=dev-refresh-secret-change-in-prod
+FRONTEND_URL=http://localhost:4321
 ```
 
 > `.env` 파일은 **절대 Git에 커밋하지 않는다.** `.gitignore`에 등록되어 있다.
+
+### 카카오 OAuth 설정 (로그인 기능을 테스트하려면)
+
+1. [카카오 디벨로퍼](https://developers.kakao.com)에 로그인
+2. **내 애플리케이션** → **애플리케이션 추가하기**
+3. **앱 키** 탭에서 **REST API 키**를 `KAKAO_CLIENT_ID`에 설정
+4. **보안** 탭에서 **Client Secret** 코드를 생성하여 `KAKAO_CLIENT_SECRET`에 설정
+5. **카카오 로그인** → **활성화 설정** → ON
+6. **카카오 로그인** → **Redirect URI**에 `http://localhost:4000/auth/kakao/callback` 등록
+7. **동의항목** → **닉네임**, **프로필 사진**, **카카오계정(이메일)** 필수/선택 동의 설정
 
 ---
 

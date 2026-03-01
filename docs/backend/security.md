@@ -19,9 +19,48 @@ const result = await this.prisma.write.$queryRawUnsafe(
 
 ## 인증/인가
 
-- NestJS Guard를 통한 인증/인가 처리
-- JWT 또는 세션 기반 인증 (추후 결정)
-- 인증이 필요한 엔드포인트에는 Guard를 적용한다
+### 카카오 OAuth + JWT
+
+- **카카오 OAuth 2.0**으로 로그인, **JWT**로 세션 관리
+- Access Token (15분) + Refresh Token (7일), **httpOnly Cookie**에 저장
+- Refresh Token은 **bcrypt 해싱** 후 Account 테이블에 저장
+- 자세한 인증 아키텍처는 [authentication.md](authentication.md) 참고
+
+### 쿠키 보안 설정
+
+```typescript
+{
+  httpOnly: true,                              // JS에서 접근 불가 (XSS 방어)
+  secure: process.env.NODE_ENV === 'production', // 프로덕션에서 HTTPS만 허용
+  sameSite: 'lax',                             // CSRF 기본 방어
+  path: '/',
+}
+```
+
+### Guard 적용
+
+- 인증이 필요한 엔드포인트에 `@UseGuards(JwtAuthGuard)`를 적용한다
+- Guard가 쿠키에서 AT를 추출 → 검증 → `request.user`에 payload 세팅
+- `@CurrentUser()` 데코레이터로 컨트롤러에서 유저 정보를 받는다
+
+```typescript
+@Post()
+@UseGuards(JwtAuthGuard)
+create(@CurrentUser() user: { id: string }, @Body() dto: CreateReviewDto) {
+  return this.reviewsService.create(dto.restaurantId, user.id, ...);
+}
+```
+
+### 보호 대상 엔드포인트
+
+| 엔드포인트 | 인증 필요 |
+|-----------|----------|
+| `POST /restaurants` | O |
+| `POST /reviews` | O |
+| `GET /auth/me` | O |
+| `POST /auth/logout` | O |
+| `GET /restaurants`, `GET /areas/counts` | X (공개) |
+| `GET /reviews` | X (공개) |
 
 ## 민감 정보 보호
 

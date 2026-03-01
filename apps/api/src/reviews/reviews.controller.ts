@@ -1,4 +1,6 @@
-import { Controller, Get, Post, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 
@@ -18,12 +20,16 @@ export class ReviewsController {
     return this.reviewsService.findByRestaurant(restaurantId);
   }
 
-  /** 리뷰 작성 */
+  /** 리뷰 작성 (로그인 필수) */
   @Post()
-  create(@Body() dto: CreateReviewDto) {
+  @UseGuards(JwtAuthGuard)
+  create(
+    @CurrentUser() user: { id: string },
+    @Body() dto: CreateReviewDto,
+  ) {
     return this.reviewsService.create(
       dto.restaurantId,
-      dto.userId,
+      user.id,
       dto.rating,
       dto.content,
       dto.imageUrls,

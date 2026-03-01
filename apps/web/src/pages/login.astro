@@ -1,0 +1,76 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="로그인">
+  <div class="login-page">
+    <h1>로그인</h1>
+    <p class="login-desc">카카오 계정으로 간편하게 시작하세요.</p>
+
+    <a href="http://localhost:4000/auth/kakao" class="kakao-btn" id="kakao-btn">
+      카카오로 시작하기
+    </a>
+
+    <div class="login-success" id="login-success" hidden>
+      <p>로그인 성공! 잠시 후 이동합니다.</p>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .login-page {
+    max-width: 400px;
+    margin: 3rem auto;
+    text-align: center;
+    padding: 0 1rem;
+  }
+
+  h1 {
+    margin-bottom: 0.5rem;
+  }
+
+  .login-desc {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+
+  .kakao-btn {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    background: #FEE500;
+    color: #191919;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+
+  .kakao-btn:hover {
+    background: #F5DC00;
+  }
+
+  .login-success {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    color: #16a34a;
+  }
+</style>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  if (params.get('success') === 'true') {
+    const kakaoBtn = document.getElementById('kakao-btn')!;
+    const successMsg = document.getElementById('login-success')!;
+    kakaoBtn.hidden = true;
+    successMsg.hidden = false;
+
+    setTimeout(() => {
+      location.href = '/';
+    }, 1500);
+  }
+</script>
