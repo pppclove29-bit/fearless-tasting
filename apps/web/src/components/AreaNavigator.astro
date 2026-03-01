@@ -334,7 +334,7 @@ const provinces = getProvinces();
     if (currentNeighborhood) params.set('neighborhood', currentNeighborhood);
 
     const search = params.toString();
-    const url = search ? `/map?${search}` : '/map';
+    const url = search ? `/?${search}` : '/';
 
     if (push) {
       history.pushState({ province: currentProvince, city: currentCity, neighborhood: currentNeighborhood }, '', url);

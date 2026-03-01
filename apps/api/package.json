@@ -19,6 +19,7 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/swagger": "^11.2.6",
     "@prisma/client": "^6.0.0",
     "@repo/types": "workspace:*",
     "@repo/utils": "workspace:*",

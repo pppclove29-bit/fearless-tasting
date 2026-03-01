@@ -333,7 +333,7 @@ const provinces = getProvinces();
 
       setTimeout(() => {
         const params = new URLSearchParams({ province, city, neighborhood });
-        location.href = `/map?${params.toString()}`;
+        location.href = `/?${params.toString()}`;
       }, 1500);
     } catch (err) {
       formError.textContent = err instanceof Error ? err.message : '등록에 실패했습니다.';

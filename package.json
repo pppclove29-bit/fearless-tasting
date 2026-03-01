@@ -17,6 +17,16 @@
   },
   "packageManager": "pnpm@10.30.3",
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "sharp", "bcrypt"]
+    "onlyBuiltDependencies": [
+      "b",
+      "bcrypt",
+      "c",
+      "esbuild",
+      "p",
+      "r",
+      "sharp",
+      "t",
+      "y"
+    ]
   }
 }
