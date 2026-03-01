@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 export class CreateRestaurantDto {
   @IsString()
@@ -15,12 +15,6 @@ export class CreateRestaurantDto {
 
   @IsString()
   neighborhood!: string;
-
-  @IsNumber()
-  latitude!: number;
-
-  @IsNumber()
-  longitude!: number;
 
   @IsString()
   category!: string;

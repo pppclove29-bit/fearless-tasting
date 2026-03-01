@@ -44,8 +44,6 @@ export class RestaurantsController {
       dto.province,
       dto.city,
       dto.neighborhood,
-      dto.latitude,
-      dto.longitude,
       dto.category,
       dto.imageUrl,
     );

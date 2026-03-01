@@ -65,10 +65,6 @@ model Restaurant {
   city         String   @db.VarChar(50)
   /// 읍/면/동
   neighborhood String   @db.VarChar(100)
-  /// 위도
-  latitude     Float
-  /// 경도
-  longitude    Float
   /// 카테고리 (한식, 중식, 일식 등)
   category     String   @db.VarChar(100)
   /// 대표 이미지 URL

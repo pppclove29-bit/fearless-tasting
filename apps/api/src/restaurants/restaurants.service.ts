@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 interface AreaCount {
   name: string;
   count: number;
+  avgRating: number | null;
 }
 
 @Injectable()
@@ -36,34 +37,43 @@ export class RestaurantsService {
     return restaurant;
   }
 
-  /** 지역별 식당 수 조회 */
+  /** 지역별 식당 수 + 평균 평점 조회 */
   async getAreaCounts(province?: string, city?: string): Promise<AreaCount[]> {
+    // Raw Query 사유: Prisma groupBy는 관계 모델(Review)의 집계(AVG)를 지원하지 않음
+    type RawRow = { name: string; count: bigint; avgRating: number | null };
+
+    let rows: RawRow[];
+
     if (province && city) {
-      const results = await this.prisma.read.restaurant.groupBy({
-        by: ['neighborhood'],
-        where: { province, city },
-        _count: { id: true },
-        orderBy: { neighborhood: 'asc' },
-      });
-      return results.map((r) => ({ name: r.neighborhood, count: r._count.id }));
+      rows = await this.prisma.read.$queryRaw<RawRow[]>`
+        SELECT r.neighborhood AS name, COUNT(DISTINCT r.id) AS count, AVG(rev.rating) AS avgRating
+        FROM Restaurant r
+        LEFT JOIN Review rev ON rev.restaurantId = r.id
+        WHERE r.province = ${province} AND r.city = ${city}
+        GROUP BY r.neighborhood
+        ORDER BY r.neighborhood ASC`;
+    } else if (province) {
+      rows = await this.prisma.read.$queryRaw<RawRow[]>`
+        SELECT r.city AS name, COUNT(DISTINCT r.id) AS count, AVG(rev.rating) AS avgRating
+        FROM Restaurant r
+        LEFT JOIN Review rev ON rev.restaurantId = r.id
+        WHERE r.province = ${province}
+        GROUP BY r.city
+        ORDER BY r.city ASC`;
+    } else {
+      rows = await this.prisma.read.$queryRaw<RawRow[]>`
+        SELECT r.province AS name, COUNT(DISTINCT r.id) AS count, AVG(rev.rating) AS avgRating
+        FROM Restaurant r
+        LEFT JOIN Review rev ON rev.restaurantId = r.id
+        GROUP BY r.province
+        ORDER BY r.province ASC`;
     }
 
-    if (province) {
-      const results = await this.prisma.read.restaurant.groupBy({
-        by: ['city'],
-        where: { province },
-        _count: { id: true },
-        orderBy: { city: 'asc' },
-      });
-      return results.map((r) => ({ name: r.city, count: r._count.id }));
-    }
-
-    const results = await this.prisma.read.restaurant.groupBy({
-      by: ['province'],
-      _count: { id: true },
-      orderBy: { province: 'asc' },
-    });
-    return results.map((r) => ({ name: r.province, count: r._count.id }));
+    return rows.map((row) => ({
+      name: row.name,
+      count: Number(row.count),
+      avgRating: row.avgRating !== null ? Math.round(row.avgRating * 10) / 10 : null,
+    }));
   }
 
   /** 식당 등록 */
@@ -73,13 +83,11 @@ export class RestaurantsService {
     province: string,
     city: string,
     neighborhood: string,
-    latitude: number,
-    longitude: number,
     category: string,
     imageUrl?: string,
   ) {
     return this.prisma.write.restaurant.create({
-      data: { name, address, province, city, neighborhood, latitude, longitude, category, imageUrl },
+      data: { name, address, province, city, neighborhood, category, imageUrl },
     });
   }
 }

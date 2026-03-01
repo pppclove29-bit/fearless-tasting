@@ -123,7 +123,8 @@ const provinces = getProvinces();
     word-break: keep-all;
   }
 
-  .area-count {
+  .area-count,
+  .area-meta {
     font-size: 0.75rem;
     color: #888;
     margin-top: 0.25rem;
@@ -187,7 +188,7 @@ const provinces = getProvinces();
   const loading = document.getElementById('loading')!;
   const emptyState = document.getElementById('empty-state')!;
 
-  async function fetchAreaCounts(province?: string, city?: string): Promise<{ name: string; count: number }[]> {
+  async function fetchAreaCounts(province?: string, city?: string): Promise<{ name: string; count: number; avgRating: number | null }[]> {
     const params = new URLSearchParams();
     if (province) params.set('province', province);
     if (city) params.set('city', city);
@@ -213,7 +214,7 @@ const provinces = getProvinces();
 
   function renderAreaButtons(
     items: string[],
-    counts: Map<string, number>,
+    counts: Map<string, { count: number; avgRating: number | null }>,
     level: 'province' | 'city' | 'neighborhood',
   ) {
     grid.innerHTML = '';
@@ -231,12 +232,16 @@ const provinces = getProvinces();
       nameSpan.textContent = name;
       btn.appendChild(nameSpan);
 
-      const count = counts.get(name);
-      if (count !== undefined && count > 0) {
-        const countSpan = document.createElement('span');
-        countSpan.className = 'area-count';
-        countSpan.textContent = `${count}곳`;
-        btn.appendChild(countSpan);
+      const data = counts.get(name);
+      if (data && data.count > 0) {
+        const metaSpan = document.createElement('span');
+        metaSpan.className = 'area-meta';
+        let text = `${data.count}곳`;
+        if (data.avgRating !== null) {
+          text += ` · ★ ${data.avgRating}`;
+        }
+        metaSpan.textContent = text;
+        btn.appendChild(metaSpan);
       }
 
       btn.addEventListener('click', () => handleAreaClick(name, level));
@@ -348,7 +353,7 @@ const provinces = getProvinces();
     loading.hidden = false;
     const provinces = getProvinces();
     const counts = await fetchAreaCounts();
-    const countMap = new Map(counts.map((c) => [c.name, c.count]));
+    const countMap = new Map(counts.map((c) => [c.name, { count: c.count, avgRating: c.avgRating }]));
     renderAreaButtons(provinces, countMap, 'province');
     loading.hidden = true;
   }
@@ -363,7 +368,7 @@ const provinces = getProvinces();
     loading.hidden = false;
     const cities = getCities(province);
     const counts = await fetchAreaCounts(province);
-    const countMap = new Map(counts.map((c) => [c.name, c.count]));
+    const countMap = new Map(counts.map((c) => [c.name, { count: c.count, avgRating: c.avgRating }]));
     renderAreaButtons(cities, countMap, 'city');
     loading.hidden = true;
   }
@@ -378,7 +383,7 @@ const provinces = getProvinces();
     loading.hidden = false;
     const neighborhoods = getNeighborhoods(province, city);
     const counts = await fetchAreaCounts(province, city);
-    const countMap = new Map(counts.map((c) => [c.name, c.count]));
+    const countMap = new Map(counts.map((c) => [c.name, { count: c.count, avgRating: c.avgRating }]));
     renderAreaButtons(neighborhoods, countMap, 'neighborhood');
     loading.hidden = true;
   }
@@ -427,16 +432,20 @@ const provinces = getProvinces();
       // 기본: 시도 목록 표시
       loading.hidden = false;
       const counts = await fetchAreaCounts();
-      const countMap = new Map(counts.map((c) => [c.name, c.count]));
+      const countMap = new Map(counts.map((c) => [c.name, c]));
 
       for (const btn of grid.querySelectorAll<HTMLElement>('.area-button')) {
         const prov = btn.dataset.province;
         if (!prov) continue;
 
-        const count = countMap.get(prov);
-        const countSpan = btn.querySelector('.area-count');
-        if (countSpan && count !== undefined && count > 0) {
-          countSpan.textContent = `${count}곳`;
+        const data = countMap.get(prov);
+        const metaSpan = btn.querySelector('.area-count');
+        if (metaSpan && data && data.count > 0) {
+          let text = `${data.count}곳`;
+          if (data.avgRating !== null) {
+            text += ` · ★ ${data.avgRating}`;
+          }
+          metaSpan.textContent = text;
         }
 
         btn.addEventListener('click', () => handleAreaClick(prov, 'province'));

@@ -10,6 +10,7 @@ function apiFetch(url: string, init?: RequestInit): Promise<Response> {
 export interface AreaCount {
   name: string;
   count: number;
+  avgRating: number | null;
 }
 
 /** 지역별 식당 수 조회 */

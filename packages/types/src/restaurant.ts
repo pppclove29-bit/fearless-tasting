@@ -5,8 +5,6 @@ export interface Restaurant {
   province: string;
   city: string;
   neighborhood: string;
-  latitude: number;
-  longitude: number;
   category: string;
   imageUrl?: string;
   createdAt: string;
