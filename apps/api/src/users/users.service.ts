@@ -24,4 +24,17 @@ export class UsersService {
 
     return user;
   }
+
+  /** 닉네임으로 사용자 조회 또는 생성 */
+  async findOrCreate(nickname: string, profileImageUrl?: string) {
+    const existing = await this.prisma.read.user.findUnique({
+      where: { nickname },
+    });
+
+    if (existing) return existing;
+
+    return this.prisma.write.user.create({
+      data: { nickname, profileImageUrl },
+    });
+  }
 }

@@ -1,3 +1,5 @@
+name: fearless-tasting
+
 services:
   mysql-writer:
     image: mysql:8.0
@@ -39,7 +41,7 @@ services:
 
   api:
     build: .
-    command: pnpm --filter @repo/api dev
+    command: sh -c "pnpm --filter @repo/api exec prisma migrate deploy && pnpm --filter @repo/api dev"
     ports:
       - "4000:4000"
     volumes:
@@ -48,7 +50,8 @@ services:
       - ./packages/utils/src:/app/packages/utils/src
     environment:
       DATABASE_URL: mysql://app:app1234@mysql-writer:3306/fearless_tasting
-      DATABASE_READER_URL: mysql://app:app1234@mysql-reader:3306/fearless_tasting
+      # 로컬 개발: 복제 미설정이므로 Reader도 Writer를 가리킴
+      DATABASE_READER_URL: mysql://app:app1234@mysql-writer:3306/fearless_tasting
     depends_on:
       mysql-writer:
         condition: service_healthy

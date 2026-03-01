@@ -20,6 +20,8 @@ model Restaurant {
   id           String   @id @default(cuid())
   name         String   @db.VarChar(200)
   address      String   @db.VarChar(500)
+  province     String   @db.VarChar(50)
+  city         String   @db.VarChar(50)
   neighborhood String   @db.VarChar(100)
   latitude     Float
   longitude    Float
@@ -29,7 +31,9 @@ model Restaurant {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  @@index([neighborhood])
+  @@index([province])
+  @@index([province, city])
+  @@index([province, city, neighborhood])
   @@index([category])
 }
 

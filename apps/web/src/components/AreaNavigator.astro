@@ -1,0 +1,448 @@
+---
+import { getProvinces } from '@/data/areas';
+
+const provinces = getProvinces();
+---
+
+<div class="area-navigator" id="area-navigator">
+  <!-- 브레드크럼 네비게이션 -->
+  <nav class="breadcrumb" id="breadcrumb" aria-label="지역 탐색 경로">
+    <ol>
+      <li><button data-level="root" class="breadcrumb-item active">전체</button></li>
+    </ol>
+  </nav>
+
+  <!-- 지역 버튼 그리드 -->
+  <div class="area-grid" id="area-grid" role="list" aria-label="지역 목록">
+    {provinces.map((province) => (
+      <button
+        class="area-button"
+        data-province={province}
+        data-level="province"
+        role="listitem"
+      >
+        <span class="area-name">{province}</span>
+        <span class="area-count"></span>
+      </button>
+    ))}
+  </div>
+
+  <!-- 식당 목록 -->
+  <div class="restaurant-list" id="restaurant-list" hidden aria-label="식당 목록"></div>
+
+  <!-- 로딩 -->
+  <div class="loading" id="loading" hidden>
+    <p>불러오는 중...</p>
+  </div>
+
+  <!-- 빈 상태 -->
+  <div class="empty-state" id="empty-state" hidden>
+    <p>이 지역에 등록된 식당이 없습니다.</p>
+  </div>
+</div>
+
+<style>
+  .area-navigator {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+
+  .breadcrumb ol {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .breadcrumb li:not(:last-child)::after {
+    content: "›";
+    margin-left: 0.25rem;
+    color: #999;
+    font-size: 1.1rem;
+  }
+
+  .breadcrumb-item {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    color: #666;
+    border-radius: 4px;
+  }
+
+  .breadcrumb-item:hover {
+    background-color: #f0f0f0;
+    color: #333;
+  }
+
+  .breadcrumb-item.active {
+    color: #111;
+    font-weight: 600;
+    cursor: default;
+  }
+
+  .area-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .area-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    min-height: 72px;
+  }
+
+  .area-button:hover {
+    border-color: #333;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .area-button:focus-visible {
+    outline: 2px solid #333;
+    outline-offset: 2px;
+  }
+
+  .area-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    word-break: keep-all;
+  }
+
+  .area-count {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 0.25rem;
+  }
+
+  .restaurant-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .restaurant-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #fff;
+  }
+
+  .restaurant-card h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.05rem;
+  }
+
+  .restaurant-card p {
+    margin: 0.2rem 0;
+    font-size: 0.85rem;
+    color: #555;
+  }
+
+  .restaurant-card .category {
+    display: inline-block;
+    background: #f5f5f5;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.25rem;
+  }
+
+  .loading, .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #888;
+  }
+</style>
+
+<script>
+  import { getProvinces, getCities, getNeighborhoods } from '@/data/areas';
+
+  const API_BASE = (import.meta as Record<string, Record<string, string>>).env?.PUBLIC_API_URL || 'http://localhost:4000';
+
+  // 상태
+  let currentProvince: string | null = null;
+  let currentCity: string | null = null;
+  let currentNeighborhood: string | null = null;
+
+  // DOM
+  const grid = document.getElementById('area-grid')!;
+  const breadcrumbOl = document.getElementById('breadcrumb')!.querySelector('ol')!;
+  const restaurantList = document.getElementById('restaurant-list')!;
+  const loading = document.getElementById('loading')!;
+  const emptyState = document.getElementById('empty-state')!;
+
+  async function fetchAreaCounts(province?: string, city?: string): Promise<{ name: string; count: number }[]> {
+    const params = new URLSearchParams();
+    if (province) params.set('province', province);
+    if (city) params.set('city', city);
+    try {
+      const res = await fetch(`${API_BASE}/restaurants/areas/counts?${params.toString()}`);
+      if (!res.ok) return [];
+      return res.json();
+    } catch {
+      return [];
+    }
+  }
+
+  async function fetchRestaurants(province: string, city: string, neighborhood: string) {
+    const params = new URLSearchParams({ province, city, neighborhood });
+    try {
+      const res = await fetch(`${API_BASE}/restaurants?${params.toString()}`);
+      if (!res.ok) return [];
+      return res.json();
+    } catch {
+      return [];
+    }
+  }
+
+  function renderAreaButtons(
+    items: string[],
+    counts: Map<string, number>,
+    level: 'province' | 'city' | 'neighborhood',
+  ) {
+    grid.innerHTML = '';
+    grid.hidden = false;
+    restaurantList.hidden = true;
+    emptyState.hidden = true;
+
+    for (const name of items) {
+      const btn = document.createElement('button');
+      btn.className = 'area-button';
+      btn.setAttribute('role', 'listitem');
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'area-name';
+      nameSpan.textContent = name;
+      btn.appendChild(nameSpan);
+
+      const count = counts.get(name);
+      if (count !== undefined && count > 0) {
+        const countSpan = document.createElement('span');
+        countSpan.className = 'area-count';
+        countSpan.textContent = `${count}곳`;
+        btn.appendChild(countSpan);
+      }
+
+      btn.addEventListener('click', () => handleAreaClick(name, level));
+      grid.appendChild(btn);
+    }
+  }
+
+  function renderRestaurants(restaurants: { id: string; name: string; address: string; category: string }[]) {
+    grid.hidden = true;
+    restaurantList.hidden = false;
+
+    if (restaurants.length === 0) {
+      restaurantList.hidden = true;
+      emptyState.hidden = false;
+      return;
+    }
+
+    emptyState.hidden = true;
+    restaurantList.innerHTML = '';
+
+    for (const r of restaurants) {
+      const card = document.createElement('article');
+      card.className = 'restaurant-card';
+      card.innerHTML = `
+        <h3>${r.name}</h3>
+        <p>${r.address}</p>
+        <span class="category">${r.category}</span>
+      `;
+      restaurantList.appendChild(card);
+    }
+  }
+
+  function updateBreadcrumb() {
+    breadcrumbOl.innerHTML = '';
+
+    const addItem = (text: string, onClick?: () => void) => {
+      const li = document.createElement('li');
+      if (onClick) {
+        const btn = document.createElement('button');
+        btn.className = 'breadcrumb-item';
+        btn.textContent = text;
+        btn.addEventListener('click', onClick);
+        li.appendChild(btn);
+      } else {
+        const span = document.createElement('span');
+        span.className = 'breadcrumb-item active';
+        span.textContent = text;
+        li.appendChild(span);
+      }
+      breadcrumbOl.appendChild(li);
+    };
+
+    if (!currentProvince) {
+      addItem('전체');
+      return;
+    }
+
+    addItem('전체', () => navigateToRoot());
+
+    if (!currentCity) {
+      addItem(currentProvince);
+      return;
+    }
+
+    addItem(currentProvince, () => navigateToProvince(currentProvince!));
+
+    if (!currentNeighborhood) {
+      addItem(currentCity);
+      return;
+    }
+
+    addItem(currentCity, () => navigateToCity(currentProvince!, currentCity!));
+    addItem(currentNeighborhood);
+  }
+
+  async function handleAreaClick(name: string, level: string) {
+    if (level === 'province') {
+      await navigateToProvince(name);
+    } else if (level === 'city') {
+      await navigateToCity(currentProvince!, name);
+    } else if (level === 'neighborhood') {
+      await navigateToNeighborhood(currentProvince!, currentCity!, name);
+    }
+  }
+
+  function updateURL(push = true) {
+    const params = new URLSearchParams();
+    if (currentProvince) params.set('province', currentProvince);
+    if (currentCity) params.set('city', currentCity);
+    if (currentNeighborhood) params.set('neighborhood', currentNeighborhood);
+
+    const search = params.toString();
+    const url = search ? `/map?${search}` : '/map';
+
+    if (push) {
+      history.pushState({ province: currentProvince, city: currentCity, neighborhood: currentNeighborhood }, '', url);
+    } else {
+      history.replaceState({ province: currentProvince, city: currentCity, neighborhood: currentNeighborhood }, '', url);
+    }
+  }
+
+  async function navigateToRoot(push = true) {
+    currentProvince = null;
+    currentCity = null;
+    currentNeighborhood = null;
+    updateBreadcrumb();
+    updateURL(push);
+
+    loading.hidden = false;
+    const provinces = getProvinces();
+    const counts = await fetchAreaCounts();
+    const countMap = new Map(counts.map((c) => [c.name, c.count]));
+    renderAreaButtons(provinces, countMap, 'province');
+    loading.hidden = true;
+  }
+
+  async function navigateToProvince(province: string, push = true) {
+    currentProvince = province;
+    currentCity = null;
+    currentNeighborhood = null;
+    updateBreadcrumb();
+    updateURL(push);
+
+    loading.hidden = false;
+    const cities = getCities(province);
+    const counts = await fetchAreaCounts(province);
+    const countMap = new Map(counts.map((c) => [c.name, c.count]));
+    renderAreaButtons(cities, countMap, 'city');
+    loading.hidden = true;
+  }
+
+  async function navigateToCity(province: string, city: string, push = true) {
+    currentProvince = province;
+    currentCity = city;
+    currentNeighborhood = null;
+    updateBreadcrumb();
+    updateURL(push);
+
+    loading.hidden = false;
+    const neighborhoods = getNeighborhoods(province, city);
+    const counts = await fetchAreaCounts(province, city);
+    const countMap = new Map(counts.map((c) => [c.name, c.count]));
+    renderAreaButtons(neighborhoods, countMap, 'neighborhood');
+    loading.hidden = true;
+  }
+
+  async function navigateToNeighborhood(province: string, city: string, neighborhood: string, push = true) {
+    currentProvince = province;
+    currentCity = city;
+    currentNeighborhood = neighborhood;
+    updateBreadcrumb();
+    updateURL(push);
+
+    loading.hidden = false;
+    const restaurants = await fetchRestaurants(province, city, neighborhood);
+    renderRestaurants(restaurants);
+    loading.hidden = true;
+  }
+
+  // 브라우저 뒤로가기/앞으로가기 처리
+  window.addEventListener('popstate', (e) => {
+    const state = e.state as { province: string | null; city: string | null; neighborhood: string | null } | null;
+    if (!state || !state.province) {
+      navigateToRoot(false);
+    } else if (!state.city) {
+      navigateToProvince(state.province, false);
+    } else if (!state.neighborhood) {
+      navigateToCity(state.province, state.city, false);
+    } else {
+      navigateToNeighborhood(state.province, state.city, state.neighborhood, false);
+    }
+  });
+
+  // 초기화: URL 파라미터 파싱 또는 시도 카운트 로드
+  (async () => {
+    const params = new URLSearchParams(location.search);
+    const province = params.get('province');
+    const city = params.get('city');
+    const neighborhood = params.get('neighborhood');
+
+    if (province && city && neighborhood) {
+      await navigateToNeighborhood(province, city, neighborhood, false);
+    } else if (province && city) {
+      await navigateToCity(province, city, false);
+    } else if (province) {
+      await navigateToProvince(province, false);
+    } else {
+      // 기본: 시도 목록 표시
+      loading.hidden = false;
+      const counts = await fetchAreaCounts();
+      const countMap = new Map(counts.map((c) => [c.name, c.count]));
+
+      for (const btn of grid.querySelectorAll<HTMLElement>('.area-button')) {
+        const prov = btn.dataset.province;
+        if (!prov) continue;
+
+        const count = countMap.get(prov);
+        const countSpan = btn.querySelector('.area-count');
+        if (countSpan && count !== undefined && count > 0) {
+          countSpan.textContent = `${count}곳`;
+        }
+
+        btn.addEventListener('click', () => handleAreaClick(prov, 'province'));
+      }
+      loading.hidden = true;
+      updateURL(false);
+    }
+  })();
+</script>

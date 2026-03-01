@@ -2,20 +2,20 @@ import { IsString, IsNumber, IsArray, Min, Max } from 'class-validator';
 
 export class CreateReviewDto {
   @IsString()
-  restaurantId: string;
+  restaurantId!: string;
 
   @IsString()
-  userId: string;
+  userId!: string;
 
   @IsNumber()
   @Min(1)
   @Max(5)
-  rating: number;
+  rating!: number;
 
   @IsString()
-  content: string;
+  content!: string;
 
   @IsArray()
   @IsString({ each: true })
-  imageUrls: string[];
+  imageUrls!: string[];
 }

@@ -2,22 +2,28 @@ import { IsString, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateRestaurantDto {
   @IsString()
-  name: string;
+  name!: string;
 
   @IsString()
-  address: string;
+  address!: string;
 
   @IsString()
-  neighborhood: string;
+  province!: string;
+
+  @IsString()
+  city!: string;
+
+  @IsString()
+  neighborhood!: string;
 
   @IsNumber()
-  latitude: number;
+  latitude!: number;
 
   @IsNumber()
-  longitude: number;
+  longitude!: number;
 
   @IsString()
-  category: string;
+  category!: string;
 
   @IsOptional()
   @IsString()

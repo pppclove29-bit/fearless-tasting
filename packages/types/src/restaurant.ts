@@ -2,6 +2,8 @@ export interface Restaurant {
   id: string;
   name: string;
   address: string;
+  province: string;
+  city: string;
   neighborhood: string;
   latitude: number;
   longitude: number;

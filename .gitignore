@@ -40,5 +40,5 @@ docker-compose.override.yml
 apps/api/prisma/*.db
 
 # Claude Code
-settings.local.json
-settings.json
+.claude/settings.local.json
+.claude/settings.json

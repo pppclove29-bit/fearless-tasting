@@ -2,7 +2,17 @@
   "permissions": {
     "allow": [
       "Read(//c/Program Files/MySQL/**)",
-      "Bash(\"/c/Users/pppcl/OneDrive/바탕 화면/무모한:*)"
+      "Bash(\"/c/Users/pppcl/OneDrive/바탕 화면/무모한:*)",
+      "Bash(docker info --format '{{.ServerVersion}}')",
+      "Bash(wsl --status)",
+      "Bash(powershell.exe -Command \"cd ''C:\\\\Users\\\\pppcl\\\\OneDrive\\\\바탕 화면\\\\무모한 시식가''; node node_modules/esbuild/install.js\")",
+      "Bash(powershell.exe -Command \"cd ''C:\\\\Users\\\\pppcl\\\\OneDrive\\\\바탕 화면\\\\무모한 시식가''; node ''node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/install.js''\")",
+      "Bash(powershell.exe -Command \"cd ''C:\\\\Users\\\\pppcl\\\\OneDrive\\\\바탕 화면\\\\무모한 시식가''; node ''node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/install.js'' 2>&1\")",
+      "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Users\\\\pppcl\\\\OneDrive\\\\바탕 화면\\\\무모한 시식가''; node ''node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/install.js''; Write-Host ''DONE''\")",
+      "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Users\\\\pppcl\\\\OneDrive\\\\바탕 화면\\\\무모한 시식가''; node ''node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/install.js''; Write-Host ''DONE''\")",
+      "Bash(powershell.exe -Command \"Test-Path ''C:\\\\Users\\\\pppcl\\\\OneDrive\\\\바탕 화면\\\\무모한 시식가\\\\apps\\\\web\\\\node_modules\\\\.bin\\\\astro''\")",
+      "Bash(powershell.exe -Command \"Test-Path ''C:\\\\Users\\\\pppcl\\\\OneDrive\\\\바탕 화면\\\\무모한 시식가\\\\apps\\\\web\\\\node_modules''\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Users\\\\pppcl\\\\OneDrive\\\\바탕 화면\\\\무모한 시식가\\\\apps\\\\web\\\\node_modules\\\\.bin'' -ErrorAction SilentlyContinue | Select-Object -First 10 -Property Name\")"
     ]
   }
 }
