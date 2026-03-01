@@ -41,3 +41,4 @@ apps/api/prisma/*.db
 
 # Claude Code
 settings.local.json
+settings.json
