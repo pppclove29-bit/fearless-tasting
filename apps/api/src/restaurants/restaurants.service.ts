@@ -11,15 +11,34 @@ interface AreaCount {
 export class RestaurantsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** 식당 목록 조회 (지역 필터 지원) */
+  /** 식당 목록 조회 (지역 필터 지원, 리뷰 포함) */
   async findAll(province?: string, city?: string, neighborhood?: string) {
-    return this.prisma.read.restaurant.findMany({
+    const restaurants = await this.prisma.read.restaurant.findMany({
       where: {
         ...(province ? { province } : {}),
         ...(city ? { city } : {}),
         ...(neighborhood ? { neighborhood } : {}),
       },
+      include: {
+        reviews: {
+          select: { rating: true, content: true },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
       orderBy: { createdAt: 'desc' },
+    });
+
+    return restaurants.map((r) => {
+      const ratings = r.reviews.map((rev) => rev.rating);
+      const avgRating = ratings.length > 0
+        ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
+        : null;
+      return {
+        ...r,
+        avgRating,
+        reviewCount: r.reviews.length,
+        latestReview: r.reviews[0]?.content ?? null,
+      };
     });
   }
 

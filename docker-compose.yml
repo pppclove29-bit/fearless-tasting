@@ -41,7 +41,7 @@ services:
 
   api:
     build: .
-    command: sh -c "pnpm --filter @repo/api exec prisma migrate deploy && pnpm --filter @repo/api dev"
+    command: sh -c "pnpm --filter @repo/api exec prisma db push --skip-generate && pnpm --filter @repo/api dev"
     ports:
       - "4000:4000"
     volumes:
