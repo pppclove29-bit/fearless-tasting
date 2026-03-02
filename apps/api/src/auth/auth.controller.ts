@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Query, Res, Req, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -27,6 +28,7 @@ export class AuthController {
 
   /** 카카오 OAuth 콜백: 인가 코드 → 토큰 교환 → JWT 발급 → 프론트 리다이렉트 */
   @Get('kakao/callback')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiExcludeEndpoint()
   async kakaoCallback(@Query('code') code: string, @Res() res: Response) {
     if (!code) {
@@ -62,6 +64,7 @@ export class AuthController {
 
   /** Refresh Token으로 Access Token 갱신 */
   @Post('refresh')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: '토큰 갱신', description: 'Refresh Token 쿠키로 Access Token을 갱신합니다.' })
   async refresh(@Req() req: Request, @Res() res: Response) {
     const refreshToken = req.cookies?.refresh_token;

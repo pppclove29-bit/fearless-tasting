@@ -1,0 +1,485 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="식당 상세">
+  <div class="restaurant-detail" id="restaurant-detail">
+    <p id="loading-msg" class="status-msg">로딩 중...</p>
+    <div id="restaurant-content" hidden></div>
+    <p id="error-msg" class="status-msg error" hidden></p>
+  </div>
+</BaseLayout>
+
+<style>
+  .restaurant-detail {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .status-msg {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #999;
+    font-size: 0.9rem;
+  }
+
+  .status-msg.error {
+    color: #dc2626;
+  }
+</style>
+
+<style is:global>
+  .rest-header {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .rest-header .rest-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.3rem;
+  }
+
+  .rest-header h1 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .rest-header .rest-rating {
+    font-size: 0.9rem;
+    color: #e6a817;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .rest-header .rest-address {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0.2rem 0 0.5rem;
+  }
+
+  .rest-header .rest-category {
+    display: inline-block;
+    background: #f0f0f0;
+    padding: 0.2rem 0.6rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    color: #555;
+    font-weight: 500;
+  }
+
+  .rest-header .admin-actions {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #eee;
+  }
+
+  .btn-danger {
+    padding: 0.45rem 0.85rem;
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-danger:hover {
+    background: #b91c1c;
+  }
+
+  .reviews-section h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  .review-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .review-card .review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.3rem;
+  }
+
+  .review-card .review-author {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .review-card .review-rating {
+    font-size: 0.8rem;
+    color: #e6a817;
+    font-weight: 600;
+  }
+
+  .review-card .review-content {
+    font-size: 0.875rem;
+    color: #444;
+    line-height: 1.5;
+    margin: 0.4rem 0;
+  }
+
+  .review-card .review-date {
+    font-size: 0.75rem;
+    color: #999;
+  }
+
+  .review-card .review-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  .btn-sm {
+    padding: 0.3rem 0.65rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: #555;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .btn-sm:hover {
+    background: #f0f0f0;
+    border-color: #999;
+  }
+
+  .btn-sm.danger {
+    color: #dc2626;
+    border-color: #fca5a5;
+  }
+
+  .btn-sm.danger:hover {
+    background: #fef2f2;
+    border-color: #dc2626;
+  }
+
+  .edit-form {
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background: #f9f9f9;
+    border-radius: 8px;
+  }
+
+  .edit-form label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 0.25rem;
+  }
+
+  .edit-form select,
+  .edit-form textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    margin-bottom: 0.5rem;
+  }
+
+  .edit-form textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .edit-form .edit-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn-primary {
+    padding: 0.4rem 0.75rem;
+    background: #111;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-primary:hover {
+    background: #333;
+  }
+
+  .btn-secondary {
+    padding: 0.4rem 0.75rem;
+    background: #fff;
+    color: #555;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-secondary:hover {
+    background: #f0f0f0;
+  }
+
+  .no-reviews {
+    text-align: center;
+    padding: 2rem;
+    color: #999;
+    font-size: 0.875rem;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: #666;
+    text-decoration: none;
+  }
+
+  .back-link:hover {
+    color: #111;
+  }
+</style>
+
+<script>
+  import { fetchRestaurant, fetchCurrentUser, updateReview, deleteReview, deleteRestaurant } from '@/lib/api';
+  import type { RestaurantDetail, ReviewWithUser, AuthUser } from '@/lib/api';
+
+  const loadingMsg = document.getElementById('loading-msg')!;
+  const errorMsg = document.getElementById('error-msg')!;
+  const content = document.getElementById('restaurant-content')!;
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function renderStars(rating: number): string {
+    const rounded = Math.round(rating);
+    return '\u2605'.repeat(rounded) + '\u2606'.repeat(5 - rounded);
+  }
+
+  function formatDate(dateStr: string): string {
+    return new Date(dateStr).toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  }
+
+  function calcAvgRating(reviews: ReviewWithUser[]): number | null {
+    if (reviews.length === 0) return null;
+    const sum = reviews.reduce((a, r) => a + r.rating, 0);
+    return Math.round((sum / reviews.length) * 10) / 10;
+  }
+
+  function renderPage(restaurant: RestaurantDetail, user: AuthUser | null) {
+    const avgRating = calcAvgRating(restaurant.reviews);
+    const isAdmin = user?.role === 'admin';
+
+    let ratingHtml = '';
+    if (avgRating !== null) {
+      ratingHtml = `<span class="rest-rating">${renderStars(avgRating)} ${avgRating}</span>`;
+    }
+
+    let adminHtml = '';
+    if (isAdmin) {
+      adminHtml = `
+        <div class="admin-actions">
+          <button type="button" class="btn-danger" id="delete-restaurant-btn">식당 삭제</button>
+        </div>
+      `;
+    }
+
+    let reviewsHtml = '';
+    if (restaurant.reviews.length === 0) {
+      reviewsHtml = '<p class="no-reviews">아직 리뷰가 없습니다.</p>';
+    } else {
+      for (const review of restaurant.reviews) {
+        const isOwner = user !== null && review.userId === user.id;
+        const canDelete = isOwner || isAdmin;
+
+        let actionsHtml = '';
+        if (isOwner || canDelete) {
+          actionsHtml = '<div class="review-actions">';
+          if (isOwner) {
+            actionsHtml += `<button type="button" class="btn-sm edit-review-btn" data-review-id="${review.id}">수정</button>`;
+          }
+          if (canDelete) {
+            actionsHtml += `<button type="button" class="btn-sm danger delete-review-btn" data-review-id="${review.id}">삭제</button>`;
+          }
+          actionsHtml += '</div>';
+        }
+
+        reviewsHtml += `
+          <div class="review-card" data-review-id="${review.id}">
+            <div class="review-header">
+              <span class="review-author">${escapeHtml(review.user.nickname)}</span>
+              <span class="review-rating">${renderStars(review.rating)} ${review.rating}</span>
+            </div>
+            <p class="review-content" data-original-content="${escapeHtml(review.content)}" data-original-rating="${review.rating}">${escapeHtml(review.content)}</p>
+            <span class="review-date">${formatDate(review.createdAt)}</span>
+            ${actionsHtml}
+          </div>
+        `;
+      }
+    }
+
+    content.innerHTML = `
+      <a href="/" class="back-link">&larr; 홈으로 돌아가기</a>
+      <div class="rest-header">
+        <div class="rest-title-row">
+          <h1>${escapeHtml(restaurant.name)}</h1>
+          ${ratingHtml}
+        </div>
+        <p class="rest-address">${escapeHtml(restaurant.address)}</p>
+        <span class="rest-category">${escapeHtml(restaurant.category)}</span>
+        ${adminHtml}
+      </div>
+      <div class="reviews-section">
+        <h2>리뷰 (${restaurant.reviews.length})</h2>
+        ${reviewsHtml}
+      </div>
+    `;
+
+    content.hidden = false;
+    attachEventHandlers(restaurant.id);
+  }
+
+  function attachEventHandlers(restaurantId: string) {
+    // 식당 삭제
+    const deleteRestBtn = document.getElementById('delete-restaurant-btn');
+    if (deleteRestBtn) {
+      deleteRestBtn.addEventListener('click', async () => {
+        if (!confirm('정말 이 식당을 삭제하시겠습니까? 모든 리뷰도 함께 삭제됩니다.')) return;
+        try {
+          await deleteRestaurant(restaurantId);
+          alert('식당이 삭제되었습니다.');
+          location.href = '/';
+        } catch {
+          alert('식당 삭제에 실패했습니다.');
+        }
+      });
+    }
+
+    // 리뷰 삭제
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('.delete-review-btn')) {
+      btn.addEventListener('click', async () => {
+        if (!confirm('정말 이 리뷰를 삭제하시겠습니까?')) return;
+        const reviewId = btn.dataset.reviewId!;
+        try {
+          await deleteReview(reviewId);
+          location.reload();
+        } catch {
+          alert('리뷰 삭제에 실패했습니다.');
+        }
+      });
+    }
+
+    // 리뷰 수정
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('.edit-review-btn')) {
+      btn.addEventListener('click', () => {
+        const reviewId = btn.dataset.reviewId!;
+        const card = document.querySelector<HTMLElement>(`.review-card[data-review-id="${reviewId}"]`)!;
+        const contentEl = card.querySelector<HTMLElement>('.review-content')!;
+        const originalContent = contentEl.dataset.originalContent || '';
+        const originalRating = contentEl.dataset.originalRating || '3';
+        const actionsEl = card.querySelector<HTMLElement>('.review-actions');
+        if (actionsEl) actionsEl.hidden = true;
+
+        // 기존 수정 폼이 있으면 제거
+        const existingForm = card.querySelector('.edit-form');
+        if (existingForm) return;
+
+        const ratingOptions = [1, 2, 3, 4, 5]
+          .map((v) => `<option value="${v}" ${v === Number(originalRating) ? 'selected' : ''}>${v}점</option>`)
+          .join('');
+
+        const formHtml = `
+          <div class="edit-form">
+            <label for="edit-rating-${reviewId}">평점</label>
+            <select id="edit-rating-${reviewId}">${ratingOptions}</select>
+            <label for="edit-content-${reviewId}">내용</label>
+            <textarea id="edit-content-${reviewId}">${escapeHtml(originalContent)}</textarea>
+            <div class="edit-buttons">
+              <button type="button" class="btn-primary save-edit-btn" data-review-id="${reviewId}">저장</button>
+              <button type="button" class="btn-secondary cancel-edit-btn" data-review-id="${reviewId}">취소</button>
+            </div>
+          </div>
+        `;
+        card.insertAdjacentHTML('beforeend', formHtml);
+
+        // 저장
+        card.querySelector<HTMLButtonElement>('.save-edit-btn')!.addEventListener('click', async () => {
+          const newRating = Number((card.querySelector<HTMLSelectElement>(`#edit-rating-${reviewId}`)!).value);
+          const newContent = (card.querySelector<HTMLTextAreaElement>(`#edit-content-${reviewId}`)!).value.trim();
+          if (!newContent) {
+            alert('리뷰 내용을 입력해 주세요.');
+            return;
+          }
+          try {
+            await updateReview(reviewId, { rating: newRating, content: newContent });
+            location.reload();
+          } catch {
+            alert('리뷰 수정에 실패했습니다.');
+          }
+        });
+
+        // 취소
+        card.querySelector<HTMLButtonElement>('.cancel-edit-btn')!.addEventListener('click', () => {
+          card.querySelector('.edit-form')!.remove();
+          if (actionsEl) actionsEl.hidden = false;
+        });
+      });
+    }
+  }
+
+  // 초기화
+  (async () => {
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+
+    if (!id) {
+      loadingMsg.hidden = true;
+      errorMsg.textContent = '식당 ID가 없습니다.';
+      errorMsg.hidden = false;
+      return;
+    }
+
+    try {
+      const [restaurant, user] = await Promise.all([
+        fetchRestaurant(id),
+        fetchCurrentUser(),
+      ]);
+      loadingMsg.hidden = true;
+      renderPage(restaurant, user);
+    } catch {
+      loadingMsg.hidden = true;
+      errorMsg.textContent = '식당 정보를 불러올 수 없습니다.';
+      errorMsg.hidden = false;
+    }
+  })();
+</script>

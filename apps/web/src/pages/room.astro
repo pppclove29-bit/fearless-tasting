@@ -1,0 +1,918 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="방 상세">
+  <div id="room-page">
+    <p id="loading-msg" class="status-msg">로딩 중...</p>
+    <p id="error-msg" class="status-msg error" hidden></p>
+    <div id="room-content" hidden></div>
+  </div>
+</BaseLayout>
+
+<style>
+  .status-msg {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #999;
+    font-size: 0.9rem;
+  }
+
+  .status-msg.error {
+    color: #dc2626;
+  }
+</style>
+
+<style is:global>
+  .back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: #666;
+    text-decoration: none;
+  }
+
+  .back-link:hover { color: #111; }
+
+  .room-header {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .room-header h1 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+  }
+
+  .invite-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .invite-code {
+    font-family: monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    background: #f5f5f5;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-copy {
+    padding: 0.3rem 0.6rem;
+    background: #fff;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-copy:hover { background: #f0f0f0; }
+
+  .room-actions-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #eee;
+  }
+
+  .btn-danger-sm {
+    padding: 0.35rem 0.7rem;
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-danger-sm:hover { background: #b91c1c; }
+
+  .btn-outline-sm {
+    padding: 0.35rem 0.7rem;
+    background: #fff;
+    color: #555;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-outline-sm:hover { background: #f0f0f0; }
+
+  /* 탭 바 */
+  .room-tab-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e8e8e8;
+  }
+
+  .room-tab-btn {
+    padding: 0.6rem 1rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #888;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .room-tab-btn:hover { color: #333; }
+
+  .room-tab-btn.active {
+    color: #111;
+    font-weight: 600;
+    border-bottom-color: #111;
+  }
+
+  /* 멤버 리스트 */
+  .member-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .member-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+  }
+
+  .member-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .member-nickname {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .member-role-badge {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: #f0f0f0;
+    color: #555;
+  }
+
+  .member-role-badge.owner { background: #fef3c7; color: #92400e; }
+  .member-role-badge.manager { background: #dbeafe; color: #1d4ed8; }
+
+  .member-actions {
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+  }
+
+  .member-actions select {
+    padding: 0.25rem 0.4rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    font-size: 0.75rem;
+  }
+
+  /* 식당 카드 */
+  .room-restaurant-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.6rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .room-restaurant-card:hover { border-color: #ccc; }
+
+  .room-rest-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 0.15rem;
+  }
+
+  .room-rest-meta {
+    font-size: 0.8rem;
+    color: #888;
+  }
+
+  .room-rest-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.35rem;
+  }
+
+  .room-rest-added-by {
+    font-size: 0.75rem;
+    color: #aaa;
+  }
+
+  .room-rest-reviews-count {
+    font-size: 0.75rem;
+    color: #666;
+  }
+
+  /* 식당 등록 폼 */
+  .add-restaurant-form {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .add-restaurant-form h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-row.full {
+    grid-template-columns: 1fr;
+  }
+
+  .add-restaurant-form input,
+  .add-restaurant-form select {
+    padding: 0.5rem 0.65rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    width: 100%;
+  }
+
+  .add-restaurant-form input:focus,
+  .add-restaurant-form select:focus {
+    outline: none;
+    border-color: #333;
+  }
+
+  .add-rest-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .btn-primary-sm {
+    padding: 0.45rem 0.85rem;
+    background: #111;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-primary-sm:hover { background: #333; }
+
+  /* 식당 상세 모달 (인라인) */
+  .room-rest-detail {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .room-rest-detail h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem;
+  }
+
+  .room-rest-detail .detail-address {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+
+  .room-rest-detail .detail-meta {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    color: #888;
+  }
+
+  .room-rest-detail .detail-meta .category-badge {
+    background: #f0f0f0;
+    padding: 0.15rem 0.5rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    color: #555;
+  }
+
+  .detail-close-btn {
+    float: right;
+    padding: 0.3rem 0.6rem;
+    background: #fff;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .detail-close-btn:hover { background: #f0f0f0; }
+
+  /* 리뷰 작성 폼 */
+  .review-form {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .review-form select,
+  .review-form textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    margin-bottom: 0.5rem;
+  }
+
+  .review-form textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+
+  .room-review-card {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 0.6rem 0;
+    font-size: 0.85rem;
+  }
+
+  .room-review-card:last-child { border-bottom: none; }
+
+  .room-review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.2rem;
+  }
+
+  .room-review-author {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.825rem;
+  }
+
+  .room-review-rating {
+    color: #e6a817;
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+
+  .room-review-content {
+    color: #444;
+    line-height: 1.4;
+  }
+
+  .room-review-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+    color: #999;
+  }
+
+  .room-review-actions {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .room-review-actions button {
+    padding: 0.2rem 0.5rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 0.7rem;
+    cursor: pointer;
+    color: #555;
+  }
+
+  .room-review-actions button:hover { background: #f0f0f0; }
+  .room-review-actions button.danger { color: #dc2626; border-color: #fca5a5; }
+  .room-review-actions button.danger:hover { background: #fef2f2; }
+
+  .empty-text {
+    text-align: center;
+    padding: 1.5rem;
+    color: #999;
+    font-size: 0.85rem;
+  }
+</style>
+
+<script>
+  import {
+    fetchCurrentUser, fetchRoom, deleteRoom, leaveRoom,
+    updateRoomMemberRole, kickRoomMember,
+    createRoomRestaurant, fetchRoomRestaurant, deleteRoomRestaurant,
+    createRoomReview, updateRoomReview, deleteRoomReview,
+  } from '@/lib/api';
+  import type { AuthUser, RoomDetailResponse, RoomMemberInfo, RoomRestaurantInfo, RoomReviewWithUser } from '@/lib/api';
+  import { getCities, getNeighborhoods } from '@/data/areas';
+
+  const loadingMsg = document.getElementById('loading-msg')!;
+  const errorMsg = document.getElementById('error-msg')!;
+  const content = document.getElementById('room-content')!;
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function renderStars(rating: number): string {
+    return '\u2605'.repeat(rating) + '\u2606'.repeat(5 - rating);
+  }
+
+  function formatDate(dateStr: string): string {
+    return new Date(dateStr).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  const roleLabel: Record<string, string> = { owner: '방장', manager: '매니저', member: '멤버' };
+
+  let currentRoom: RoomDetailResponse;
+  let currentUser: AuthUser;
+  let myRole: string;
+
+  function getMyRole(): string {
+    const me = currentRoom.members.find((m) => m.userId === currentUser.id);
+    return me?.role || 'member';
+  }
+
+  function isOwner(): boolean { return myRole === 'owner'; }
+  function isManagerOrAbove(): boolean { return myRole === 'owner' || myRole === 'manager'; }
+
+  // ─── 렌더링 ───
+
+  function renderPage() {
+    myRole = getMyRole();
+
+    let actionsHtml = '';
+    if (isOwner()) {
+      actionsHtml = `<div class="room-actions-bar">
+        <button type="button" class="btn-danger-sm" id="delete-room-btn">방 삭제</button>
+      </div>`;
+    } else {
+      actionsHtml = `<div class="room-actions-bar">
+        <button type="button" class="btn-outline-sm" id="leave-room-btn">방 나가기</button>
+      </div>`;
+    }
+
+    content.innerHTML = `
+      <a href="/rooms" class="back-link">&larr; 내 방 목록</a>
+      <div class="room-header">
+        <h1>${escapeHtml(currentRoom.name)}</h1>
+        <div class="invite-row">
+          <span class="invite-code" id="invite-code">${currentRoom.inviteCode}</span>
+          <button type="button" class="btn-copy" id="copy-code-btn">복사</button>
+        </div>
+        ${actionsHtml}
+      </div>
+
+      <div class="room-tab-bar">
+        <button type="button" class="room-tab-btn active" data-tab="restaurants">식당 목록</button>
+        <button type="button" class="room-tab-btn" data-tab="members">멤버 (${currentRoom.members.length})</button>
+      </div>
+
+      <div id="tab-restaurants" class="room-tab-panel"></div>
+      <div id="tab-members" class="room-tab-panel" hidden></div>
+    `;
+
+    content.hidden = false;
+    attachHeaderHandlers();
+    attachTabHandlers();
+    renderRestaurantsTab();
+    renderMembersTab();
+  }
+
+  function attachHeaderHandlers() {
+    document.getElementById('copy-code-btn')?.addEventListener('click', () => {
+      navigator.clipboard.writeText(currentRoom.inviteCode);
+      const btn = document.getElementById('copy-code-btn')!;
+      btn.textContent = '복사됨!';
+      setTimeout(() => { btn.textContent = '복사'; }, 1500);
+    });
+
+    document.getElementById('delete-room-btn')?.addEventListener('click', async () => {
+      if (!confirm('정말 이 방을 삭제하시겠습니까? 모든 식당과 리뷰가 삭제됩니다.')) return;
+      try {
+        await deleteRoom(currentRoom.id);
+        location.href = '/rooms';
+      } catch { alert('방 삭제에 실패했습니다.'); }
+    });
+
+    document.getElementById('leave-room-btn')?.addEventListener('click', async () => {
+      if (!confirm('방을 나가시겠습니까?')) return;
+      try {
+        await leaveRoom(currentRoom.id);
+        location.href = '/rooms';
+      } catch (err) { alert(err instanceof Error ? err.message : '방 나가기에 실패했습니다.'); }
+    });
+  }
+
+  function attachTabHandlers() {
+    const restaurantsPanel = document.getElementById('tab-restaurants')!;
+    const membersPanel = document.getElementById('tab-members')!;
+
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('.room-tab-btn')) {
+      btn.addEventListener('click', () => {
+        for (const b of document.querySelectorAll('.room-tab-btn')) b.classList.remove('active');
+        btn.classList.add('active');
+        const tab = btn.dataset.tab!;
+        restaurantsPanel.hidden = tab !== 'restaurants';
+        membersPanel.hidden = tab !== 'members';
+      });
+    }
+  }
+
+  // ─── 멤버 탭 ───
+
+  function renderMembersTab() {
+    const panel = document.getElementById('tab-members')!;
+
+    panel.innerHTML = `<div class="member-list">${currentRoom.members
+      .map((m) => {
+        let actionsHtml = '';
+        if (isOwner() && m.userId !== currentUser.id) {
+          actionsHtml = `
+            <div class="member-actions">
+              <select class="role-select" data-user-id="${m.userId}">
+                <option value="manager" ${m.role === 'manager' ? 'selected' : ''}>매니저</option>
+                <option value="member" ${m.role === 'member' ? 'selected' : ''}>멤버</option>
+              </select>
+              <button type="button" class="btn-danger-sm kick-btn" data-user-id="${m.userId}">강퇴</button>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="member-item">
+            <div class="member-info">
+              <span class="member-nickname">${escapeHtml(m.user.nickname)}</span>
+              <span class="member-role-badge ${m.role}">${roleLabel[m.role]}</span>
+            </div>
+            ${actionsHtml}
+          </div>
+        `;
+      })
+      .join('')}</div>`;
+
+    // 역할 변경
+    for (const select of panel.querySelectorAll<HTMLSelectElement>('.role-select')) {
+      select.addEventListener('change', async () => {
+        const userId = select.dataset.userId!;
+        try {
+          await updateRoomMemberRole(currentRoom.id, userId, select.value);
+          currentRoom = await fetchRoom(currentRoom.id);
+          renderMembersTab();
+        } catch { alert('역할 변경에 실패했습니다.'); }
+      });
+    }
+
+    // 강퇴
+    for (const btn of panel.querySelectorAll<HTMLButtonElement>('.kick-btn')) {
+      btn.addEventListener('click', async () => {
+        if (!confirm('이 멤버를 강퇴하시겠습니까?')) return;
+        const userId = btn.dataset.userId!;
+        try {
+          await kickRoomMember(currentRoom.id, userId);
+          currentRoom = await fetchRoom(currentRoom.id);
+          renderMembersTab();
+        } catch { alert('강퇴에 실패했습니다.'); }
+      });
+    }
+  }
+
+  // ─── 식당 탭 ───
+
+  function renderRestaurantsTab() {
+    const panel = document.getElementById('tab-restaurants')!;
+
+    const addFormHtml = `
+      <div class="add-restaurant-form">
+        <h3>식당 등록</h3>
+        <div class="form-row full">
+          <input type="text" id="add-rest-name" placeholder="식당 이름" required />
+        </div>
+        <div class="form-row full">
+          <input type="text" id="add-rest-address" placeholder="주소" required />
+        </div>
+        <div class="form-row">
+          <input type="text" id="add-rest-province" placeholder="시/도 (예: 서울특별시)" required />
+          <input type="text" id="add-rest-city" placeholder="시/군/구 (예: 강남구)" required />
+        </div>
+        <div class="form-row">
+          <input type="text" id="add-rest-neighborhood" placeholder="읍/면/동 (예: 역삼동)" required />
+          <input type="text" id="add-rest-category" placeholder="카테고리 (예: 한식)" required />
+        </div>
+        <div class="add-rest-actions">
+          <button type="button" class="btn-primary-sm" id="add-rest-submit">등록</button>
+        </div>
+      </div>
+    `;
+
+    let listHtml = '';
+    if (currentRoom.restaurants.length === 0) {
+      listHtml = '<p class="empty-text">등록된 식당이 없습니다.</p>';
+    } else {
+      listHtml = currentRoom.restaurants
+        .map(
+          (r) => `
+          <div class="room-restaurant-card" data-rid="${r.id}">
+            <div class="room-rest-name">${escapeHtml(r.name)}</div>
+            <div class="room-rest-meta">${escapeHtml(r.address)} · ${escapeHtml(r.category)}</div>
+            <div class="room-rest-footer">
+              <span class="room-rest-added-by">${escapeHtml(r.addedBy.nickname)}</span>
+              <span class="room-rest-reviews-count">리뷰 ${r._count.reviews}개</span>
+            </div>
+          </div>
+        `,
+        )
+        .join('');
+    }
+
+    panel.innerHTML = addFormHtml + '<div id="restaurant-detail-area"></div>' + listHtml;
+    attachRestaurantFormHandler();
+    attachRestaurantCardHandlers();
+  }
+
+  function attachRestaurantFormHandler() {
+    document.getElementById('add-rest-submit')?.addEventListener('click', async () => {
+      const name = (document.getElementById('add-rest-name') as HTMLInputElement).value.trim();
+      const address = (document.getElementById('add-rest-address') as HTMLInputElement).value.trim();
+      const province = (document.getElementById('add-rest-province') as HTMLInputElement).value.trim();
+      const city = (document.getElementById('add-rest-city') as HTMLInputElement).value.trim();
+      const neighborhood = (document.getElementById('add-rest-neighborhood') as HTMLInputElement).value.trim();
+      const category = (document.getElementById('add-rest-category') as HTMLInputElement).value.trim();
+
+      if (!name || !address || !province || !city || !neighborhood || !category) {
+        alert('모든 항목을 입력해 주세요.');
+        return;
+      }
+
+      try {
+        await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category });
+        currentRoom = await fetchRoom(currentRoom.id);
+        renderRestaurantsTab();
+      } catch (err) { alert(err instanceof Error ? err.message : '등록에 실패했습니다.'); }
+    });
+  }
+
+  function attachRestaurantCardHandlers() {
+    for (const card of document.querySelectorAll<HTMLElement>('.room-restaurant-card')) {
+      card.addEventListener('click', () => {
+        const rid = card.dataset.rid!;
+        loadRestaurantDetail(rid);
+      });
+    }
+  }
+
+  // ─── 식당 상세 (인라인) ───
+
+  async function loadRestaurantDetail(rid: string) {
+    const area = document.getElementById('restaurant-detail-area')!;
+    area.innerHTML = '<p class="empty-text">로딩 중...</p>';
+
+    try {
+      const detail = await fetchRoomRestaurant(currentRoom.id, rid);
+
+      const avgRating = detail.reviews.length > 0
+        ? Math.round(detail.reviews.reduce((a, r) => a + r.rating, 0) / detail.reviews.length * 10) / 10
+        : null;
+
+      let deleteRestBtn = '';
+      const canDeleteRest = detail.addedById === currentUser.id || isManagerOrAbove();
+      if (canDeleteRest) {
+        deleteRestBtn = `<button type="button" class="btn-danger-sm" id="delete-rest-btn">식당 삭제</button>`;
+      }
+
+      const reviewFormHtml = `
+        <div class="review-form">
+          <select id="review-rating">
+            <option value="5">5 - 최고</option>
+            <option value="4">4 - 좋음</option>
+            <option value="3" selected>3 - 보통</option>
+            <option value="2">2 - 별로</option>
+            <option value="1">1 - 나쁨</option>
+          </select>
+          <textarea id="review-content" placeholder="한줄평을 남겨주세요"></textarea>
+          <button type="button" class="btn-primary-sm" id="submit-review-btn">리뷰 작성</button>
+        </div>
+      `;
+
+      let reviewsHtml = '';
+      if (detail.reviews.length === 0) {
+        reviewsHtml = '<p class="empty-text">아직 리뷰가 없습니다.</p>';
+      } else {
+        reviewsHtml = detail.reviews
+          .map((rev) => {
+            const isReviewOwner = rev.userId === currentUser.id;
+            const canDeleteReview = isReviewOwner || isManagerOrAbove();
+            let actionsHtml = '';
+            if (isReviewOwner || canDeleteReview) {
+              actionsHtml = '<div class="room-review-actions">';
+              if (isReviewOwner) {
+                actionsHtml += `<button type="button" class="edit-rev-btn" data-rev-id="${rev.id}" data-rating="${rev.rating}" data-content="${escapeHtml(rev.content)}">수정</button>`;
+              }
+              if (canDeleteReview) {
+                actionsHtml += `<button type="button" class="danger delete-rev-btn" data-rev-id="${rev.id}">삭제</button>`;
+              }
+              actionsHtml += '</div>';
+            }
+
+            return `
+              <div class="room-review-card" data-rev-id="${rev.id}">
+                <div class="room-review-header">
+                  <span class="room-review-author">${escapeHtml(rev.user.nickname)}</span>
+                  <span class="room-review-rating">${renderStars(rev.rating)} ${rev.rating}</span>
+                </div>
+                <div class="room-review-content">${escapeHtml(rev.content)}</div>
+                <div class="room-review-footer">
+                  <span>${formatDate(rev.createdAt)}</span>
+                  ${actionsHtml}
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+      }
+
+      area.innerHTML = `
+        <div class="room-rest-detail">
+          <button type="button" class="detail-close-btn" id="close-detail-btn">닫기</button>
+          <h2>${escapeHtml(detail.name)}</h2>
+          <div class="detail-address">${escapeHtml(detail.address)}</div>
+          <div class="detail-meta">
+            <span class="category-badge">${escapeHtml(detail.category)}</span>
+            ${avgRating !== null ? `<span>${renderStars(Math.round(avgRating))} ${avgRating}</span>` : ''}
+            <span>등록: ${escapeHtml(detail.addedBy.nickname)}</span>
+            ${deleteRestBtn}
+          </div>
+          ${reviewFormHtml}
+          <div id="reviews-list">${reviewsHtml}</div>
+        </div>
+      `;
+
+      // 닫기
+      document.getElementById('close-detail-btn')!.addEventListener('click', () => { area.innerHTML = ''; });
+
+      // 식당 삭제
+      document.getElementById('delete-rest-btn')?.addEventListener('click', async () => {
+        if (!confirm('이 식당을 삭제하시겠습니까? 모든 리뷰도 삭제됩니다.')) return;
+        try {
+          await deleteRoomRestaurant(currentRoom.id, rid);
+          area.innerHTML = '';
+          currentRoom = await fetchRoom(currentRoom.id);
+          renderRestaurantsTab();
+        } catch { alert('삭제에 실패했습니다.'); }
+      });
+
+      // 리뷰 작성
+      document.getElementById('submit-review-btn')!.addEventListener('click', async () => {
+        const rating = parseInt((document.getElementById('review-rating') as HTMLSelectElement).value, 10);
+        const reviewContent = (document.getElementById('review-content') as HTMLTextAreaElement).value.trim();
+        if (!reviewContent) { alert('내용을 입력해 주세요.'); return; }
+
+        try {
+          await createRoomReview(currentRoom.id, rid, { rating, content: reviewContent });
+          currentRoom = await fetchRoom(currentRoom.id);
+          await loadRestaurantDetail(rid);
+        } catch (err) { alert(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.'); }
+      });
+
+      // 리뷰 삭제
+      for (const btn of area.querySelectorAll<HTMLButtonElement>('.delete-rev-btn')) {
+        btn.addEventListener('click', async () => {
+          if (!confirm('이 리뷰를 삭제하시겠습니까?')) return;
+          try {
+            await deleteRoomReview(currentRoom.id, btn.dataset.revId!);
+            currentRoom = await fetchRoom(currentRoom.id);
+            await loadRestaurantDetail(rid);
+          } catch { alert('리뷰 삭제에 실패했습니다.'); }
+        });
+      }
+
+      // 리뷰 수정
+      for (const btn of area.querySelectorAll<HTMLButtonElement>('.edit-rev-btn')) {
+        btn.addEventListener('click', () => {
+          const revId = btn.dataset.revId!;
+          const origRating = btn.dataset.rating!;
+          const origContent = btn.dataset.content!;
+          const card = area.querySelector<HTMLElement>(`.room-review-card[data-rev-id="${revId}"]`)!;
+
+          if (card.querySelector('.review-form')) return;
+
+          const ratingOptions = [1, 2, 3, 4, 5]
+            .map((v) => `<option value="${v}" ${v === Number(origRating) ? 'selected' : ''}>${v}점</option>`)
+            .join('');
+
+          card.insertAdjacentHTML('beforeend', `
+            <div class="review-form">
+              <select class="edit-rating">${ratingOptions}</select>
+              <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
+              <div style="display:flex;gap:0.5rem;">
+                <button type="button" class="btn-primary-sm save-edit-btn">저장</button>
+                <button type="button" class="btn-outline-sm cancel-edit-btn">취소</button>
+              </div>
+            </div>
+          `);
+
+          card.querySelector('.save-edit-btn')!.addEventListener('click', async () => {
+            const newRating = parseInt(card.querySelector<HTMLSelectElement>('.edit-rating')!.value, 10);
+            const newContent = card.querySelector<HTMLTextAreaElement>('.edit-content')!.value.trim();
+            if (!newContent) { alert('내용을 입력해 주세요.'); return; }
+
+            try {
+              await updateRoomReview(currentRoom.id, revId, { rating: newRating, content: newContent });
+              currentRoom = await fetchRoom(currentRoom.id);
+              await loadRestaurantDetail(rid);
+            } catch { alert('수정에 실패했습니다.'); }
+          });
+
+          card.querySelector('.cancel-edit-btn')!.addEventListener('click', () => {
+            card.querySelector('.review-form')!.remove();
+          });
+        });
+      }
+    } catch {
+      area.innerHTML = '<p class="empty-text">식당 정보를 불러올 수 없습니다.</p>';
+    }
+  }
+
+  // ─── 초기화 ───
+
+  (async () => {
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+
+    if (!id) {
+      loadingMsg.hidden = true;
+      errorMsg.textContent = '방 ID가 없습니다.';
+      errorMsg.hidden = false;
+      return;
+    }
+
+    try {
+      const [user, room] = await Promise.all([
+        fetchCurrentUser(),
+        fetchRoom(id),
+      ]);
+
+      if (!user) {
+        loadingMsg.hidden = true;
+        errorMsg.textContent = '로그인이 필요합니다.';
+        errorMsg.hidden = false;
+        return;
+      }
+
+      currentUser = user;
+      currentRoom = room;
+      loadingMsg.hidden = true;
+      renderPage();
+    } catch {
+      loadingMsg.hidden = true;
+      errorMsg.textContent = '방 정보를 불러올 수 없습니다.';
+      errorMsg.hidden = false;
+    }
+  })();
+</script>

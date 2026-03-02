@@ -1,4 +1,4 @@
-import type { Restaurant, Review } from '@repo/types';
+import type { Restaurant, Review, Room, RoomRestaurant, RoomReview } from '@repo/types';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -122,6 +122,215 @@ export async function fetchInquiries(): Promise<Inquiry[]> {
   const res = await apiFetch(`${API_BASE}/inquiries`);
   if (!res.ok) return [];
   return res.json();
+}
+
+export interface ReviewWithUser extends Review {
+  user: { id: string; nickname: string; profileImageUrl: string | null };
+}
+
+export interface RestaurantDetail extends Restaurant {
+  reviews: ReviewWithUser[];
+}
+
+/** 식당 단건 조회 (리뷰 + 작성자 포함) */
+export async function fetchRestaurant(id: string): Promise<RestaurantDetail> {
+  const res = await apiFetch(`${API_BASE}/restaurants/${id}`);
+  if (!res.ok) throw new Error('식당 조회에 실패했습니다.');
+  return res.json();
+}
+
+/** 리뷰 수정 */
+export async function updateReview(
+  id: string,
+  data: { rating?: number; content?: string },
+): Promise<Review> {
+  const res = await apiFetch(`${API_BASE}/reviews/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('리뷰 수정에 실패했습니다.');
+  return res.json();
+}
+
+/** 리뷰 삭제 */
+export async function deleteReview(id: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/reviews/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('리뷰 삭제에 실패했습니다.');
+}
+
+/** 식당 삭제 (관리자) */
+export async function deleteRestaurant(id: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/restaurants/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('식당 삭제에 실패했습니다.');
+}
+
+// ─── 방 관련 ───
+
+export interface RoomListItem extends Room {
+  myRole: string;
+  memberCount: number;
+  restaurantCount: number;
+}
+
+export interface RoomMemberInfo {
+  id: string;
+  role: string;
+  userId: string;
+  joinedAt: string;
+  user: { id: string; nickname: string; profileImageUrl: string | null };
+}
+
+export interface RoomRestaurantInfo extends RoomRestaurant {
+  addedBy: { id: string; nickname: string };
+  _count: { reviews: number };
+}
+
+export interface RoomDetailResponse extends Room {
+  members: RoomMemberInfo[];
+  restaurants: RoomRestaurantInfo[];
+}
+
+export interface RoomReviewWithUser extends RoomReview {
+  user: { id: string; nickname: string; profileImageUrl: string | null };
+}
+
+export interface RoomRestaurantDetailResponse extends RoomRestaurant {
+  addedBy: { id: string; nickname: string };
+  reviews: RoomReviewWithUser[];
+}
+
+/** 내 방 목록 */
+export async function fetchMyRooms(): Promise<RoomListItem[]> {
+  const res = await apiFetch(`${API_BASE}/rooms`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+/** 방 상세 */
+export async function fetchRoom(id: string): Promise<RoomDetailResponse> {
+  const res = await apiFetch(`${API_BASE}/rooms/${id}`);
+  if (!res.ok) throw new Error('방 조회에 실패했습니다.');
+  return res.json();
+}
+
+/** 방 생성 */
+export async function createRoom(name: string): Promise<Room> {
+  const res = await apiFetch(`${API_BASE}/rooms`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) throw new Error('방 생성에 실패했습니다.');
+  return res.json();
+}
+
+/** 초대 코드로 입장 */
+export async function joinRoom(inviteCode: string): Promise<Room> {
+  const res = await apiFetch(`${API_BASE}/rooms/join`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ inviteCode }),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: '입장에 실패했습니다.' }));
+    throw new Error(error.message || '입장에 실패했습니다.');
+  }
+  return res.json();
+}
+
+/** 방 삭제 */
+export async function deleteRoom(id: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/rooms/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('방 삭제에 실패했습니다.');
+}
+
+/** 방 나가기 */
+export async function leaveRoom(id: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/rooms/${id}/leave`, { method: 'POST' });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: '방 나가기에 실패했습니다.' }));
+    throw new Error(error.message || '방 나가기에 실패했습니다.');
+  }
+}
+
+/** 멤버 역할 변경 */
+export async function updateRoomMemberRole(roomId: string, userId: string, role: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/members/${userId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role }),
+  });
+  if (!res.ok) throw new Error('역할 변경에 실패했습니다.');
+}
+
+/** 멤버 강퇴 */
+export async function kickRoomMember(roomId: string, userId: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/members/${userId}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('강퇴에 실패했습니다.');
+}
+
+/** 방 내 식당 등록 */
+export async function createRoomRestaurant(
+  roomId: string,
+  data: Omit<RoomRestaurant, 'id' | 'roomId' | 'addedById' | 'createdAt'>,
+): Promise<RoomRestaurant> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('식당 등록에 실패했습니다.');
+  return res.json();
+}
+
+/** 방 내 식당 상세 (리뷰 포함) */
+export async function fetchRoomRestaurant(roomId: string, rid: string): Promise<RoomRestaurantDetailResponse> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}`);
+  if (!res.ok) throw new Error('식당 조회에 실패했습니다.');
+  return res.json();
+}
+
+/** 방 내 식당 삭제 */
+export async function deleteRoomRestaurant(roomId: string, rid: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('식당 삭제에 실패했습니다.');
+}
+
+/** 방 내 리뷰 작성 */
+export async function createRoomReview(
+  roomId: string,
+  rid: string,
+  data: { rating: number; content: string },
+): Promise<RoomReview> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}/reviews`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('리뷰 작성에 실패했습니다.');
+  return res.json();
+}
+
+/** 방 내 리뷰 수정 */
+export async function updateRoomReview(
+  roomId: string,
+  revId: string,
+  data: { rating?: number; content?: string },
+): Promise<RoomReview> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/reviews/${revId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('리뷰 수정에 실패했습니다.');
+  return res.json();
+}
+
+/** 방 내 리뷰 삭제 */
+export async function deleteRoomReview(roomId: string, revId: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/reviews/${revId}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('리뷰 삭제에 실패했습니다.');
 }
 
 export type CreateRestaurantInput = Omit<Restaurant, 'id' | 'createdAt' | 'updatedAt'>;

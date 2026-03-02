@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 import { RestaurantsService } from './restaurants.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { AreaCountsQueryDto } from './dto/area-counts-query.dto';
@@ -42,6 +44,7 @@ export class RestaurantsController {
 
   /** 식당 등록 (로그인 필수) */
   @Post()
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '식당 등록', description: '새로운 식당을 등록합니다. 로그인 필수.' })
   create(@Body() dto: CreateRestaurantDto) {
@@ -54,5 +57,14 @@ export class RestaurantsController {
       dto.category,
       dto.imageUrl,
     );
+  }
+
+  /** 식당 삭제 (관리자 전용, 리뷰도 함께 삭제) */
+  @Delete(':id')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: '식당 삭제', description: '관리자가 식당을 삭제합니다. 관련 리뷰도 함께 삭제됩니다.' })
+  @ApiParam({ name: 'id', description: '식당 ID' })
+  remove(@Param('id') id: string) {
+    return this.restaurantsService.remove(id);
   }
 }

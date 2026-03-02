@@ -42,6 +42,10 @@ const provinces = getProvinces();
 </div>
 
 <style is:global>
+  .area-navigator [hidden] {
+    display: none !important;
+  }
+
   .area-navigator {
     max-width: 800px;
     margin: 0 auto;
@@ -169,24 +173,47 @@ const provinces = getProvinces();
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   }
 
+  .restaurant-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.3rem;
+  }
+
   .restaurant-card h3 {
-    margin: 0 0 0.4rem;
+    margin: 0;
     font-size: 1rem;
     font-weight: 600;
     color: #111;
   }
 
-  .restaurant-card p {
+  .restaurant-card .restaurant-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .restaurant-card .restaurant-link:hover {
+    text-decoration: underline;
+  }
+
+  .restaurant-card .rating {
+    font-size: 0.8rem;
+    color: #e6a817;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .restaurant-card .address {
     margin: 0.15rem 0;
     font-size: 0.825rem;
     color: #666;
   }
 
-  .restaurant-card .card-meta {
+  .restaurant-card .card-footer {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 0.6rem;
-    margin-top: 0.4rem;
+    margin-top: 0.5rem;
   }
 
   .restaurant-card .category {
@@ -199,19 +226,15 @@ const provinces = getProvinces();
     font-weight: 500;
   }
 
-  .restaurant-card .rating {
-    font-size: 0.8rem;
-    color: #e6a817;
-    font-weight: 600;
-  }
-
   .restaurant-card .latest-review {
-    margin-top: 0.5rem;
     font-size: 0.8rem;
     color: #888;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: 60%;
+    text-align: right;
+    margin: 0;
   }
 
   .loading, .empty-state {
@@ -237,6 +260,7 @@ const provinces = getProvinces();
   const breadcrumbOl = document.getElementById('breadcrumb')!.querySelector('ol')!;
   const restaurantList = document.getElementById('restaurant-list')!;
   const loading = document.getElementById('loading')!;
+  const addLink = document.getElementById('add-link') as HTMLAnchorElement | null;
   const emptyState = document.getElementById('empty-state')!;
 
   async function fetchAreaCounts(province?: string, city?: string): Promise<{ name: string; count: number; avgRating: number | null }[]> {
@@ -339,13 +363,15 @@ const provinces = getProvinces();
       }
 
       card.innerHTML = `
-        <h3>${escapeHtml(r.name)}</h3>
-        <p>${escapeHtml(r.address)}</p>
-        <div class="card-meta">
-          <span class="category">${escapeHtml(r.category)}</span>
+        <div class="card-header">
+          <h3><a href="/restaurant?id=${r.id}" class="restaurant-link">${escapeHtml(r.name)}</a></h3>
           ${ratingHtml}
         </div>
-        ${reviewHtml}
+        <p class="address">${escapeHtml(r.address)}</p>
+        <div class="card-footer">
+          <span class="category">${escapeHtml(r.category)}</span>
+          ${reviewHtml}
+        </div>
       `;
       restaurantList.appendChild(card);
     }
@@ -418,6 +444,11 @@ const provinces = getProvinces();
     } else {
       history.replaceState({ province: currentProvince, city: currentCity, neighborhood: currentNeighborhood }, '', url);
     }
+
+    // 등록 링크에 현재 지역 파라미터 반영
+    if (addLink) {
+      addLink.href = search ? `/add?${search}` : '/add';
+    }
   }
 
   async function navigateToRoot(push = true) {
@@ -427,6 +458,8 @@ const provinces = getProvinces();
     updateBreadcrumb();
     updateURL(push);
 
+    restaurantList.hidden = true;
+    emptyState.hidden = true;
     loading.hidden = false;
     const provinces = getProvinces();
     const counts = await fetchAreaCounts();

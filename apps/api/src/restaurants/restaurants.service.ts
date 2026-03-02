@@ -42,11 +42,16 @@ export class RestaurantsService {
     });
   }
 
-  /** 식당 단건 조회 */
+  /** 식당 단건 조회 (리뷰 + 작성자 포함) */
   async findOne(id: string) {
     const restaurant = await this.prisma.read.restaurant.findUnique({
       where: { id },
-      include: { reviews: true },
+      include: {
+        reviews: {
+          include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
 
     if (!restaurant) {
@@ -54,6 +59,17 @@ export class RestaurantsService {
     }
 
     return restaurant;
+  }
+
+  /** 식당 삭제 (리뷰도 cascade 삭제) */
+  async remove(id: string) {
+    const restaurant = await this.prisma.read.restaurant.findUnique({ where: { id } });
+
+    if (!restaurant) {
+      throw new NotFoundException(`Restaurant with id ${id} not found`);
+    }
+
+    return this.prisma.write.restaurant.delete({ where: { id } });
   }
 
   /** 지역별 식당 수 + 평균 평점 조회 */

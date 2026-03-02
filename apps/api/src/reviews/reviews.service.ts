@@ -22,6 +22,19 @@ export class ReviewsService {
     });
   }
 
+  /** 리뷰 단건 조회 */
+  async findOne(id: string) {
+    const review = await this.prisma.read.review.findUnique({
+      where: { id },
+    });
+
+    if (!review) {
+      throw new NotFoundException(`Review with id ${id} not found`);
+    }
+
+    return review;
+  }
+
   /** 리뷰 작성 */
   async create(
     restaurantId: string,
@@ -41,5 +54,33 @@ export class ReviewsService {
     return this.prisma.write.review.create({
       data: { restaurantId, userId, rating, content, imageUrls },
     });
+  }
+
+  /** 리뷰 수정 */
+  async update(id: string, rating?: number, content?: string) {
+    const review = await this.prisma.read.review.findUnique({ where: { id } });
+
+    if (!review) {
+      throw new NotFoundException(`Review with id ${id} not found`);
+    }
+
+    return this.prisma.write.review.update({
+      where: { id },
+      data: {
+        ...(rating !== undefined ? { rating } : {}),
+        ...(content !== undefined ? { content } : {}),
+      },
+    });
+  }
+
+  /** 리뷰 삭제 */
+  async remove(id: string) {
+    const review = await this.prisma.read.review.findUnique({ where: { id } });
+
+    if (!review) {
+      throw new NotFoundException(`Review with id ${id} not found`);
+    }
+
+    return this.prisma.write.review.delete({ where: { id } });
   }
 }

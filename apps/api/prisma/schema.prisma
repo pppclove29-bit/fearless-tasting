@@ -23,6 +23,16 @@ model User {
   accounts        Account[]
   /// 작성한 리뷰 목록
   reviews         Review[]
+  /// 소유한 방 목록
+  ownedRooms      Room[]           @relation("RoomOwner")
+  /// 참여 중인 방 멤버십
+  roomMembers     RoomMember[]
+  /// 방 내 등록한 식당
+  roomRestaurants RoomRestaurant[]
+  /// 방 내 작성한 리뷰
+  roomReviews     RoomReview[]
+  /// 강퇴 기록
+  roomKicks       RoomKick[]
   /// 가입일
   createdAt       DateTime  @default(now())
   /// 최종 수정일
@@ -94,7 +104,7 @@ model Review {
   /// 리뷰 이미지 URL 배열 (JSON)
   imageUrls    Json       @default("[]")
   /// 리뷰 대상 식당
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   /// 식당 ID (FK)
   restaurantId String
   /// 작성자
@@ -107,6 +117,135 @@ model Review {
   updatedAt    DateTime   @updatedAt
 
   @@index([restaurantId])
+  @@index([userId])
+}
+
+/// 공유 방 (초대 코드로 입장, 방 전용 식당/리뷰 리스트)
+model Room {
+  /// 고유 식별자
+  id          String           @id @default(cuid())
+  /// 방 이름
+  name        String           @db.VarChar(100)
+  /// 8자 초대 코드
+  inviteCode  String           @unique @db.VarChar(8)
+  /// 초대 코드 만료 시간 (null = 무제한)
+  inviteCodeExpiresAt DateTime?
+  /// 방장 (User FK)
+  owner       User             @relation("RoomOwner", fields: [ownerId], references: [id])
+  /// 방장 ID
+  ownerId     String
+  /// 멤버 목록
+  members     RoomMember[]
+  /// 방 내 식당 목록
+  restaurants RoomRestaurant[]
+  /// 강퇴 기록
+  kicks       RoomKick[]
+  /// 생성일
+  createdAt   DateTime         @default(now())
+  /// 최종 수정일
+  updatedAt   DateTime         @updatedAt
+
+  @@index([ownerId])
+}
+
+/// 방 멤버 (owner/manager/member 역할)
+model RoomMember {
+  /// 고유 식별자
+  id       String   @id @default(cuid())
+  /// 역할 ('owner' | 'manager' | 'member')
+  role     String   @default("member") @db.VarChar(10)
+  /// 소속 방
+  room     Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  /// 방 ID (FK)
+  roomId   String
+  /// 참여 유저
+  user     User     @relation(fields: [userId], references: [id])
+  /// 유저 ID (FK)
+  userId   String
+  /// 가입일
+  joinedAt DateTime @default(now())
+
+  @@unique([roomId, userId])
+  @@index([userId])
+}
+
+/// 방 내 식당
+model RoomRestaurant {
+  /// 고유 식별자
+  id           String       @id @default(cuid())
+  /// 식당 이름
+  name         String       @db.VarChar(200)
+  /// 도로명/지번 주소
+  address      String       @db.VarChar(500)
+  /// 시/도
+  province     String       @db.VarChar(50)
+  /// 시/군/구
+  city         String       @db.VarChar(50)
+  /// 읍/면/동
+  neighborhood String       @db.VarChar(100)
+  /// 카테고리
+  category     String       @db.VarChar(100)
+  /// 대표 이미지 URL
+  imageUrl     String?      @db.VarChar(500)
+  /// 소속 방
+  room         Room         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  /// 방 ID (FK)
+  roomId       String
+  /// 등록자
+  addedBy      User         @relation(fields: [addedById], references: [id])
+  /// 등록자 ID (FK)
+  addedById    String
+  /// 리뷰 목록
+  reviews      RoomReview[]
+  /// 등록일
+  createdAt    DateTime     @default(now())
+
+  @@index([roomId])
+  @@index([addedById])
+}
+
+/// 방 내 리뷰
+model RoomReview {
+  /// 고유 식별자
+  id                 String         @id @default(cuid())
+  /// 1~5 평점
+  rating             Int
+  /// 리뷰 본문
+  content            String         @db.Text
+  /// 리뷰 대상 방 식당
+  roomRestaurant     RoomRestaurant @relation(fields: [roomRestaurantId], references: [id], onDelete: Cascade)
+  /// 방 식당 ID (FK)
+  roomRestaurantId   String
+  /// 작성자
+  user               User           @relation(fields: [userId], references: [id])
+  /// 작성자 ID (FK)
+  userId             String
+  /// 작성일
+  createdAt          DateTime       @default(now())
+  /// 최종 수정일
+  updatedAt          DateTime       @updatedAt
+
+  @@index([roomRestaurantId])
+  @@index([userId])
+}
+
+/// 방 강퇴 기록 (재입장 차단용)
+model RoomKick {
+  /// 고유 식별자
+  id       String   @id @default(cuid())
+  /// 소속 방
+  room     Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  /// 방 ID (FK)
+  roomId   String
+  /// 강퇴당한 유저
+  user     User     @relation(fields: [userId], references: [id])
+  /// 유저 ID (FK)
+  userId   String
+  /// 강퇴 일시
+  kickedAt DateTime @default(now())
+
+  /// 같은 방에서 같은 유저 중복 강퇴 방지
+  @@unique([roomId, userId])
   @@index([userId])
 }
 
