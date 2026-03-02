@@ -33,6 +33,18 @@ mysql://[사용자]:[비밀번호]@[호스트]:[포트]/[데이터베이스명]
 | `JWT_REFRESH_SECRET` | O | Refresh Token 서명 시크릿 | `dev-refresh-secret-change-in-prod` |
 | `FRONTEND_URL` | X | 프론트엔드 URL (CORS origin, OAuth 리다이렉트용) | `http://localhost:4321` |
 
+### SMTP (문의 알림)
+
+| 변수명 | 필수 | 설명 | 로컬 기본값 |
+|--------|------|------|-------------|
+| `SMTP_HOST` | X | SMTP 서버 호스트. 미설정 시 이메일 발송 스킵 | - |
+| `SMTP_PORT` | X | SMTP 포트 | `587` |
+| `SMTP_USER` | X | SMTP 인증 사용자 | - |
+| `SMTP_PASS` | X | SMTP 인증 비밀번호 | - |
+| `ADMIN_EMAIL` | X | 문의 알림 수신 이메일. 미설정 시 이메일 발송 스킵 | - |
+
+> SMTP 환경변수는 모두 선택사항. 미설정 시 문의는 DB에만 저장되고 이메일 알림은 발송되지 않는다.
+
 ## apps/web (프론트엔드)
 
 | 변수명 | 필수 | 설명 | 로컬 기본값 |
@@ -55,6 +67,11 @@ Docker로 실행 시 환경변수가 `docker-compose.yml`에 이미 설정되어
 | api | `JWT_ACCESS_SECRET` | `${JWT_ACCESS_SECRET}` (기본값: `dev-access-secret-change-in-prod`) |
 | api | `JWT_REFRESH_SECRET` | `${JWT_REFRESH_SECRET}` (기본값: `dev-refresh-secret-change-in-prod`) |
 | api | `FRONTEND_URL` | `http://localhost:4321` |
+| api | `SMTP_HOST` | `${SMTP_HOST}` (선택, 미설정 시 이메일 스킵) |
+| api | `SMTP_PORT` | `${SMTP_PORT}` (기본값: `587`) |
+| api | `SMTP_USER` | `${SMTP_USER}` (선택) |
+| api | `SMTP_PASS` | `${SMTP_PASS}` (선택) |
+| api | `ADMIN_EMAIL` | `${ADMIN_EMAIL}` (선택) |
 | web | `PUBLIC_API_URL` | `http://localhost:4000` |
 | mysql-writer | `MYSQL_ROOT_PASSWORD` | `root` |
 | mysql-writer | `MYSQL_DATABASE` | `fearless_tasting` |

@@ -1,0 +1,155 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="관리자">
+  <h1>관리자 페이지</h1>
+  <p class="page-desc">문의 목록을 확인하고 관리합니다.</p>
+
+  <div id="admin-content">
+    <p id="loading-msg">로딩 중...</p>
+    <p id="access-denied" hidden class="access-denied">관리자 권한이 필요합니다.</p>
+    <div id="inquiry-list" hidden></div>
+  </div>
+</BaseLayout>
+
+<style>
+  h1 {
+    margin-bottom: 0.25rem;
+    font-size: 1.4rem;
+  }
+
+  .page-desc {
+    color: #888;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .access-denied {
+    color: #dc2626;
+    font-size: 0.9rem;
+    padding: 1rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+  }
+
+  .inquiry-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .inquiry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .inquiry-category {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #f0f0f0;
+    color: #555;
+  }
+
+  .inquiry-category.region_request { background: #dbeafe; color: #1d4ed8; }
+  .inquiry-category.bug_report { background: #fee2e2; color: #dc2626; }
+  .inquiry-category.feedback { background: #dcfce7; color: #16a34a; }
+
+  .inquiry-date {
+    font-size: 0.75rem;
+    color: #999;
+  }
+
+  .inquiry-subject {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+  }
+
+  .inquiry-meta {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+  }
+
+  .inquiry-content {
+    font-size: 0.85rem;
+    color: #444;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  .empty-msg {
+    text-align: center;
+    color: #999;
+    font-size: 0.9rem;
+    padding: 2rem;
+  }
+</style>
+
+<script>
+  import { fetchCurrentUser, fetchInquiries } from '@/lib/api';
+  import { formatDate } from '@repo/utils';
+
+  const loadingMsg = document.getElementById('loading-msg')!;
+  const accessDenied = document.getElementById('access-denied')!;
+  const inquiryList = document.getElementById('inquiry-list')!;
+
+  const categoryLabel: Record<string, string> = {
+    region_request: '지역 추가 요청',
+    bug_report: '버그 신고',
+    feedback: '피드백',
+    other: '기타',
+  };
+
+  async function init() {
+    const user = await fetchCurrentUser();
+
+    if (!user || user.role !== 'admin') {
+      loadingMsg.hidden = true;
+      accessDenied.hidden = false;
+      return;
+    }
+
+    const inquiries = await fetchInquiries();
+    loadingMsg.hidden = true;
+    inquiryList.hidden = false;
+
+    if (inquiries.length === 0) {
+      inquiryList.innerHTML = '<p class="empty-msg">등록된 문의가 없습니다.</p>';
+      return;
+    }
+
+    inquiryList.innerHTML = inquiries
+      .map(
+        (inq) => `
+        <div class="inquiry-card">
+          <div class="inquiry-header">
+            <span class="inquiry-category ${inq.category}">${categoryLabel[inq.category] || inq.category}</span>
+            <span class="inquiry-date">${formatDate(inq.createdAt)}</span>
+          </div>
+          <div class="inquiry-subject">${escapeHtml(inq.subject)}</div>
+          <div class="inquiry-meta">${escapeHtml(inq.email)}</div>
+          <div class="inquiry-content">${escapeHtml(inq.content)}</div>
+        </div>
+      `,
+      )
+      .join('');
+  }
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  init();
+</script>

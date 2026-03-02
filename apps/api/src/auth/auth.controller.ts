@@ -36,7 +36,7 @@ export class AuthController {
     const kakaoToken = await this.authService.exchangeKakaoCode(code);
     const kakaoUser = await this.authService.getKakaoUser(kakaoToken.access_token);
     const user = await this.authService.findOrCreateFromKakao(kakaoUser);
-    const tokens = await this.authService.generateTokens(user.id, user.email);
+    const tokens = await this.authService.generateTokens(user.id, user.email, user.role);
 
     res.cookie('access_token', tokens.accessToken, {
       ...COOKIE_OPTIONS,
@@ -56,7 +56,7 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '내 정보 조회', description: 'JWT 토큰으로 현재 로그인된 유저 정보를 반환합니다.' })
-  me(@CurrentUser() user: { id: string; email: string }) {
+  me(@CurrentUser() user: { id: string; email: string; role: string }) {
     return user;
   }
 

@@ -17,6 +17,8 @@ model User {
   nickname        String    @unique
   /// 프로필 이미지 URL
   profileImageUrl String?   @db.VarChar(500)
+  /// 역할 ('user' | 'admin')
+  role            String    @default("user") @db.VarChar(10)
   /// 연결된 OAuth 계정 (카카오 등)
   accounts        Account[]
   /// 작성한 리뷰 목록
@@ -106,4 +108,20 @@ model Review {
 
   @@index([restaurantId])
   @@index([userId])
+}
+
+/// 고객 문의 (지역 추가 요청, 버그 신고, 기타 피드백)
+model Inquiry {
+  /// 고유 식별자
+  id        String   @id @default(cuid())
+  /// 문의 유형 (region_request, bug_report, feedback, other)
+  category  String   @db.VarChar(30)
+  /// 보낸 사람 이메일 (답변 회신용)
+  email     String   @db.VarChar(200)
+  /// 문의 제목
+  subject   String   @db.VarChar(300)
+  /// 문의 내용
+  content   String   @db.Text
+  /// 작성일
+  createdAt DateTime @default(now())
 }

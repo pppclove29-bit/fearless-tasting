@@ -2,7 +2,7 @@
 
 ## REST 원칙
 
-- 리소스 중심 URL: `/restaurants`, `/reviews`, `/users`
+- 리소스 중심 URL: `/restaurants`, `/reviews`, `/users`, `/inquiries`
 - 복수형 명사를 사용한다 (`/restaurant` X → `/restaurants` O)
 - 동사 대신 HTTP 메서드로 행위를 표현한다
 
@@ -34,7 +34,7 @@
 
 ```typescript
 // create-restaurant.dto.ts
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 export class CreateRestaurantDto {
   @IsString()
@@ -44,13 +44,13 @@ export class CreateRestaurantDto {
   address: string;
 
   @IsString()
+  province: string;
+
+  @IsString()
+  city: string;
+
+  @IsString()
   neighborhood: string;
-
-  @IsNumber()
-  latitude: number;
-
-  @IsNumber()
-  longitude: number;
 
   @IsString()
   category: string;
@@ -76,6 +76,13 @@ export class CreateRestaurantDto {
 | GET | `/reviews/restaurant/:restaurantId` | X | 특정 식당의 리뷰 목록 |
 | POST | `/reviews` | O | 리뷰 작성 |
 | GET | `/users/:id` | X | 사용자 조회 |
+
+### 문의 (Inquiries)
+
+| Method | URL | 인증 | 설명 |
+|--------|-----|------|------|
+| POST | `/inquiries` | X | 문의 등록 (지역 추가 요청, 버그 신고, 피드백 등) |
+| GET | `/inquiries` | O | 문의 목록 조회 (관리자용) |
 
 ### 인증 (Auth)
 

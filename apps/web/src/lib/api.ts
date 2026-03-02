@@ -39,9 +39,10 @@ export async function fetchRestaurants(
   return res.json();
 }
 
-interface AuthUser {
+export interface AuthUser {
   id: string;
   email: string;
+  role: string;
 }
 
 /** 현재 로그인 유저 조회 (비로그인 시 null) */
@@ -86,6 +87,40 @@ export async function createReview(
     throw new Error('리뷰 등록에 실패했습니다.');
   }
 
+  return res.json();
+}
+
+/** 문의 등록 */
+export async function createInquiry(data: {
+  category: string;
+  email: string;
+  subject: string;
+  content: string;
+}): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/inquiries`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    throw new Error('문의 등록에 실패했습니다.');
+  }
+}
+
+export interface Inquiry {
+  id: string;
+  category: string;
+  email: string;
+  subject: string;
+  content: string;
+  createdAt: string;
+}
+
+/** 문의 목록 조회 (관리자 전용) */
+export async function fetchInquiries(): Promise<Inquiry[]> {
+  const res = await apiFetch(`${API_BASE}/inquiries`);
+  if (!res.ok) return [];
   return res.json();
 }
 

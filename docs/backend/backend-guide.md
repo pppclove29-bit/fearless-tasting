@@ -16,7 +16,8 @@ apps/api/src/
 │   ├── auth.service.ts             # 카카오 OAuth, JWT 토큰 관리
 │   ├── auth.controller.ts          # 인증 엔드포인트 (/auth/*)
 │   ├── guards/
-│   │   └── jwt-auth.guard.ts       # JWT 쿠키 검증 Guard
+│   │   ├── jwt-auth.guard.ts       # JWT 쿠키 검증 Guard
+│   │   └── admin.guard.ts          # 관리자 역할 검증 Guard
 │   └── decorators/
 │       └── current-user.decorator.ts # @CurrentUser() 데코레이터
 ├── restaurants/
@@ -29,10 +30,16 @@ apps/api/src/
 │   ├── reviews.controller.ts
 │   ├── reviews.service.ts
 │   └── dto/
-└── users/
-    ├── users.module.ts
-    ├── users.controller.ts
-    └── users.service.ts
+├── users/
+│   ├── users.module.ts
+│   ├── users.controller.ts
+│   └── users.service.ts
+└── inquiries/
+    ├── inquiries.module.ts
+    ├── inquiries.controller.ts
+    ├── inquiries.service.ts          # 문의 등록 + SMTP 이메일 알림
+    └── dto/
+        └── create-inquiry.dto.ts
 ```
 
 ## 규칙 문서

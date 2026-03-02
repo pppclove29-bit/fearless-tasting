@@ -10,21 +10,26 @@ const { title } = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <title>{title} | 무모한 시식가</title>
   </head>
   <body>
     <header>
       <nav>
-        <div class="nav-left">
-          <a href="/">홈</a>
-          <a href="/add">등록</a>
-        </div>
-        <div class="nav-right" id="auth-nav">
-          <a href="/login" id="login-link">로그인</a>
-          <span id="user-info" hidden>
-            <span id="user-email"></span>
-            <button type="button" id="logout-btn">로그아웃</button>
-          </span>
+        <a href="/" class="nav-brand">무모한 시식가</a>
+        <div class="nav-links">
+          <a href="/" class="nav-link">홈</a>
+          <a href="/add" class="nav-link">등록</a>
+          <a href="/cs" class="nav-link">문의</a>
+          <div class="nav-auth" id="auth-nav">
+            <a href="/login" id="login-link" class="nav-link nav-login">로그인</a>
+            <span id="user-info" hidden>
+              <span id="user-email"></span>
+              <button type="button" id="logout-btn">로그아웃</button>
+            </span>
+          </div>
         </div>
       </nav>
     </header>
@@ -37,48 +42,127 @@ const { title } = Astro.props;
   </body>
 </html>
 
-<style>
+<style is:global>
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f7f8fa;
+    color: #1a1a1a;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  header {
+    background: #fff;
+    border-bottom: 1px solid #e8e8e8;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
   nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0.75rem 1.5rem;
   }
 
-  .nav-left {
-    display: flex;
-    gap: 1rem;
+  .nav-brand {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111;
+    text-decoration: none;
+    letter-spacing: -0.02em;
   }
 
-  .nav-right {
+  .nav-links {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.25rem;
+  }
+
+  .nav-link {
+    padding: 0.45rem 0.85rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #555;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .nav-link:hover {
+    background: #f0f0f0;
+    color: #111;
+  }
+
+  .nav-login {
+    color: #fff;
+    background: #111;
+    margin-left: 0.5rem;
+  }
+
+  .nav-login:hover {
+    background: #333;
+    color: #fff;
+  }
+
+  .nav-auth {
+    display: flex;
+    align-items: center;
+    margin-left: 0.5rem;
   }
 
   #user-info:not([hidden]) {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.875rem;
+    font-size: 0.8rem;
   }
 
   #user-email {
-    color: #555;
+    color: #666;
+    font-weight: 500;
   }
 
   #logout-btn {
-    padding: 0.3rem 0.6rem;
+    padding: 0.35rem 0.7rem;
     background: none;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
     font-size: 0.8rem;
+    font-weight: 500;
     cursor: pointer;
     color: #555;
+    transition: background 0.15s, border-color 0.15s;
   }
 
   #logout-btn:hover {
-    background: #f5f5f5;
+    background: #f0f0f0;
     border-color: #999;
+  }
+
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1.5rem 1.5rem 3rem;
+    min-height: calc(100vh - 130px);
+  }
+
+  footer {
+    border-top: 1px solid #e8e8e8;
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.8rem;
+    color: #999;
+    background: #fff;
   }
 </style>
 

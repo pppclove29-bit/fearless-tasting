@@ -61,6 +61,15 @@ create(@CurrentUser() user: { id: string }, @Body() dto: CreateReviewDto) {
 | `POST /auth/logout` | O |
 | `GET /restaurants`, `GET /areas/counts` | X (공개) |
 | `GET /reviews` | X (공개) |
+| `POST /inquiries` | X (공개) |
+| `GET /inquiries` | O (관리자, AdminGuard) |
+
+### 역할 기반 접근 제어
+
+- User 모델에 `role` 필드 (`'user'` | `'admin'`, 기본값 `'user'`)
+- `JwtAuthGuard`: 로그인 여부만 확인 (JWT 토큰 검증)
+- `AdminGuard`: JwtAuthGuard를 먼저 실행 후 `role === 'admin'` 확인
+- role은 JWT 토큰 payload에 포함되어 있음
 
 ## 민감 정보 보호
 
