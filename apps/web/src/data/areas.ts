@@ -302,7 +302,19 @@ export function getCities(province: string): string[] {
   return Object.keys(KOREA_AREAS[province] || {});
 }
 
-/** 특정 시군구의 읍면동 목록 반환 */
+/** 특정 시군구의 읍면동 목록 반환 (숫자+가 접미사 병합: 보문동1가~7가 → 보문동) */
 export function getNeighborhoods(province: string, city: string): string[] {
-  return (KOREA_AREAS[province] || {})[city] || [];
+  const raw = (KOREA_AREAS[province] || {})[city] || [];
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const name of raw) {
+    const merged = name.replace(/\d+가$/, '');
+    if (!seen.has(merged)) {
+      seen.add(merged);
+      result.push(merged);
+    }
+  }
+
+  return result;
 }

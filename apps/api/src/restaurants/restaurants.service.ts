@@ -17,7 +17,7 @@ export class RestaurantsService {
       where: {
         ...(province ? { province } : {}),
         ...(city ? { city } : {}),
-        ...(neighborhood ? { neighborhood } : {}),
+        ...(neighborhood ? { neighborhood: { startsWith: neighborhood } } : {}),
       },
       include: {
         reviews: {
@@ -64,13 +64,15 @@ export class RestaurantsService {
     let rows: RawRow[];
 
     if (province && city) {
+      // Raw Query 사유: 숫자+가 접미사 병합 (보문동1가~7가 → 보문동)을 위해 REGEXP_REPLACE 사용
       rows = await this.prisma.read.$queryRaw<RawRow[]>`
-        SELECT r.neighborhood AS name, COUNT(DISTINCT r.id) AS count, AVG(rev.rating) AS avgRating
+        SELECT REGEXP_REPLACE(r.neighborhood, '[0-9]+가$', '') AS name,
+               COUNT(DISTINCT r.id) AS count, AVG(rev.rating) AS avgRating
         FROM Restaurant r
         LEFT JOIN Review rev ON rev.restaurantId = r.id
         WHERE r.province = ${province} AND r.city = ${city}
-        GROUP BY r.neighborhood
-        ORDER BY r.neighborhood ASC`;
+        GROUP BY name
+        ORDER BY name ASC`;
     } else if (province) {
       rows = await this.prisma.read.$queryRaw<RawRow[]>`
         SELECT r.city AS name, COUNT(DISTINCT r.id) AS count, AVG(rev.rating) AS avgRating
