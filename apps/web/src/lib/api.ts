@@ -5,9 +5,68 @@ import type {
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
 
-/** credentials: 'include' 기본 포함 fetch 래퍼 */
-function apiFetch(url: string, init?: RequestInit): Promise<Response> {
-  return fetch(url, { credentials: 'include', ...init });
+// ─── 토큰 관리 ───
+
+export function getAccessToken(): string | null {
+  return localStorage.getItem('access_token');
+}
+
+export function getRefreshToken(): string | null {
+  return localStorage.getItem('refresh_token');
+}
+
+export function saveTokens(accessToken: string, refreshToken: string) {
+  localStorage.setItem('access_token', accessToken);
+  localStorage.setItem('refresh_token', refreshToken);
+}
+
+export function clearTokens() {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+}
+
+/** Authorization 헤더 포함 fetch 래퍼 (토큰 만료 시 자동 갱신) */
+async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
+  const token = getAccessToken();
+  const headers: Record<string, string> = {
+    ...(init?.headers as Record<string, string> ?? {}),
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  let res = await fetch(url, { ...init, headers });
+
+  if (res.status === 401 && getRefreshToken()) {
+    const refreshed = await refreshTokens();
+    if (refreshed) {
+      headers['Authorization'] = `Bearer ${getAccessToken()!}`;
+      res = await fetch(url, { ...init, headers });
+    }
+  }
+
+  return res;
+}
+
+/** 토큰 갱신 (내부용) */
+async function refreshTokens(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: getRefreshToken() }),
+    });
+    if (!res.ok) {
+      clearTokens();
+      return false;
+    }
+    const data = await res.json();
+    saveTokens(data.accessToken, data.refreshToken);
+    return true;
+  } catch {
+    clearTokens();
+    return false;
+  }
 }
 
 export interface AreaCount {
@@ -61,17 +120,13 @@ export async function fetchCurrentUser(): Promise<AuthUser | null> {
 
 /** 토큰 갱신 */
 export async function refreshToken(): Promise<boolean> {
-  try {
-    const res = await apiFetch(`${API_BASE}/auth/refresh`, { method: 'POST' });
-    return res.ok;
-  } catch {
-    return false;
-  }
+  return refreshTokens();
 }
 
 /** 로그아웃 */
 export async function logout(): Promise<void> {
   await apiFetch(`${API_BASE}/auth/logout`, { method: 'POST' });
+  clearTokens();
 }
 
 /** 리뷰 작성 */

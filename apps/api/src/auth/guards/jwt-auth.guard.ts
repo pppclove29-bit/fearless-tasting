@@ -8,7 +8,7 @@ export class JwtAuthGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
-    const token = request.cookies?.access_token;
+    const token = this.extractToken(request);
 
     if (!token) {
       throw new UnauthorizedException('로그인이 필요합니다');
@@ -22,5 +22,14 @@ export class JwtAuthGuard implements CanActivate {
     };
 
     return true;
+  }
+
+  /** Authorization 헤더 → 쿠키 순으로 토큰 추출 */
+  private extractToken(request: Request): string | undefined {
+    const authHeader = request.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      return authHeader.slice(7);
+    }
+    return request.cookies?.access_token;
   }
 }

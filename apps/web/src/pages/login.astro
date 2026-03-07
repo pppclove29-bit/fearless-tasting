@@ -62,8 +62,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <script>
+  import { saveTokens } from '@/lib/api';
+
   const params = new URLSearchParams(location.search);
-  if (params.get('success') === 'true') {
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+
+  if (accessToken && refreshToken) {
+    saveTokens(accessToken, refreshToken);
+
+    // URL에서 토큰 파라미터 제거 (히스토리에 남지 않도록)
+    history.replaceState(null, '', '/login');
+
     const kakaoBtn = document.getElementById('kakao-btn')!;
     const successMsg = document.getElementById('login-success')!;
     kakaoBtn.hidden = true;

@@ -1,20 +1,10 @@
-import { Controller, Get, Post, Query, Res, Req, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Res, Req, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
-
-const isProduction = process.env.NODE_ENV === 'production' ||
-  (process.env.FRONTEND_URL?.startsWith('https') ?? false);
-
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: isProduction,
-  sameSite: isProduction ? 'none' as const : 'lax' as const,
-  path: '/',
-};
 
 @ApiTags('인증')
 @Controller('auth')
@@ -43,18 +33,12 @@ export class AuthController {
     const user = await this.authService.findOrCreateFromKakao(kakaoUser);
     const tokens = await this.authService.generateTokens(user.id, user.email, user.role);
 
-    res.cookie('access_token', tokens.accessToken, {
-      ...COOKIE_OPTIONS,
-      maxAge: 15 * 60 * 1000, // 15분
-    });
-
-    res.cookie('refresh_token', tokens.refreshToken, {
-      ...COOKIE_OPTIONS,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
-    });
-
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4321';
-    res.redirect(`${frontendUrl}/login?success=true`);
+    const params = new URLSearchParams({
+      access_token: tokens.accessToken,
+      refresh_token: tokens.refreshToken,
+    });
+    res.redirect(`${frontendUrl}/login?${params.toString()}`);
   }
 
   /** 현재 로그인 유저 정보 */
@@ -68,40 +52,28 @@ export class AuthController {
   /** Refresh Token으로 Access Token 갱신 */
   @Post('refresh')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
-  @ApiOperation({ summary: '토큰 갱신', description: 'Refresh Token 쿠키로 Access Token을 갱신합니다.' })
-  async refresh(@Req() req: Request, @Res() res: Response) {
-    const refreshToken = req.cookies?.refresh_token;
+  @ApiOperation({ summary: '토큰 갱신', description: 'Refresh Token으로 Access Token을 갱신합니다.' })
+  async refresh(@Body() body: { refreshToken?: string }, @Req() req: Request) {
+    const refreshToken = body?.refreshToken || req.cookies?.refresh_token;
+
     if (!refreshToken) {
       throw new UnauthorizedException('리프레시 토큰이 없습니다');
     }
 
     const tokens = await this.authService.refreshAccessToken(refreshToken);
 
-    res.cookie('access_token', tokens.accessToken, {
-      ...COOKIE_OPTIONS,
-      maxAge: 15 * 60 * 1000,
-    });
-
-    res.cookie('refresh_token', tokens.refreshToken, {
-      ...COOKIE_OPTIONS,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    res.json({ message: '토큰 갱신 완료' });
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    };
   }
 
-  /** 로그아웃: 쿠키 삭제 + DB RT 무효화 */
+  /** 로그아웃: DB RT 무효화 */
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '로그아웃', description: '쿠키를 삭제하고 DB의 Refresh Token을 무효화합니다.' })
-  async logout(
-    @CurrentUser() user: { id: string },
-    @Res() res: Response,
-  ) {
+  @ApiOperation({ summary: '로그아웃', description: 'DB의 Refresh Token을 무효화합니다.' })
+  async logout(@CurrentUser() user: { id: string }) {
     await this.authService.logout(user.id);
-
-    res.clearCookie('access_token', COOKIE_OPTIONS);
-    res.clearCookie('refresh_token', COOKIE_OPTIONS);
-    res.json({ message: '로그아웃 완료' });
+    return { message: '로그아웃 완료' };
   }
 }
