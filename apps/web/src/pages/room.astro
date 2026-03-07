@@ -752,6 +752,147 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.85rem;
   }
 
+  /* 지역 탭 */
+  .region-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .region-depth {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+  }
+
+  .region-depth-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #888;
+    margin-bottom: 0.5rem;
+  }
+
+  .region-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .region-btn {
+    padding: 0.4rem 0.75rem;
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .region-btn:hover {
+    background: #eee;
+    color: #333;
+  }
+
+  .region-btn.active {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+  }
+
+  .region-avg {
+    font-size: 0.7rem;
+    color: #f59e0b;
+    font-weight: 600;
+  }
+
+  .region-btn.active .region-avg {
+    color: #fde68a;
+  }
+
+  .region-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .region-result-header {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #666;
+  }
+
+  .region-sort {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-family: inherit;
+    color: #555;
+    background: #fff;
+  }
+
+  .region-restaurant-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .region-rest-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .region-rest-card:hover {
+    border-color: #ccc;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .region-rest-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 0.3rem;
+  }
+
+  .region-rest-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.25rem;
+  }
+
+  .region-rest-rating {
+    font-size: 0.8rem;
+    color: #f59e0b;
+    font-weight: 500;
+  }
+
+  .region-rest-reviews {
+    font-size: 0.75rem;
+    color: #999;
+  }
+
+  .region-rest-addr {
+    font-size: 0.75rem;
+    color: #999;
+  }
+
+  .region-hint {
+    text-align: center;
+    padding: 2rem;
+    color: #999;
+    font-size: 0.85rem;
+  }
+
   /* 카카오맵 지도 */
   .map-container {
     background: #fff;
@@ -920,12 +1061,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       <div class="room-tab-bar">
         <button type="button" class="room-tab-btn active" data-tab="restaurants">식당 목록</button>
+        <button type="button" class="room-tab-btn" data-tab="region">지역</button>
         ${hasKakaoMap ? '<button type="button" class="room-tab-btn" data-tab="map">지도</button>' : ''}
         <button type="button" class="room-tab-btn" data-tab="stats">통계</button>
         <button type="button" class="room-tab-btn" data-tab="members">멤버 (${currentRoom.members.length})</button>
       </div>
 
       <div id="tab-restaurants" class="room-tab-panel"></div>
+      <div id="tab-region" class="room-tab-panel" hidden></div>
       ${hasKakaoMap ? '<div id="tab-map" class="room-tab-panel" hidden></div>' : ''}
       <div id="tab-stats" class="room-tab-panel" hidden></div>
       <div id="tab-members" class="room-tab-panel" hidden></div>
@@ -935,6 +1078,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     attachHeaderHandlers();
     attachTabHandlers();
     renderRestaurantsTab();
+    renderRegionTab();
     renderStatsTab();
     renderMembersTab();
   }
@@ -1064,6 +1208,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   function attachTabHandlers() {
     const panels: Record<string, HTMLElement> = {
       restaurants: document.getElementById('tab-restaurants')!,
+      region: document.getElementById('tab-region')!,
       stats: document.getElementById('tab-stats')!,
       members: document.getElementById('tab-members')!,
     };
@@ -1426,6 +1571,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category, latitude, longitude });
         currentRoom = await fetchRoom(currentRoom.id);
         renderRestaurantsTab();
+        renderRegionTab();
         showToast('식당이 등록되었습니다.', 'success');
       } catch (err) { showToast(err instanceof Error ? err.message : '등록에 실패했습니다.'); }
     });
@@ -1538,6 +1684,177 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     categoryInput.focus();
   }
 
+  // ─── 지역 탭 ───
+
+  function calcRegionAvg(rests: typeof currentRoom.restaurants): string {
+    const withRating = rests.filter((r) => r.avgRating !== null);
+    if (withRating.length === 0) return '';
+    const totalWeighted = withRating.reduce((s, r) => s + r.avgRating! * r._count.reviews, 0);
+    const totalReviews = withRating.reduce((s, r) => s + r._count.reviews, 0);
+    if (totalReviews === 0) return '';
+    return (Math.round(totalWeighted / totalReviews * 10) / 10).toFixed(1);
+  }
+
+  function renderRegionTab() {
+    const panel = document.getElementById('tab-region')!;
+    const restaurants = currentRoom.restaurants;
+
+    if (restaurants.length === 0) {
+      panel.innerHTML = '<p class="empty-text">등록된 식당이 없습니다.</p>';
+      return;
+    }
+
+    const provinces = [...new Set(restaurants.map((r) => r.province).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
+
+    let selectedProvince: string | null = null;
+    let selectedCity: string | null = null;
+    let selectedNeighborhood: string | null = null;
+    let sortBy = 'rating-high';
+
+    function filterBy(province: string | null, city: string | null, neighborhood: string | null) {
+      return restaurants.filter((r) => {
+        if (province && r.province !== province) return false;
+        if (city && r.city !== city) return false;
+        if (neighborhood && r.neighborhood !== neighborhood) return false;
+        return true;
+      });
+    }
+
+    function getCities() {
+      return [...new Set(filterBy(selectedProvince, null, null).map((r) => r.city).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
+    }
+
+    function getNeighborhoods() {
+      return [...new Set(filterBy(selectedProvince, selectedCity, null).map((r) => r.neighborhood).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
+    }
+
+    function sortRestaurants(list: typeof restaurants) {
+      const sorted = [...list];
+      switch (sortBy) {
+        case 'rating-high': return sorted.sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0));
+        case 'rating-low': return sorted.sort((a, b) => (a.avgRating ?? 0) - (b.avgRating ?? 0));
+        case 'name': return sorted.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+        case 'reviews': return sorted.sort((a, b) => b._count.reviews - a._count.reviews);
+        case 'latest': return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        default: return sorted;
+      }
+    }
+
+    function render() {
+      const cities = selectedProvince ? getCities() : [];
+      const neighborhoods = selectedCity ? getNeighborhoods() : [];
+      const filtered = selectedProvince ? filterBy(selectedProvince, selectedCity, selectedNeighborhood) : [];
+
+      let html = '<div class="region-tab">';
+
+      // 시/도
+      html += '<div class="region-depth"><span class="region-depth-label">시/도</span><div class="region-btns">';
+      for (const p of provinces) {
+        const avg = calcRegionAvg(filterBy(p, null, null));
+        html += `<button type="button" class="region-btn ${selectedProvince === p ? 'active' : ''}" data-depth="province" data-val="${escapeHtml(p)}">${escapeHtml(p)}${avg ? ` <span class="region-avg">★${avg}</span>` : ''}</button>`;
+      }
+      html += '</div></div>';
+
+      // 시/군/구
+      if (selectedProvince && cities.length > 0) {
+        html += '<div class="region-depth"><span class="region-depth-label">시/군/구</span><div class="region-btns">';
+        for (const c of cities) {
+          const avg = calcRegionAvg(filterBy(selectedProvince, c, null));
+          html += `<button type="button" class="region-btn ${selectedCity === c ? 'active' : ''}" data-depth="city" data-val="${escapeHtml(c)}">${escapeHtml(c)}${avg ? ` <span class="region-avg">★${avg}</span>` : ''}</button>`;
+        }
+        html += '</div></div>';
+      }
+
+      // 읍/면/동
+      if (selectedCity && neighborhoods.length > 0) {
+        html += '<div class="region-depth"><span class="region-depth-label">읍/면/동</span><div class="region-btns">';
+        for (const n of neighborhoods) {
+          const avg = calcRegionAvg(filterBy(selectedProvince, selectedCity, n));
+          html += `<button type="button" class="region-btn ${selectedNeighborhood === n ? 'active' : ''}" data-depth="neighborhood" data-val="${escapeHtml(n)}">${escapeHtml(n)}${avg ? ` <span class="region-avg">★${avg}</span>` : ''}</button>`;
+        }
+        html += '</div></div>';
+      }
+
+      // 식당 목록
+      if (selectedProvince) {
+        const sorted = sortRestaurants(filtered);
+        html += `<div class="region-list-header">`;
+        html += `<span class="region-result-header">${sorted.length}개의 식당</span>`;
+        if (sorted.length > 1) {
+          html += `<select class="region-sort" id="region-sort">
+            <option value="rating-high" ${sortBy === 'rating-high' ? 'selected' : ''}>평점 높은순</option>
+            <option value="rating-low" ${sortBy === 'rating-low' ? 'selected' : ''}>평점 낮은순</option>
+            <option value="reviews" ${sortBy === 'reviews' ? 'selected' : ''}>리뷰 많은순</option>
+            <option value="name" ${sortBy === 'name' ? 'selected' : ''}>이름순</option>
+            <option value="latest" ${sortBy === 'latest' ? 'selected' : ''}>최신순</option>
+          </select>`;
+        }
+        html += `</div>`;
+
+        if (sorted.length > 0) {
+          html += '<div class="region-restaurant-list">';
+          for (const r of sorted) {
+            const ratingStr = r.avgRating !== null ? `${renderStars(Math.round(r.avgRating))} ${r.avgRating}` : '';
+            const reviewCount = r._count.reviews;
+            html += `
+              <div class="region-rest-card" data-rid="${r.id}">
+                <div class="region-rest-name">${escapeHtml(r.name)}</div>
+                <div class="region-rest-meta">
+                  <span class="category-badge">${escapeHtml(r.category || '')}</span>
+                  ${ratingStr ? `<span class="region-rest-rating">${ratingStr}</span>` : ''}
+                  <span class="region-rest-reviews">리뷰 ${reviewCount}개</span>
+                </div>
+                <div class="region-rest-addr">${escapeHtml(r.address)}</div>
+              </div>`;
+          }
+          html += '</div>';
+        }
+
+        html += '<div id="region-detail-area"></div>';
+      } else {
+        html += '<p class="region-hint">시/도를 선택하면 해당 지역의 식당을 볼 수 있습니다.</p>';
+      }
+
+      html += '</div>';
+      panel.innerHTML = html;
+
+      // 지역 버튼 이벤트
+      for (const btn of panel.querySelectorAll<HTMLButtonElement>('.region-btn')) {
+        btn.addEventListener('click', () => {
+          const depth = btn.dataset.depth!;
+          const val = btn.dataset.val!;
+          if (depth === 'province') {
+            selectedProvince = selectedProvince === val ? null : val;
+            selectedCity = null;
+            selectedNeighborhood = null;
+          } else if (depth === 'city') {
+            selectedCity = selectedCity === val ? null : val;
+            selectedNeighborhood = null;
+          } else if (depth === 'neighborhood') {
+            selectedNeighborhood = selectedNeighborhood === val ? null : val;
+          }
+          render();
+        });
+      }
+
+      // 정렬 이벤트
+      document.getElementById('region-sort')?.addEventListener('change', (e) => {
+        sortBy = (e.target as HTMLSelectElement).value;
+        render();
+      });
+
+      // 식당 카드 클릭 → 상세
+      for (const card of panel.querySelectorAll<HTMLElement>('.region-rest-card')) {
+        card.addEventListener('click', () => {
+          const rid = card.dataset.rid!;
+          loadRestaurantDetail(rid, 'region-detail-area');
+        });
+      }
+    }
+
+    render();
+  }
+
   // ─── 카카오맵 지도 탭 ───
 
   async function renderMapTab() {
@@ -1553,7 +1870,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return;
     }
 
-    panel.innerHTML = '<div class="map-container"><div id="kakao-map"></div></div>';
+    panel.innerHTML = '<div class="map-container"><div id="kakao-map"></div></div><div id="map-detail-area"></div>';
 
     await loadKakaoMaps();
 
@@ -1562,7 +1879,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const LatLng = maps.LatLng as new (lat: number, lng: number) => unknown;
     const MapConstructor = maps.Map as new (el: HTMLElement, opts: Record<string, unknown>) => Record<string, unknown>;
     const MarkerConstructor = maps.Marker as new (opts: Record<string, unknown>) => Record<string, unknown>;
-    const InfoWindowConstructor = maps.InfoWindow as new (opts: Record<string, unknown>) => Record<string, unknown>;
+    const CustomOverlayConstructor = maps.CustomOverlay as new (opts: Record<string, unknown>) => Record<string, unknown>;
     const LatLngBounds = maps.LatLngBounds as new () => Record<string, (pos: unknown) => void>;
 
     const container = document.getElementById('kakao-map')!;
@@ -1574,19 +1891,57 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const map = new MapConstructor(container, { center, level: 5 });
     const bounds = new LatLngBounds();
 
+    let activeOverlay: Record<string, unknown> | null = null;
+
     for (const r of restaurantsWithCoords) {
       const position = new LatLng(r.latitude!, r.longitude!);
       bounds.extend(position);
 
       const marker = new MarkerConstructor({ map, position });
-      const infoContent = `<div style="padding:5px 10px;font-size:13px;white-space:nowrap;">${escapeHtml(r.name)}</div>`;
-      const infoWindow = new InfoWindowConstructor({ content: infoContent });
+
+      const ratingLine = r.avgRating !== null
+        ? `<div style="color:#f59e0b;font-size:12px;">★ ${r.avgRating} <span style="color:#999;font-size:11px;">(${r._count.reviews})</span></div>`
+        : `<div style="color:#999;font-size:11px;">리뷰 없음</div>`;
+
+      const overlayContent = document.createElement('div');
+      overlayContent.className = 'map-overlay-card';
+      overlayContent.innerHTML = `
+        <div style="background:#fff;border-radius:8px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:120px;cursor:pointer;border:1px solid #e8e8e8;">
+          <div style="font-size:13px;font-weight:600;color:#111;margin-bottom:2px;">${escapeHtml(r.name)}</div>
+          <div style="font-size:11px;color:#888;margin-bottom:3px;">${escapeHtml(r.category || '')}</div>
+          ${ratingLine}
+        </div>
+        <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #fff;margin:0 auto;"></div>
+      `;
+
+      overlayContent.addEventListener('click', () => {
+        loadRestaurantDetail(r.id, 'map-detail-area');
+      });
+
+      const overlay = new CustomOverlayConstructor({
+        content: overlayContent,
+        position,
+        yAnchor: 1.3,
+      });
 
       const markerEvents = maps.event as Record<string, (target: unknown, type: string, cb: () => void) => void>;
       markerEvents.addListener(marker, 'click', () => {
-        (infoWindow as Record<string, (m: unknown) => void>).open(map, marker);
+        if (activeOverlay) {
+          (activeOverlay as Record<string, () => void>).setMap(null as unknown as never);
+        }
+        (overlay as Record<string, (m: unknown) => void>).setMap(map);
+        activeOverlay = overlay;
       });
     }
+
+    // 지도 클릭 시 오버레이 닫기
+    const mapEvents = maps.event as Record<string, (target: unknown, type: string, cb: () => void) => void>;
+    mapEvents.addListener(map, 'click', () => {
+      if (activeOverlay) {
+        (activeOverlay as Record<string, () => void>).setMap(null as unknown as never);
+        activeOverlay = null;
+      }
+    });
 
     if (restaurantsWithCoords.length > 1) {
       (map as Record<string, (b: unknown) => void>).setBounds(bounds);
@@ -1604,8 +1959,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   // ─── 식당 상세 (인라인) ───
 
-  async function loadRestaurantDetail(rid: string) {
-    const area = document.getElementById('restaurant-detail-area')!;
+  async function loadRestaurantDetail(rid: string, areaId = 'restaurant-detail-area') {
+    const area = document.getElementById(areaId)!;
     area.innerHTML = '<p class="empty-text">로딩 중...</p>';
 
     try {
@@ -1728,7 +2083,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const sorted = sortReviews(detail.reviews, sortBy);
         const listEl = document.getElementById('reviews-list')!;
         listEl.innerHTML = sorted.length > 0 ? renderReviewsList(sorted) : '<p class="empty-text">아직 리뷰가 없습니다.</p>';
-        attachReviewHandlers(area, rid, detail);
+        attachReviewHandlers(area, rid, detail, areaId);
       });
 
       // 식당 삭제
@@ -1739,6 +2094,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           area.innerHTML = '';
           currentRoom = await fetchRoom(currentRoom.id);
           renderRestaurantsTab();
+          renderRegionTab();
           showToast('식당이 삭제되었습니다.', 'success');
         } catch { showToast('삭제에 실패했습니다.'); }
       });
@@ -1753,25 +2109,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         try {
           await createRoomReview(currentRoom.id, rid, { rating, content: reviewContent, wouldRevisit });
           currentRoom = await fetchRoom(currentRoom.id);
-          await loadRestaurantDetail(rid);
+          if (areaId === 'restaurant-detail-area') renderRegionTab();
+          await loadRestaurantDetail(rid, areaId);
           showToast('리뷰가 작성되었습니다.', 'success');
         } catch (err) { showToast(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.'); }
       });
 
-      attachReviewHandlers(area, rid, detail);
+      attachReviewHandlers(area, rid, detail, areaId);
     } catch {
       area.innerHTML = '<p class="empty-text">식당 정보를 불러올 수 없습니다.</p>';
     }
   }
 
-  function attachReviewHandlers(area: HTMLElement, rid: string, detail: { reviews: RoomReviewWithUser[] }) {
+  function attachReviewHandlers(area: HTMLElement, rid: string, detail: { reviews: RoomReviewWithUser[] }, areaId = 'restaurant-detail-area') {
     for (const btn of area.querySelectorAll<HTMLButtonElement>('.delete-rev-btn')) {
       btn.addEventListener('click', async () => {
         if (!await showDangerConfirm('이 리뷰를 삭제하시겠습니까?')) return;
         try {
           await deleteRoomReview(currentRoom.id, btn.dataset.revId!);
           currentRoom = await fetchRoom(currentRoom.id);
-          await loadRestaurantDetail(rid);
+          if (areaId === 'restaurant-detail-area') renderRegionTab();
+          await loadRestaurantDetail(rid, areaId);
         } catch { showToast('리뷰 삭제에 실패했습니다.'); }
       });
     }
@@ -1811,7 +2169,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           try {
             await updateRoomReview(currentRoom.id, revId, { rating: newRating, content: newContent, wouldRevisit: newRevisit });
             currentRoom = await fetchRoom(currentRoom.id);
-            await loadRestaurantDetail(rid);
+            if (areaId === 'restaurant-detail-area') renderRegionTab();
+            await loadRestaurantDetail(rid, areaId);
             showToast('리뷰가 수정되었습니다.', 'success');
           } catch { showToast('수정에 실패했습니다.'); }
         });

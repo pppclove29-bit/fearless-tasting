@@ -38,6 +38,8 @@ export interface RoomRestaurant {
   roomId: string;
   addedById: string;
   createdAt: string;
+  avgRating: number | null;
+  _count: { reviews: number };
 }
 
 export interface RoomReview {
