@@ -131,8 +131,13 @@ export async function refreshToken(): Promise<boolean> {
 
 /** 로그아웃 */
 export async function logout(): Promise<void> {
-  await apiFetch(`${API_BASE}/auth/logout`, { method: 'POST' });
-  clearTokens();
+  try {
+    await apiFetch(`${API_BASE}/auth/logout`, { method: 'POST' });
+  } catch {
+    // 토큰 만료 등으로 실패해도 클라이언트 토큰은 삭제
+  } finally {
+    clearTokens();
+  }
 }
 
 /** 문의 등록 */
