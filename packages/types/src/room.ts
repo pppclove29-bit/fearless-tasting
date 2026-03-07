@@ -5,6 +5,8 @@ export interface Room {
   name: string;
   inviteCode: string;
   ownerId: string;
+  shareCode?: string | null;
+  shareCodeEnabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -57,4 +59,35 @@ export interface RoomRestaurantDetail extends RoomRestaurant {
 export interface RoomDetail extends Room {
   members: RoomMemberWithUser[];
   restaurants: RoomRestaurant[];
+}
+
+// ─── 공유 링크용 타입 (멤버 정보 제외) ───
+
+export interface SharedRoomRestaurant {
+  id: string;
+  name: string;
+  address: string;
+  province: string;
+  city: string;
+  neighborhood: string;
+  category: string;
+  imageUrl?: string;
+  reviewCount: number;
+}
+
+export interface SharedRoomReview {
+  id: string;
+  rating: number;
+  content: string;
+  createdAt: string;
+}
+
+export interface SharedRoomRestaurantDetail extends SharedRoomRestaurant {
+  reviews: SharedRoomReview[];
+}
+
+export interface SharedRoomDetail {
+  id: string;
+  name: string;
+  restaurants: SharedRoomRestaurant[];
 }

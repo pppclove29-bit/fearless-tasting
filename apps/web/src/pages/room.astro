@@ -77,6 +77,34 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .btn-copy:hover { background: #f0f0f0; }
 
+  .share-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .share-label {
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 500;
+  }
+
+  .share-link {
+    font-family: monospace;
+    font-size: 0.8rem;
+    background: #f5f5f5;
+    padding: 0.3rem 0.55rem;
+    border-radius: 6px;
+    color: #333;
+    word-break: break-all;
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .room-actions-bar {
     display: flex;
     gap: 0.5rem;
@@ -446,6 +474,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     updateRoomMemberRole, kickRoomMember,
     createRoomRestaurant, fetchRoomRestaurant, deleteRoomRestaurant,
     createRoomReview, updateRoomReview, deleteRoomReview,
+    toggleShareCode,
   } from '@/lib/api';
   import type { AuthUser, RoomDetailResponse, RoomMemberInfo, RoomRestaurantInfo, RoomReviewWithUser } from '@/lib/api';
   import { getCities, getNeighborhoods } from '@/data/areas';
@@ -498,6 +527,28 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>`;
     }
 
+    let shareHtml = '';
+    if (isManagerOrAbove()) {
+      if (currentRoom.shareCodeEnabled && currentRoom.shareCode) {
+        const shareUrl = `${location.origin}/share?code=${currentRoom.shareCode}`;
+        shareHtml = `
+          <div class="share-row">
+            <span class="share-label">공유 링크</span>
+            <span class="share-link" id="share-link">${shareUrl}</span>
+            <button type="button" class="btn-copy" id="copy-share-btn">복사</button>
+            <button type="button" class="btn-outline-sm" id="disable-share-btn">비활성화</button>
+            <button type="button" class="btn-outline-sm" id="regen-share-btn">재생성</button>
+          </div>
+        `;
+      } else {
+        shareHtml = `
+          <div class="share-row">
+            <button type="button" class="btn-outline-sm" id="enable-share-btn">공유 링크 만들기</button>
+          </div>
+        `;
+      }
+    }
+
     content.innerHTML = `
       <a href="/rooms" class="back-link">&larr; 내 방 목록</a>
       <div class="room-header">
@@ -506,6 +557,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <span class="invite-code" id="invite-code">${currentRoom.inviteCode}</span>
           <button type="button" class="btn-copy" id="copy-code-btn">복사</button>
         </div>
+        ${shareHtml}
         ${actionsHtml}
       </div>
 
@@ -547,6 +599,44 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         await leaveRoom(currentRoom.id);
         location.href = '/rooms';
       } catch (err) { alert(err instanceof Error ? err.message : '방 나가기에 실패했습니다.'); }
+    });
+
+    // 공유 링크 관리
+    document.getElementById('copy-share-btn')?.addEventListener('click', () => {
+      const shareUrl = document.getElementById('share-link')!.textContent!;
+      navigator.clipboard.writeText(shareUrl);
+      const btn = document.getElementById('copy-share-btn')!;
+      btn.textContent = '복사됨!';
+      setTimeout(() => { btn.textContent = '복사'; }, 1500);
+    });
+
+    document.getElementById('enable-share-btn')?.addEventListener('click', async () => {
+      try {
+        const result = await toggleShareCode(currentRoom.id, 'enable');
+        currentRoom.shareCode = result.shareCode;
+        currentRoom.shareCodeEnabled = result.shareCodeEnabled;
+        renderPage();
+      } catch { alert('공유 링크 생성에 실패했습니다.'); }
+    });
+
+    document.getElementById('disable-share-btn')?.addEventListener('click', async () => {
+      if (!confirm('공유 링크를 비활성화하시겠습니까? 기존 링크로 접근할 수 없게 됩니다.')) return;
+      try {
+        const result = await toggleShareCode(currentRoom.id, 'disable');
+        currentRoom.shareCode = result.shareCode;
+        currentRoom.shareCodeEnabled = result.shareCodeEnabled;
+        renderPage();
+      } catch { alert('비활성화에 실패했습니다.'); }
+    });
+
+    document.getElementById('regen-share-btn')?.addEventListener('click', async () => {
+      if (!confirm('공유 링크를 재생성하시겠습니까? 기존 링크는 더 이상 사용할 수 없습니다.')) return;
+      try {
+        const result = await toggleShareCode(currentRoom.id, 'regenerate');
+        currentRoom.shareCode = result.shareCode;
+        currentRoom.shareCodeEnabled = result.shareCodeEnabled;
+        renderPage();
+      } catch { alert('재생성에 실패했습니다.'); }
     });
   }
 

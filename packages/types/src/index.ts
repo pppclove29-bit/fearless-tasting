@@ -11,4 +11,8 @@ export type {
   RoomReviewWithUser,
   RoomRestaurantDetail,
   RoomDetail,
+  SharedRoomDetail,
+  SharedRoomRestaurant,
+  SharedRoomRestaurantDetail,
+  SharedRoomReview,
 } from './room';

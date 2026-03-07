@@ -1,12 +1,12 @@
 # 무모한 시식가 - Claude Code 가이드
 
-방(Room) 기반 맛집 리뷰 공유 플랫폼 모노레포 프로젝트. 초대 코드로 방 입장, 방 전용 식당/리뷰 리스트 운영.
+방(Room) 기반 맛집 리뷰 공유 플랫폼 모노레포 프로젝트. 초대 코드로 방 입장, 공유 링크로 비로그인 열람, 방 전용 식당/리뷰 리스트 운영.
 
 ## 프로젝트 구조
 
 - `apps/web/` - Astro 프론트엔드 (포트 4321)
 - `apps/api/` - NestJS 백엔드 API (포트 4000, Prisma ORM, MySQL)
-- `packages/types/` - 공유 타입 (`Restaurant`, `Review`, `User`, `Room`, `RoomMember` 등)
+- `packages/types/` - 공유 타입 (`Restaurant`, `Review`, `User`, `Room`, `RoomMember`, `SharedRoom*` 등)
 - `packages/utils/` - 공유 유틸 (`formatRating`, `formatDate`)
 - `packages/typescript-config/` - 공유 tsconfig (base, astro, nestjs)
 - `packages/eslint-config/` - 공유 ESLint flat config (base, astro, nestjs)
@@ -40,9 +40,9 @@ apps/api/src/
 ├── auth/           # 카카오 OAuth, JWT 인증, Guards (JwtAuth, Admin)
 ├── restaurants/    # 공개 식당 CRUD, 지역별 조회 (레거시, 방 전용 전환 예정)
 ├── reviews/        # 공개 리뷰 CRUD (레거시, 방 전용 전환 예정)
-├── rooms/          # 방 기능 (초대 코드, 멤버/식당/리뷰 관리)
+├── rooms/          # 방 기능 (초대 코드, 공유 링크, 멤버/식당/리뷰 관리)
 │   ├── guards/     # RoomMemberGuard, RoomManagerGuard
-│   └── dto/        # 방 관련 DTO
+│   └── dto/        # 방 관련 DTO (CreateRoom, JoinRoom, ToggleShareCode 등)
 ├── users/          # 유저 조회
 ├── inquiries/      # 문의 CRUD
 └── prisma/         # PrismaService (Reader/Writer 분리)
@@ -54,7 +54,7 @@ apps/api/src/
 |------|------|-----------|
 | User | 서비스 사용자 | Account, Room, RoomMember, RoomKick |
 | Account | OAuth 계정 (카카오) | User |
-| Room | 공유 방 | RoomMember, RoomRestaurant, RoomKick |
+| Room | 공유 방 (inviteCode + shareCode) | RoomMember, RoomRestaurant, RoomKick |
 | RoomMember | 방 멤버십 (owner/manager/member) | Room, User |
 | RoomRestaurant | 방 내 식당 | Room, User, RoomReview |
 | RoomReview | 방 내 리뷰 | RoomRestaurant, User |
@@ -65,11 +65,14 @@ apps/api/src/
 
 ## 방(Room) 권한 체계
 
-| 역할 | 방 삭제 | 멤버 강퇴/역할 변경 | 방장 위임 | 초대 코드 재생성 | 타인 식당·리뷰 삭제 | 등록 | 본인 수정·삭제 |
-|------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| owner (방장) | O | O | O | O | O | O | O |
-| manager (매니저) | X | X | X | X | O | O | O |
-| member (멤버) | X | X | X | X | X | O | O |
+| 역할 | 방 삭제 | 멤버 강퇴/역할 변경 | 방장 위임 | 초대 코드 재생성 | 공유 링크 관리 | 타인 식당·리뷰 삭제 | 등록 | 본인 수정·삭제 | 열람 |
+|------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| owner (방장) | O | O | O | O | O | O | O | O | O |
+| manager (매니저) | X | X | X | X | O | O | O | O | O |
+| member (멤버) | X | X | X | X | X | X | O | O | O |
+| viewer (공유 링크) | X | X | X | X | X | X | X | X | O |
+
+> viewer는 DB에 저장되지 않는 비로그인 읽기 전용 접근자. 공유 코드(`shareCode`)로 `/share?code=xxx` 페이지를 통해 열람.
 
 ## 초대 코드 보안
 
@@ -78,6 +81,31 @@ apps/api/src/
 - 만료 후 입장 시도 → 403 거부
 - 강퇴당한 유저 재입장 → `RoomKick` 테이블 확인 → 403 거부
 - 방장이 초대 코드 재생성 가능 (새 코드 + 만료 시간 갱신)
+
+## 공유 링크 (비로그인 열람)
+
+블로그·SNS에 방 공유 링크를 게시하여 비로그인 사용자가 식당/리뷰를 읽기 전용으로 열람 가능.
+
+- `shareCode`: 8자 hex, nullable + unique. null = 한 번도 생성 안 한 상태
+- `shareCodeEnabled`: boolean. 비활성화 시 코드 보존, 재활성화 가능
+- 만료 없음 (무기한), 방장/매니저가 직접 비활성화·재생성
+- 공유 엔드포인트 응답에 **멤버 정보(닉네임, 프로필) 미포함** — `select`로 제한
+- 리뷰 작성자 정보 미노출 (rating, content, createdAt만 반환)
+- Guard 없는 공개 엔드포인트 (`GET /rooms/shared/:shareCode`)
+- 전역 Rate Limit(60req/60s)으로 브루트포스 방지 (8자 hex = 43억 조합)
+
+### 공유 링크 API
+
+| Method | Path | Guard | 설명 |
+|--------|------|-------|------|
+| `GET` | `/rooms/shared/:shareCode` | 없음 (공개) | 공유 방 조회 (방 이름 + 식당 목록) |
+| `GET` | `/rooms/shared/:shareCode/restaurants/:rid` | 없음 (공개) | 공유 식당 상세 (리뷰 포함, user 미노출) |
+| `PATCH` | `/rooms/:id/share-code` | RoomManagerGuard | 공유 코드 활성화/비활성화/재생성 |
+
+### 공유 링크 프론트엔드
+
+- `/share?code=xxx` — 비로그인 공유 전용 페이지 (`share.astro`)
+- 방 상세(`room.astro`)에서 owner/manager에게 공유 링크 관리 UI 표시
 
 ## Rate Limit (어뷰저 정책)
 
@@ -99,7 +127,8 @@ apps/api/src/
 | 경로 | 설명 |
 |------|------|
 | `/` | 홈 — 내 방 목록 + 방 만들기 + 초대 코드 입장 |
-| `/room?id=xxx` | 방 상세 — 카카오맵 지도, 식당/리뷰 CRUD, 멤버 관리, 통계 |
+| `/room?id=xxx` | 방 상세 — 식당/리뷰 CRUD, 멤버 관리, 공유 링크 관리 |
+| `/share?code=xxx` | 공유 열람 — 비로그인, 읽기 전용 (식당/리뷰 열람) |
 | `/login` | 카카오 로그인 |
 | `/cs` | 문의 등록 |
 | `/admin` | 관리자 — 문의/식당/리뷰 관리 (탭) |

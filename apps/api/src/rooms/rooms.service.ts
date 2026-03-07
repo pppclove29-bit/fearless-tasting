@@ -153,6 +153,142 @@ export class RoomsService {
     return this.prisma.write.roomMember.delete({ where: { id: member.id } });
   }
 
+  // ─── 공유 코드 ───
+
+  /** 고유 8자 공유 코드 생성 */
+  private async generateShareCode(): Promise<string> {
+    for (let i = 0; i < 10; i++) {
+      const code = randomBytes(4).toString('hex');
+      const existing = await this.prisma.read.room.findFirst({ where: { shareCode: code } });
+      if (!existing) return code;
+    }
+    throw new ConflictException('공유 코드 생성에 실패했습니다. 다시 시도해 주세요.');
+  }
+
+  /** 공유 코드 활성화/비활성화/재생성 (owner + manager) */
+  async toggleShareCode(roomId: string, requesterId: string, action: 'enable' | 'disable' | 'regenerate') {
+    const room = await this.prisma.read.room.findUnique({ where: { id: roomId } });
+    if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
+
+    const member = await this.prisma.read.roomMember.findUnique({
+      where: { roomId_userId: { roomId, userId: requesterId } },
+    });
+    if (!member || (member.role !== 'owner' && member.role !== 'manager')) {
+      throw new ForbiddenException('매니저 이상의 권한이 필요합니다');
+    }
+
+    if (action === 'disable') {
+      return this.prisma.write.room.update({
+        where: { id: roomId },
+        data: { shareCodeEnabled: false },
+        select: { shareCode: true, shareCodeEnabled: true },
+      });
+    }
+
+    const shareCode = action === 'regenerate' || !room.shareCode
+      ? await this.generateShareCode()
+      : room.shareCode;
+
+    return this.prisma.write.room.update({
+      where: { id: roomId },
+      data: { shareCode, shareCodeEnabled: true },
+      select: { shareCode: true, shareCodeEnabled: true },
+    });
+  }
+
+  /** 공유 코드로 방 조회 (비로그인 공개) */
+  async findByShareCode(shareCode: string) {
+    const room = await this.prisma.read.room.findFirst({
+      where: { shareCode, shareCodeEnabled: true },
+      select: {
+        id: true,
+        name: true,
+        restaurants: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            province: true,
+            city: true,
+            neighborhood: true,
+            category: true,
+            imageUrl: true,
+            _count: { select: { reviews: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!room) throw new NotFoundException('유효하지 않은 공유 링크입니다');
+
+    return {
+      ...room,
+      restaurants: room.restaurants.map((r) => ({
+        id: r.id,
+        name: r.name,
+        address: r.address,
+        province: r.province,
+        city: r.city,
+        neighborhood: r.neighborhood,
+        category: r.category,
+        imageUrl: r.imageUrl,
+        reviewCount: r._count.reviews,
+      })),
+    };
+  }
+
+  /** 공유 코드로 식당 상세 조회 (비로그인 공개) */
+  async findSharedRestaurantDetail(shareCode: string, restaurantId: string) {
+    const room = await this.prisma.read.room.findFirst({
+      where: { shareCode, shareCodeEnabled: true },
+      select: { id: true },
+    });
+    if (!room) throw new NotFoundException('유효하지 않은 공유 링크입니다');
+
+    const restaurant = await this.prisma.read.roomRestaurant.findUnique({
+      where: { id: restaurantId },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        province: true,
+        city: true,
+        neighborhood: true,
+        category: true,
+        imageUrl: true,
+        roomId: true,
+        reviews: {
+          select: {
+            id: true,
+            rating: true,
+            content: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        _count: { select: { reviews: true } },
+      },
+    });
+
+    if (!restaurant || restaurant.roomId !== room.id) {
+      throw new NotFoundException('식당을 찾을 수 없습니다');
+    }
+
+    return {
+      id: restaurant.id,
+      name: restaurant.name,
+      address: restaurant.address,
+      province: restaurant.province,
+      city: restaurant.city,
+      neighborhood: restaurant.neighborhood,
+      category: restaurant.category,
+      imageUrl: restaurant.imageUrl,
+      reviewCount: restaurant._count.reviews,
+      reviews: restaurant.reviews,
+    };
+  }
+
   // ─── 방 내 식당 ───
 
   /** 방 내 식당 목록 */

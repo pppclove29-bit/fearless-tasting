@@ -12,6 +12,8 @@ import { CreateRoomRestaurantDto } from './dto/create-room-restaurant.dto';
 import { CreateRoomReviewDto } from './dto/create-room-review.dto';
 import { UpdateRoomReviewDto } from './dto/update-room-review.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
+import { ToggleShareCodeDto } from './dto/toggle-share-code.dto';
+import { RoomManagerGuard } from './guards/room-manager.guard';
 
 interface RequestWithRoomMember extends Request {
   roomMember: { role: string };
@@ -50,6 +52,28 @@ export class RoomsController {
     return this.roomsService.join(dto.inviteCode, user.id);
   }
 
+  // ─── 공유 링크 (비로그인 공개) ───
+
+  /** 공유 코드로 방 조회 */
+  @Get('shared/:shareCode')
+  @ApiOperation({ summary: '공유 링크로 방 조회 (비로그인 가능)' })
+  @ApiParam({ name: 'shareCode', description: '공유 코드' })
+  findByShareCode(@Param('shareCode') shareCode: string) {
+    return this.roomsService.findByShareCode(shareCode);
+  }
+
+  /** 공유 코드로 식당 상세 */
+  @Get('shared/:shareCode/restaurants/:rid')
+  @ApiOperation({ summary: '공유 링크 식당 상세 (비로그인 가능)' })
+  @ApiParam({ name: 'shareCode', description: '공유 코드' })
+  @ApiParam({ name: 'rid', description: '식당 ID' })
+  findSharedRestaurantDetail(
+    @Param('shareCode') shareCode: string,
+    @Param('rid') rid: string,
+  ) {
+    return this.roomsService.findSharedRestaurantDetail(shareCode, rid);
+  }
+
   /** 방 상세 */
   @Get(':id')
   @UseGuards(RoomMemberGuard)
@@ -66,6 +90,19 @@ export class RoomsController {
   @ApiParam({ name: 'id', description: '방 ID' })
   remove(@Param('id') id: string, @CurrentUser() user: { id: string }) {
     return this.roomsService.remove(id, user.id);
+  }
+
+  /** 공유 코드 관리 (owner + manager) */
+  @Patch(':id/share-code')
+  @UseGuards(RoomManagerGuard)
+  @ApiOperation({ summary: '공유 코드 활성화/비활성화/재생성' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  toggleShareCode(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+    @Body() dto: ToggleShareCodeDto,
+  ) {
+    return this.roomsService.toggleShareCode(id, user.id, dto.action);
   }
 
   /** 멤버 역할 변경 */

@@ -130,6 +130,10 @@ model Room {
   inviteCode  String           @unique @db.VarChar(8)
   /// 초대 코드 만료 시간 (null = 무제한)
   inviteCodeExpiresAt DateTime?
+  /// 8자 공유 코드 (null = 한 번도 생성 안 함)
+  shareCode           String?  @unique @db.VarChar(8)
+  /// 공유 코드 활성 여부
+  shareCodeEnabled    Boolean  @default(false)
   /// 방장 (User FK)
   owner       User             @relation("RoomOwner", fields: [ownerId], references: [id])
   /// 방장 ID

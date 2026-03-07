@@ -1,4 +1,7 @@
-import type { Restaurant, Review, Room, RoomRestaurant, RoomReview } from '@repo/types';
+import type {
+  Restaurant, Review, Room, RoomRestaurant, RoomReview,
+  SharedRoomDetail, SharedRoomRestaurantDetail,
+} from '@repo/types';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -331,6 +334,39 @@ export async function updateRoomReview(
 export async function deleteRoomReview(roomId: string, revId: string): Promise<void> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/reviews/${revId}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('리뷰 삭제에 실패했습니다.');
+}
+
+// ─── 공유 링크 ───
+
+/** 공유 코드로 방 조회 (비로그인) */
+export async function fetchSharedRoom(shareCode: string): Promise<SharedRoomDetail> {
+  const res = await apiFetch(`${API_BASE}/rooms/shared/${shareCode}`);
+  if (!res.ok) throw new Error('유효하지 않은 공유 링크입니다.');
+  return res.json();
+}
+
+/** 공유 코드로 식당 상세 (비로그인) */
+export async function fetchSharedRestaurantDetail(
+  shareCode: string,
+  rid: string,
+): Promise<SharedRoomRestaurantDetail> {
+  const res = await apiFetch(`${API_BASE}/rooms/shared/${shareCode}/restaurants/${rid}`);
+  if (!res.ok) throw new Error('식당 조회에 실패했습니다.');
+  return res.json();
+}
+
+/** 공유 코드 관리 */
+export async function toggleShareCode(
+  roomId: string,
+  action: 'enable' | 'disable' | 'regenerate',
+): Promise<{ shareCode: string | null; shareCodeEnabled: boolean }> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/share-code`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action }),
+  });
+  if (!res.ok) throw new Error('공유 코드 관리에 실패했습니다.');
+  return res.json();
 }
 
 export type CreateRestaurantInput = Omit<Restaurant, 'id' | 'createdAt' | 'updatedAt'>;
