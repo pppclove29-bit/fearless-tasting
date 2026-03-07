@@ -106,6 +106,18 @@ export class RoomsController {
     return this.roomsService.remove(id, user.id);
   }
 
+  /** 초대 코드 재생성 (owner만) */
+  @Patch(':id/invite-code')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '초대 코드 재생성 (방장만, 24시간 만료)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  regenerateInviteCode(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.roomsService.regenerateInviteCode(id, user.id);
+  }
+
   /** 공유 코드 관리 (owner + manager) */
   @Patch(':id/share-code')
   @UseGuards(RoomManagerGuard)
@@ -146,6 +158,20 @@ export class RoomsController {
     @CurrentUser() user: { id: string },
   ) {
     return this.roomsService.kickMember(id, targetUserId, user.id);
+  }
+
+  /** 방장 위임 */
+  @Patch(':id/transfer/:userId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '방장 위임 (방장만)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  @ApiParam({ name: 'userId', description: '대상 유저 ID' })
+  transferOwnership(
+    @Param('id') id: string,
+    @Param('userId') targetUserId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.roomsService.transferOwnership(id, targetUserId, user.id);
   }
 
   /** 방 나가기 */

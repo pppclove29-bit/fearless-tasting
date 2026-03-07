@@ -111,6 +111,24 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .btn-copy:hover { background: #f0f0f0; }
 
+  .btn-regen {
+    padding: 0.3rem 0.6rem;
+    background: #111;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-regen:hover { background: #333; }
+
+  .invite-expiry {
+    font-size: 0.75rem;
+    color: #999;
+  }
+
   .share-row {
     display: flex;
     align-items: center;
@@ -275,6 +293,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-weight: 600;
     color: #111;
     margin-bottom: 0.15rem;
+  }
+
+  .room-rest-rating {
+    font-size: 0.8rem;
+    color: #e6a817;
+    font-weight: 500;
   }
 
   .room-rest-meta {
@@ -700,10 +724,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 <script>
   import {
     fetchCurrentUser, fetchRoom, deleteRoom, leaveRoom,
-    updateRoomMemberRole, kickRoomMember,
+    updateRoomMemberRole, kickRoomMember, transferOwnership,
     createRoomRestaurant, fetchRoomRestaurant, deleteRoomRestaurant,
     createRoomReview, updateRoomReview, deleteRoomReview,
-    toggleShareCode, updateRoom,
+    toggleShareCode, updateRoom, regenerateInviteCode,
   } from '@/lib/api';
   import type { AuthUser, RoomDetailResponse, RoomMemberInfo, RoomRestaurantInfo, RoomReviewWithUser } from '@/lib/api';
   import { getCities, getNeighborhoods } from '@/data/areas';
@@ -789,6 +813,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="invite-row">
           <span class="invite-code" id="invite-code">${currentRoom.inviteCode}</span>
           <button type="button" class="btn-copy" id="copy-code-btn">복사</button>
+          ${isOwner() ? '<button type="button" class="btn-regen" id="regen-code-btn">재생성</button>' : ''}
+          ${currentRoom.inviteCodeExpiresAt ? `<span class="invite-expiry" id="invite-expiry">${new Date(currentRoom.inviteCodeExpiresAt) < new Date() ? '(만료됨)' : '(~' + formatDate(currentRoom.inviteCodeExpiresAt) + ')'}</span>` : ''}
         </div>
         ${shareHtml}
         ${actionsHtml}
@@ -863,6 +889,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const btn = document.getElementById('copy-code-btn')!;
       btn.textContent = '복사됨!';
       setTimeout(() => { btn.textContent = '복사'; }, 1500);
+    });
+
+    document.getElementById('regen-code-btn')?.addEventListener('click', async () => {
+      if (!confirm('초대 코드를 재생성하시겠습니까? 기존 코드는 사용할 수 없게 됩니다.')) return;
+      try {
+        const result = await regenerateInviteCode(currentRoom.id);
+        currentRoom.inviteCode = result.inviteCode;
+        currentRoom.inviteCodeExpiresAt = result.inviteCodeExpiresAt;
+        document.getElementById('invite-code')!.textContent = result.inviteCode;
+        const expiryEl = document.getElementById('invite-expiry');
+        if (expiryEl) expiryEl.textContent = '(~' + formatDate(result.inviteCodeExpiresAt) + ')';
+        alert('초대 코드가 재생성되었습니다.');
+      } catch {
+        alert('초대 코드 재생성에 실패했습니다.');
+      }
     });
 
     document.getElementById('delete-room-btn')?.addEventListener('click', async () => {
@@ -954,6 +995,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 <option value="manager" ${m.role === 'manager' ? 'selected' : ''}>매니저</option>
                 <option value="member" ${m.role === 'member' ? 'selected' : ''}>멤버</option>
               </select>
+              <button type="button" class="btn-outline-sm transfer-btn" data-user-id="${m.userId}">방장 위임</button>
               <button type="button" class="btn-danger-sm kick-btn" data-user-id="${m.userId}">강퇴</button>
             </div>
           `;
@@ -993,6 +1035,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           currentRoom = await fetchRoom(currentRoom.id);
           renderMembersTab();
         } catch { alert('강퇴에 실패했습니다.'); }
+      });
+    }
+
+    // 방장 위임
+    for (const btn of panel.querySelectorAll<HTMLButtonElement>('.transfer-btn')) {
+      btn.addEventListener('click', async () => {
+        if (!confirm('이 멤버에게 방장을 위임하시겠습니까? 본인은 일반 멤버가 됩니다.')) return;
+        const userId = btn.dataset.userId!;
+        try {
+          await transferOwnership(currentRoom.id, userId);
+          currentRoom = await fetchRoom(currentRoom.id);
+          renderPage();
+        } catch { alert('방장 위임에 실패했습니다.'); }
       });
     }
   }
@@ -1143,7 +1198,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         .map(
           (r) => `
           <div class="room-restaurant-card" data-rid="${r.id}">
-            <div class="room-rest-name">${escapeHtml(r.name)}</div>
+            <div class="room-rest-name">${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(Math.round(r.avgRating))} ${r.avgRating}</span>` : ''}</div>
             <div class="room-rest-meta">${escapeHtml(r.address)} · ${escapeHtml(r.category)}</div>
             <div class="room-rest-footer">
               <span class="room-rest-added-by">${escapeHtml(r.addedBy.nickname)}</span>

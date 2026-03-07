@@ -24,7 +24,12 @@ export class RoomsService {
 
     return this.prisma.write.$transaction(async (tx) => {
       const room = await tx.room.create({
-        data: { name, inviteCode, ownerId },
+        data: {
+          name,
+          inviteCode,
+          inviteCodeExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          ownerId,
+        },
       });
 
       await tx.roomMember.create({
@@ -71,6 +76,7 @@ export class RoomsService {
         restaurants: {
           include: {
             addedBy: { select: { id: true, nickname: true } },
+            reviews: { select: { rating: true } },
             _count: { select: { reviews: true } },
           },
           orderBy: { createdAt: 'desc' },
@@ -79,13 +85,31 @@ export class RoomsService {
     });
 
     if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
-    return room;
+
+    return {
+      ...room,
+      restaurants: room.restaurants.map(({ reviews, ...rest }) => ({
+        ...rest,
+        avgRating: reviews.length > 0
+          ? Math.round(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length * 10) / 10
+          : null,
+      })),
+    };
   }
 
   /** 초대 코드로 입장 */
   async join(inviteCode: string, userId: string) {
     const room = await this.prisma.read.room.findUnique({ where: { inviteCode } });
     if (!room) throw new NotFoundException('유효하지 않은 초대 코드입니다');
+
+    if (room.inviteCodeExpiresAt && room.inviteCodeExpiresAt < new Date()) {
+      throw new ForbiddenException('초대 코드가 만료되었습니다. 방장에게 새 코드를 요청하세요.');
+    }
+
+    const kicked = await this.prisma.read.roomKick.findUnique({
+      where: { roomId_userId: { roomId: room.id, userId } },
+    });
+    if (kicked) throw new ForbiddenException('이 방에서 강퇴되어 재입장할 수 없습니다.');
 
     const existing = await this.prisma.read.roomMember.findUnique({
       where: { roomId_userId: { roomId: room.id, userId } },
@@ -115,6 +139,23 @@ export class RoomsService {
     return this.prisma.write.room.update({
       where: { id: roomId },
       data: { name },
+    });
+  }
+
+  /** 초대 코드 재생성 (owner만) */
+  async regenerateInviteCode(roomId: string, userId: string) {
+    const room = await this.prisma.read.room.findUnique({ where: { id: roomId } });
+    if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
+    if (room.ownerId !== userId) throw new ForbiddenException('방장만 초대 코드를 재생성할 수 있습니다');
+
+    const newCode = await this.generateInviteCode();
+    return this.prisma.write.room.update({
+      where: { id: roomId },
+      data: {
+        inviteCode: newCode,
+        inviteCodeExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+      select: { inviteCode: true, inviteCodeExpiresAt: true },
     });
   }
 
@@ -158,6 +199,30 @@ export class RoomsService {
     if (!member) throw new NotFoundException('해당 멤버를 찾을 수 없습니다');
 
     return this.prisma.write.roomMember.delete({ where: { id: member.id } });
+  }
+
+  /** 방장 위임 (owner만) */
+  async transferOwnership(roomId: string, targetUserId: string, requesterId: string) {
+    const room = await this.prisma.read.room.findUnique({ where: { id: roomId } });
+    if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
+    if (room.ownerId !== requesterId) throw new ForbiddenException('방장만 위임할 수 있습니다');
+    if (targetUserId === requesterId) throw new ForbiddenException('본인에게 위임할 수 없습니다');
+
+    const targetMember = await this.prisma.read.roomMember.findUnique({
+      where: { roomId_userId: { roomId, userId: targetUserId } },
+    });
+    if (!targetMember) throw new NotFoundException('해당 멤버를 찾을 수 없습니다');
+
+    const requesterMember = await this.prisma.read.roomMember.findUnique({
+      where: { roomId_userId: { roomId, userId: requesterId } },
+    });
+    if (!requesterMember) throw new NotFoundException('멤버를 찾을 수 없습니다');
+
+    return this.prisma.write.$transaction([
+      this.prisma.write.room.update({ where: { id: roomId }, data: { ownerId: targetUserId } }),
+      this.prisma.write.roomMember.update({ where: { id: targetMember.id }, data: { role: 'owner' } }),
+      this.prisma.write.roomMember.update({ where: { id: requesterMember.id }, data: { role: 'member' } }),
+    ]);
   }
 
   /** 방 나가기 (owner는 나갈 수 없음) */

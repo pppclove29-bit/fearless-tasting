@@ -188,6 +188,7 @@ export interface RoomMemberInfo {
 export interface RoomRestaurantInfo extends RoomRestaurant {
   addedBy: { id: string; nickname: string };
   _count: { reviews: number };
+  avgRating: number | null;
 }
 
 export interface RoomDetailResponse extends Room {
@@ -272,6 +273,19 @@ export async function updateRoomMemberRole(roomId: string, userId: string, role:
 export async function kickRoomMember(roomId: string, userId: string): Promise<void> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/members/${userId}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('강퇴에 실패했습니다.');
+}
+
+/** 방장 위임 */
+export async function transferOwnership(roomId: string, userId: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/transfer/${userId}`, { method: 'PATCH' });
+  if (!res.ok) throw new Error('방장 위임에 실패했습니다.');
+}
+
+/** 초대 코드 재생성 */
+export async function regenerateInviteCode(roomId: string): Promise<{ inviteCode: string; inviteCodeExpiresAt: string }> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/invite-code`, { method: 'PATCH' });
+  if (!res.ok) throw new Error('초대 코드 재생성에 실패했습니다.');
+  return res.json();
 }
 
 /** 방 내 식당 등록 */

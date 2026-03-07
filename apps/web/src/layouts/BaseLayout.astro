@@ -28,10 +28,23 @@ const fullTitle = `${title} | 무모한 시식가`;
     <meta property="og:locale" content="ko_KR" />
     <meta property="og:site_name" content="무모한 시식가" />
 
+    <meta property="og:image" content={new URL('/icons/icon-512.png', Astro.site ?? Astro.url.origin).href} />
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={new URL('/icons/icon-512.png', Astro.site ?? Astro.url.origin).href} />
+
+    <!-- JSON-LD -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "무모한 시식가",
+      "url": (Astro.site ?? Astro.url.origin).toString(),
+      "description": "방 기반 맛집 리뷰 공유 플랫폼",
+      "inLanguage": "ko",
+    })} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

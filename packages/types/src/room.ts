@@ -4,6 +4,7 @@ export interface Room {
   id: string;
   name: string;
   inviteCode: string;
+  inviteCodeExpiresAt?: string | null;
   ownerId: string;
   shareCode?: string | null;
   shareCodeEnabled?: boolean;
