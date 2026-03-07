@@ -1,0 +1,155 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="개인정보처리방침" description="무모한 시식가 개인정보처리방침">
+  <div class="privacy-page">
+    <h1>개인정보처리방침</h1>
+    <p class="updated-at">시행일: 2026년 3월 7일</p>
+
+    <section>
+      <h2>1. 개인정보 수집 항목 및 목적</h2>
+      <p>무모한 시식가(이하 "서비스")는 다음의 개인정보를 수집합니다.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>수집 항목</th>
+            <th>수집 목적</th>
+            <th>수집 방법</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>카카오 계정 이메일, 닉네임, 프로필 이미지</td>
+            <td>회원 식별 및 서비스 제공</td>
+            <td>카카오 OAuth 로그인 시 자동 수집</td>
+          </tr>
+          <tr>
+            <td>문의 시 입력한 이메일, 문의 내용</td>
+            <td>문의 답변 및 서비스 개선</td>
+            <td>문의 폼 직접 입력</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>2. 개인정보 보유 및 이용 기간</h2>
+      <ul>
+        <li>회원 탈퇴 시까지 보유하며, 탈퇴 즉시 파기합니다.</li>
+        <li>문의 내역은 답변 완료 후 1년간 보관 후 파기합니다.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. 개인정보의 제3자 제공</h2>
+      <p>서비스는 이용자의 개인정보를 제3자에게 제공하지 않습니다. 단, 법령에 의해 요구되는 경우는 예외로 합니다.</p>
+    </section>
+
+    <section>
+      <h2>4. 개인정보 처리 위탁</h2>
+      <p>서비스는 원활한 운영을 위해 다음과 같이 개인정보 처리를 위탁합니다.</p>
+      <ul>
+        <li><strong>카카오</strong> — OAuth 인증 처리</li>
+        <li><strong>AWS</strong> — 서버 및 데이터베이스 호스팅</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>5. 이용자의 권리</h2>
+      <p>이용자는 언제든지 다음의 권리를 행사할 수 있습니다.</p>
+      <ul>
+        <li>개인정보 열람, 정정, 삭제 요청</li>
+        <li>회원 탈퇴 요청</li>
+        <li>개인정보 처리 정지 요청</li>
+      </ul>
+      <p>위 요청은 <a href="/cs">문의 페이지</a>를 통해 접수할 수 있습니다.</p>
+    </section>
+
+    <section>
+      <h2>6. 쿠키 및 자동 수집 장치</h2>
+      <p>서비스는 인증 유지를 위해 JWT 토큰을 브라우저에 저장합니다. 이는 로그인 상태 유지 목적으로만 사용되며, 로그아웃 시 삭제됩니다.</p>
+    </section>
+
+    <section>
+      <h2>7. 개인정보 보호 책임자</h2>
+      <p>개인정보 관련 문의는 <a href="/cs">문의 페이지</a>를 이용해 주세요.</p>
+    </section>
+
+    <section>
+      <h2>8. 방침 변경</h2>
+      <p>본 방침이 변경되는 경우, 변경 사항을 서비스 내 공지합니다.</p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .privacy-page {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .updated-at {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 2rem;
+  }
+
+  section {
+    margin-bottom: 2rem;
+  }
+
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  p, li {
+    font-size: 0.9rem;
+    color: #444;
+    line-height: 1.7;
+  }
+
+  ul {
+    padding-left: 1.25rem;
+    margin-top: 0.25rem;
+  }
+
+  li {
+    margin-bottom: 0.25rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  th, td {
+    border: 1px solid #e0e0e0;
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+  }
+
+  th {
+    background: #f7f8fa;
+    font-weight: 600;
+    color: #333;
+  }
+
+  td {
+    color: #555;
+  }
+
+  a {
+    color: #111;
+    font-weight: 500;
+  }
+</style>
