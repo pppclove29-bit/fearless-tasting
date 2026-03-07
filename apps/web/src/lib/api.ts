@@ -62,7 +62,7 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
   }
 
   if (res.status === 401) {
-    const isPublicUrl = url.includes('/auth/') || url.includes('/shared/');
+    const isPublicUrl = url.includes('/shared/') || url.includes('/auth/kakao') || url.includes('/auth/refresh');
 
     if (getRefreshToken()) {
       const refreshed = await refreshTokens();
@@ -144,6 +144,7 @@ export async function updateRoom(id: string, name: string): Promise<void> {
 
 /** 현재 로그인 유저 조회 (비로그인 시 null) */
 export async function fetchCurrentUser(): Promise<AuthUser | null> {
+  if (!getAccessToken() && !getRefreshToken()) return null;
   try {
     const res = await apiFetch(`${API_BASE}/auth/me`);
     if (!res.ok) return null;
