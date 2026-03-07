@@ -50,11 +50,27 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
     throw new Error('네트워크 오류');
   }
 
-  if (res.status === 401 && getRefreshToken()) {
-    const refreshed = await refreshTokens();
-    if (refreshed) {
-      headers['Authorization'] = `Bearer ${getAccessToken()!}`;
-      res = await fetch(url, { ...init, headers, credentials: 'omit' });
+  if (res.status === 401) {
+    if (getRefreshToken()) {
+      const refreshed = await refreshTokens();
+      if (refreshed) {
+        headers['Authorization'] = `Bearer ${getAccessToken()!}`;
+        res = await fetch(url, { ...init, headers, credentials: 'omit' });
+      } else {
+        // 리프레시 실패 → 세션 만료
+        clearTokens();
+        if (!url.includes('/auth/')) {
+          location.href = '/login';
+        }
+        return res;
+      }
+    } else if (token) {
+      // access token 있었는데 401 → 세션 만료
+      clearTokens();
+      if (!url.includes('/auth/')) {
+        location.href = '/login';
+      }
+      return res;
     }
   }
 
