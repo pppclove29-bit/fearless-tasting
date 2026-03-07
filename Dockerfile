@@ -19,3 +19,7 @@ RUN pnpm install --frozen-lockfile || pnpm install
 COPY . .
 
 RUN pnpm --filter @repo/api exec prisma generate
+
+RUN pnpm --filter @repo/api build
+
+CMD ["node", "apps/api/dist/main"]
