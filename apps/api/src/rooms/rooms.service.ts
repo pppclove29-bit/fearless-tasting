@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, ConflictException, ForbiddenException } 
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
+const MAX_ROOM_MEMBERS = 2;
+
 @Injectable()
 export class RoomsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -89,6 +91,13 @@ export class RoomsService {
       where: { roomId_userId: { roomId: room.id, userId } },
     });
     if (existing) throw new ConflictException('이미 이 방에 참여하고 있습니다');
+
+    const memberCount = await this.prisma.read.roomMember.count({
+      where: { roomId: room.id },
+    });
+    if (memberCount >= MAX_ROOM_MEMBERS) {
+      throw new ForbiddenException(`방 인원이 가득 찼습니다 (최대 ${MAX_ROOM_MEMBERS}명)`);
+    }
 
     await this.prisma.write.roomMember.create({
       data: { role: 'member', roomId: room.id, userId },
