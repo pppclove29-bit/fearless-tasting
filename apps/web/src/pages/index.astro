@@ -27,10 +27,42 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <h3>공유 링크</h3>
         <p>맛집 리스트를 공유 링크로 만들어 누구에게나 보여줄 수 있어요.</p>
       </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>초대 코드</h3>
+        <p>24시간 유효한 초대 코드로 원하는 사람만 방에 초대하세요.</p>
+      </div>
+    </section>
+
+    <section class="recommend">
+      <h2 class="section-title">이런 분들에게 추천해요</h2>
+      <div class="recommend-list">
+        <div class="recommend-item">
+          <span class="recommend-icon">👫</span>
+          <div>
+            <h4>연인과 맛집을 기록하고 싶은 커플</h4>
+            <p>함께 다녀온 맛집을 하나의 리스트로 관리하세요.</p>
+          </div>
+        </div>
+        <div class="recommend-item">
+          <span class="recommend-icon">👨‍👩‍👧‍👦</span>
+          <div>
+            <h4>가족끼리 맛집을 공유하고 싶은 분</h4>
+            <p>부모님, 형제와 함께 우리 가족만의 맛집 지도를 만들어보세요.</p>
+          </div>
+        </div>
+        <div class="recommend-item">
+          <span class="recommend-icon">🍽️</span>
+          <div>
+            <h4>맛집 기록을 체계적으로 남기고 싶은 분</h4>
+            <p>별점과 리뷰로 다녀온 식당을 깔끔하게 정리하세요.</p>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="steps">
-      <h2 class="steps-title">이렇게 시작하세요</h2>
+      <h2 class="section-title">이렇게 시작하세요</h2>
       <div class="steps-list">
         <div class="step">
           <span class="step-num">1</span>
@@ -42,23 +74,53 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="step">
           <span class="step-num">2</span>
           <div>
-            <h4>방 만들기</h4>
-            <p>방을 만들고 초대 코드를 공유하세요.</p>
+            <h4>방 만들기 또는 참여</h4>
+            <p>새 방을 만들거나, 초대 코드로 기존 방에 참여하세요.</p>
           </div>
         </div>
         <div class="step">
           <span class="step-num">3</span>
           <div>
-            <h4>맛집 기록</h4>
-            <p>식당을 등록하고 리뷰를 남기세요.</p>
+            <h4>맛집 등록 & 리뷰</h4>
+            <p>방문한 식당을 등록하고 별점과 리뷰를 남기세요.</p>
           </div>
         </div>
+        <div class="step">
+          <span class="step-num">4</span>
+          <div>
+            <h4>공유하기</h4>
+            <p>공유 링크를 만들어 누구나 볼 수 있게 하세요.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="faq">
+      <h2 class="section-title">자주 묻는 질문</h2>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>무료인가요?</summary>
+          <p>네, 모든 기능을 무료로 이용할 수 있습니다.</p>
+        </details>
+        <details class="faq-item">
+          <summary>한 방에 몇 명까지 참여할 수 있나요?</summary>
+          <p>현재 한 방에 최대 2명까지 참여할 수 있습니다.</p>
+        </details>
+        <details class="faq-item">
+          <summary>초대 코드는 어떻게 공유하나요?</summary>
+          <p>방을 만들면 초대 코드가 자동으로 생성됩니다. 코드를 복사해서 카톡 등으로 상대방에게 보내주세요. 코드는 24시간 유효합니다.</p>
+        </details>
+        <details class="faq-item">
+          <summary>공유 링크는 누구나 볼 수 있나요?</summary>
+          <p>네, 공유 링크를 통해 비회원도 맛집 리스트를 열람할 수 있습니다. 단, 수정이나 리뷰 작성은 방 멤버만 가능합니다.</p>
+        </details>
       </div>
     </section>
 
     <section class="bottom-cta">
       <p>지금 바로 시작해보세요.</p>
       <a href="/login" class="hero-cta">카카오로 시작하기</a>
+      <a href="/cs" class="bottom-cta-link">문의하기</a>
     </section>
   </div>
 
@@ -127,7 +189,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .features {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.25rem;
     padding: 2rem 0 3rem;
   }
@@ -157,15 +219,56 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     line-height: 1.5;
   }
 
-  .steps {
-    padding: 2rem 0 3rem;
-  }
-
-  .steps-title {
+  .section-title {
     text-align: center;
     font-size: 1.3rem;
     font-weight: 700;
     margin-bottom: 1.5rem;
+  }
+
+  /* ─── 추천 대상 ─── */
+  .recommend {
+    padding: 0 0 3rem;
+  }
+
+  .recommend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .recommend-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+
+  .recommend-icon {
+    font-size: 1.5rem;
+    min-width: 32px;
+    text-align: center;
+  }
+
+  .recommend-item h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+  }
+
+  .recommend-item p {
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  /* ─── 시작 스텝 ─── */
+  .steps {
+    padding: 0 0 3rem;
   }
 
   .steps-list {
@@ -211,6 +314,61 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: #666;
   }
 
+  /* ─── FAQ ─── */
+  .faq {
+    padding: 0 0 3rem;
+  }
+
+  .faq-list {
+    max-width: 520px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .faq-item {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .faq-item summary {
+    padding: 1rem 1.25rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .faq-item summary::after {
+    content: '+';
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #999;
+    transition: transform 0.2s;
+  }
+
+  .faq-item[open] summary::after {
+    content: '−';
+  }
+
+  .faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-item p {
+    padding: 0 1.25rem 1rem;
+    font-size: 0.85rem;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  /* ─── 하단 CTA ─── */
   .bottom-cta {
     text-align: center;
     padding: 2rem 0 3rem;
@@ -220,6 +378,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 1rem;
     color: #555;
     margin-bottom: 1rem;
+  }
+
+  .bottom-cta-link {
+    display: block;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: #888;
+    text-decoration: none;
+  }
+
+  .bottom-cta-link:hover {
+    color: #111;
   }
 
   @media (max-width: 600px) {
