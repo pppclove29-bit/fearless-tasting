@@ -494,6 +494,40 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .room-review-actions button.danger { color: #dc2626; border-color: #fca5a5; }
   .room-review-actions button.danger:hover { background: #fef2f2; }
 
+  .edited-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    color: #aaa;
+    margin-left: 0.25rem;
+    font-style: italic;
+  }
+
+  .category-filter-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .category-filter-btn {
+    padding: 0.3rem 0.7rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 100px;
+    background: #fff;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .category-filter-btn:hover { background: #f0f0f0; }
+
+  .category-filter-btn.active {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+  }
+
   .empty-text {
     text-align: center;
     padding: 1.5rem;
@@ -797,6 +831,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   // ─── 식당 탭 ───
 
+  let activeCategory = '';
+
   function renderRestaurantsTab() {
     const panel = document.getElementById('tab-restaurants')!;
 
@@ -823,11 +859,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>
     `;
 
+    // 카테고리 필터
+    const categories = [...new Set(currentRoom.restaurants.map((r) => r.category))].sort();
+    let filterHtml = '';
+    if (categories.length > 1) {
+      filterHtml = `<div class="category-filter-row">
+        <button type="button" class="category-filter-btn ${!activeCategory ? 'active' : ''}" data-category="">전체</button>
+        ${categories.map((c) => `<button type="button" class="category-filter-btn ${activeCategory === c ? 'active' : ''}" data-category="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('')}
+      </div>`;
+    }
+
+    const filtered = activeCategory
+      ? currentRoom.restaurants.filter((r) => r.category === activeCategory)
+      : currentRoom.restaurants;
+
     let listHtml = '';
     if (currentRoom.restaurants.length === 0) {
       listHtml = '<p class="empty-text">등록된 식당이 없습니다.</p>';
+    } else if (filtered.length === 0) {
+      listHtml = '<p class="empty-text">해당 카테고리의 식당이 없습니다.</p>';
     } else {
-      listHtml = currentRoom.restaurants
+      listHtml = filtered
         .map(
           (r) => `
           <div class="room-restaurant-card" data-rid="${r.id}">
@@ -843,9 +895,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         .join('');
     }
 
-    panel.innerHTML = addFormHtml + '<div id="restaurant-detail-area"></div>' + listHtml;
+    panel.innerHTML = addFormHtml + '<div id="restaurant-detail-area"></div>' + filterHtml + '<div id="restaurant-list">' + listHtml + '</div>';
     attachRestaurantFormHandler();
     attachRestaurantCardHandlers();
+    attachCategoryFilterHandlers();
+  }
+
+  function attachCategoryFilterHandlers() {
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('.category-filter-btn')) {
+      btn.addEventListener('click', () => {
+        activeCategory = btn.dataset.category || '';
+        renderRestaurantsTab();
+      });
+    }
   }
 
   function attachRestaurantFormHandler() {
@@ -932,6 +994,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               actionsHtml += '</div>';
             }
 
+            const isEdited = rev.updatedAt && rev.updatedAt !== rev.createdAt;
+            const editedBadge = isEdited ? ' <span class="edited-badge">수정됨</span>' : '';
+
             return `
               <div class="room-review-card" data-rev-id="${rev.id}">
                 <div class="room-review-header">
@@ -940,7 +1005,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 </div>
                 <div class="room-review-content">${escapeHtml(rev.content)}</div>
                 <div class="room-review-footer">
-                  <span>${formatDate(rev.createdAt)}</span>
+                  <span>${formatDate(rev.createdAt)}${editedBadge}</span>
                   ${actionsHtml}
                 </div>
               </div>
