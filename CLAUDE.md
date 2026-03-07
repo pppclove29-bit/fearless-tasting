@@ -6,7 +6,7 @@
 
 - `apps/web/` - Astro 프론트엔드 (포트 4321)
 - `apps/api/` - NestJS 백엔드 API (포트 4000, Prisma ORM, MySQL)
-- `packages/types/` - 공유 타입 (`Restaurant`, `Review`, `User`, `Room`, `RoomMember`, `SharedRoom*` 등)
+- `packages/types/` - 공유 타입 (`User`, `Room`, `RoomMember`, `RoomRestaurant`, `RoomReview`, `SharedRoom*` 등)
 - `packages/utils/` - 공유 유틸 (`formatRating`, `formatDate`)
 - `packages/typescript-config/` - 공유 tsconfig (base, astro, nestjs)
 - `packages/eslint-config/` - 공유 ESLint flat config (base, astro, nestjs)
@@ -18,7 +18,7 @@
 - **백엔드**: NestJS 11, Prisma, TypeScript
 - **DB**: MySQL 8.0 (Reader/Writer 분리)
 - **컨테이너**: Docker, docker-compose
-- **인증**: 카카오 OAuth + JWT (Bearer 토큰 + localStorage)
+- **인증**: 카카오 OAuth + JWT (Bearer 토큰 + localStorage, payload: `{ sub }` userId만)
 - **Rate Limit**: @nestjs/throttler
 
 ## 핵심 규칙
@@ -127,8 +127,8 @@ apps/api/src/
 | `/share?code=xxx` | 공유 열람 — 비로그인, 읽기 전용 (식당/리뷰 열람)    |
 | `/login`          | 카카오 로그인                                       |
 | `/cs`             | 문의 등록                                           |
-| `/admin`          | 관리자 — 문의/식당/리뷰 관리 (탭)                   |
-| `/map`            | 지도 탐색                                           |
+| `/rooms`          | 방 목록 (홈과 동일)                                 |
+| `/admin`          | 관리자 — 문의 관리                                  |
 
 ## 환경 변수
 
@@ -144,6 +144,17 @@ apps/api/src/
 
 - `PUBLIC_API_URL` — API 서버 주소
 - `PUBLIC_KAKAO_MAP_KEY` — 카카오맵 JavaScript 키 (빈 값이면 지도 숨김)
+
+## 프론트엔드 인증 흐름
+
+- 토큰 저장: `localStorage` (`access_token`, `refresh_token`)
+- API 호출: `apiFetch()` — Bearer 토큰 자동 첨부, `credentials: 'omit'`
+- **선제 갱신**: access token 만료 1분 전에 자동 refresh (JWT `exp` 디코딩)
+- **401 처리**: refresh token으로 재시도 → 실패 시 `clearTokens()` + `/login` 리다이렉트
+- **refresh mutex**: 동시 401 발생 시 refresh 요청 1회만 실행
+- **fetchCurrentUser 캐싱**: 같은 페이지 내 중복 호출 방지 (BaseLayout + 페이지 스크립트)
+- **로그아웃**: 즉시 localStorage/쿠키 삭제, 서버 DB 무효화는 fire-and-forget
+- Access Token 만료: 15분, Refresh Token 만료: 7일
 
 ## 명령어
 
