@@ -44,7 +44,7 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
 
   let res: Response;
   try {
-    res = await fetch(url, { ...init, headers });
+    res = await fetch(url, { ...init, headers, credentials: 'omit' });
   } catch {
     showToast('서버에 연결할 수 없습니다. 네트워크를 확인해주세요.');
     throw new Error('네트워크 오류');
@@ -54,7 +54,7 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
     const refreshed = await refreshTokens();
     if (refreshed) {
       headers['Authorization'] = `Bearer ${getAccessToken()!}`;
-      res = await fetch(url, { ...init, headers });
+      res = await fetch(url, { ...init, headers, credentials: 'omit' });
     }
   }
 
@@ -71,6 +71,7 @@ async function refreshTokens(): Promise<boolean> {
     const res = await fetch(`${API_BASE}/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'omit',
       body: JSON.stringify({ refreshToken: getRefreshToken() }),
     });
     if (!res.ok) {
@@ -143,6 +144,7 @@ export function logout(): void {
     fetch(`${API_BASE}/auth/logout`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
+      credentials: 'omit',
     }).catch(() => {});
   }
 }
