@@ -91,12 +91,29 @@ export class AuthController {
     };
   }
 
-  /** 로그아웃: DB RT 무효화 */
+  /** 로그아웃: DB RT 무효화 (Access Token 또는 Refresh Token으로 인증) */
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '로그아웃', description: 'DB의 Refresh Token을 무효화합니다.' })
-  async logout(@CurrentUser() user: { id: string }) {
-    await this.authService.logout(user.id);
+  async logout(@Req() req: Request, @Body() body: { refreshToken?: string }) {
+    // 1) Access Token으로 유저 식별 시도
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const payload = this.authService.verifyAccessToken(authHeader.slice(7));
+        await this.authService.logout(payload.sub);
+        return { message: '로그아웃 완료' };
+      } catch {
+        // Access Token 만료 — Refresh Token으로 fallback
+      }
+    }
+
+    // 2) Refresh Token으로 유저 식별
+    const refreshToken = body?.refreshToken;
+    if (refreshToken) {
+      await this.authService.logoutByRefreshToken(refreshToken);
+      return { message: '로그아웃 완료' };
+    }
+
     return { message: '로그아웃 완료' };
   }
 }

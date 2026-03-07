@@ -138,15 +138,21 @@ export async function refreshToken(): Promise<boolean> {
 /** 로그아웃 — 즉시 클라이언트 토큰 삭제, 서버 DB 무효화는 fire-and-forget */
 export function logout(): void {
   logoutState.active = true;
-  const token = getAccessToken();
+  const accessToken = getAccessToken();
+  const rt = getRefreshToken();
   clearTokens();
-  if (token) {
-    fetch(`${API_BASE}/auth/logout`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      credentials: 'omit',
-    }).catch(() => {});
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
   }
+
+  fetch(`${API_BASE}/auth/logout`, {
+    method: 'POST',
+    headers,
+    credentials: 'omit',
+    body: JSON.stringify({ refreshToken: rt }),
+  }).catch(() => {});
 }
 
 /** 문의 등록 */

@@ -187,6 +187,20 @@ export class AuthService {
     });
   }
 
+  /** Refresh Token으로 유저 식별 후 로그아웃 */
+  async logoutByRefreshToken(refreshToken: string) {
+    let payload: JwtPayload;
+    try {
+      payload = this.jwtService.verify<JwtPayload>(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
+    } catch {
+      return; // 토큰 검증 실패 시 무시
+    }
+
+    await this.logout(payload.sub);
+  }
+
   /** lastActiveAt 갱신 (fire-and-forget) */
   updateLastActive(userId: string) {
     this.prisma.write.user
