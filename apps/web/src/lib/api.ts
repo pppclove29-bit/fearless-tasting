@@ -88,26 +88,36 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
   return res;
 }
 
-/** 토큰 갱신 (내부용) */
+/** 토큰 갱신 (내부용, 동시 호출 시 하나만 실행) */
+let refreshPromise: Promise<boolean> | null = null;
+
 async function refreshTokens(): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'omit',
-      body: JSON.stringify({ refreshToken: getRefreshToken() }),
-    });
-    if (!res.ok) {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'omit',
+        body: JSON.stringify({ refreshToken: getRefreshToken() }),
+      });
+      if (!res.ok) {
+        clearTokens();
+        return false;
+      }
+      const data = await res.json();
+      saveTokens(data.accessToken, data.refreshToken);
+      return true;
+    } catch {
       clearTokens();
       return false;
+    } finally {
+      refreshPromise = null;
     }
-    const data = await res.json();
-    saveTokens(data.accessToken, data.refreshToken);
-    return true;
-  } catch {
-    clearTokens();
-    return false;
-  }
+  })();
+
+  return refreshPromise;
 }
 
 export interface AuthUser {
