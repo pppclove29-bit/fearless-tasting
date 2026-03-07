@@ -528,6 +528,141 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-color: #111;
   }
 
+  /* ─── 통계 ─── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .stat-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 0.15rem;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: #888;
+  }
+
+  .stat-section {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .stat-section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  .stat-highlight {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111;
+  }
+
+  .stat-highlight-sub {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: #888;
+  }
+
+  .stat-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .stat-bar-label {
+    font-size: 0.8rem;
+    min-width: 60px;
+    color: #555;
+  }
+
+  .stat-bar-track {
+    flex: 1;
+    height: 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .stat-bar-fill {
+    height: 100%;
+    background: #111;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+
+  .stat-bar-count {
+    font-size: 0.75rem;
+    color: #888;
+    min-width: 30px;
+    text-align: right;
+  }
+
+  .random-pick-card {
+    margin-bottom: 0.75rem;
+  }
+
+  .random-pick-card h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  .random-result {
+    min-height: 48px;
+    margin-bottom: 0.75rem;
+  }
+
+  .random-result.bounce {
+    animation: bounce 0.4s;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+
+  .random-picked {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+  }
+
+  .random-picked-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 0.15rem;
+  }
+
+  .random-picked-meta {
+    font-size: 0.8rem;
+    color: #888;
+  }
+
+  @media (max-width: 500px) {
+    .stats-grid { grid-template-columns: 1fr 1fr 1fr; }
+  }
+
   .empty-text {
     text-align: center;
     padding: 1.5rem;
@@ -635,10 +770,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       <div class="room-tab-bar">
         <button type="button" class="room-tab-btn active" data-tab="restaurants">식당 목록</button>
+        <button type="button" class="room-tab-btn" data-tab="stats">통계</button>
         <button type="button" class="room-tab-btn" data-tab="members">멤버 (${currentRoom.members.length})</button>
       </div>
 
       <div id="tab-restaurants" class="room-tab-panel"></div>
+      <div id="tab-stats" class="room-tab-panel" hidden></div>
       <div id="tab-members" class="room-tab-panel" hidden></div>
     `;
 
@@ -646,6 +783,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     attachHeaderHandlers();
     attachTabHandlers();
     renderRestaurantsTab();
+    renderStatsTab();
     renderMembersTab();
   }
 
@@ -757,16 +895,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   function attachTabHandlers() {
-    const restaurantsPanel = document.getElementById('tab-restaurants')!;
-    const membersPanel = document.getElementById('tab-members')!;
+    const panels: Record<string, HTMLElement> = {
+      restaurants: document.getElementById('tab-restaurants')!,
+      stats: document.getElementById('tab-stats')!,
+      members: document.getElementById('tab-members')!,
+    };
 
     for (const btn of document.querySelectorAll<HTMLButtonElement>('.room-tab-btn')) {
       btn.addEventListener('click', () => {
         for (const b of document.querySelectorAll('.room-tab-btn')) b.classList.remove('active');
         btn.classList.add('active');
         const tab = btn.dataset.tab!;
-        restaurantsPanel.hidden = tab !== 'restaurants';
-        membersPanel.hidden = tab !== 'members';
+        for (const [key, panel] of Object.entries(panels)) {
+          panel.hidden = key !== tab;
+        }
       });
     }
   }
@@ -827,6 +969,98 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         } catch { alert('강퇴에 실패했습니다.'); }
       });
     }
+  }
+
+  // ─── 통계 탭 ───
+
+  function renderStatsTab() {
+    const panel = document.getElementById('tab-stats')!;
+    const restaurants = currentRoom.restaurants;
+
+    if (restaurants.length === 0) {
+      panel.innerHTML = '<p class="empty-text">등록된 식당이 없으면 통계를 볼 수 없습니다.</p>';
+      return;
+    }
+
+    // 카테고리별 분포
+    const categoryMap: Record<string, number> = {};
+    for (const r of restaurants) {
+      categoryMap[r.category] = (categoryMap[r.category] || 0) + 1;
+    }
+    const categoryEntries = Object.entries(categoryMap).sort((a, b) => b[1] - a[1]);
+    const maxCount = categoryEntries[0][1];
+
+    const categoryHtml = categoryEntries
+      .map(([cat, count]) => {
+        const pct = Math.round((count / maxCount) * 100);
+        return `<div class="stat-bar-row">
+          <span class="stat-bar-label">${escapeHtml(cat)}</span>
+          <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
+          <span class="stat-bar-count">${count}개</span>
+        </div>`;
+      })
+      .join('');
+
+    // 총 리뷰 수
+    const totalReviews = restaurants.reduce((sum, r) => sum + r._count.reviews, 0);
+
+    // 가장 리뷰 많은 식당
+    const topReviewed = [...restaurants].sort((a, b) => b._count.reviews - a._count.reviews)[0];
+
+    // 랜덤 추천
+    const randomPickHtml = `
+      <div class="stat-card random-pick-card">
+        <h3>오늘 뭐 먹지?</h3>
+        <div id="random-result" class="random-result"></div>
+        <button type="button" class="btn-primary-sm" id="random-pick-btn">랜덤 추천</button>
+      </div>
+    `;
+
+    panel.innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">${restaurants.length}</div>
+          <div class="stat-label">등록된 식당</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${totalReviews}</div>
+          <div class="stat-label">총 리뷰</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${categoryEntries.length}</div>
+          <div class="stat-label">카테고리</div>
+        </div>
+      </div>
+
+      ${topReviewed && topReviewed._count.reviews > 0 ? `
+        <div class="stat-section">
+          <h3 class="stat-section-title">리뷰가 가장 많은 식당</h3>
+          <div class="stat-highlight">${escapeHtml(topReviewed.name)} <span class="stat-highlight-sub">(리뷰 ${topReviewed._count.reviews}개)</span></div>
+        </div>
+      ` : ''}
+
+      <div class="stat-section">
+        <h3 class="stat-section-title">카테고리 분포</h3>
+        ${categoryHtml}
+      </div>
+
+      ${randomPickHtml}
+    `;
+
+    // 랜덤 추천 핸들러
+    document.getElementById('random-pick-btn')!.addEventListener('click', () => {
+      const result = document.getElementById('random-result')!;
+      const pick = restaurants[Math.floor(Math.random() * restaurants.length)];
+
+      result.innerHTML = `
+        <div class="random-picked">
+          <div class="random-picked-name">${escapeHtml(pick.name)}</div>
+          <div class="random-picked-meta">${escapeHtml(pick.address)} · ${escapeHtml(pick.category)}</div>
+        </div>
+      `;
+      result.classList.add('bounce');
+      setTimeout(() => result.classList.remove('bounce'), 400);
+    });
   }
 
   // ─── 식당 탭 ───
