@@ -18,7 +18,7 @@
 - **백엔드**: NestJS 11, Prisma, TypeScript
 - **DB**: MySQL 8.0 (Reader/Writer 분리)
 - **컨테이너**: Docker, docker-compose
-- **인증**: 카카오 OAuth + JWT (httpOnly 쿠키)
+- **인증**: 카카오 OAuth + JWT (Bearer 토큰 + localStorage)
 - **Rate Limit**: @nestjs/throttler
 
 ## 핵심 규칙
@@ -50,27 +50,27 @@ apps/api/src/
 
 ## DB 모델
 
-| 모델 | 설명 | 주요 관계 |
-|------|------|-----------|
-| User | 서비스 사용자 | Account, Room, RoomMember, RoomKick |
-| Account | OAuth 계정 (카카오) | User |
-| Room | 공유 방 (inviteCode + shareCode) | RoomMember, RoomRestaurant, RoomKick |
-| RoomMember | 방 멤버십 (owner/manager/member) | Room, User |
-| RoomRestaurant | 방 내 식당 | Room, User, RoomReview |
-| RoomReview | 방 내 리뷰 | RoomRestaurant, User |
-| RoomKick | 방 강퇴 기록 (재입장 차단) | Room, User |
-| Restaurant | 공개 식당 (레거시) | Review |
-| Review | 공개 리뷰 (레거시) | Restaurant, User |
-| Inquiry | 고객 문의 | - |
+| 모델           | 설명                             | 주요 관계                            |
+| -------------- | -------------------------------- | ------------------------------------ |
+| User           | 서비스 사용자                    | Account, Room, RoomMember, RoomKick  |
+| Account        | OAuth 계정 (카카오)              | User                                 |
+| Room           | 공유 방 (inviteCode + shareCode) | RoomMember, RoomRestaurant, RoomKick |
+| RoomMember     | 방 멤버십 (owner/manager/member) | Room, User                           |
+| RoomRestaurant | 방 내 식당                       | Room, User, RoomReview               |
+| RoomReview     | 방 내 리뷰                       | RoomRestaurant, User                 |
+| RoomKick       | 방 강퇴 기록 (재입장 차단)       | Room, User                           |
+| Restaurant     | 공개 식당 (레거시)               | Review                               |
+| Review         | 공개 리뷰 (레거시)               | Restaurant, User                     |
+| Inquiry        | 고객 문의                        | -                                    |
 
 ## 방(Room) 권한 체계
 
-| 역할 | 방 삭제 | 멤버 강퇴/역할 변경 | 방장 위임 | 초대 코드 재생성 | 공유 링크 관리 | 타인 식당·리뷰 삭제 | 등록 | 본인 수정·삭제 | 열람 |
-|------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| owner (방장) | O | O | O | O | O | O | O | O | O |
-| manager (매니저) | X | X | X | X | O | O | O | O | O |
-| member (멤버) | X | X | X | X | X | X | O | O | O |
-| viewer (공유 링크) | X | X | X | X | X | X | X | X | O |
+| 역할               | 방 삭제 | 멤버 강퇴/역할 변경 | 방장 위임 | 초대 코드 재생성 | 공유 링크 관리 | 타인 식당·리뷰 삭제 | 등록 | 본인 수정·삭제 | 열람 |
+| ------------------ | :-----: | :-----------------: | :-------: | :--------------: | :------------: | :-----------------: | :--: | :------------: | :--: |
+| owner (방장)       |    O    |          O          |     O     |        O         |       O        |          O          |  O   |       O        |  O   |
+| manager (매니저)   |    X    |          X          |     X     |        X         |       O        |          O          |  O   |       O        |  O   |
+| member (멤버)      |    X    |          X          |     X     |        X         |       X        |          X          |  O   |       O        |  O   |
+| viewer (공유 링크) |    X    |          X          |     X     |        X         |       X        |          X          |  X   |       X        |  O   |
 
 > viewer는 DB에 저장되지 않는 비로그인 읽기 전용 접근자. 공유 코드(`shareCode`)로 `/share?code=xxx` 페이지를 통해 열람.
 
@@ -96,11 +96,11 @@ apps/api/src/
 
 ### 공유 링크 API
 
-| Method | Path | Guard | 설명 |
-|--------|------|-------|------|
-| `GET` | `/rooms/shared/:shareCode` | 없음 (공개) | 공유 방 조회 (방 이름 + 식당 목록) |
-| `GET` | `/rooms/shared/:shareCode/restaurants/:rid` | 없음 (공개) | 공유 식당 상세 (리뷰 포함, user 미노출) |
-| `PATCH` | `/rooms/:id/share-code` | RoomManagerGuard | 공유 코드 활성화/비활성화/재생성 |
+| Method  | Path                                        | Guard            | 설명                                    |
+| ------- | ------------------------------------------- | ---------------- | --------------------------------------- |
+| `GET`   | `/rooms/shared/:shareCode`                  | 없음 (공개)      | 공유 방 조회 (방 이름 + 식당 목록)      |
+| `GET`   | `/rooms/shared/:shareCode/restaurants/:rid` | 없음 (공개)      | 공유 식당 상세 (리뷰 포함, user 미노출) |
+| `PATCH` | `/rooms/:id/share-code`                     | RoomManagerGuard | 공유 코드 활성화/비활성화/재생성        |
 
 ### 공유 링크 프론트엔드
 
@@ -111,11 +111,11 @@ apps/api/src/
 
 `@nestjs/throttler`로 전역 + 엔드포인트별 제한 적용.
 
-| 범위 | TTL | 제한 | 대상 |
-|------|-----|------|------|
-| 전역 기본 | 60초 | 60회 | 모든 엔드포인트 |
-| 인증 | 60초 | 5회 | `GET /auth/kakao/callback`, `POST /auth/refresh` |
-| 생성 | 60초 | 10회 | `POST /rooms`, `POST /rooms/join`, `POST /rooms/:id/restaurants`, `POST /rooms/:id/restaurants/:rid/reviews` |
+| 범위      | TTL  | 제한 | 대상                                                                                                         |
+| --------- | ---- | ---- | ------------------------------------------------------------------------------------------------------------ |
+| 전역 기본 | 60초 | 60회 | 모든 엔드포인트                                                                                              |
+| 인증      | 60초 | 5회  | `GET /auth/kakao/callback`, `POST /auth/refresh`                                                             |
+| 생성      | 60초 | 10회 | `POST /rooms`, `POST /rooms/join`, `POST /rooms/:id/restaurants`, `POST /rooms/:id/restaurants/:rid/reviews` |
 
 - 초과 시 HTTP 429 (Too Many Requests) 응답
 - IP 기반 추적 (ThrottlerGuard 기본)
@@ -124,19 +124,20 @@ apps/api/src/
 
 ## 프론트엔드 페이지
 
-| 경로 | 설명 |
-|------|------|
-| `/` | 홈 — 내 방 목록 + 방 만들기 + 초대 코드 입장 |
-| `/room?id=xxx` | 방 상세 — 식당/리뷰 CRUD, 멤버 관리, 공유 링크 관리 |
-| `/share?code=xxx` | 공유 열람 — 비로그인, 읽기 전용 (식당/리뷰 열람) |
-| `/login` | 카카오 로그인 |
-| `/cs` | 문의 등록 |
-| `/admin` | 관리자 — 문의/식당/리뷰 관리 (탭) |
-| `/map` | 지도 탐색 |
+| 경로              | 설명                                                |
+| ----------------- | --------------------------------------------------- |
+| `/`               | 홈 — 내 방 목록 + 방 만들기 + 초대 코드 입장        |
+| `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 멤버 관리, 공유 링크 관리 |
+| `/share?code=xxx` | 공유 열람 — 비로그인, 읽기 전용 (식당/리뷰 열람)    |
+| `/login`          | 카카오 로그인                                       |
+| `/cs`             | 문의 등록                                           |
+| `/admin`          | 관리자 — 문의/식당/리뷰 관리 (탭)                   |
+| `/map`            | 지도 탐색                                           |
 
 ## 환경 변수
 
 ### 백엔드 (`apps/api/.env`)
+
 - `DATABASE_URL` — MySQL Writer 연결
 - `DATABASE_READER_URL` — MySQL Reader 연결
 - `JWT_SECRET`, `JWT_REFRESH_SECRET`
@@ -144,6 +145,7 @@ apps/api/src/
 - `FRONTEND_URL`
 
 ### 프론트엔드 (`apps/web/.env`)
+
 - `PUBLIC_API_URL` — API 서버 주소
 - `PUBLIC_KAKAO_MAP_KEY` — 카카오맵 JavaScript 키 (빈 값이면 지도 숨김)
 
