@@ -22,12 +22,11 @@ export class JwtAuthGuard implements CanActivate {
     return true;
   }
 
-  /** Authorization 헤더 → 쿠키 순으로 토큰 추출 */
   private extractToken(request: Request): string | undefined {
     const authHeader = request.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
       return authHeader.slice(7);
     }
-    return request.cookies?.access_token;
+    return undefined;
   }
 }
