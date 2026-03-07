@@ -136,6 +136,10 @@ model RoomRestaurant {
   category     String       @db.VarChar(100)
   /// 대표 이미지 URL
   imageUrl     String?      @db.VarChar(500)
+  /// 위도 (카카오맵 좌표)
+  latitude     Float?
+  /// 경도 (카카오맵 좌표)
+  longitude    Float?
   /// 소속 방
   room         Room         @relation(fields: [roomId], references: [id], onDelete: Cascade)
   /// 방 ID (FK)

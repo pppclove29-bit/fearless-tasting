@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUrl, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsUrl, IsNumber, MaxLength, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateRoomRestaurantDto {
@@ -37,4 +37,18 @@ export class CreateRoomRestaurantDto {
   @IsUrl()
   @MaxLength(500)
   imageUrl?: string;
+
+  @ApiPropertyOptional({ description: '위도' })
+  @IsOptional()
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  latitude?: number;
+
+  @ApiPropertyOptional({ description: '경도' })
+  @IsOptional()
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  longitude?: number;
 }

@@ -751,6 +751,68 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: #999;
     font-size: 0.85rem;
   }
+
+  /* 카카오맵 지도 */
+  .map-container {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .map-container #kakao-map {
+    width: 100%;
+    height: 400px;
+  }
+
+  .map-no-data {
+    text-align: center;
+    padding: 2rem;
+    color: #999;
+    font-size: 0.85rem;
+  }
+
+  /* 주소 검색 자동완성 */
+  .address-search-wrap {
+    position: relative;
+  }
+
+  .address-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: #fff;
+    border: 1px solid #d0d0d0;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .address-result-item {
+    padding: 0.5rem 0.65rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .address-result-item:hover {
+    background: #f5f5f5;
+  }
+
+  .address-result-name {
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 0.1rem;
+  }
+
+  .address-result-addr {
+    color: #888;
+    font-size: 0.75rem;
+  }
 </style>
 
 <script>
@@ -768,6 +830,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   const loadingMsg = document.getElementById('loading-msg')!;
   const errorMsg = document.getElementById('error-msg')!;
   const content = document.getElementById('room-content')!;
+
+  // 카카오맵 SDK 로드 여부
+  const hasKakaoMap = typeof window !== 'undefined' && 'kakao' in window;
 
   function escapeHtml(text: string): string {
     const div = document.createElement('div');
@@ -855,11 +920,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       <div class="room-tab-bar">
         <button type="button" class="room-tab-btn active" data-tab="restaurants">식당 목록</button>
+        ${hasKakaoMap ? '<button type="button" class="room-tab-btn" data-tab="map">지도</button>' : ''}
         <button type="button" class="room-tab-btn" data-tab="stats">통계</button>
         <button type="button" class="room-tab-btn" data-tab="members">멤버 (${currentRoom.members.length})</button>
       </div>
 
       <div id="tab-restaurants" class="room-tab-panel"></div>
+      ${hasKakaoMap ? '<div id="tab-map" class="room-tab-panel" hidden></div>' : ''}
       <div id="tab-stats" class="room-tab-panel" hidden></div>
       <div id="tab-members" class="room-tab-panel" hidden></div>
     `;
@@ -1000,6 +1067,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       stats: document.getElementById('tab-stats')!,
       members: document.getElementById('tab-members')!,
     };
+    const mapPanel = document.getElementById('tab-map');
+    if (mapPanel) panels.map = mapPanel;
+
+    let mapRendered = false;
 
     for (const btn of document.querySelectorAll<HTMLButtonElement>('.room-tab-btn')) {
       btn.addEventListener('click', () => {
@@ -1008,6 +1079,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const tab = btn.dataset.tab!;
         for (const [key, panel] of Object.entries(panels)) {
           panel.hidden = key !== tab;
+        }
+        if (tab === 'map' && !mapRendered) {
+          mapRendered = true;
+          renderMapTab();
         }
       });
     }
@@ -1185,7 +1260,34 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   function renderRestaurantsTab() {
     const panel = document.getElementById('tab-restaurants')!;
 
-    const addFormHtml = `
+    const addFormHtml = hasKakaoMap ? `
+      <div class="add-restaurant-form">
+        <h3>식당 등록</h3>
+        <div class="form-row full address-search-wrap">
+          <input type="text" id="add-rest-search" placeholder="식당 이름으로 검색 (카카오)" autocomplete="off" />
+          <div id="address-results" class="address-results" hidden></div>
+        </div>
+        <div class="form-row full">
+          <input type="text" id="add-rest-name" placeholder="식당 이름" required />
+        </div>
+        <div class="form-row full">
+          <input type="text" id="add-rest-address" placeholder="주소" required readonly />
+        </div>
+        <div class="form-row">
+          <input type="text" id="add-rest-province" placeholder="시/도" required readonly />
+          <input type="text" id="add-rest-city" placeholder="시/군/구" required readonly />
+        </div>
+        <div class="form-row">
+          <input type="text" id="add-rest-neighborhood" placeholder="읍/면/동" required readonly />
+          <input type="text" id="add-rest-category" placeholder="카테고리 (예: 한식)" required />
+        </div>
+        <input type="hidden" id="add-rest-lat" />
+        <input type="hidden" id="add-rest-lng" />
+        <div class="add-rest-actions">
+          <button type="button" class="btn-primary-sm" id="add-rest-submit">등록</button>
+        </div>
+      </div>
+    ` : `
       <div class="add-restaurant-form">
         <h3>식당 등록</h3>
         <div class="form-row full">
@@ -1253,6 +1355,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     panel.innerHTML = addFormHtml + '<div id="restaurant-detail-area"></div>' + searchHtml + filterHtml + '<div id="restaurant-list">' + listHtml + '</div>';
     attachRestaurantFormHandler();
+    if (hasKakaoMap) attachPlaceSearchHandler();
     attachRestaurantCardHandlers();
     attachCategoryFilterHandlers();
     attachSearchHandler();
@@ -1314,13 +1417,180 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         return;
       }
 
+      const latEl = document.getElementById('add-rest-lat') as HTMLInputElement | null;
+      const lngEl = document.getElementById('add-rest-lng') as HTMLInputElement | null;
+      const latitude = latEl?.value ? Number(latEl.value) : undefined;
+      const longitude = lngEl?.value ? Number(lngEl.value) : undefined;
+
       try {
-        await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category });
+        await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category, latitude, longitude });
         currentRoom = await fetchRoom(currentRoom.id);
         renderRestaurantsTab();
         showToast('식당이 등록되었습니다.', 'success');
       } catch (err) { showToast(err instanceof Error ? err.message : '등록에 실패했습니다.'); }
     });
+  }
+
+  // ─── 카카오 장소 검색 (식당 등록 폼) ───
+
+  let kakaoMapsLoaded = false;
+
+  function loadKakaoMaps(): Promise<void> {
+    if (kakaoMapsLoaded) return Promise.resolve();
+    return new Promise((resolve) => {
+      const kakao = (window as Record<string, unknown>).kakao as Record<string, unknown>;
+      const maps = kakao.maps as Record<string, unknown>;
+      (maps.load as (cb: () => void) => void)(() => {
+        kakaoMapsLoaded = true;
+        resolve();
+      });
+    });
+  }
+
+  function attachPlaceSearchHandler() {
+    const searchInput = document.getElementById('add-rest-search') as HTMLInputElement | null;
+    const resultsDiv = document.getElementById('address-results');
+    if (!searchInput || !resultsDiv) return;
+
+    let debounceTimer: ReturnType<typeof setTimeout>;
+
+    searchInput.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      const keyword = searchInput.value.trim();
+      if (keyword.length < 2) {
+        resultsDiv.hidden = true;
+        return;
+      }
+      debounceTimer = setTimeout(async () => {
+        await loadKakaoMaps();
+        const kakao = (window as Record<string, unknown>).kakao as Record<string, unknown>;
+        const maps = kakao.maps as Record<string, unknown>;
+        const services = maps.services as Record<string, new () => Record<string, unknown>>;
+        const places = new services.Places();
+
+        (places.keywordSearch as (keyword: string, cb: (data: Array<Record<string, string>>, status: string) => void, options: Record<string, string>) => void)(
+          keyword,
+          (data: Array<Record<string, string>>, status: string) => {
+            const OK = ((maps.services as Record<string, Record<string, string>>).Status as Record<string, string>).OK;
+            if (status !== OK || data.length === 0) {
+              resultsDiv.hidden = true;
+              return;
+            }
+            resultsDiv.innerHTML = data.slice(0, 8).map((place, i) => `
+              <div class="address-result-item" data-idx="${i}">
+                <div class="address-result-name">${escapeHtml(place.place_name)}</div>
+                <div class="address-result-addr">${escapeHtml(place.address_name)}</div>
+              </div>
+            `).join('');
+            resultsDiv.hidden = false;
+
+            for (const item of resultsDiv.querySelectorAll<HTMLElement>('.address-result-item')) {
+              item.addEventListener('click', () => {
+                const idx = Number(item.dataset.idx);
+                const place = data[idx];
+                fillFormFromPlace(place);
+                resultsDiv.hidden = true;
+                searchInput.value = '';
+              });
+            }
+          },
+          { category_group_code: 'FD6' },
+        );
+      }, 300);
+    });
+
+    // 외부 클릭 시 결과 닫기
+    document.addEventListener('click', (e) => {
+      if (!(e.target as HTMLElement).closest('.address-search-wrap')) {
+        resultsDiv.hidden = true;
+      }
+    });
+  }
+
+  function fillFormFromPlace(place: Record<string, string>) {
+    const nameInput = document.getElementById('add-rest-name') as HTMLInputElement;
+    const addressInput = document.getElementById('add-rest-address') as HTMLInputElement;
+    const provinceInput = document.getElementById('add-rest-province') as HTMLInputElement;
+    const cityInput = document.getElementById('add-rest-city') as HTMLInputElement;
+    const neighborhoodInput = document.getElementById('add-rest-neighborhood') as HTMLInputElement;
+    const categoryInput = document.getElementById('add-rest-category') as HTMLInputElement;
+    const latInput = document.getElementById('add-rest-lat') as HTMLInputElement;
+    const lngInput = document.getElementById('add-rest-lng') as HTMLInputElement;
+
+    nameInput.value = place.place_name;
+    addressInput.value = place.address_name;
+    latInput.value = place.y;
+    lngInput.value = place.x;
+
+    // 주소에서 시/도, 시/군/구, 읍/면/동 파싱
+    const parts = place.address_name.split(' ');
+    provinceInput.value = parts[0] || '';
+    cityInput.value = parts[1] || '';
+    neighborhoodInput.value = parts[2] || '';
+
+    // 카카오 카테고리에서 마지막 카테고리 추출 (예: "음식점 > 한식 > 국밥" → "국밥")
+    const catParts = (place.category_name || '').split(' > ');
+    const lastCat = catParts[catParts.length - 1] || '';
+    if (lastCat && lastCat !== '음식점') {
+      categoryInput.value = lastCat;
+    }
+
+    categoryInput.focus();
+  }
+
+  // ─── 카카오맵 지도 탭 ───
+
+  async function renderMapTab() {
+    const panel = document.getElementById('tab-map');
+    if (!panel) return;
+
+    const restaurantsWithCoords = currentRoom.restaurants.filter(
+      (r) => r.latitude != null && r.longitude != null,
+    );
+
+    if (restaurantsWithCoords.length === 0) {
+      panel.innerHTML = '<p class="map-no-data">좌표가 등록된 식당이 없습니다. 카카오 검색으로 식당을 등록하면 지도에 표시됩니다.</p>';
+      return;
+    }
+
+    panel.innerHTML = '<div class="map-container"><div id="kakao-map"></div></div>';
+
+    await loadKakaoMaps();
+
+    const kakao = (window as Record<string, unknown>).kakao as Record<string, unknown>;
+    const maps = kakao.maps as Record<string, unknown>;
+    const LatLng = maps.LatLng as new (lat: number, lng: number) => unknown;
+    const MapConstructor = maps.Map as new (el: HTMLElement, opts: Record<string, unknown>) => Record<string, unknown>;
+    const MarkerConstructor = maps.Marker as new (opts: Record<string, unknown>) => Record<string, unknown>;
+    const InfoWindowConstructor = maps.InfoWindow as new (opts: Record<string, unknown>) => Record<string, unknown>;
+    const LatLngBounds = maps.LatLngBounds as new () => Record<string, (pos: unknown) => void>;
+
+    const container = document.getElementById('kakao-map')!;
+    const center = new LatLng(
+      restaurantsWithCoords[0].latitude!,
+      restaurantsWithCoords[0].longitude!,
+    );
+
+    const map = new MapConstructor(container, { center, level: 5 });
+    const bounds = new LatLngBounds();
+
+    for (const r of restaurantsWithCoords) {
+      const position = new LatLng(r.latitude!, r.longitude!);
+      bounds.extend(position);
+
+      const marker = new MarkerConstructor({ map, position });
+      const infoContent = `<div style="padding:5px 10px;font-size:13px;white-space:nowrap;">${escapeHtml(r.name)}</div>`;
+      const infoWindow = new InfoWindowConstructor({ content: infoContent });
+
+      const markerEvents = maps.event as Record<string, (target: unknown, type: string, cb: () => void) => void>;
+      markerEvents.addListener(marker, 'click', () => {
+        (infoWindow as Record<string, (m: unknown) => void>).open(map, marker);
+      });
+    }
+
+    if (restaurantsWithCoords.length > 1) {
+      (map as Record<string, (b: unknown) => void>).setBounds(bounds);
+    }
   }
 
   function attachRestaurantCardHandlers() {

@@ -206,7 +206,7 @@ export class RoomsController {
     @Body() dto: CreateRoomRestaurantDto,
   ) {
     return this.roomsService.createRestaurant(
-      id, user.id, dto.name, dto.address, dto.province, dto.city, dto.neighborhood, dto.category, dto.imageUrl,
+      id, user.id, dto.name, dto.address, dto.province, dto.city, dto.neighborhood, dto.category, dto.imageUrl, dto.latitude, dto.longitude,
     );
   }
 

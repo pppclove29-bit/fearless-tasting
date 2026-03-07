@@ -9,6 +9,8 @@ const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
 
 // ─── 토큰 관리 ───
 
+const logoutState = { active: false };
+
 export function getAccessToken(): string | null {
   return localStorage.getItem('access_token');
 }
@@ -18,6 +20,7 @@ export function getRefreshToken(): string | null {
 }
 
 export function saveTokens(accessToken: string, refreshToken: string) {
+  if (logoutState.active) return;
   localStorage.setItem('access_token', accessToken);
   localStorage.setItem('refresh_token', refreshToken);
 }
@@ -25,6 +28,8 @@ export function saveTokens(accessToken: string, refreshToken: string) {
 export function clearTokens() {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
+  document.cookie = 'access_token=; Max-Age=0; path=/';
+  document.cookie = 'refresh_token=; Max-Age=0; path=/';
 }
 
 /** Authorization 헤더 포함 fetch 래퍼 (토큰 만료 시 자동 갱신) */
@@ -131,6 +136,7 @@ export async function refreshToken(): Promise<boolean> {
 
 /** 로그아웃 — 즉시 클라이언트 토큰 삭제, 서버 DB 무효화는 fire-and-forget */
 export function logout(): void {
+  logoutState.active = true;
   const token = getAccessToken();
   clearTokens();
   if (token) {

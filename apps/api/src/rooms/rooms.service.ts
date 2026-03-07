@@ -299,6 +299,8 @@ export class RoomsService {
             neighborhood: true,
             category: true,
             imageUrl: true,
+            latitude: true,
+            longitude: true,
             _count: { select: { reviews: true } },
           },
           orderBy: { createdAt: 'desc' },
@@ -319,6 +321,8 @@ export class RoomsService {
         neighborhood: r.neighborhood,
         category: r.category,
         imageUrl: r.imageUrl,
+        latitude: r.latitude,
+        longitude: r.longitude,
         reviewCount: r._count.reviews,
       })),
     };
@@ -343,6 +347,8 @@ export class RoomsService {
         neighborhood: true,
         category: true,
         imageUrl: true,
+        latitude: true,
+        longitude: true,
         roomId: true,
         reviews: {
           select: {
@@ -370,6 +376,8 @@ export class RoomsService {
       neighborhood: restaurant.neighborhood,
       category: restaurant.category,
       imageUrl: restaurant.imageUrl,
+      latitude: restaurant.latitude,
+      longitude: restaurant.longitude,
       reviewCount: restaurant._count.reviews,
       reviews: restaurant.reviews,
     };
@@ -400,9 +408,11 @@ export class RoomsService {
     neighborhood: string,
     category: string,
     imageUrl?: string,
+    latitude?: number,
+    longitude?: number,
   ) {
     return this.prisma.write.roomRestaurant.create({
-      data: { roomId, addedById, name, address, province, city, neighborhood, category, imageUrl },
+      data: { roomId, addedById, name, address, province, city, neighborhood, category, imageUrl, latitude, longitude },
     });
   }
 

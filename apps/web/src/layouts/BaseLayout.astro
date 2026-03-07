@@ -49,6 +49,9 @@ const fullTitle = `${title} | 무모한 시식가`;
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    {import.meta.env.PUBLIC_KAKAO_MAP_KEY && (
+      <script type="text/javascript" src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.PUBLIC_KAKAO_MAP_KEY}&libraries=services&autoload=false`}></script>
+    )}
     <title>{fullTitle}</title>
   </head>
   <body>

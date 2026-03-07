@@ -33,6 +33,8 @@ export interface RoomRestaurant {
   neighborhood: string;
   category: string;
   imageUrl?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   roomId: string;
   addedById: string;
   createdAt: string;
@@ -74,6 +76,8 @@ export interface SharedRoomRestaurant {
   neighborhood: string;
   category: string;
   imageUrl?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   reviewCount: number;
 }
 
