@@ -3,7 +3,7 @@ import type {
   SharedRoomDetail, SharedRoomRestaurantDetail,
 } from '@repo/types';
 
-export { showToast } from './toast';
+export { showToast, showConfirm, showDangerConfirm } from './toast';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -129,14 +129,19 @@ export async function refreshToken(): Promise<boolean> {
   return refreshTokens();
 }
 
-/** 로그아웃 */
+/** 로그아웃 — 즉시 클라이언트 토큰 삭제 후 서버에 DB 무효화 요청 */
 export async function logout(): Promise<void> {
-  try {
-    await apiFetch(`${API_BASE}/auth/logout`, { method: 'POST' });
-  } catch {
-    // 토큰 만료 등으로 실패해도 클라이언트 토큰은 삭제
-  } finally {
-    clearTokens();
+  const token = getAccessToken();
+  clearTokens();
+  if (token) {
+    try {
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+    } catch {
+      // DB 토큰 무효화 실패해도 클라이언트는 이미 정리됨
+    }
   }
 }
 

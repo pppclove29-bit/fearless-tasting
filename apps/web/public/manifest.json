@@ -1,6 +1,6 @@
 {
   "name": "무모한 시식가",
-  "short_name": "시식가",
+  "short_name": "무모한 시식가",
   "description": "둘만의 맛집 리스트를 만들고 공유하세요",
   "start_url": "/",
   "display": "standalone",

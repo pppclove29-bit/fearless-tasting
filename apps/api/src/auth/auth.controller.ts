@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Query, Res, Req, UseGuards, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  Res,
+  Req,
+  UseGuards,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Response, Request } from 'express';
@@ -13,7 +23,10 @@ export class AuthController {
 
   /** 카카오 OAuth 시작: 카카오 인가 페이지로 리다이렉트 */
   @Get('kakao')
-  @ApiOperation({ summary: '카카오 로그인', description: '카카오 OAuth 인가 페이지로 302 리다이렉트합니다.' })
+  @ApiOperation({
+    summary: '카카오 로그인',
+    description: '카카오 OAuth 인가 페이지로 302 리다이렉트합니다.',
+  })
   kakaoLogin(@Res() res: Response) {
     const url = this.authService.getKakaoAuthUrl();
     res.redirect(url);
@@ -44,7 +57,10 @@ export class AuthController {
   /** 현재 로그인 유저 정보 */
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '내 정보 조회', description: 'JWT 토큰으로 현재 로그인된 유저 정보를 반환합니다.' })
+  @ApiOperation({
+    summary: '내 정보 조회',
+    description: 'JWT 토큰으로 현재 로그인된 유저 정보를 반환합니다.',
+  })
   async me(@CurrentUser() user: { id: string; email: string; role: string }) {
     // fire-and-forget: lastActiveAt 갱신
     this.authService.updateLastActive(user.id);
@@ -55,7 +71,10 @@ export class AuthController {
   /** Refresh Token으로 Access Token 갱신 */
   @Post('refresh')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
-  @ApiOperation({ summary: '토큰 갱신', description: 'Refresh Token으로 Access Token을 갱신합니다.' })
+  @ApiOperation({
+    summary: '토큰 갱신',
+    description: 'Refresh Token으로 Access Token을 갱신합니다.',
+  })
   async refresh(@Body() body: { refreshToken?: string }, @Req() req: Request) {
     const refreshToken = body?.refreshToken || req.cookies?.refresh_token;
 

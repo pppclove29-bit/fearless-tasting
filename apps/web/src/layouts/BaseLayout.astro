@@ -322,7 +322,7 @@ const fullTitle = `${title} | 무모한 시식가`;
 </style>
 
 <script>
-  import { fetchCurrentUser, logout, updateNickname } from '@/lib/api';
+  import { fetchCurrentUser, logout, updateNickname, showToast } from '@/lib/api';
 
   // 햄버거 메뉴 토글
   const hamburgerBtn = document.getElementById('hamburger-btn')!;
@@ -371,7 +371,7 @@ const fullTitle = `${title} | 무모한 시식가`;
       const updated = await updateNickname(newName);
       nicknameSpan.textContent = updated.nickname;
     } catch (err) {
-      alert(err instanceof Error ? err.message : '닉네임 변경에 실패했습니다.');
+      showToast(err instanceof Error ? err.message : '닉네임 변경에 실패했습니다.');
     }
   }
 

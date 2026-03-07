@@ -435,6 +435,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .detail-close-btn:hover { background: #f0f0f0; }
 
   /* 리뷰 작성 폼 */
+  .review-sort-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5rem;
+  }
+
+  .review-sort-row select {
+    padding: 0.3rem 0.6rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    background: #fff;
+    cursor: pointer;
+  }
+
   .review-form {
     background: #f9f9f9;
     border-radius: 8px;
@@ -550,6 +566,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .revisit-toggle input[type="checkbox"] {
     accent-color: #111;
+  }
+
+  .rest-search {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    margin-bottom: 0.75rem;
+    transition: border-color 0.15s;
+  }
+
+  .rest-search:focus {
+    outline: none;
+    border-color: #111;
   }
 
   .category-filter-row {
@@ -728,6 +760,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     createRoomRestaurant, fetchRoomRestaurant, deleteRoomRestaurant,
     createRoomReview, updateRoomReview, deleteRoomReview,
     toggleShareCode, updateRoom, regenerateInviteCode,
+    showToast, showConfirm, showDangerConfirm,
   } from '@/lib/api';
   import type { AuthUser, RoomDetailResponse, RoomMemberInfo, RoomRestaurantInfo, RoomReviewWithUser } from '@/lib/api';
   import { getCities, getNeighborhoods } from '@/data/areas';
@@ -869,7 +902,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           currentRoom.name = newName;
           nameDisplay.textContent = newName;
         } catch {
-          alert('방 이름 변경에 실패했습니다.');
+          showToast('방 이름 변경에 실패했습니다.');
         }
       }
 
@@ -892,7 +925,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     });
 
     document.getElementById('regen-code-btn')?.addEventListener('click', async () => {
-      if (!confirm('초대 코드를 재생성하시겠습니까? 기존 코드는 사용할 수 없게 됩니다.')) return;
+      if (!await showConfirm('초대 코드를 재생성하시겠습니까? 기존 코드는 사용할 수 없게 됩니다.')) return;
       try {
         const result = await regenerateInviteCode(currentRoom.id);
         currentRoom.inviteCode = result.inviteCode;
@@ -900,26 +933,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         document.getElementById('invite-code')!.textContent = result.inviteCode;
         const expiryEl = document.getElementById('invite-expiry');
         if (expiryEl) expiryEl.textContent = '(~' + formatDate(result.inviteCodeExpiresAt) + ')';
-        alert('초대 코드가 재생성되었습니다.');
+        showToast('초대 코드가 재생성되었습니다.', 'success');
       } catch {
-        alert('초대 코드 재생성에 실패했습니다.');
+        showToast('초대 코드 재생성에 실패했습니다.');
       }
     });
 
     document.getElementById('delete-room-btn')?.addEventListener('click', async () => {
-      if (!confirm('정말 이 방을 삭제하시겠습니까? 모든 식당과 리뷰가 삭제됩니다.')) return;
+      if (!await showDangerConfirm('정말 이 방을 삭제하시겠습니까? 모든 식당과 리뷰가 삭제됩니다.')) return;
       try {
         await deleteRoom(currentRoom.id);
         location.href = '/rooms';
-      } catch { alert('방 삭제에 실패했습니다.'); }
+      } catch { showToast('방 삭제에 실패했습니다.'); }
     });
 
     document.getElementById('leave-room-btn')?.addEventListener('click', async () => {
-      if (!confirm('방을 나가시겠습니까?')) return;
+      if (!await showConfirm('방을 나가시겠습니까?')) return;
       try {
         await leaveRoom(currentRoom.id);
         location.href = '/rooms';
-      } catch (err) { alert(err instanceof Error ? err.message : '방 나가기에 실패했습니다.'); }
+      } catch (err) { showToast(err instanceof Error ? err.message : '방 나가기에 실패했습니다.'); }
     });
 
     // 공유 링크 관리
@@ -937,27 +970,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         currentRoom.shareCode = result.shareCode;
         currentRoom.shareCodeEnabled = result.shareCodeEnabled;
         renderPage();
-      } catch { alert('공유 링크 생성에 실패했습니다.'); }
+      } catch { showToast('공유 링크 생성에 실패했습니다.'); }
     });
 
     document.getElementById('disable-share-btn')?.addEventListener('click', async () => {
-      if (!confirm('공유 링크를 비활성화하시겠습니까? 기존 링크로 접근할 수 없게 됩니다.')) return;
+      if (!await showConfirm('공유 링크를 비활성화하시겠습니까? 기존 링크로 접근할 수 없게 됩니다.')) return;
       try {
         const result = await toggleShareCode(currentRoom.id, 'disable');
         currentRoom.shareCode = result.shareCode;
         currentRoom.shareCodeEnabled = result.shareCodeEnabled;
         renderPage();
-      } catch { alert('비활성화에 실패했습니다.'); }
+      } catch { showToast('비활성화에 실패했습니다.'); }
     });
 
     document.getElementById('regen-share-btn')?.addEventListener('click', async () => {
-      if (!confirm('공유 링크를 재생성하시겠습니까? 기존 링크는 더 이상 사용할 수 없습니다.')) return;
+      if (!await showConfirm('공유 링크를 재생성하시겠습니까? 기존 링크는 더 이상 사용할 수 없습니다.')) return;
       try {
         const result = await toggleShareCode(currentRoom.id, 'regenerate');
         currentRoom.shareCode = result.shareCode;
         currentRoom.shareCodeEnabled = result.shareCodeEnabled;
         renderPage();
-      } catch { alert('재생성에 실패했습니다.'); }
+      } catch { showToast('재생성에 실패했습니다.'); }
     });
   }
 
@@ -1021,33 +1054,33 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           await updateRoomMemberRole(currentRoom.id, userId, select.value);
           currentRoom = await fetchRoom(currentRoom.id);
           renderMembersTab();
-        } catch { alert('역할 변경에 실패했습니다.'); }
+        } catch { showToast('역할 변경에 실패했습니다.'); }
       });
     }
 
     // 강퇴
     for (const btn of panel.querySelectorAll<HTMLButtonElement>('.kick-btn')) {
       btn.addEventListener('click', async () => {
-        if (!confirm('이 멤버를 강퇴하시겠습니까?')) return;
+        if (!await showDangerConfirm('이 멤버를 강퇴하시겠습니까?', '강퇴')) return;
         const userId = btn.dataset.userId!;
         try {
           await kickRoomMember(currentRoom.id, userId);
           currentRoom = await fetchRoom(currentRoom.id);
           renderMembersTab();
-        } catch { alert('강퇴에 실패했습니다.'); }
+        } catch { showToast('강퇴에 실패했습니다.'); }
       });
     }
 
     // 방장 위임
     for (const btn of panel.querySelectorAll<HTMLButtonElement>('.transfer-btn')) {
       btn.addEventListener('click', async () => {
-        if (!confirm('이 멤버에게 방장을 위임하시겠습니까? 본인은 일반 멤버가 됩니다.')) return;
+        if (!await showConfirm('이 멤버에게 방장을 위임하시겠습니까? 본인은 일반 멤버가 됩니다.')) return;
         const userId = btn.dataset.userId!;
         try {
           await transferOwnership(currentRoom.id, userId);
           currentRoom = await fetchRoom(currentRoom.id);
           renderPage();
-        } catch { alert('방장 위임에 실패했습니다.'); }
+        } catch { showToast('방장 위임에 실패했습니다.'); }
       });
     }
   }
@@ -1147,6 +1180,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   // ─── 식당 탭 ───
 
   let activeCategory = '';
+  let searchQuery = '';
 
   function renderRestaurantsTab() {
     const panel = document.getElementById('tab-restaurants')!;
@@ -1174,7 +1208,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>
     `;
 
-    // 카테고리 필터
+    // 검색 + 카테고리 필터
+    const searchHtml = currentRoom.restaurants.length > 3
+      ? `<input type="text" id="rest-search" class="rest-search" placeholder="식당 이름 또는 주소 검색" value="${escapeHtml(searchQuery)}" />`
+      : '';
+
     const categories = [...new Set(currentRoom.restaurants.map((r) => r.category))].sort();
     let filterHtml = '';
     if (categories.length > 1) {
@@ -1184,9 +1222,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>`;
     }
 
-    const filtered = activeCategory
-      ? currentRoom.restaurants.filter((r) => r.category === activeCategory)
-      : currentRoom.restaurants;
+    let filtered = currentRoom.restaurants;
+    if (activeCategory) filtered = filtered.filter((r) => r.category === activeCategory);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((r) => r.name.toLowerCase().includes(q) || r.address.toLowerCase().includes(q));
+    }
 
     let listHtml = '';
     if (currentRoom.restaurants.length === 0) {
@@ -1210,10 +1251,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         .join('');
     }
 
-    panel.innerHTML = addFormHtml + '<div id="restaurant-detail-area"></div>' + filterHtml + '<div id="restaurant-list">' + listHtml + '</div>';
+    panel.innerHTML = addFormHtml + '<div id="restaurant-detail-area"></div>' + searchHtml + filterHtml + '<div id="restaurant-list">' + listHtml + '</div>';
     attachRestaurantFormHandler();
     attachRestaurantCardHandlers();
     attachCategoryFilterHandlers();
+    attachSearchHandler();
   }
 
   function attachCategoryFilterHandlers() {
@@ -1223,6 +1265,39 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         renderRestaurantsTab();
       });
     }
+  }
+
+  function attachSearchHandler() {
+    const input = document.getElementById('rest-search') as HTMLInputElement | null;
+    if (!input) return;
+    input.addEventListener('input', () => {
+      searchQuery = input.value.trim();
+      const filtered = (() => {
+        let list = currentRoom.restaurants;
+        if (activeCategory) list = list.filter((r) => r.category === activeCategory);
+        if (searchQuery) {
+          const q = searchQuery.toLowerCase();
+          list = list.filter((r) => r.name.toLowerCase().includes(q) || r.address.toLowerCase().includes(q));
+        }
+        return list;
+      })();
+      const listEl = document.getElementById('restaurant-list')!;
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<p class="empty-text">검색 결과가 없습니다.</p>';
+      } else {
+        listEl.innerHTML = filtered.map((r) => `
+          <div class="room-restaurant-card" data-rid="${r.id}">
+            <div class="room-rest-name">${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(Math.round(r.avgRating))} ${r.avgRating}</span>` : ''}</div>
+            <div class="room-rest-meta">${escapeHtml(r.address)} · ${escapeHtml(r.category)}</div>
+            <div class="room-rest-footer">
+              <span class="room-rest-added-by">${escapeHtml(r.addedBy.nickname)}</span>
+              <span class="room-rest-reviews-count">리뷰 ${r._count.reviews}개</span>
+            </div>
+          </div>
+        `).join('');
+      }
+      attachRestaurantCardHandlers();
+    });
   }
 
   function attachRestaurantFormHandler() {
@@ -1235,7 +1310,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const category = (document.getElementById('add-rest-category') as HTMLInputElement).value.trim();
 
       if (!name || !address || !province || !city || !neighborhood || !category) {
-        alert('모든 항목을 입력해 주세요.');
+        showToast('모든 항목을 입력해 주세요.', 'info');
         return;
       }
 
@@ -1243,7 +1318,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category });
         currentRoom = await fetchRoom(currentRoom.id);
         renderRestaurantsTab();
-      } catch (err) { alert(err instanceof Error ? err.message : '등록에 실패했습니다.'); }
+        showToast('식당이 등록되었습니다.', 'success');
+      } catch (err) { showToast(err instanceof Error ? err.message : '등록에 실패했습니다.'); }
     });
   }
 
@@ -1290,12 +1366,29 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
       `;
 
-      let reviewsHtml = '';
-      if (detail.reviews.length === 0) {
-        reviewsHtml = '<p class="empty-text">아직 리뷰가 없습니다.</p>';
-      } else {
-        reviewsHtml = detail.reviews
-          .map((rev) => {
+      const reviewSortHtml = detail.reviews.length > 1
+        ? `<div class="review-sort-row">
+            <select id="review-sort">
+              <option value="latest">최신순</option>
+              <option value="oldest">오래된순</option>
+              <option value="rating-high">평점 높은순</option>
+              <option value="rating-low">평점 낮은순</option>
+            </select>
+          </div>`
+        : '';
+
+      function sortReviews(reviews: RoomReviewWithUser[], sortBy: string): RoomReviewWithUser[] {
+        const sorted = [...reviews];
+        switch (sortBy) {
+          case 'oldest': return sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          case 'rating-high': return sorted.sort((a, b) => b.rating - a.rating);
+          case 'rating-low': return sorted.sort((a, b) => a.rating - b.rating);
+          default: return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        }
+      }
+
+      function renderReviewsList(reviews: RoomReviewWithUser[]): string {
+        return reviews.map((rev) => {
             const isReviewOwner = rev.userId === currentUser.id;
             const canDeleteReview = isReviewOwner || isManagerOrAbove();
             let actionsHtml = '';
@@ -1329,8 +1422,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 </div>
               </div>
             `;
-          })
-          .join('');
+          }).join('');
+      }
+
+      let reviewsHtml = '';
+      if (detail.reviews.length === 0) {
+        reviewsHtml = '<p class="empty-text">아직 리뷰가 없습니다.</p>';
+      } else {
+        reviewsHtml = renderReviewsList(sortReviews(detail.reviews, 'latest'));
       }
 
       area.innerHTML = `
@@ -1345,6 +1444,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             ${deleteRestBtn}
           </div>
           ${reviewFormHtml}
+          ${reviewSortHtml}
           <div id="reviews-list">${reviewsHtml}</div>
         </div>
       `;
@@ -1352,15 +1452,25 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       // 닫기
       document.getElementById('close-detail-btn')!.addEventListener('click', () => { area.innerHTML = ''; });
 
+      // 리뷰 정렬
+      document.getElementById('review-sort')?.addEventListener('change', (e) => {
+        const sortBy = (e.target as HTMLSelectElement).value;
+        const sorted = sortReviews(detail.reviews, sortBy);
+        const listEl = document.getElementById('reviews-list')!;
+        listEl.innerHTML = sorted.length > 0 ? renderReviewsList(sorted) : '<p class="empty-text">아직 리뷰가 없습니다.</p>';
+        attachReviewHandlers(area, rid, detail);
+      });
+
       // 식당 삭제
       document.getElementById('delete-rest-btn')?.addEventListener('click', async () => {
-        if (!confirm('이 식당을 삭제하시겠습니까? 모든 리뷰도 삭제됩니다.')) return;
+        if (!await showDangerConfirm('이 식당을 삭제하시겠습니까? 모든 리뷰도 삭제됩니다.')) return;
         try {
           await deleteRoomRestaurant(currentRoom.id, rid);
           area.innerHTML = '';
           currentRoom = await fetchRoom(currentRoom.id);
           renderRestaurantsTab();
-        } catch { alert('삭제에 실패했습니다.'); }
+          showToast('식당이 삭제되었습니다.', 'success');
+        } catch { showToast('삭제에 실패했습니다.'); }
       });
 
       // 리뷰 작성
@@ -1368,74 +1478,78 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const rating = parseInt((document.getElementById('review-rating') as HTMLSelectElement).value, 10);
         const reviewContent = (document.getElementById('review-content') as HTMLTextAreaElement).value.trim();
         const wouldRevisit = (document.getElementById('review-revisit') as HTMLInputElement).checked;
-        if (!reviewContent) { alert('내용을 입력해 주세요.'); return; }
+        if (!reviewContent) { showToast('내용을 입력해 주세요.', 'info'); return; }
 
         try {
           await createRoomReview(currentRoom.id, rid, { rating, content: reviewContent, wouldRevisit });
           currentRoom = await fetchRoom(currentRoom.id);
           await loadRestaurantDetail(rid);
-        } catch (err) { alert(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.'); }
+          showToast('리뷰가 작성되었습니다.', 'success');
+        } catch (err) { showToast(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.'); }
       });
 
-      // 리뷰 삭제
-      for (const btn of area.querySelectorAll<HTMLButtonElement>('.delete-rev-btn')) {
-        btn.addEventListener('click', async () => {
-          if (!confirm('이 리뷰를 삭제하시겠습니까?')) return;
-          try {
-            await deleteRoomReview(currentRoom.id, btn.dataset.revId!);
-            currentRoom = await fetchRoom(currentRoom.id);
-            await loadRestaurantDetail(rid);
-          } catch { alert('리뷰 삭제에 실패했습니다.'); }
-        });
-      }
-
-      // 리뷰 수정
-      for (const btn of area.querySelectorAll<HTMLButtonElement>('.edit-rev-btn')) {
-        btn.addEventListener('click', () => {
-          const revId = btn.dataset.revId!;
-          const origRating = btn.dataset.rating!;
-          const origContent = btn.dataset.content!;
-          const origRevisit = btn.dataset.revisit === 'true';
-          const card = area.querySelector<HTMLElement>(`.room-review-card[data-rev-id="${revId}"]`)!;
-
-          if (card.querySelector('.review-form')) return;
-
-          const ratingOptions = [1, 2, 3, 4, 5]
-            .map((v) => `<option value="${v}" ${v === Number(origRating) ? 'selected' : ''}>${v}점</option>`)
-            .join('');
-
-          card.insertAdjacentHTML('beforeend', `
-            <div class="review-form">
-              <select class="edit-rating">${ratingOptions}</select>
-              <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
-              <label class="revisit-toggle"><input type="checkbox" class="edit-revisit" ${origRevisit ? 'checked' : ''} /> 재방문 의사 있음</label>
-              <div style="display:flex;gap:0.5rem;">
-                <button type="button" class="btn-primary-sm save-edit-btn">저장</button>
-                <button type="button" class="btn-outline-sm cancel-edit-btn">취소</button>
-              </div>
-            </div>
-          `);
-
-          card.querySelector('.save-edit-btn')!.addEventListener('click', async () => {
-            const newRating = parseInt(card.querySelector<HTMLSelectElement>('.edit-rating')!.value, 10);
-            const newContent = card.querySelector<HTMLTextAreaElement>('.edit-content')!.value.trim();
-            const newRevisit = card.querySelector<HTMLInputElement>('.edit-revisit')!.checked;
-            if (!newContent) { alert('내용을 입력해 주세요.'); return; }
-
-            try {
-              await updateRoomReview(currentRoom.id, revId, { rating: newRating, content: newContent, wouldRevisit: newRevisit });
-              currentRoom = await fetchRoom(currentRoom.id);
-              await loadRestaurantDetail(rid);
-            } catch { alert('수정에 실패했습니다.'); }
-          });
-
-          card.querySelector('.cancel-edit-btn')!.addEventListener('click', () => {
-            card.querySelector('.review-form')!.remove();
-          });
-        });
-      }
+      attachReviewHandlers(area, rid, detail);
     } catch {
       area.innerHTML = '<p class="empty-text">식당 정보를 불러올 수 없습니다.</p>';
+    }
+  }
+
+  function attachReviewHandlers(area: HTMLElement, rid: string, detail: { reviews: RoomReviewWithUser[] }) {
+    for (const btn of area.querySelectorAll<HTMLButtonElement>('.delete-rev-btn')) {
+      btn.addEventListener('click', async () => {
+        if (!await showDangerConfirm('이 리뷰를 삭제하시겠습니까?')) return;
+        try {
+          await deleteRoomReview(currentRoom.id, btn.dataset.revId!);
+          currentRoom = await fetchRoom(currentRoom.id);
+          await loadRestaurantDetail(rid);
+        } catch { showToast('리뷰 삭제에 실패했습니다.'); }
+      });
+    }
+
+    for (const btn of area.querySelectorAll<HTMLButtonElement>('.edit-rev-btn')) {
+      btn.addEventListener('click', () => {
+        const revId = btn.dataset.revId!;
+        const origRating = btn.dataset.rating!;
+        const origContent = btn.dataset.content!;
+        const origRevisit = btn.dataset.revisit === 'true';
+        const card = area.querySelector<HTMLElement>(`.room-review-card[data-rev-id="${revId}"]`)!;
+
+        if (card.querySelector('.review-form')) return;
+
+        const ratingOptions = [1, 2, 3, 4, 5]
+          .map((v) => `<option value="${v}" ${v === Number(origRating) ? 'selected' : ''}>${v}점</option>`)
+          .join('');
+
+        card.insertAdjacentHTML('beforeend', `
+          <div class="review-form">
+            <select class="edit-rating">${ratingOptions}</select>
+            <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
+            <label class="revisit-toggle"><input type="checkbox" class="edit-revisit" ${origRevisit ? 'checked' : ''} /> 재방문 의사 있음</label>
+            <div style="display:flex;gap:0.5rem;">
+              <button type="button" class="btn-primary-sm save-edit-btn">저장</button>
+              <button type="button" class="btn-outline-sm cancel-edit-btn">취소</button>
+            </div>
+          </div>
+        `);
+
+        card.querySelector('.save-edit-btn')!.addEventListener('click', async () => {
+          const newRating = parseInt(card.querySelector<HTMLSelectElement>('.edit-rating')!.value, 10);
+          const newContent = card.querySelector<HTMLTextAreaElement>('.edit-content')!.value.trim();
+          const newRevisit = card.querySelector<HTMLInputElement>('.edit-revisit')!.checked;
+          if (!newContent) { showToast('내용을 입력해 주세요.', 'info'); return; }
+
+          try {
+            await updateRoomReview(currentRoom.id, revId, { rating: newRating, content: newContent, wouldRevisit: newRevisit });
+            currentRoom = await fetchRoom(currentRoom.id);
+            await loadRestaurantDetail(rid);
+            showToast('리뷰가 수정되었습니다.', 'success');
+          } catch { showToast('수정에 실패했습니다.'); }
+        });
+
+        card.querySelector('.cancel-edit-btn')!.addEventListener('click', () => {
+          card.querySelector('.review-form')!.remove();
+        });
+      });
     }
   }
 
