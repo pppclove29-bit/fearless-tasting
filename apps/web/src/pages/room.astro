@@ -42,10 +42,44 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-bottom: 1.25rem;
   }
 
+  .room-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
   .room-header h1 {
     font-size: 1.3rem;
     font-weight: 700;
-    margin: 0 0 0.5rem;
+    margin: 0;
+  }
+
+  .btn-edit-name {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #999;
+    padding: 0.2rem;
+    transition: color 0.15s;
+  }
+
+  .btn-edit-name:hover { color: #333; }
+
+  .room-name-input {
+    font-size: 1.3rem;
+    font-weight: 700;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    font-family: inherit;
+    flex: 1;
+  }
+
+  .room-name-input:focus {
+    outline: none;
+    border-color: #333;
   }
 
   .invite-row {
@@ -474,7 +508,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     updateRoomMemberRole, kickRoomMember,
     createRoomRestaurant, fetchRoomRestaurant, deleteRoomRestaurant,
     createRoomReview, updateRoomReview, deleteRoomReview,
-    toggleShareCode,
+    toggleShareCode, updateRoom,
   } from '@/lib/api';
   import type { AuthUser, RoomDetailResponse, RoomMemberInfo, RoomRestaurantInfo, RoomReviewWithUser } from '@/lib/api';
   import { getCities, getNeighborhoods } from '@/data/areas';
@@ -552,7 +586,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     content.innerHTML = `
       <a href="/rooms" class="back-link">&larr; 내 방 목록</a>
       <div class="room-header">
-        <h1>${escapeHtml(currentRoom.name)}</h1>
+        <div class="room-name-row">
+          <h1 id="room-name-display">${escapeHtml(currentRoom.name)}</h1>
+          ${isOwner() ? '<button type="button" class="btn-edit-name" id="edit-name-btn" title="방 이름 변경">✎</button>' : ''}
+          <input type="text" id="room-name-input" class="room-name-input" maxlength="100" hidden />
+        </div>
         <div class="invite-row">
           <span class="invite-code" id="invite-code">${currentRoom.inviteCode}</span>
           <button type="button" class="btn-copy" id="copy-code-btn">복사</button>
@@ -578,6 +616,50 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   function attachHeaderHandlers() {
+    // 방 이름 수정 (owner만)
+    const editNameBtn = document.getElementById('edit-name-btn');
+    const nameDisplay = document.getElementById('room-name-display');
+    const nameInput = document.getElementById('room-name-input') as HTMLInputElement | null;
+
+    if (editNameBtn && nameDisplay && nameInput) {
+      editNameBtn.addEventListener('click', () => {
+        nameInput.value = currentRoom.name;
+        nameDisplay.hidden = true;
+        editNameBtn.hidden = true;
+        nameInput.hidden = false;
+        nameInput.focus();
+        nameInput.select();
+      });
+
+      async function saveName() {
+        if (!nameInput || !nameDisplay || !editNameBtn) return;
+        const newName = nameInput.value.trim();
+        nameInput.hidden = true;
+        nameDisplay.hidden = false;
+        editNameBtn.hidden = false;
+
+        if (!newName || newName === currentRoom.name) return;
+
+        try {
+          await updateRoom(currentRoom.id, newName);
+          currentRoom.name = newName;
+          nameDisplay.textContent = newName;
+        } catch {
+          alert('방 이름 변경에 실패했습니다.');
+        }
+      }
+
+      nameInput.addEventListener('blur', saveName);
+      nameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); nameInput.blur(); }
+        if (e.key === 'Escape') {
+          nameInput.hidden = true;
+          nameDisplay!.hidden = false;
+          editNameBtn!.hidden = false;
+        }
+      });
+    }
+
     document.getElementById('copy-code-btn')?.addEventListener('click', () => {
       navigator.clipboard.writeText(currentRoom.inviteCode);
       const btn = document.getElementById('copy-code-btn')!;

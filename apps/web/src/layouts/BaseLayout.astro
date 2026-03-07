@@ -48,10 +48,12 @@ const fullTitle = `${title} | 무모한 시식가`;
           <a href="/rooms" class="nav-link">방</a>
           <a href="/cs" class="nav-link">문의</a>
           <a href="/about" class="nav-link">소개</a>
+          <a href="/admin" class="nav-link nav-admin" id="admin-link" hidden>관리자</a>
           <div class="nav-auth" id="auth-nav">
             <a href="/login" id="login-link" class="nav-link nav-login">로그인</a>
             <span id="user-info" hidden>
-              <span id="user-email"></span>
+              <span id="user-nickname" class="user-nickname" title="클릭하여 닉네임 변경"></span>
+              <input type="text" id="nickname-input" class="nickname-input" maxlength="50" hidden />
               <button type="button" id="logout-btn">로그아웃</button>
             </span>
           </div>
@@ -140,6 +142,11 @@ const fullTitle = `${title} | 무모한 시식가`;
     color: #fff;
   }
 
+  .nav-admin {
+    color: #dc2626;
+    font-weight: 600;
+  }
+
   .nav-auth {
     display: flex;
     align-items: center;
@@ -153,9 +160,30 @@ const fullTitle = `${title} | 무모한 시식가`;
     font-size: 0.8rem;
   }
 
-  #user-email {
+  .user-nickname {
     color: #666;
     font-weight: 500;
+    cursor: pointer;
+    border-bottom: 1px dashed transparent;
+    transition: border-color 0.15s;
+  }
+
+  .user-nickname:hover {
+    border-bottom-color: #999;
+  }
+
+  .nickname-input {
+    width: 100px;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-family: inherit;
+  }
+
+  .nickname-input:focus {
+    outline: none;
+    border-color: #333;
   }
 
   #logout-btn {
@@ -280,7 +308,7 @@ const fullTitle = `${title} | 무모한 시식가`;
 </style>
 
 <script>
-  import { fetchCurrentUser, logout } from '@/lib/api';
+  import { fetchCurrentUser, logout, updateNickname } from '@/lib/api';
 
   // 햄버거 메뉴 토글
   const hamburgerBtn = document.getElementById('hamburger-btn')!;
@@ -293,15 +321,51 @@ const fullTitle = `${title} | 무모한 시식가`;
 
   const loginLink = document.getElementById('login-link')!;
   const userInfo = document.getElementById('user-info')!;
-  const userEmail = document.getElementById('user-email')!;
+  const nicknameSpan = document.getElementById('user-nickname')!;
+  const nicknameInput = document.getElementById('nickname-input') as HTMLInputElement;
   const logoutBtn = document.getElementById('logout-btn')!;
 
   const user = await fetchCurrentUser();
   if (user) {
     loginLink.hidden = true;
     userInfo.hidden = false;
-    userEmail.textContent = user.email;
+    nicknameSpan.textContent = user.nickname;
+
+    if (user.role === 'admin') {
+      const adminLink = document.getElementById('admin-link');
+      if (adminLink) adminLink.hidden = false;
+    }
   }
+
+  // 닉네임 클릭 → 인라인 편집
+  nicknameSpan.addEventListener('click', () => {
+    nicknameInput.value = nicknameSpan.textContent || '';
+    nicknameSpan.hidden = true;
+    nicknameInput.hidden = false;
+    nicknameInput.focus();
+    nicknameInput.select();
+  });
+
+  async function saveNickname() {
+    const newName = nicknameInput.value.trim();
+    nicknameInput.hidden = true;
+    nicknameSpan.hidden = false;
+
+    if (!newName || newName === nicknameSpan.textContent) return;
+
+    try {
+      const updated = await updateNickname(newName);
+      nicknameSpan.textContent = updated.nickname;
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '닉네임 변경에 실패했습니다.');
+    }
+  }
+
+  nicknameInput.addEventListener('blur', saveNickname);
+  nicknameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); nicknameInput.blur(); }
+    if (e.key === 'Escape') { nicknameInput.hidden = true; nicknameSpan.hidden = false; }
+  });
 
   logoutBtn.addEventListener('click', async () => {
     await logout();
