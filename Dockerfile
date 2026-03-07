@@ -22,4 +22,4 @@ RUN pnpm --filter @repo/api exec prisma generate
 
 RUN pnpm --filter @repo/api build
 
-CMD ["sh", "-c", "pnpm --filter @repo/api exec prisma migrate deploy && node apps/api/dist/main"]
+CMD ["sh", "-c", "pnpm --filter @repo/api exec prisma db push --accept-data-loss && node apps/api/dist/main"]
