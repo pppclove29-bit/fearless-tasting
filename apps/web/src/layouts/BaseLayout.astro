@@ -59,7 +59,7 @@ const fullTitle = `${title} | 무모한 시식가`;
       <slot />
     </main>
     <footer>
-      <p>&copy; 2026 무모한 시식가</p>
+      <p>&copy; 2026 무모한 시식가 · <a href="/privacy">개인정보처리방침</a></p>
     </footer>
   </body>
 </html>
@@ -202,6 +202,15 @@ const fullTitle = `${title} | 무모한 시식가`;
     font-size: 0.8rem;
     color: #999;
     background: #fff;
+  }
+
+  footer a {
+    color: #999;
+    text-decoration: none;
+  }
+
+  footer a:hover {
+    color: #555;
   }
 </style>
 
