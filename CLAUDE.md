@@ -38,12 +38,10 @@
 ```
 apps/api/src/
 ├── auth/           # 카카오 OAuth, JWT 인증, Guards (JwtAuth, Admin)
-├── restaurants/    # 공개 식당 CRUD, 지역별 조회 (레거시, 방 전용 전환 예정)
-├── reviews/        # 공개 리뷰 CRUD (레거시, 방 전용 전환 예정)
 ├── rooms/          # 방 기능 (초대 코드, 공유 링크, 멤버/식당/리뷰 관리)
 │   ├── guards/     # RoomMemberGuard, RoomManagerGuard
 │   └── dto/        # 방 관련 DTO (CreateRoom, JoinRoom, ToggleShareCode 등)
-├── users/          # 유저 조회
+├── users/          # 유저 조회, 닉네임 수정
 ├── inquiries/      # 문의 CRUD
 └── prisma/         # PrismaService (Reader/Writer 분리)
 ```
@@ -59,8 +57,6 @@ apps/api/src/
 | RoomRestaurant | 방 내 식당                       | Room, User, RoomReview               |
 | RoomReview     | 방 내 리뷰                       | RoomRestaurant, User                 |
 | RoomKick       | 방 강퇴 기록 (재입장 차단)       | Room, User                           |
-| Restaurant     | 공개 식당 (레거시)               | Review                               |
-| Review         | 공개 리뷰 (레거시)               | Restaurant, User                     |
 | Inquiry        | 고객 문의                        | -                                    |
 
 ## 방(Room) 권한 체계
@@ -140,7 +136,7 @@ apps/api/src/
 
 - `DATABASE_URL` — MySQL Writer 연결
 - `DATABASE_READER_URL` — MySQL Reader 연결
-- `JWT_SECRET`, `JWT_REFRESH_SECRET`
+- `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
 - `KAKAO_CLIENT_ID`, `KAKAO_REDIRECT_URI`
 - `FRONTEND_URL`
 

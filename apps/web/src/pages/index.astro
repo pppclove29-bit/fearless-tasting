@@ -138,6 +138,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     <div class="form-error" id="form-error" hidden></div>
 
+    <div class="rooms-sort-row" id="rooms-sort-row" hidden>
+      <select id="rooms-sort">
+        <option value="recent">최근 참여순</option>
+        <option value="name">이름순</option>
+        <option value="members">멤버 많은순</option>
+        <option value="restaurants">식당 많은순</option>
+      </select>
+    </div>
+
     <div id="rooms-list"></div>
     <p id="empty-msg" class="status-msg" hidden>참여 중인 방이 없습니다. 방을 만들거나 초대 코드로 입장하세요.</p>
   </div>
@@ -471,6 +480,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .btn-secondary:hover { background: #f0f0f0; }
 
+  .rooms-sort-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
+  }
+
+  .rooms-sort-row select {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    color: #555;
+    background: #fff;
+    cursor: pointer;
+  }
+
   .form-error {
     padding: 0.75rem;
     background: #fef2f2;
@@ -558,14 +584,30 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     member: '멤버',
   };
 
+  const roomsSortRow = document.getElementById('rooms-sort-row')!;
+  const roomsSortSelect = document.getElementById('rooms-sort') as HTMLSelectElement;
+  let allRooms: RoomListItem[] = [];
+
+  function sortRooms(rooms: RoomListItem[], sortBy: string): RoomListItem[] {
+    const sorted = [...rooms];
+    switch (sortBy) {
+      case 'name': return sorted.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      case 'members': return sorted.sort((a, b) => b.memberCount - a.memberCount);
+      case 'restaurants': return sorted.sort((a, b) => b.restaurantCount - a.restaurantCount);
+      default: return sorted; // 'recent' — 서버에서 joinedAt desc로 정렬됨
+    }
+  }
+
   function renderRooms(rooms: RoomListItem[]) {
     if (rooms.length === 0) {
       roomsList.innerHTML = '';
+      roomsSortRow.hidden = true;
       emptyMsg.hidden = false;
       return;
     }
 
     emptyMsg.hidden = true;
+    roomsSortRow.hidden = rooms.length < 2;
     roomsList.innerHTML = rooms
       .map(
         (r) => `
@@ -581,6 +623,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       .join('');
   }
 
+  roomsSortSelect.addEventListener('change', () => {
+    renderRooms(sortRooms(allRooms, roomsSortSelect.value));
+  });
+
   function showError(msg: string) {
     formError.textContent = msg;
     formError.hidden = false;
@@ -595,8 +641,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     try {
       await createRoom(name);
       createNameInput.value = '';
-      const rooms = await fetchMyRooms();
-      renderRooms(rooms);
+      allRooms = await fetchMyRooms();
+      renderRooms(sortRooms(allRooms, roomsSortSelect.value));
     } catch (err) {
       showError(err instanceof Error ? err.message : '방 생성에 실패했습니다.');
     }
@@ -627,7 +673,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
 
     dashboard.hidden = false;
-    const rooms = await fetchMyRooms();
-    renderRooms(rooms);
+    allRooms = await fetchMyRooms();
+    renderRooms(allRooms);
   })();
 </script>
