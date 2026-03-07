@@ -220,6 +220,8 @@ model RoomReview {
   rating             Int
   /// 리뷰 본문
   content            String         @db.Text
+  /// 재방문 의사
+  wouldRevisit       Boolean        @default(true)
   /// 리뷰 대상 방 식당
   roomRestaurant     RoomRestaurant @relation(fields: [roomRestaurantId], references: [id], onDelete: Cascade)
   /// 방 식당 ID (FK)

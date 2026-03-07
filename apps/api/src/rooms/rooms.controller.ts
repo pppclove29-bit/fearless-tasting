@@ -224,7 +224,7 @@ export class RoomsController {
     @CurrentUser() user: { id: string },
     @Body() dto: CreateRoomReviewDto,
   ) {
-    return this.roomsService.createReview(id, rid, user.id, dto.rating, dto.content);
+    return this.roomsService.createReview(id, rid, user.id, dto.rating, dto.content, dto.wouldRevisit);
   }
 
   /** 방 내 리뷰 수정 (본인만) */
@@ -238,7 +238,7 @@ export class RoomsController {
     @CurrentUser() user: { id: string },
     @Body() dto: UpdateRoomReviewDto,
   ) {
-    return this.roomsService.updateReview(revId, user.id, dto.rating, dto.content);
+    return this.roomsService.updateReview(revId, user.id, dto.rating, dto.content, dto.wouldRevisit);
   }
 
   /** 방 내 리뷰 삭제 (본인 또는 매니저+) */

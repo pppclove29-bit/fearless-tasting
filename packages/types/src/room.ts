@@ -41,6 +41,7 @@ export interface RoomReview {
   id: string;
   rating: number;
   content: string;
+  wouldRevisit: boolean;
   roomRestaurantId: string;
   userId: string;
   createdAt: string;

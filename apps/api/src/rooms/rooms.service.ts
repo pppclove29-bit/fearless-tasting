@@ -381,19 +381,19 @@ export class RoomsService {
   // ─── 방 내 리뷰 ───
 
   /** 방 내 리뷰 작성 */
-  async createReview(roomId: string, restaurantId: string, userId: string, rating: number, content: string) {
+  async createReview(roomId: string, restaurantId: string, userId: string, rating: number, content: string, wouldRevisit = true) {
     const restaurant = await this.prisma.read.roomRestaurant.findUnique({ where: { id: restaurantId } });
     if (!restaurant || restaurant.roomId !== roomId) {
       throw new NotFoundException('식당을 찾을 수 없습니다');
     }
 
     return this.prisma.write.roomReview.create({
-      data: { roomRestaurantId: restaurantId, userId, rating, content },
+      data: { roomRestaurantId: restaurantId, userId, rating, content, wouldRevisit },
     });
   }
 
   /** 방 내 리뷰 수정 (본인만) */
-  async updateReview(reviewId: string, userId: string, rating?: number, content?: string) {
+  async updateReview(reviewId: string, userId: string, rating?: number, content?: string, wouldRevisit?: boolean) {
     const review = await this.prisma.read.roomReview.findUnique({ where: { id: reviewId } });
     if (!review) throw new NotFoundException('리뷰를 찾을 수 없습니다');
     if (review.userId !== userId) throw new ForbiddenException('본인의 리뷰만 수정할 수 있습니다');
@@ -403,6 +403,7 @@ export class RoomsService {
       data: {
         ...(rating !== undefined ? { rating } : {}),
         ...(content !== undefined ? { content } : {}),
+        ...(wouldRevisit !== undefined ? { wouldRevisit } : {}),
       },
     });
   }

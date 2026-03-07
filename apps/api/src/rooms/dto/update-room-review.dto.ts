@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, Min, Max } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsBoolean, Min, Max } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateRoomReviewDto {
@@ -13,4 +13,9 @@ export class UpdateRoomReviewDto {
   @IsOptional()
   @IsString()
   content?: string;
+
+  @ApiPropertyOptional({ description: '재방문 의사' })
+  @IsOptional()
+  @IsBoolean()
+  wouldRevisit?: boolean;
 }

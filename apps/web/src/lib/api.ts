@@ -397,7 +397,7 @@ export async function deleteRoomRestaurant(roomId: string, rid: string): Promise
 export async function createRoomReview(
   roomId: string,
   rid: string,
-  data: { rating: number; content: string },
+  data: { rating: number; content: string; wouldRevisit?: boolean },
 ): Promise<RoomReview> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}/reviews`, {
     method: 'POST',
@@ -412,7 +412,7 @@ export async function createRoomReview(
 export async function updateRoomReview(
   roomId: string,
   revId: string,
-  data: { rating?: number; content?: string },
+  data: { rating?: number; content?: string; wouldRevisit?: boolean },
 ): Promise<RoomReview> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/reviews/${revId}`, {
     method: 'PATCH',

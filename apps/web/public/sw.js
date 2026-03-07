@@ -1,0 +1,50 @@
+const CACHE_NAME = 'fearless-tasting-v1';
+const PRECACHE_URLS = [
+  '/',
+  '/favicon.svg',
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+
+  // API 요청은 캐시하지 않음
+  if (request.url.includes('/api/') || request.method !== 'GET') return;
+
+  // 네비게이션(HTML) 요청: network-first
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() => caches.match('/'))
+    );
+    return;
+  }
+
+  // 정적 자산: stale-while-revalidate
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      const fetched = fetch(request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      });
+      return cached || fetched;
+    })
+  );
+});
