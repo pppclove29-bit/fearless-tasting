@@ -6,10 +6,13 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 
+const isProduction = process.env.NODE_ENV === 'production' ||
+  (process.env.FRONTEND_URL?.startsWith('https') ?? false);
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  secure: isProduction,
+  sameSite: isProduction ? 'none' as const : 'lax' as const,
   path: '/',
 };
 
