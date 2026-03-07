@@ -33,10 +33,14 @@ model User {
   roomReviews     RoomReview[]
   /// 강퇴 기록
   roomKicks       RoomKick[]
+  /// 마지막 활동 시각 (DAU 추적용)
+  lastActiveAt    DateTime?
   /// 가입일
   createdAt       DateTime  @default(now())
   /// 최종 수정일
   updatedAt       DateTime  @updatedAt
+
+  @@index([lastActiveAt])
 }
 
 /// OAuth 계정 정보 (User와 1:N, 다중 소셜 로그인 확장 가능)

@@ -46,6 +46,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '내 정보 조회', description: 'JWT 토큰으로 현재 로그인된 유저 정보를 반환합니다.' })
   me(@CurrentUser() user: { id: string; email: string; role: string }) {
+    // fire-and-forget: lastActiveAt 갱신
+    this.authService.updateLastActive(user.id);
     return user;
   }
 

@@ -187,6 +187,13 @@ export class AuthService {
     });
   }
 
+  /** lastActiveAt 갱신 (fire-and-forget) */
+  updateLastActive(userId: string) {
+    this.prisma.write.user
+      .update({ where: { id: userId }, data: { lastActiveAt: new Date() } })
+      .catch(() => {});
+  }
+
   /** Access Token에서 유저 정보 추출 */
   verifyAccessToken(token: string): JwtPayload {
     try {
