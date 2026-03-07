@@ -19,7 +19,7 @@ export class RoomMemberGuard implements CanActivate {
     }
 
     const payload = this.authService.verifyAccessToken(token);
-    const user = { id: payload.sub, email: payload.email, role: payload.role };
+    const user = { id: payload.sub };
     (request as Request & { user: typeof user }).user = user;
 
     const roomId = request.params.id as string | undefined;

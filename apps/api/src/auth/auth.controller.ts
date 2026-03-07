@@ -44,7 +44,7 @@ export class AuthController {
     const kakaoToken = await this.authService.exchangeKakaoCode(code);
     const kakaoUser = await this.authService.getKakaoUser(kakaoToken.access_token);
     const user = await this.authService.findOrCreateFromKakao(kakaoUser);
-    const tokens = await this.authService.generateTokens(user.id, user.email, user.role);
+    const tokens = await this.authService.generateTokens(user.id);
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4321';
     const params = new URLSearchParams({
@@ -62,7 +62,7 @@ export class AuthController {
     summary: '내 정보 조회',
     description: 'JWT 토큰으로 현재 로그인된 유저 정보를 반환합니다.',
   })
-  async me(@CurrentUser() user: { id: string; email: string; role: string }) {
+  async me(@CurrentUser() user: { id: string }) {
     // fire-and-forget: lastActiveAt 갱신
     this.authService.updateLastActive(user.id);
     const profile = await this.authService.getUserProfile(user.id);

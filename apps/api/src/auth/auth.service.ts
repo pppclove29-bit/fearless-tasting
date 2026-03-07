@@ -23,8 +23,6 @@ interface KakaoUserResponse {
 
 interface JwtPayload {
   sub: string;
-  email: string;
-  role: string;
 }
 
 @Injectable()
@@ -123,8 +121,8 @@ export class AuthService {
   }
 
   /** JWT Access Token + Refresh Token 생성 */
-  async generateTokens(userId: string, email: string, role: string) {
-    const payload: JwtPayload = { sub: userId, email, role };
+  async generateTokens(userId: string) {
+    const payload: JwtPayload = { sub: userId };
 
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_ACCESS_SECRET,
@@ -171,12 +169,7 @@ export class AuthService {
       throw new UnauthorizedException('리프레시 토큰 불일치');
     }
 
-    const user = await this.prisma.read.user.findUnique({
-      where: { id: payload.sub },
-      select: { role: true },
-    });
-
-    return this.generateTokens(payload.sub, payload.email, user?.role ?? 'user');
+    return this.generateTokens(payload.sub);
   }
 
   /** 로그아웃: DB의 Refresh Token 무효화 */
