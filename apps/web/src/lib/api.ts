@@ -28,8 +28,19 @@ export function saveTokens(accessToken: string, refreshToken: string) {
 export function clearTokens() {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
-  document.cookie = 'access_token=; Max-Age=0; path=/';
-  document.cookie = 'refresh_token=; Max-Age=0; path=/';
+
+  // 가능한 모든 path/domain 조합으로 쿠키 삭제 시도
+  const names = ['access_token', 'refresh_token'];
+  const domain = location.hostname;
+  for (const name of names) {
+    document.cookie = `${name}=; Max-Age=0; path=/`;
+    document.cookie = `${name}=; Max-Age=0`;
+    document.cookie = `${name}=; Max-Age=0; path=/; domain=${domain}`;
+    document.cookie = `${name}=; Max-Age=0; path=/; domain=.${domain}`;
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${domain}`;
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.${domain}`;
+  }
 }
 
 /** Authorization 헤더 포함 fetch 래퍼 (토큰 만료 시 자동 갱신) */
@@ -51,25 +62,21 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
   }
 
   if (res.status === 401) {
+    const isPublicUrl = url.includes('/auth/') || url.includes('/shared/');
+
     if (getRefreshToken()) {
       const refreshed = await refreshTokens();
       if (refreshed) {
         headers['Authorization'] = `Bearer ${getAccessToken()!}`;
         res = await fetch(url, { ...init, headers, credentials: 'omit' });
       } else {
-        // 리프레시 실패 → 세션 만료
         clearTokens();
-        if (!url.includes('/auth/')) {
-          location.href = '/login';
-        }
+        if (!isPublicUrl) location.href = '/login';
         return res;
       }
-    } else if (token) {
-      // access token 있었는데 401 → 세션 만료
+    } else if (!isPublicUrl) {
       clearTokens();
-      if (!url.includes('/auth/')) {
-        location.href = '/login';
-      }
+      location.href = '/login';
       return res;
     }
   }
@@ -166,7 +173,7 @@ export function logout(): void {
   fetch(`${API_BASE}/auth/logout`, {
     method: 'POST',
     headers,
-    credentials: 'omit',
+    credentials: 'include',
     body: JSON.stringify({ refreshToken: rt }),
   }).catch(() => {});
 }

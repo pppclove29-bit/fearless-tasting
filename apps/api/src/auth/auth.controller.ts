@@ -91,9 +91,9 @@ export class AuthController {
     };
   }
 
-  /** 로그아웃: DB RT 무효화 (Access Token 또는 Refresh Token으로 인증) */
+  /** 로그아웃: DB RT 무효화 + 쿠키 삭제 */
   @Post('logout')
-  @ApiOperation({ summary: '로그아웃', description: 'DB의 Refresh Token을 무효화합니다.' })
+  @ApiOperation({ summary: '로그아웃', description: 'DB의 Refresh Token을 무효화하고 쿠키를 삭제합니다.' })
   async logout(@Req() req: Request, @Body() body: { refreshToken?: string }) {
     // 1) Access Token으로 유저 식별 시도
     const authHeader = req.headers.authorization;
@@ -101,18 +101,21 @@ export class AuthController {
       try {
         const payload = this.authService.verifyAccessToken(authHeader.slice(7));
         await this.authService.logout(payload.sub);
-        return { message: '로그아웃 완료' };
       } catch {
         // Access Token 만료 — Refresh Token으로 fallback
       }
     }
 
     // 2) Refresh Token으로 유저 식별
-    const refreshToken = body?.refreshToken;
+    const refreshToken = body?.refreshToken || req.cookies?.refresh_token;
     if (refreshToken) {
       await this.authService.logoutByRefreshToken(refreshToken);
-      return { message: '로그아웃 완료' };
     }
+
+    // 3) 쿠키 삭제 (httpOnly / non-httpOnly 모두)
+    const res = req.res!;
+    res.clearCookie('access_token', { path: '/' });
+    res.clearCookie('refresh_token', { path: '/' });
 
     return { message: '로그아웃 완료' };
   }
