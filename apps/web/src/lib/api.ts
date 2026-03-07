@@ -104,7 +104,33 @@ export async function fetchRestaurants(
 export interface AuthUser {
   id: string;
   email: string;
+  nickname: string;
   role: string;
+  profileImageUrl: string | null;
+}
+
+/** 닉네임 수정 */
+export async function updateNickname(nickname: string): Promise<AuthUser> {
+  const res = await apiFetch(`${API_BASE}/users/me`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nickname }),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: '닉네임 변경에 실패했습니다.' }));
+    throw new Error(error.message || '닉네임 변경에 실패했습니다.');
+  }
+  return res.json();
+}
+
+/** 방 이름 수정 */
+export async function updateRoom(id: string, name: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/rooms/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) throw new Error('방 이름 변경에 실패했습니다.');
 }
 
 /** 현재 로그인 유저 조회 (비로그인 시 null) */

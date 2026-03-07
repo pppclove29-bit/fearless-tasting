@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -23,6 +23,22 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  /** 닉네임 수정 */
+  async updateNickname(userId: string, nickname: string) {
+    const existing = await this.prisma.read.user.findFirst({
+      where: { nickname, NOT: { id: userId } },
+    });
+    if (existing) {
+      throw new ConflictException('이미 사용 중인 닉네임입니다');
+    }
+
+    return this.prisma.write.user.update({
+      where: { id: userId },
+      data: { nickname },
+      select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true },
+    });
   }
 
   /** 관리자 대시보드 통계 */

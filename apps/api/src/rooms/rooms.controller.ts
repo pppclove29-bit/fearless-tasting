@@ -13,6 +13,7 @@ import { CreateRoomReviewDto } from './dto/create-room-review.dto';
 import { UpdateRoomReviewDto } from './dto/update-room-review.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 import { ToggleShareCodeDto } from './dto/toggle-share-code.dto';
+import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomManagerGuard } from './guards/room-manager.guard';
 
 interface RequestWithRoomMember extends Request {
@@ -81,6 +82,19 @@ export class RoomsController {
   @ApiParam({ name: 'id', description: '방 ID' })
   findOne(@Param('id') id: string) {
     return this.roomsService.findOne(id);
+  }
+
+  /** 방 이름 수정 */
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '방 이름 수정 (방장만)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  updateRoom(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+    @Body() dto: UpdateRoomDto,
+  ) {
+    return this.roomsService.updateRoom(id, dto.name, user.id);
   }
 
   /** 방 삭제 */

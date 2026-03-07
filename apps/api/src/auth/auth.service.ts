@@ -194,6 +194,14 @@ export class AuthService {
       .catch(() => {});
   }
 
+  /** 유저 프로필 조회 (id, email, nickname, role) */
+  async getUserProfile(userId: string) {
+    return this.prisma.read.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true },
+    });
+  }
+
   /** Access Token에서 유저 정보 추출 */
   verifyAccessToken(token: string): JwtPayload {
     try {

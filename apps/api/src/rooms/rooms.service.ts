@@ -106,6 +106,18 @@ export class RoomsService {
     return room;
   }
 
+  /** 방 이름 수정 (owner만) */
+  async updateRoom(roomId: string, name: string, userId: string) {
+    const room = await this.prisma.read.room.findUnique({ where: { id: roomId } });
+    if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
+    if (room.ownerId !== userId) throw new ForbiddenException('방장만 방 이름을 변경할 수 있습니다');
+
+    return this.prisma.write.room.update({
+      where: { id: roomId },
+      data: { name },
+    });
+  }
+
   /** 방 삭제 (owner만) */
   async remove(roomId: string, userId: string) {
     const room = await this.prisma.read.room.findUnique({ where: { id: roomId } });
