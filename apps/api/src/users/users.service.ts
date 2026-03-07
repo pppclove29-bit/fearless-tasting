@@ -25,4 +25,24 @@ export class UsersService {
     return user;
   }
 
+  /** 관리자 대시보드 통계 */
+  async getStats() {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const sevenDaysAgo = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(todayStart.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const [totalUsers, dau, wau, mau, totalRooms, totalRoomRestaurants, totalRoomReviews] =
+      await Promise.all([
+        this.prisma.read.user.count(),
+        this.prisma.read.user.count({ where: { lastActiveAt: { gte: todayStart } } }),
+        this.prisma.read.user.count({ where: { lastActiveAt: { gte: sevenDaysAgo } } }),
+        this.prisma.read.user.count({ where: { lastActiveAt: { gte: thirtyDaysAgo } } }),
+        this.prisma.read.room.count(),
+        this.prisma.read.roomRestaurant.count(),
+        this.prisma.read.roomReview.count(),
+      ]);
+
+    return { totalUsers, dau, wau, mau, totalRooms, totalRoomRestaurants, totalRoomReviews };
+  }
 }

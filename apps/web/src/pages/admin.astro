@@ -12,11 +12,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     <div id="admin-tabs" hidden>
       <div class="tab-bar">
-        <button type="button" class="tab-btn active" data-tab="inquiries">문의 관리</button>
+        <button type="button" class="tab-btn active" data-tab="stats">통계</button>
+        <button type="button" class="tab-btn" data-tab="inquiries">문의 관리</button>
         <button type="button" class="tab-btn" data-tab="restaurants">식당/리뷰 관리</button>
       </div>
 
-      <div id="tab-inquiries" class="tab-panel"></div>
+      <div id="tab-stats" class="tab-panel"></div>
+      <div id="tab-inquiries" class="tab-panel" hidden></div>
       <div id="tab-restaurants" class="tab-panel" hidden></div>
     </div>
   </div>
@@ -231,6 +233,33 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.9rem;
     padding: 2rem;
   }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+
+  .stat-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #111;
+    line-height: 1.2;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 0.25rem;
+  }
 </style>
 
 <script>
@@ -243,6 +272,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   const loadingMsg = document.getElementById('loading-msg')!;
   const accessDenied = document.getElementById('access-denied')!;
   const adminTabs = document.getElementById('admin-tabs')!;
+  const statsPanel = document.getElementById('tab-stats')!;
   const inquiriesPanel = document.getElementById('tab-inquiries')!;
   const restaurantsPanel = document.getElementById('tab-restaurants')!;
 
@@ -265,12 +295,74 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       for (const b of document.querySelectorAll('.tab-btn')) b.classList.remove('active');
       btn.classList.add('active');
       const tab = btn.dataset.tab!;
+      statsPanel.hidden = tab !== 'stats';
       inquiriesPanel.hidden = tab !== 'inquiries';
       restaurantsPanel.hidden = tab !== 'restaurants';
+      if (tab === 'inquiries' && inquiriesPanel.innerHTML === '') {
+        loadInquiries();
+      }
       if (tab === 'restaurants' && restaurantsPanel.innerHTML === '') {
         loadRestaurants();
       }
     });
+  }
+
+  interface Stats {
+    totalUsers: number;
+    dau: number;
+    wau: number;
+    mau: number;
+    totalRooms: number;
+    totalRoomRestaurants: number;
+    totalRoomReviews: number;
+  }
+
+  async function loadStats() {
+    statsPanel.innerHTML = '<p class="empty-msg">로딩 중...</p>';
+    try {
+      const res = await fetch(`${API_BASE}/users/stats`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}` },
+      });
+      if (!res.ok) {
+        statsPanel.innerHTML = '<p class="empty-msg">통계를 불러올 수 없습니다.</p>';
+        return;
+      }
+      const stats: Stats = await res.json();
+      statsPanel.innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${stats.dau}</div>
+            <div class="stat-label">오늘 활성 유저 (DAU)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.wau}</div>
+            <div class="stat-label">7일 활성 유저 (WAU)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.mau}</div>
+            <div class="stat-label">30일 활성 유저 (MAU)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.totalUsers}</div>
+            <div class="stat-label">전체 유저</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.totalRooms}</div>
+            <div class="stat-label">전체 방</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.totalRoomRestaurants}</div>
+            <div class="stat-label">전체 식당</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.totalRoomReviews}</div>
+            <div class="stat-label">전체 리뷰</div>
+          </div>
+        </div>
+      `;
+    } catch {
+      statsPanel.innerHTML = '<p class="empty-msg">통계를 불러올 수 없습니다.</p>';
+    }
   }
 
   async function loadInquiries() {
@@ -432,7 +524,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     loadingMsg.hidden = true;
     adminTabs.hidden = false;
-    await loadInquiries();
+    await loadStats();
   }
 
   init();
