@@ -56,6 +56,7 @@ export class AuthController {
 
   /** 현재 로그인 유저 정보 */
   @Get('me')
+  @Throttle({ default: { ttl: 60000, limit: 120 } })
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: '내 정보 조회',

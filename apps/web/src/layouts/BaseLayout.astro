@@ -381,8 +381,8 @@ const fullTitle = `${title} | 무모한 시식가`;
     if (e.key === 'Escape') { nicknameInput.hidden = true; nicknameSpan.hidden = false; }
   });
 
-  logoutBtn.addEventListener('click', async () => {
-    await logout();
+  logoutBtn.addEventListener('click', () => {
+    logout();
     location.href = '/';
   });
 

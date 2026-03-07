@@ -11,7 +11,7 @@ import { RoomsModule } from './rooms/rooms.module';
 @Module({
   imports: [
     ThrottlerModule.forRoot({
-      throttlers: [{ ttl: 60000, limit: 60 }],
+      throttlers: [{ ttl: 60000, limit: 120 }],
     }),
     PrismaModule,
     AuthModule,
