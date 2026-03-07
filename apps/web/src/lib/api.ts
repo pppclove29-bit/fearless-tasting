@@ -3,6 +3,8 @@ import type {
   SharedRoomDetail, SharedRoomRestaurantDetail,
 } from '@repo/types';
 
+export { showToast } from './toast';
+
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
 
 // ─── 토큰 관리 ───
@@ -35,7 +37,13 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  let res = await fetch(url, { ...init, headers });
+  let res: Response;
+  try {
+    res = await fetch(url, { ...init, headers });
+  } catch {
+    showToast('서버에 연결할 수 없습니다. 네트워크를 확인해주세요.');
+    throw new Error('네트워크 오류');
+  }
 
   if (res.status === 401 && getRefreshToken()) {
     const refreshed = await refreshTokens();
@@ -43,6 +51,10 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
       headers['Authorization'] = `Bearer ${getAccessToken()!}`;
       res = await fetch(url, { ...init, headers });
     }
+  }
+
+  if (res.status >= 500) {
+    showToast('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
   }
 
   return res;
