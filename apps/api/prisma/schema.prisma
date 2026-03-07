@@ -21,8 +21,6 @@ model User {
   role            String    @default("user") @db.VarChar(10)
   /// 연결된 OAuth 계정 (카카오 등)
   accounts        Account[]
-  /// 작성한 리뷰 목록
-  reviews         Review[]
   /// 소유한 방 목록
   ownedRooms      Room[]           @relation("RoomOwner")
   /// 참여 중인 방 멤버십
@@ -64,63 +62,6 @@ model Account {
 
   /// 동일 제공자의 동일 계정 중복 방지
   @@unique([provider, providerId])
-  @@index([userId])
-}
-
-/// 식당 정보
-model Restaurant {
-  /// 고유 식별자
-  id           String   @id @default(cuid())
-  /// 식당 이름
-  name         String   @db.VarChar(200)
-  /// 도로명/지번 주소
-  address      String   @db.VarChar(500)
-  /// 시/도
-  province     String   @db.VarChar(50)
-  /// 시/군/구
-  city         String   @db.VarChar(50)
-  /// 읍/면/동
-  neighborhood String   @db.VarChar(100)
-  /// 카테고리 (한식, 중식, 일식 등)
-  category     String   @db.VarChar(100)
-  /// 대표 이미지 URL
-  imageUrl     String?  @db.VarChar(500)
-  /// 식당에 달린 리뷰 목록
-  reviews      Review[]
-  /// 등록일
-  createdAt    DateTime @default(now())
-  /// 최종 수정일
-  updatedAt    DateTime @updatedAt
-
-  /// 지역 검색용 복합 인덱스 (leftmost prefix로 province, province+city 검색도 커버)
-  @@index([province, city, neighborhood])
-  @@index([category])
-}
-
-/// 식당 리뷰 (1~5점 평점 + 텍스트)
-model Review {
-  /// 고유 식별자
-  id           String     @id @default(cuid())
-  /// 1~5 평점
-  rating       Int
-  /// 리뷰 본문
-  content      String     @db.Text
-  /// 리뷰 이미지 URL 배열 (JSON)
-  imageUrls    Json       @default("[]")
-  /// 리뷰 대상 식당
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  /// 식당 ID (FK)
-  restaurantId String
-  /// 작성자
-  user         User       @relation(fields: [userId], references: [id])
-  /// 작성자 ID (FK)
-  userId       String
-  /// 작성일
-  createdAt    DateTime   @default(now())
-  /// 최종 수정일
-  updatedAt    DateTime   @updatedAt
-
-  @@index([restaurantId])
   @@index([userId])
 }
 
