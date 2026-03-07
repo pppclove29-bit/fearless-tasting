@@ -11,6 +11,23 @@ const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
 
 const logoutState = { active: false };
 
+/** JWT payload에서 exp(만료 시각, 초 단위)를 추출 */
+function getTokenExp(token: string): number | null {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return typeof payload.exp === 'number' ? payload.exp : null;
+  } catch { return null; }
+}
+
+/** access token이 1분 이내 만료인지 확인 */
+function isTokenExpiringSoon(): boolean {
+  const token = localStorage.getItem('access_token');
+  if (!token) return false;
+  const exp = getTokenExp(token);
+  if (!exp) return false;
+  return exp - Date.now() / 1000 < 60;
+}
+
 export function getAccessToken(): string | null {
   return localStorage.getItem('access_token');
 }
@@ -43,8 +60,13 @@ export function clearTokens() {
   }
 }
 
-/** Authorization 헤더 포함 fetch 래퍼 (토큰 만료 시 자동 갱신) */
+/** Authorization 헤더 포함 fetch 래퍼 (토큰 만료 임박 시 선제 갱신, 만료 시 자동 갱신) */
 async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
+  // 만료 1분 전이면 선제적으로 토큰 갱신
+  if (isTokenExpiringSoon() && getRefreshToken()) {
+    await refreshTokens();
+  }
+
   const token = getAccessToken();
   const headers: Record<string, string> = {
     ...(init?.headers as Record<string, string> ?? {}),
@@ -152,16 +174,24 @@ export async function updateRoom(id: string, name: string): Promise<void> {
   if (!res.ok) throw new Error('방 이름 변경에 실패했습니다.');
 }
 
-/** 현재 로그인 유저 조회 (비로그인 시 null) */
-export async function fetchCurrentUser(): Promise<AuthUser | null> {
-  if (!getAccessToken() && !getRefreshToken()) return null;
-  try {
-    const res = await apiFetch(`${API_BASE}/auth/me`);
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
+/** 현재 로그인 유저 조회 (비로그인 시 null, 같은 페이지 내 중복 호출 캐싱) */
+let currentUserCache: Promise<AuthUser | null> | null = null;
+
+export function fetchCurrentUser(): Promise<AuthUser | null> {
+  if (!getAccessToken() && !getRefreshToken()) return Promise.resolve(null);
+  if (currentUserCache) return currentUserCache;
+
+  currentUserCache = (async () => {
+    try {
+      const res = await apiFetch(`${API_BASE}/auth/me`);
+      if (!res.ok) return null;
+      return res.json() as Promise<AuthUser>;
+    } catch {
+      return null;
+    }
+  })();
+
+  return currentUserCache;
 }
 
 /** 토큰 갱신 */
@@ -172,6 +202,7 @@ export async function refreshToken(): Promise<boolean> {
 /** 로그아웃 — 즉시 클라이언트 토큰 삭제, 서버 DB 무효화는 fire-and-forget */
 export function logout(): void {
   logoutState.active = true;
+  currentUserCache = null;
   const accessToken = getAccessToken();
   const rt = getRefreshToken();
   clearTokens();
