@@ -33,6 +33,28 @@ function escapeHtml(text: string): string {
 ---
 
 <BaseLayout title={title} description={description}>
+  <slot name="head">
+    {room && (
+      <script type="application/ld+json" set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": room.name,
+        "description": `${room.name} - ${room.restaurants.length}곳의 맛집 리스트`,
+        "url": (Astro.site ?? Astro.url.origin) + `/share/${code}`,
+        "numberOfItems": room.restaurants.length,
+        "itemListElement": room.restaurants.map((r, i) => ({
+          "@type": "ListItem",
+          "position": i + 1,
+          "item": {
+            "@type": "FoodEstablishment",
+            "name": r.name,
+            "address": r.address,
+            "servesCuisine": r.category,
+          },
+        })),
+      })} />
+    )}
+  </slot>
   <div id="share-page">
     {error && <p class="status-msg error">{error}</p>}
 

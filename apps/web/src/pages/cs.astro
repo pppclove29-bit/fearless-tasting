@@ -3,6 +3,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="문의하기" description="지역 추가 요청, 버그 신고, 피드백 등 자유롭게 문의해 주세요">
+  <slot name="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "ContactPage",
+      "name": "문의하기 - 무모한 시식가",
+      "description": "지역 추가 요청, 버그 신고, 피드백 등 문의",
+      "url": (Astro.site ?? Astro.url.origin) + "/cs",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "email": "pppclove29@naver.com",
+        "availableLanguage": "Korean",
+      },
+    })} />
+  </slot>
   <h1>문의하기</h1>
   <p class="page-desc">지역 추가 요청, 버그 신고, 피드백 등 자유롭게 문의해 주세요.</p>
   <p class="email-info">이메일로도 문의 가능합니다: <a href="mailto:pppclove29@naver.com">pppclove29@naver.com</a></p>

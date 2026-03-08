@@ -7,6 +7,7 @@ Disallow: /room
 Disallow: /rooms
 Disallow: /add
 Disallow: /profile
+Disallow: /join
 Allow: /rankings
 Allow: /discover
 

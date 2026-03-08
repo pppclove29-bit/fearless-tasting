@@ -4,6 +4,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="맛집 리뷰 랭킹" description="무모한 시식가 유저들의 맛집 리뷰 랭킹. 리뷰 수, 방문 수, 평균 평점, 재방문율 등 다양한 기준으로 순위를 확인하세요.">
+  <slot name="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "맛집 리뷰 랭킹 - 무모한 시식가",
+      "description": "유저들의 맛집 리뷰 활동 기반 랭킹과 업적",
+      "url": (Astro.site ?? Astro.url.origin) + "/rankings",
+    })} />
+  </slot>
   <div id="rankings-page">
     <div class="rankings-header">
       <h1>맛집 리뷰 랭킹</h1>

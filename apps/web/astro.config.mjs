@@ -12,7 +12,8 @@ export default defineConfig({
         !page.includes('/login') &&
         !page.includes('/room') &&
         !page.includes('/rooms') &&
-        !page.includes('/profile'),
+        !page.includes('/profile') &&
+        !page.includes('/join'),
     }),
   ],
 });
