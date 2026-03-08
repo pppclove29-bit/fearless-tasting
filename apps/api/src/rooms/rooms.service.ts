@@ -1,7 +1,12 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import { calcAvgRating } from '@repo/utils';
 import { PrismaService } from '../prisma/prisma.service';
+
+/** 평균 평점 계산 (소수점 1자리 반올림). 빈 배열이면 null 반환. */
+function calcAvgRating(ratings: number[]): number | null {
+  if (ratings.length === 0) return null;
+  return Math.round((ratings.reduce((sum, r) => sum + r, 0) / ratings.length) * 10) / 10;
+}
 
 const MAX_ROOM_MEMBERS = 4;
 const CODE_GEN_MAX_RETRIES = 10;
