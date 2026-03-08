@@ -27,20 +27,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
 <style is:global>
   .rankings-header {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
   }
 
   .rankings-header h1 {
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     margin: 0;
     color: var(--text-heading);
   }
 
   .rankings-subtitle {
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     color: var(--text-muted);
-    margin-top: 0.15rem;
+    margin-top: 0.25rem;
   }
 
   .loading-msg, .error-msg {
@@ -55,33 +56,39 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   /* 랭킹 카테고리 탭 */
   .ranking-tabs {
     display: flex;
-    gap: 0.3rem;
+    gap: 0.35rem;
     margin-bottom: 1rem;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    padding: 0.25rem;
+    background: var(--bg-hover);
+    border-radius: 12px;
   }
 
   .ranking-tabs::-webkit-scrollbar { display: none; }
 
   .ranking-tab-btn {
-    padding: 0.4rem 0.8rem;
-    border: 1px solid var(--border-mid);
-    border-radius: 100px;
-    background: var(--bg-card);
+    padding: 0.5rem 0.85rem;
+    border: none;
+    border-radius: 8px;
+    background: none;
     font-size: 0.78rem;
-    color: var(--text-sub);
+    font-weight: 500;
+    color: var(--text-muted);
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.15s;
+    font-family: inherit;
   }
 
-  .ranking-tab-btn:hover { border-color: var(--text-muted); }
+  .ranking-tab-btn:hover { color: var(--text-sub); }
 
   .ranking-tab-btn.active {
-    background: var(--text-heading);
-    color: var(--bg);
-    border-color: var(--text-heading);
+    background: var(--bg-card);
+    color: var(--text-heading);
+    font-weight: 700;
+    box-shadow: 0 1px 3px var(--shadow);
   }
 
   /* 랭킹 테이블 */
@@ -90,7 +97,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-collapse: collapse;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 14px;
     overflow: hidden;
     margin-bottom: 1.5rem;
   }
@@ -100,7 +107,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-muted);
-    padding: 0.6rem 0.75rem;
+    padding: 0.65rem 0.85rem;
     text-align: left;
     border-bottom: 1px solid var(--border);
   }
@@ -108,7 +115,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .ranking-table th.num { text-align: right; }
 
   .ranking-table td {
-    padding: 0.6rem 0.75rem;
+    padding: 0.7rem 0.85rem;
     font-size: 0.82rem;
     border-bottom: 1px solid var(--border-light);
     vertical-align: middle;
@@ -149,15 +156,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .rank-avatar {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: var(--bg-hover);
     object-fit: cover;
   }
 
   .rank-nickname {
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text-sub);
   }
 
@@ -165,7 +172,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .achievements-section {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 1.25rem;
     margin-bottom: 1.5rem;
   }
@@ -173,7 +180,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .achievements-section h2 {
     font-size: 1rem;
     font-weight: 700;
-    margin: 0 0 0.75rem;
+    margin: 0 0 0.85rem;
     color: var(--text-heading);
   }
 
@@ -187,14 +194,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.75rem 0.5rem;
-    border: 1px solid var(--border-light);
-    border-radius: 10px;
+    padding: 0.85rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
     text-align: center;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, transform 0.1s;
   }
 
   .achievement-card:hover { border-color: var(--border-mid); }
+  .achievement-card:active { transform: scale(0.98); }
 
   .achievement-card.locked {
     opacity: 0.35;
@@ -203,19 +211,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .achievement-icon {
     font-size: 1.5rem;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
   }
 
   .achievement-name {
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.78rem;
+    font-weight: 700;
     color: var(--text-sub);
   }
 
   .achievement-desc {
     font-size: 0.65rem;
     color: var(--text-muted);
-    margin-top: 0.1rem;
+    margin-top: 0.15rem;
   }
 
   .achievement-count {
@@ -229,7 +237,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .my-profile-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 1.25rem;
     margin-bottom: 1.25rem;
     display: flex;
@@ -238,29 +246,32 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .my-profile-avatar {
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     background: var(--bg-hover);
     object-fit: cover;
+    border: 2px solid var(--border);
   }
 
   .my-profile-info {
     flex: 1;
+    min-width: 0;
   }
 
   .my-profile-name {
-    font-size: 1rem;
-    font-weight: 700;
+    font-size: 1.05rem;
+    font-weight: 800;
     color: var(--text-heading);
   }
 
   .my-profile-stats {
     display: flex;
     gap: 0.75rem;
-    margin-top: 0.3rem;
-    font-size: 0.75rem;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
     color: var(--text-muted);
+    flex-wrap: wrap;
   }
 
   .my-profile-stats strong { color: var(--text-sub); }
@@ -269,13 +280,35 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: flex;
     align-items: center;
     gap: 0.3rem;
-    padding: 0.3rem 0.7rem;
+    padding: 0.35rem 0.75rem;
     background: #fffbeb;
     border: 1px solid #fde68a;
     border-radius: 100px;
     font-size: 0.78rem;
     font-weight: 600;
     color: #92400e;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 600px) {
+    .my-profile-card {
+      flex-wrap: wrap;
+    }
+
+    .my-achievement-count {
+      margin-left: auto;
+    }
+
+    .ranking-table th,
+    .ranking-table td {
+      padding: 0.55rem 0.5rem;
+    }
+
+    .rank-avatar {
+      width: 28px;
+      height: 28px;
+    }
   }
 </style>
 

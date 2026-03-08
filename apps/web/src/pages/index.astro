@@ -37,61 +37,99 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   <!-- 내 방 목록 (로그인 시) -->
   <div id="dashboard" hidden>
-    <h1>내 방</h1>
-    <p class="page-desc">방을 만들어 함께 맛집 리스트를 공유하세요.</p>
+    <div class="dashboard-header">
+      <div>
+        <h1>내 방</h1>
+        <p class="page-desc">방을 만들어 함께 맛집 리스트를 공유하세요.</p>
+      </div>
+    </div>
 
     <div class="rooms-actions">
       <form id="create-form" class="action-form">
-        <input type="text" id="create-name" placeholder="방 이름" required maxlength="100" />
-        <button type="submit" class="btn-primary">방 만들기</button>
+        <div class="input-group">
+          <input type="text" id="create-name" placeholder="방 이름을 입력하세요" required maxlength="100" />
+          <button type="submit" class="btn-primary">만들기</button>
+        </div>
       </form>
       <form id="join-form" class="action-form">
-        <input type="text" id="join-code" placeholder="초대 코드 (8자)" required maxlength="8" minlength="8" />
-        <button type="submit" class="btn-secondary">입장</button>
+        <div class="input-group">
+          <input type="text" id="join-code" placeholder="초대 코드 8자리" required maxlength="8" minlength="8" />
+          <button type="submit" class="btn-outline">입장</button>
+        </div>
       </form>
     </div>
 
     <div class="form-error" id="form-error" hidden></div>
 
-    <div class="rooms-sort-row" id="rooms-sort-row" hidden>
-      <select id="rooms-sort">
-        <option value="recent">최근 참여순</option>
-        <option value="name">이름순</option>
-        <option value="members">멤버 많은순</option>
-        <option value="restaurants">식당 많은순</option>
-      </select>
+    <div class="rooms-toolbar" id="rooms-toolbar" hidden>
+      <span class="rooms-count" id="rooms-count"></span>
+      <button type="button" class="sort-trigger" id="sort-trigger">
+        <span id="sort-label">최근 참여순</span>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
     </div>
 
     <div id="rooms-list"></div>
-    <p id="empty-msg" class="status-msg" hidden>참여 중인 방이 없습니다. 방을 만들거나 초대 코드로 입장하세요.</p>
+    <p id="empty-msg" class="empty-state" hidden>
+      <span class="empty-icon">🏠</span>
+      <span class="empty-text">참여 중인 방이 없습니다</span>
+      <span class="empty-sub">위에서 방을 만들거나 초대 코드로 입장하세요</span>
+    </p>
   </div>
 
-  <!-- 랜딩 (항상 표시) -->
+  <!-- 정렬 바텀시트 -->
+  <div class="sheet-backdrop" id="sort-backdrop" hidden></div>
+  <div class="sheet" id="sort-sheet" hidden>
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">정렬</div>
+    <div class="sheet-options" id="sort-options">
+      <button type="button" class="sheet-option active" data-sort="recent">최근 참여순</button>
+      <button type="button" class="sheet-option" data-sort="name">이름순</button>
+      <button type="button" class="sheet-option" data-sort="members">멤버 많은순</button>
+      <button type="button" class="sheet-option" data-sort="restaurants">식당 많은순</button>
+    </div>
+  </div>
+
+  <!-- 랜딩 (비로그인 시 표시) -->
   <div id="landing" hidden>
     <section class="hero">
-      <h1 class="hero-title">둘만의 맛집 리스트</h1>
-      <p class="hero-sub">함께 다녀온 맛집을 기록하고, 리뷰를 남기고, 링크 하나로 공유하세요.</p>
-      <a href="/login" class="hero-cta login-only-cta">카카오로 시작하기</a>
+      <p class="hero-badge">맛집 공유 플랫폼</p>
+      <h1 class="hero-title">둘만의<br/>맛집 리스트</h1>
+      <p class="hero-sub">함께 다녀온 맛집을 기록하고,<br/>리뷰를 남기고, 링크 하나로 공유하세요.</p>
+      <a href="/login" class="hero-cta login-only-cta">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align: -3px; margin-right: 6px;">
+          <path d="M9 1C4.58 1 1 3.8 1 7.2c0 2.2 1.47 4.13 3.68 5.22-.16.6-.59 2.17-.67 2.51-.1.42.15.41.32.3.13-.09 2.1-1.43 2.95-2.01.55.08 1.12.12 1.72.12 4.42 0 8-2.8 8-6.14S13.42 1 9 1z" fill="currentColor"/>
+        </svg>
+        카카오로 시작하기
+      </a>
     </section>
 
     <section class="features">
       <div class="feature-card">
-        <div class="feature-icon">🏠</div>
+        <div class="feature-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
         <h3>방 만들기</h3>
         <p>둘만의 맛집 방을 만들고 초대 코드로 상대방을 초대하세요.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📝</div>
+        <div class="feature-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
         <h3>맛집 리뷰</h3>
         <p>다녀온 식당을 등록하고 별점과 함께 솔직한 리뷰를 남겨보세요.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔗</div>
+        <div class="feature-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+        </div>
         <h3>공유 링크</h3>
         <p>맛집 리스트를 공유 링크로 만들어 누구에게나 보여줄 수 있어요.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔒</div>
+        <div class="feature-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
         <h3>초대 코드</h3>
         <p>24시간 유효한 초대 코드로 원하는 사람만 방에 초대하세요.</p>
       </div>
@@ -101,21 +139,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <h2 class="section-title">이런 분들에게 추천해요</h2>
       <div class="recommend-list">
         <div class="recommend-item">
-          <span class="recommend-icon">👫</span>
+          <div class="recommend-icon-wrap">👫</div>
           <div>
             <h4>연인과 맛집을 기록하고 싶은 커플</h4>
             <p>함께 다녀온 맛집을 하나의 리스트로 관리하세요.</p>
           </div>
         </div>
         <div class="recommend-item">
-          <span class="recommend-icon">👨‍👩‍👧‍👦</span>
+          <div class="recommend-icon-wrap">👨‍👩‍👧‍👦</div>
           <div>
             <h4>가족끼리 맛집을 공유하고 싶은 분</h4>
             <p>부모님, 형제와 함께 우리 가족만의 맛집 지도를 만들어보세요.</p>
           </div>
         </div>
         <div class="recommend-item">
-          <span class="recommend-icon">🍽️</span>
+          <div class="recommend-icon-wrap">🍽️</div>
           <div>
             <h4>맛집 기록을 체계적으로 남기고 싶은 분</h4>
             <p>별점과 리뷰로 다녀온 식당을 깔끔하게 정리하세요.</p>
@@ -187,19 +225,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     <section class="platform-stats" id="platform-stats" hidden>
       <h2 class="section-title">지금까지의 기록</h2>
       <div class="stats-grid">
-        <div class="stat-card">
+        <div class="stat-item">
           <span class="stat-number" id="stat-rooms">-</span>
           <span class="stat-label">개의 방</span>
         </div>
-        <div class="stat-card">
+        <div class="stat-item">
           <span class="stat-number" id="stat-users">-</span>
           <span class="stat-label">명의 시식가</span>
         </div>
-        <div class="stat-card">
+        <div class="stat-item">
           <span class="stat-number" id="stat-restaurants">-</span>
           <span class="stat-label">곳의 맛집</span>
         </div>
-        <div class="stat-card">
+        <div class="stat-item">
           <span class="stat-number" id="stat-reviews">-</span>
           <span class="stat-label">개의 리뷰</span>
         </div>
@@ -221,88 +259,114 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   /* ─── 랜딩 ─── */
   .hero {
     text-align: center;
-    padding: 4rem 1rem 3rem;
+    padding: 5rem 1rem 3.5rem;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    padding: 0.35rem 0.9rem;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-sub);
+    margin-bottom: 1.25rem;
   }
 
   .hero-title {
-    font-size: 2.2rem;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    margin-bottom: 0.75rem;
+    font-size: 2.8rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.2;
+    margin-bottom: 1rem;
     color: var(--text-heading);
   }
 
   .hero-sub {
     font-size: 1.05rem;
     color: var(--text-sub);
-    margin-bottom: 2rem;
-    line-height: 1.6;
+    margin-bottom: 2.5rem;
+    line-height: 1.7;
   }
 
   .hero-cta {
-    display: inline-block;
-    padding: 0.85rem 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.9rem 2rem;
     background: #FEE500;
     color: #191919;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    border-radius: 10px;
+    border-radius: 12px;
     text-decoration: none;
-    transition: background 0.15s;
+    transition: background 0.15s, transform 0.1s;
   }
 
   .hero-cta:hover {
     background: #F5DC00;
   }
 
+  .hero-cta:active {
+    transform: scale(0.98);
+  }
+
   .hero-cta[hidden] {
     display: none;
   }
 
+  /* ─── 기능 소개 ─── */
   .features {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
-    padding: 2rem 0 3rem;
+    gap: 1rem;
+    padding: 0 0 3.5rem;
   }
 
   .feature-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.75rem 1.25rem;
-    text-align: center;
+    border-radius: 16px;
+    padding: 1.75rem 1.5rem;
   }
 
-  .feature-icon {
-    font-size: 2rem;
-    margin-bottom: 0.75rem;
+  .feature-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: var(--text-heading);
+    color: var(--bg);
+    border-radius: 12px;
+    margin-bottom: 1rem;
   }
 
   .feature-card h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
     color: var(--text-heading);
   }
 
   .feature-card p {
     font-size: 0.85rem;
     color: var(--text-sub);
-    line-height: 1.5;
+    line-height: 1.55;
   }
 
   .section-title {
     text-align: center;
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     margin-bottom: 1.5rem;
     color: var(--text-heading);
   }
 
   /* ─── 추천 대상 ─── */
   .recommend {
-    padding: 0 0 3rem;
+    padding: 0 0 3.5rem;
   }
 
   .recommend-list {
@@ -319,37 +383,44 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     gap: 1rem;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 14px;
     padding: 1.25rem;
   }
 
-  .recommend-icon {
-    font-size: 1.5rem;
-    min-width: 32px;
-    text-align: center;
+  .recommend-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    background: var(--bg-hover);
+    border-radius: 12px;
+    font-size: 1.3rem;
   }
 
   .recommend-item h4 {
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: 0.925rem;
+    font-weight: 700;
     margin-bottom: 0.2rem;
     color: var(--text-heading);
   }
 
   .recommend-item p {
-    font-size: 0.85rem;
+    font-size: 0.825rem;
     color: var(--text-sub);
+    line-height: 1.5;
   }
 
   /* ─── 시작 스텝 ─── */
   .steps {
-    padding: 0 0 3rem;
+    padding: 0 0 3.5rem;
   }
 
   .steps-list {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
     max-width: 480px;
     margin: 0 auto;
   }
@@ -360,7 +431,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     gap: 1rem;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 14px;
     padding: 1.25rem;
   }
 
@@ -379,20 +450,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .step h4 {
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: 0.925rem;
+    font-weight: 700;
     margin-bottom: 0.2rem;
     color: var(--text-heading);
   }
 
   .step p {
-    font-size: 0.85rem;
+    font-size: 0.825rem;
     color: var(--text-sub);
+    line-height: 1.5;
   }
 
   /* ─── FAQ ─── */
   .faq {
-    padding: 0 0 3rem;
+    padding: 0 0 3.5rem;
   }
 
   .faq-list {
@@ -406,13 +478,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .faq-item {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 14px;
     overflow: hidden;
   }
 
   .faq-item summary {
     padding: 1rem 1.25rem;
-    font-size: 0.95rem;
+    font-size: 0.925rem;
     font-weight: 600;
     cursor: pointer;
     list-style: none;
@@ -439,15 +511,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .faq-item p {
-    padding: 0 1.25rem 1rem;
+    padding: 0 1.25rem 1.1rem;
     font-size: 0.85rem;
     color: var(--text-sub);
-    line-height: 1.6;
+    line-height: 1.65;
   }
 
   /* ─── 플랫폼 통계 ─── */
   .platform-stats {
-    padding: 0 0 3rem;
+    padding: 0 0 3.5rem;
   }
 
   .stats-grid {
@@ -458,10 +530,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin: 0 auto;
   }
 
-  .stat-card {
+  .stat-item {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 14px;
     padding: 1.25rem 0.5rem;
     text-align: center;
   }
@@ -469,9 +541,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .stat-number {
     display: block;
     font-size: 1.6rem;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--text-heading);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.2rem;
   }
 
   .stat-label {
@@ -479,7 +551,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 600px) {
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
@@ -490,9 +562,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .bottom-cta p {
-    font-size: 1rem;
-    color: var(--text-sub);
-    margin-bottom: 1rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin-bottom: 1.25rem;
   }
 
   .bottom-cta-link {
@@ -508,23 +581,29 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   @media (max-width: 600px) {
-    .hero-title { font-size: 1.6rem; }
+    .hero { padding: 3rem 0.5rem 2.5rem; }
+    .hero-title { font-size: 2rem; }
     .hero-sub { font-size: 0.9rem; }
     .features { grid-template-columns: 1fr; }
-    .action-form { min-width: 100%; }
+    .feature-card { padding: 1.5rem 1.25rem; }
   }
 
   /* ─── 대시보드 (방 목록) ─── */
+  .dashboard-header {
+    margin-bottom: 1.5rem;
+  }
+
   h1 {
     margin-bottom: 0.25rem;
-    font-size: 1.4rem;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     color: var(--text-heading);
   }
 
   .page-desc {
     color: var(--text-muted);
     font-size: 0.875rem;
-    margin-bottom: 1.5rem;
   }
 
   .status-msg {
@@ -538,91 +617,144 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: flex;
     gap: 0.75rem;
     margin-bottom: 1rem;
-    flex-wrap: wrap;
   }
 
   .action-form {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .input-group {
     display: flex;
     gap: 0.5rem;
-    flex: 1;
-    min-width: 240px;
   }
 
-  .action-form input {
+  .input-group input {
     flex: 1;
-    padding: 0.6rem 0.75rem;
-    border: 1px solid var(--border-mid);
-    border-radius: 6px;
+    min-width: 0;
+    padding: 0.7rem 0.85rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
     font-size: 0.875rem;
-    background: var(--bg-input);
+    background: var(--bg-card);
     color: var(--text);
     font-family: inherit;
+    transition: border-color 0.15s;
   }
 
-  .action-form input:focus {
+  .input-group input:focus {
     outline: none;
-    border-color: var(--text-sub);
-    box-shadow: 0 0 0 2px var(--shadow);
+    border-color: var(--text-heading);
   }
 
-  .action-form input::placeholder {
+  .input-group input::placeholder {
     color: var(--text-muted);
   }
 
   .btn-primary {
-    padding: 0.6rem 1rem;
+    padding: 0.7rem 1.1rem;
     background: var(--text-heading);
     color: var(--bg);
     border: none;
-    border-radius: 6px;
+    border-radius: 10px;
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
-    transition: background 0.15s;
-  }
-
-  .btn-primary:hover { background: var(--text-sub); }
-
-  .btn-secondary {
-    padding: 0.6rem 1rem;
-    background: var(--bg-card);
-    color: var(--text-sub);
-    border: 1px solid var(--border-mid);
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.15s;
-  }
-
-  .btn-secondary:hover { background: var(--bg-hover); }
-
-  .rooms-sort-row {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 0.75rem;
-  }
-
-  .rooms-sort-row select {
-    padding: 0.4rem 0.6rem;
-    border: 1px solid var(--border-mid);
-    border-radius: 6px;
-    font-size: 0.8rem;
+    transition: opacity 0.15s, transform 0.1s;
     font-family: inherit;
-    color: var(--text-sub);
+  }
+
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:active { transform: scale(0.97); }
+
+  .btn-outline {
+    padding: 0.7rem 1.1rem;
     background: var(--bg-card);
+    color: var(--text-heading);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
     cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.15s, transform 0.1s;
+    font-family: inherit;
+  }
+
+  .btn-outline:hover { border-color: var(--text-heading); }
+  .btn-outline:active { transform: scale(0.97); }
+
+  .rooms-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0 0.1rem;
+  }
+
+  .rooms-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .sort-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.45rem 0.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-sub);
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+
+  .sort-trigger:hover {
+    border-color: var(--text-muted);
+  }
+
+  .sort-trigger svg {
+    color: var(--text-muted);
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 3rem 1rem;
+    text-align: center;
+  }
+
+  .empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .empty-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-sub);
+  }
+
+  .empty-sub {
+    font-size: 0.825rem;
+    color: var(--text-muted);
   }
 
   .form-error {
-    padding: 0.75rem;
+    padding: 0.75rem 1rem;
     background: #fef2f2;
     border: 1px solid #fecaca;
-    border-radius: 6px;
+    border-radius: 10px;
     color: #dc2626;
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     margin-bottom: 1rem;
   }
 
@@ -631,35 +763,51 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-color: #7f1d1d;
     color: #fca5a5;
   }
+
+  @media (max-width: 600px) {
+    .rooms-actions {
+      flex-direction: column;
+    }
+  }
 </style>
 
 <style is:global>
+  /* ─── 방 카드 ─── */
   .room-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1rem 1.25rem;
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
     margin-bottom: 0.6rem;
     text-decoration: none;
     color: inherit;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: border-color 0.15s, transform 0.1s;
   }
 
   .room-card:hover {
     border-color: var(--border-mid);
-    box-shadow: 0 2px 8px var(--shadow);
   }
 
-  .room-info { min-width: 0; }
+  .room-card:active {
+    transform: scale(0.99);
+  }
+
+  .room-info {
+    min-width: 0;
+    flex: 1;
+  }
 
   .room-name {
     font-size: 0.95rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-heading);
-    margin-bottom: 0.15rem;
+    margin-bottom: 0.2rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .room-meta {
@@ -667,19 +815,123 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
   }
 
+  .room-right {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-left: 0.75rem;
+    flex-shrink: 0;
+  }
+
   .room-role {
     display: inline-block;
-    padding: 0.15rem 0.45rem;
-    border-radius: 4px;
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
     font-size: 0.7rem;
     font-weight: 600;
     background: var(--bg-hover);
     color: var(--text-sub);
-    margin-left: 0.5rem;
   }
 
   .room-role.owner { background: #fef3c7; color: #92400e; }
   .room-role.manager { background: #dbeafe; color: #1d4ed8; }
+
+  .room-chevron {
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  /* ─── 바텀시트 ─── */
+  .sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .sheet-backdrop.visible {
+    opacity: 1;
+  }
+
+  .sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    border-radius: 20px 20px 0 0;
+    padding: 0.5rem 1.25rem 2rem;
+    z-index: 201;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .sheet.visible {
+    transform: translateY(0);
+  }
+
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border-mid);
+    border-radius: 2px;
+    margin: 0.5rem auto 1rem;
+  }
+
+  .sheet-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 0.75rem;
+    padding: 0 0.25rem;
+  }
+
+  .sheet-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .sheet-option {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.85rem 0.75rem;
+    background: none;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-sub);
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+
+  .sheet-option:hover {
+    background: var(--bg-hover);
+  }
+
+  .sheet-option.active {
+    color: var(--text-heading);
+    font-weight: 700;
+    background: var(--bg-hover);
+  }
+
+  .sheet-option.active::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--text-heading);
+    border-radius: 50%;
+    margin-right: 0.6rem;
+  }
 </style>
 
 <script>
@@ -709,9 +961,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     member: '멤버',
   };
 
-  const roomsSortRow = document.getElementById('rooms-sort-row')!;
-  const roomsSortSelect = document.getElementById('rooms-sort') as HTMLSelectElement;
+  const roomsToolbar = document.getElementById('rooms-toolbar')!;
+  const roomsCount = document.getElementById('rooms-count')!;
+  const sortTrigger = document.getElementById('sort-trigger')!;
+  const sortLabel = document.getElementById('sort-label')!;
+  const sortBackdrop = document.getElementById('sort-backdrop')!;
+  const sortSheet = document.getElementById('sort-sheet')!;
+  const sortOptions = document.getElementById('sort-options')!;
+
   let allRooms: RoomListItem[] = [];
+  let currentSort = 'recent';
+
+  const sortLabels: Record<string, string> = {
+    recent: '최근 참여순',
+    name: '이름순',
+    members: '멤버 많은순',
+    restaurants: '식당 많은순',
+  };
 
   function sortRooms(rooms: RoomListItem[], sortBy: string): RoomListItem[] {
     const sorted = [...rooms];
@@ -719,20 +985,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       case 'name': return sorted.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
       case 'members': return sorted.sort((a, b) => b.memberCount - a.memberCount);
       case 'restaurants': return sorted.sort((a, b) => b.restaurantCount - a.restaurantCount);
-      default: return sorted; // 'recent' — 서버에서 joinedAt desc로 정렬됨
+      default: return sorted;
     }
   }
 
   function renderRooms(rooms: RoomListItem[]) {
     if (rooms.length === 0) {
       roomsList.innerHTML = '';
-      roomsSortRow.hidden = true;
+      roomsToolbar.hidden = true;
       emptyMsg.hidden = false;
       return;
     }
 
     emptyMsg.hidden = true;
-    roomsSortRow.hidden = rooms.length < 2;
+    roomsToolbar.hidden = false;
+    roomsCount.textContent = `${rooms.length}개의 방`;
     roomsList.innerHTML = rooms
       .map(
         (r) => `
@@ -741,16 +1008,51 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <div class="room-name">${escapeHtml(r.name)}</div>
             <div class="room-meta">멤버 ${r.memberCount}명 · 식당 ${r.restaurantCount}개</div>
           </div>
-          <span class="room-role ${r.myRole}">${roleLabel[r.myRole] || r.myRole}</span>
+          <div class="room-right">
+            <span class="room-role ${r.myRole}">${roleLabel[r.myRole] || r.myRole}</span>
+            <svg class="room-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
         </a>
       `,
       )
       .join('');
   }
 
-  roomsSortSelect.addEventListener('change', () => {
-    renderRooms(sortRooms(allRooms, roomsSortSelect.value));
-  });
+  // 바텀시트 정렬
+  function openSortSheet() {
+    sortBackdrop.hidden = false;
+    sortSheet.hidden = false;
+    requestAnimationFrame(() => {
+      sortBackdrop.classList.add('visible');
+      sortSheet.classList.add('visible');
+    });
+  }
+
+  function closeSortSheet() {
+    sortBackdrop.classList.remove('visible');
+    sortSheet.classList.remove('visible');
+    setTimeout(() => {
+      sortBackdrop.hidden = true;
+      sortSheet.hidden = true;
+    }, 300);
+  }
+
+  sortTrigger.addEventListener('click', openSortSheet);
+  sortBackdrop.addEventListener('click', closeSortSheet);
+
+  for (const btn of sortOptions.querySelectorAll<HTMLButtonElement>('.sheet-option')) {
+    btn.addEventListener('click', () => {
+      const value = btn.dataset.sort!;
+      currentSort = value;
+      sortLabel.textContent = sortLabels[value];
+
+      for (const b of sortOptions.querySelectorAll('.sheet-option')) b.classList.remove('active');
+      btn.classList.add('active');
+
+      renderRooms(sortRooms(allRooms, currentSort));
+      closeSortSheet();
+    });
+  }
 
   function showError(msg: string) {
     formError.textContent = msg;
@@ -767,7 +1069,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       await createRoom(name);
       createNameInput.value = '';
       allRooms = await fetchMyRooms();
-      renderRooms(sortRooms(allRooms, roomsSortSelect.value));
+      renderRooms(sortRooms(allRooms, currentSort));
     } catch (err) {
       showError(err instanceof Error ? err.message : '방 생성에 실패했습니다.');
     }
@@ -788,7 +1090,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
   });
 
-  // 플랫폼 통계 로드 (비동기, 실패해도 무시)
+  // 플랫폼 통계 로드
   (async () => {
     try {
       const stats = await fetchPlatformStats();

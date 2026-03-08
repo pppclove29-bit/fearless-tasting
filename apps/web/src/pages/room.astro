@@ -25,11 +25,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
 <style is:global>
   .back-link {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
     margin-bottom: 1rem;
     font-size: 0.85rem;
-    color: var(--text-sub);
+    color: var(--text-muted);
     text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s;
   }
 
   .back-link:hover { color: var(--text-heading); }
@@ -37,7 +41,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .room-header {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 1.5rem;
     margin-bottom: 1.25rem;
   }
@@ -52,6 +56,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .room-header h1 {
     font-size: 1.5rem;
     font-weight: 800;
+    letter-spacing: -0.02em;
     margin: 0;
     line-height: 1.3;
     word-break: break-word;
@@ -119,14 +124,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     padding: 0.3rem 0.6rem;
     background: var(--bg-card);
     color: var(--text-sub);
-    border: 1px solid var(--border-mid);
-    border-radius: 6px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
     font-size: 0.75rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: border-color 0.15s;
+    font-family: inherit;
   }
 
-  .btn-copy:hover { background: var(--bg-hover); }
+  .btn-copy:hover { border-color: var(--text-muted); }
 
   .btn-kakao-share {
     padding: 0.3rem 0.6rem;
@@ -147,13 +154,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     background: var(--text-heading);
     color: var(--bg);
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 0.75rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: opacity 0.15s;
+    font-family: inherit;
   }
 
-  .btn-regen:hover { background: var(--text-sub); }
+  .btn-regen:hover { opacity: 0.85; }
 
   .invite-expiry {
     font-size: 0.75rem;
@@ -202,66 +211,74 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .btn-danger-sm {
-    padding: 0.35rem 0.7rem;
+    padding: 0.4rem 0.75rem;
     background: #dc2626;
     color: #fff;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 0.8rem;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: opacity 0.15s, transform 0.1s;
+    font-family: inherit;
   }
 
-  .btn-danger-sm:hover { background: #b91c1c; }
+  .btn-danger-sm:hover { opacity: 0.85; }
+  .btn-danger-sm:active { transform: scale(0.97); }
 
   .btn-outline-sm {
-    padding: 0.35rem 0.7rem;
+    padding: 0.4rem 0.75rem;
     background: var(--bg-card);
     color: var(--text-sub);
-    border: 1px solid var(--border-mid);
-    border-radius: 6px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: border-color 0.15s, transform 0.1s;
+    font-family: inherit;
   }
 
-  .btn-outline-sm:hover { background: var(--bg-hover); }
+  .btn-outline-sm:hover { border-color: var(--text-muted); }
+  .btn-outline-sm:active { transform: scale(0.97); }
 
   /* 탭 바 */
   .room-tab-bar {
     display: flex;
-    gap: 0;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
+    gap: 0.35rem;
+    margin-bottom: 1.25rem;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    padding: 0.25rem;
+    background: var(--bg-hover);
+    border-radius: 12px;
   }
 
   .room-tab-bar::-webkit-scrollbar { display: none; }
 
   .room-tab-btn {
-    padding: 0.6rem 0.85rem;
+    padding: 0.55rem 0.85rem;
     background: none;
     border: none;
-    border-bottom: 2px solid transparent;
-    font-size: 0.85rem;
+    border-radius: 8px;
+    font-size: 0.825rem;
     font-weight: 500;
     color: var(--text-muted);
     cursor: pointer;
-    transition: color 0.15s, border-color 0.15s;
+    transition: all 0.15s;
     white-space: nowrap;
     flex-shrink: 0;
+    font-family: inherit;
   }
 
   .room-tab-btn:hover { color: var(--text-sub); }
 
   .room-tab-btn.active {
     color: var(--text-heading);
-    font-weight: 600;
-    border-bottom-color: var(--text-heading);
+    font-weight: 700;
+    background: var(--bg-card);
+    box-shadow: 0 1px 3px var(--shadow);
   }
 
   /* 멤버 리스트 */
@@ -277,8 +294,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     align-items: center;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
   }
 
   .member-info {
@@ -325,14 +342,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .room-restaurant-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1rem 1.25rem;
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
     margin-bottom: 0.6rem;
     cursor: pointer;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, transform 0.1s;
   }
 
   .room-restaurant-card:hover { border-color: var(--border-mid); }
+  .room-restaurant-card:active { transform: scale(0.99); }
 
   .room-rest-name-row {
     display: flex;
@@ -395,15 +413,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .add-restaurant-form {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 14px;
     padding: 1.25rem;
     margin-bottom: 1rem;
   }
 
   .add-restaurant-form h3 {
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 0.85rem;
     color: var(--text-heading);
   }
 
@@ -420,20 +438,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .add-restaurant-form input,
   .add-restaurant-form select {
-    padding: 0.5rem 0.65rem;
-    border: 1px solid var(--border-mid);
-    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
     font-size: 0.85rem;
     width: 100%;
-    background: var(--bg-input);
+    background: var(--bg-card);
     color: var(--text);
     font-family: inherit;
+    transition: border-color 0.15s;
   }
 
   .add-restaurant-form input:focus,
   .add-restaurant-form select:focus {
     outline: none;
-    border-color: var(--text-sub);
+    border-color: var(--text-heading);
   }
 
   .add-rest-actions {
@@ -443,24 +462,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .btn-primary-sm {
-    padding: 0.45rem 0.85rem;
+    padding: 0.5rem 0.95rem;
     background: var(--text-heading);
     color: var(--bg);
     border: none;
-    border-radius: 6px;
+    border-radius: 10px;
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: opacity 0.15s, transform 0.1s;
+    font-family: inherit;
   }
 
-  .btn-primary-sm:hover { background: var(--text-sub); }
+  .btn-primary-sm:hover { opacity: 0.85; }
+  .btn-primary-sm:active { transform: scale(0.97); }
 
   /* 식당 상세 모달 (인라인) */
   .room-rest-detail {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 1.5rem;
     margin-bottom: 1rem;
   }
@@ -516,34 +537,42 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .review-sort-row select {
-    padding: 0.3rem 0.6rem;
-    border: 1px solid var(--border-mid);
-    border-radius: 6px;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
     font-size: 0.8rem;
     font-family: inherit;
     background: var(--bg-card);
     color: var(--text-sub);
     cursor: pointer;
+    font-weight: 500;
   }
 
   .review-form {
     background: var(--bg-hover);
-    border-radius: 8px;
-    padding: 0.75rem;
+    border-radius: 12px;
+    padding: 1rem;
     margin-bottom: 0.75rem;
   }
 
   .review-form select,
   .review-form textarea {
     width: 100%;
-    padding: 0.5rem;
-    border: 1px solid var(--border-mid);
-    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
     font-size: 0.85rem;
     font-family: inherit;
     margin-bottom: 0.5rem;
-    background: var(--bg-input);
+    background: var(--bg-card);
     color: var(--text);
+    transition: border-color 0.15s;
+  }
+
+  .review-form select:focus,
+  .review-form textarea:focus {
+    outline: none;
+    border-color: var(--text-heading);
   }
 
   .review-form textarea {
@@ -647,8 +676,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .visit-card {
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.75rem;
+    border-radius: 12px;
+    padding: 0.85rem;
     margin-bottom: 0.75rem;
     background: var(--bg-hover);
   }
@@ -697,8 +726,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .visit-form {
     background: var(--bg-hover);
-    border-radius: 8px;
-    padding: 0.75rem;
+    border-radius: 12px;
+    padding: 1rem;
     margin-top: 0.75rem;
   }
 
@@ -711,14 +740,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .visit-form input[type="date"],
   .visit-form input[type="text"] {
     width: 100%;
-    padding: 0.5rem;
-    border: 1px solid var(--border-mid);
-    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
     font-size: 0.85rem;
     font-family: inherit;
     margin-bottom: 0.5rem;
-    background: var(--bg-input);
+    background: var(--bg-card);
     color: var(--text);
+    transition: border-color 0.15s;
+  }
+
+  .visit-form input[type="date"]:focus,
+  .visit-form input[type="text"]:focus {
+    outline: none;
+    border-color: var(--text-heading);
   }
 
   .participant-list {
@@ -813,14 +849,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .rest-search {
     width: 100%;
-    padding: 0.6rem 0.75rem;
-    border: 1px solid var(--border-mid);
-    border-radius: 8px;
+    padding: 0.7rem 0.85rem;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
     font-size: 0.875rem;
     font-family: inherit;
     margin-bottom: 0.75rem;
     transition: border-color 0.15s;
-    background: var(--bg-input);
+    background: var(--bg-card);
     color: var(--text);
   }
 
@@ -890,7 +926,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .help-modal {
     background: var(--bg-card);
-    border-radius: 14px;
+    border-radius: 20px;
     max-width: 420px;
     width: 100%;
     padding: 1.75rem;
@@ -983,7 +1019,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .stat-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 14px;
     padding: 1.25rem;
     text-align: center;
   }
@@ -1003,7 +1039,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .stat-section {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 14px;
     padding: 1.25rem;
     margin-bottom: 0.75rem;
   }
@@ -1179,8 +1215,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .unreviewed-item { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light); font-size: 0.82rem; }
   .unreviewed-item:last-child { border-bottom: none; }
 
-  @media (max-width: 500px) {
+  @media (max-width: 600px) {
     .stats-grid { grid-template-columns: 1fr 1fr; }
+    .form-row { grid-template-columns: 1fr; }
   }
 
   .empty-text {
@@ -1200,8 +1237,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .region-depth {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
   }
 
   .region-depth-label {
@@ -1282,15 +1319,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .region-rest-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    padding: 0.95rem 1rem;
     cursor: pointer;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: border-color 0.15s, transform 0.1s;
   }
 
   .region-rest-card:hover {
     border-color: var(--border-mid);
-    box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  .region-rest-card:active {
+    transform: scale(0.99);
   }
 
   .region-rest-name {
@@ -1371,7 +1411,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .map-container {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
   }
 
