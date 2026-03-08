@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fearless-tasting-v1';
+const CACHE_NAME = 'fearless-tasting-v2';
 const PRECACHE_URLS = [
   '/',
   '/favicon.svg',
@@ -23,8 +23,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
-  // API 요청은 캐시하지 않음
-  if (request.url.includes('/api/') || request.method !== 'GET') return;
+  // API 요청은 캐시하지 않음 (외부 origin 또는 /api/ 경로)
+  if (request.url.includes('/api/') || request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
 
   // 네비게이션(HTML) 요청: network-first
   if (request.mode === 'navigate') {

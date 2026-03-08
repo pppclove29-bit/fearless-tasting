@@ -52,7 +52,7 @@ export const prerender = false;
       <div class="account-actions">
         <button type="button" class="btn-logout" id="profile-logout">로그아웃</button>
         <div class="danger-zone">
-          <p class="danger-desc">계정을 삭제하면 모든 리뷰, 방 멤버십 등 개인 데이터가 즉시 삭제되며 복구할 수 없습니다.</p>
+          <p class="danger-desc">계정을 삭제하면 모든 리뷰, 참여 중인 방 등 개인 데이터가 즉시 삭제되며 복구할 수 없습니다.</p>
           <button type="button" class="btn-delete-account" id="delete-account-btn">회원 탈퇴</button>
         </div>
       </div>
@@ -410,7 +410,7 @@ export const prerender = false;
     // 회원 탈퇴
     document.getElementById('delete-account-btn')!.addEventListener('click', async () => {
       const confirmed = await showDangerConfirm(
-        '정말 탈퇴하시겠습니까?\n\n계정, 리뷰, 방 멤버십 등 모든 개인 데이터가 즉시 삭제되며 복구할 수 없습니다.',
+        '정말 탈퇴하시겠습니까?\n\n계정, 리뷰, 참여 중인 방 등 모든 개인 데이터가 즉시 삭제되며 복구할 수 없습니다.',
         '탈퇴',
       );
       if (!confirmed) return;
