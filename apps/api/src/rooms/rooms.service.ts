@@ -76,8 +76,12 @@ export class RoomsService {
         restaurants: {
           include: {
             addedBy: { select: { id: true, nickname: true } },
-            reviews: { select: { rating: true } },
-            _count: { select: { reviews: true } },
+            visits: {
+              include: {
+                reviews: { select: { rating: true } },
+              },
+            },
+            _count: { select: { visits: true } },
           },
           orderBy: { createdAt: 'desc' },
         },
@@ -88,12 +92,16 @@ export class RoomsService {
 
     return {
       ...room,
-      restaurants: room.restaurants.map(({ reviews, ...rest }) => ({
-        ...rest,
-        avgRating: reviews.length > 0
-          ? Math.round(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length * 10) / 10
-          : null,
-      })),
+      restaurants: room.restaurants.map(({ visits, ...rest }) => {
+        const allRatings = visits.flatMap((v) => v.reviews.map((r) => r.rating));
+        return {
+          ...rest,
+          avgRating: allRatings.length > 0
+            ? Math.round(allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length * 10) / 10
+            : null,
+          _count: { ...rest._count, reviews: allRatings.length },
+        };
+      }),
     };
   }
 
@@ -301,7 +309,9 @@ export class RoomsService {
             imageUrl: true,
             latitude: true,
             longitude: true,
-            _count: { select: { reviews: true } },
+            visits: {
+              select: { reviews: { select: { id: true } } },
+            },
           },
           orderBy: { createdAt: 'desc' },
         },
@@ -312,18 +322,9 @@ export class RoomsService {
 
     return {
       ...room,
-      restaurants: room.restaurants.map((r) => ({
-        id: r.id,
-        name: r.name,
-        address: r.address,
-        province: r.province,
-        city: r.city,
-        neighborhood: r.neighborhood,
-        category: r.category,
-        imageUrl: r.imageUrl,
-        latitude: r.latitude,
-        longitude: r.longitude,
-        reviewCount: r._count.reviews,
+      restaurants: room.restaurants.map(({ visits, ...r }) => ({
+        ...r,
+        reviewCount: visits.reduce((sum, v) => sum + v.reviews.length, 0),
       })),
     };
   }
@@ -350,16 +351,23 @@ export class RoomsService {
         latitude: true,
         longitude: true,
         roomId: true,
-        reviews: {
+        visits: {
           select: {
             id: true,
-            rating: true,
-            content: true,
-            createdAt: true,
+            visitedAt: true,
+            memo: true,
+            reviews: {
+              select: {
+                id: true, rating: true, content: true, wouldRevisit: true,
+                tasteRating: true, valueRating: true, serviceRating: true,
+                cleanlinessRating: true, accessibilityRating: true,
+                favoriteMenu: true, tryNextMenu: true, createdAt: true,
+              },
+              orderBy: { createdAt: 'desc' },
+            },
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { visitedAt: 'desc' },
         },
-        _count: { select: { reviews: true } },
       },
     });
 
@@ -367,6 +375,7 @@ export class RoomsService {
       throw new NotFoundException('식당을 찾을 수 없습니다');
     }
 
+    const allReviews = restaurant.visits.flatMap((v) => v.reviews);
     return {
       id: restaurant.id,
       name: restaurant.name,
@@ -378,8 +387,8 @@ export class RoomsService {
       imageUrl: restaurant.imageUrl,
       latitude: restaurant.latitude,
       longitude: restaurant.longitude,
-      reviewCount: restaurant._count.reviews,
-      reviews: restaurant.reviews,
+      reviewCount: allReviews.length,
+      visits: restaurant.visits,
     };
   }
 
@@ -391,7 +400,7 @@ export class RoomsService {
       where: { roomId },
       include: {
         addedBy: { select: { id: true, nickname: true } },
-        _count: { select: { reviews: true } },
+        _count: { select: { visits: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -410,9 +419,10 @@ export class RoomsService {
     imageUrl?: string,
     latitude?: number,
     longitude?: number,
+    waitTime?: string,
   ) {
     return this.prisma.write.roomRestaurant.create({
-      data: { roomId, addedById, name, address, province, city, neighborhood, category, imageUrl, latitude, longitude },
+      data: { roomId, addedById, name, address, province, city, neighborhood, category, imageUrl, latitude, longitude, waitTime },
     });
   }
 
@@ -433,15 +443,25 @@ export class RoomsService {
     return this.prisma.write.roomRestaurant.delete({ where: { id: restaurantId } });
   }
 
-  /** 방 내 식당 상세 (리뷰 포함) */
+  /** 방 내 식당 상세 (방문 기록 + 리뷰 포함) */
   async findRestaurantDetail(roomId: string, restaurantId: string) {
     const restaurant = await this.prisma.read.roomRestaurant.findUnique({
       where: { id: restaurantId },
       include: {
         addedBy: { select: { id: true, nickname: true } },
-        reviews: {
-          include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
-          orderBy: { createdAt: 'desc' },
+        visits: {
+          include: {
+            createdBy: { select: { id: true, nickname: true } },
+            participants: {
+              include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+            },
+            reviews: {
+              include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+              orderBy: { createdAt: 'desc' },
+            },
+            _count: { select: { reviews: true } },
+          },
+          orderBy: { visitedAt: 'desc' },
         },
       },
     });
@@ -453,37 +473,120 @@ export class RoomsService {
     return restaurant;
   }
 
-  // ─── 방 내 리뷰 ───
+  // ─── 방문 기록 ───
 
-  /** 방 내 리뷰 작성 */
-  async createReview(roomId: string, restaurantId: string, userId: string, rating: number, content: string, wouldRevisit = true) {
+  /** 방문 기록 생성 */
+  async createVisit(roomId: string, restaurantId: string, userId: string, visitedAt: string, memo?: string, participantIds?: string[]) {
     const restaurant = await this.prisma.read.roomRestaurant.findUnique({ where: { id: restaurantId } });
     if (!restaurant || restaurant.roomId !== roomId) {
       throw new NotFoundException('식당을 찾을 수 없습니다');
     }
 
-    return this.prisma.write.roomReview.create({
-      data: { roomRestaurantId: restaurantId, userId, rating, content, wouldRevisit },
-    });
-  }
-
-  /** 방 내 리뷰 수정 (본인만) */
-  async updateReview(reviewId: string, userId: string, rating?: number, content?: string, wouldRevisit?: boolean) {
-    const review = await this.prisma.read.roomReview.findUnique({ where: { id: reviewId } });
-    if (!review) throw new NotFoundException('리뷰를 찾을 수 없습니다');
-    if (review.userId !== userId) throw new ForbiddenException('본인의 리뷰만 수정할 수 있습니다');
-
-    return this.prisma.write.roomReview.update({
-      where: { id: reviewId },
+    return this.prisma.write.roomVisit.create({
       data: {
-        ...(rating !== undefined ? { rating } : {}),
-        ...(content !== undefined ? { content } : {}),
-        ...(wouldRevisit !== undefined ? { wouldRevisit } : {}),
+        restaurantId,
+        createdById: userId,
+        visitedAt: new Date(visitedAt),
+        memo,
+        participants: participantIds && participantIds.length > 0
+          ? { create: participantIds.map((uid) => ({ userId: uid })) }
+          : undefined,
+      },
+      include: {
+        createdBy: { select: { id: true, nickname: true } },
+        participants: {
+          include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+        },
+        reviews: {
+          include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+        },
+        _count: { select: { reviews: true } },
       },
     });
   }
 
-  /** 방 내 리뷰 삭제 (본인 or manager+) */
+  /** 방문 기록 삭제 (생성자 or manager+) */
+  async removeVisit(visitId: string, userId: string, memberRole: string) {
+    const visit = await this.prisma.read.roomVisit.findUnique({ where: { id: visitId } });
+    if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
+
+    const isOwnerOrManager = memberRole === 'owner' || memberRole === 'manager';
+    if (visit.createdById !== userId && !isOwnerOrManager) {
+      throw new ForbiddenException('본인이 생성한 방문 기록이거나 매니저 이상만 삭제할 수 있습니다');
+    }
+
+    return this.prisma.write.roomVisit.delete({ where: { id: visitId } });
+  }
+
+  // ─── 방 내 리뷰 ───
+
+  /** 방문 기록에 리뷰 작성 (방문당 1인 1리뷰) */
+  async createReview(
+    visitId: string,
+    userId: string,
+    rating: number,
+    content: string,
+    wouldRevisit = true,
+    tasteRating?: number,
+    valueRating?: number,
+    serviceRating?: number,
+    cleanlinessRating?: number,
+    accessibilityRating?: number,
+    favoriteMenu?: string,
+    tryNextMenu?: string,
+  ) {
+    const visit = await this.prisma.read.roomVisit.findUnique({ where: { id: visitId } });
+    if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
+
+    const existing = await this.prisma.read.roomReview.findUnique({
+      where: { visitId_userId: { visitId, userId } },
+    });
+    if (existing) {
+      throw new ConflictException('이 방문에 이미 리뷰를 작성했습니다. 기존 리뷰를 수정해 주세요.');
+    }
+
+    return this.prisma.write.roomReview.create({
+      data: {
+        visitId, userId, rating, content, wouldRevisit,
+        tasteRating, valueRating, serviceRating, cleanlinessRating, accessibilityRating,
+        favoriteMenu, tryNextMenu,
+      },
+    });
+  }
+
+  /** 리뷰 수정 (본인만) */
+  async updateReview(
+    reviewId: string,
+    userId: string,
+    data: {
+      rating?: number;
+      content?: string;
+      wouldRevisit?: boolean;
+      tasteRating?: number | null;
+      valueRating?: number | null;
+      serviceRating?: number | null;
+      cleanlinessRating?: number | null;
+      accessibilityRating?: number | null;
+      favoriteMenu?: string | null;
+      tryNextMenu?: string | null;
+    },
+  ) {
+    const review = await this.prisma.read.roomReview.findUnique({ where: { id: reviewId } });
+    if (!review) throw new NotFoundException('리뷰를 찾을 수 없습니다');
+    if (review.userId !== userId) throw new ForbiddenException('본인의 리뷰만 수정할 수 있습니다');
+
+    const updateData: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) updateData[key] = value;
+    }
+
+    return this.prisma.write.roomReview.update({
+      where: { id: reviewId },
+      data: updateData,
+    });
+  }
+
+  /** 리뷰 삭제 (본인 or manager+) */
   async removeReview(reviewId: string, userId: string, memberRole: string) {
     const review = await this.prisma.read.roomReview.findUnique({ where: { id: reviewId } });
     if (!review) throw new NotFoundException('리뷰를 찾을 수 없습니다');

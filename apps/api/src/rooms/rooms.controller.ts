@@ -11,6 +11,7 @@ import { JoinRoomDto } from './dto/join-room.dto';
 import { CreateRoomRestaurantDto } from './dto/create-room-restaurant.dto';
 import { CreateRoomReviewDto } from './dto/create-room-review.dto';
 import { UpdateRoomReviewDto } from './dto/update-room-review.dto';
+import { CreateRoomVisitDto } from './dto/create-room-visit.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 import { ToggleShareCodeDto } from './dto/toggle-share-code.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
@@ -206,7 +207,7 @@ export class RoomsController {
     @Body() dto: CreateRoomRestaurantDto,
   ) {
     return this.roomsService.createRestaurant(
-      id, user.id, dto.name, dto.address, dto.province, dto.city, dto.neighborhood, dto.category, dto.imageUrl, dto.latitude, dto.longitude,
+      id, user.id, dto.name, dto.address, dto.province, dto.city, dto.neighborhood, dto.category, dto.imageUrl, dto.latitude, dto.longitude, dto.waitTime,
     );
   }
 
@@ -235,28 +236,64 @@ export class RoomsController {
     return this.roomsService.removeRestaurant(id, rid, user.id, req.roomMember.role);
   }
 
-  // ─── 방 내 리뷰 ───
+  // ─── 방문 기록 ───
 
-  /** 방 내 리뷰 작성 */
-  @Post(':id/restaurants/:rid/reviews')
+  /** 방문 기록 생성 */
+  @Post(':id/restaurants/:rid/visits')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @UseGuards(RoomMemberGuard)
-  @ApiOperation({ summary: '방 내 리뷰 작성' })
+  @ApiOperation({ summary: '방문 기록 생성' })
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'rid', description: '식당 ID' })
-  createReview(
+  createVisit(
     @Param('id') id: string,
     @Param('rid') rid: string,
     @CurrentUser() user: { id: string },
-    @Body() dto: CreateRoomReviewDto,
+    @Body() dto: CreateRoomVisitDto,
   ) {
-    return this.roomsService.createReview(id, rid, user.id, dto.rating, dto.content, dto.wouldRevisit);
+    return this.roomsService.createVisit(id, rid, user.id, dto.visitedAt, dto.memo, dto.participantIds);
   }
 
-  /** 방 내 리뷰 수정 (본인만) */
+  /** 방문 기록 삭제 (생성자 or 매니저+) */
+  @Delete(':id/visits/:visitId')
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '방문 기록 삭제 (생성자 또는 매니저+)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  @ApiParam({ name: 'visitId', description: '방문 ID' })
+  removeVisit(
+    @Param('visitId') visitId: string,
+    @CurrentUser() user: { id: string },
+    @Req() req: RequestWithRoomMember,
+  ) {
+    return this.roomsService.removeVisit(visitId, user.id, req.roomMember.role);
+  }
+
+  // ─── 방 내 리뷰 ───
+
+  /** 방문 기록에 리뷰 작성 */
+  @Post(':id/visits/:visitId/reviews')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '방문 기록에 리뷰 작성 (방문당 1인 1리뷰)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  @ApiParam({ name: 'visitId', description: '방문 ID' })
+  createReview(
+    @Param('visitId') visitId: string,
+    @CurrentUser() user: { id: string },
+    @Body() dto: CreateRoomReviewDto,
+  ) {
+    return this.roomsService.createReview(
+      visitId, user.id, dto.rating, dto.content, dto.wouldRevisit,
+      dto.tasteRating, dto.valueRating, dto.serviceRating,
+      dto.cleanlinessRating, dto.accessibilityRating,
+      dto.favoriteMenu, dto.tryNextMenu,
+    );
+  }
+
+  /** 리뷰 수정 (본인만) */
   @Patch(':id/reviews/:revId')
   @UseGuards(RoomMemberGuard)
-  @ApiOperation({ summary: '방 내 리뷰 수정 (본인만)' })
+  @ApiOperation({ summary: '리뷰 수정 (본인만)' })
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'revId', description: '리뷰 ID' })
   updateReview(
@@ -264,13 +301,13 @@ export class RoomsController {
     @CurrentUser() user: { id: string },
     @Body() dto: UpdateRoomReviewDto,
   ) {
-    return this.roomsService.updateReview(revId, user.id, dto.rating, dto.content, dto.wouldRevisit);
+    return this.roomsService.updateReview(revId, user.id, dto);
   }
 
-  /** 방 내 리뷰 삭제 (본인 또는 매니저+) */
+  /** 리뷰 삭제 (본인 또는 매니저+) */
   @Delete(':id/reviews/:revId')
   @UseGuards(RoomMemberGuard)
-  @ApiOperation({ summary: '방 내 리뷰 삭제 (본인 또는 매니저+)' })
+  @ApiOperation({ summary: '리뷰 삭제 (본인 또는 매니저+)' })
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'revId', description: '리뷰 ID' })
   removeReview(

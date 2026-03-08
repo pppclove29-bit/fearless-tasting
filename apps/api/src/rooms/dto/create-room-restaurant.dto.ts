@@ -1,5 +1,7 @@
-import { IsString, IsOptional, IsUrl, IsNumber, MaxLength, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsUrl, IsNumber, IsIn, MaxLength, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+const WAIT_TIMES = ['없음', '~10분', '~30분', '~1시간', '1시간+'] as const;
 
 export class CreateRoomRestaurantDto {
   @ApiProperty({ description: '식당 이름' })
@@ -51,4 +53,10 @@ export class CreateRoomRestaurantDto {
   @Min(-180)
   @Max(180)
   longitude?: number;
+
+  @ApiPropertyOptional({ description: '웨이팅 (없음/~10분/~30분/~1시간/1시간+)' })
+  @IsOptional()
+  @IsString()
+  @IsIn(WAIT_TIMES)
+  waitTime?: string;
 }

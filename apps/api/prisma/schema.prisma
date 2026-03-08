@@ -10,33 +10,37 @@ datasource db {
 /// 서비스 사용자 (프로필 정보만 보관, 인증 정보는 Account에 분리)
 model User {
   /// 고유 식별자
-  id              String    @id @default(cuid())
+  id                  String                 @id @default(cuid())
   /// OAuth 제공자에서 받은 이메일
-  email           String    @unique
+  email               String                 @unique
   /// 리뷰 등에 표시되는 닉네임
-  nickname        String    @unique
+  nickname            String                 @unique
   /// 프로필 이미지 URL
-  profileImageUrl String?   @db.VarChar(500)
+  profileImageUrl     String?                @db.VarChar(500)
   /// 역할 ('user' | 'admin')
-  role            String    @default("user") @db.VarChar(10)
+  role                String                 @default("user") @db.VarChar(10)
   /// 연결된 OAuth 계정 (카카오 등)
-  accounts        Account[]
+  accounts            Account[]
   /// 소유한 방 목록
-  ownedRooms      Room[]           @relation("RoomOwner")
+  ownedRooms          Room[]                 @relation("RoomOwner")
   /// 참여 중인 방 멤버십
-  roomMembers     RoomMember[]
+  roomMembers         RoomMember[]
   /// 방 내 등록한 식당
-  roomRestaurants RoomRestaurant[]
+  roomRestaurants     RoomRestaurant[]
+  /// 생성한 방문 기록
+  createdVisits       RoomVisit[]            @relation("VisitCreator")
+  /// 방문 참여 기록
+  visitParticipations RoomVisitParticipant[]
   /// 방 내 작성한 리뷰
-  roomReviews     RoomReview[]
+  roomReviews         RoomReview[]
   /// 강퇴 기록
-  roomKicks       RoomKick[]
+  roomKicks           RoomKick[]
   /// 마지막 활동 시각 (DAU 추적용)
-  lastActiveAt    DateTime?
+  lastActiveAt        DateTime?
   /// 가입일
-  createdAt       DateTime  @default(now())
+  createdAt           DateTime               @default(now())
   /// 최종 수정일
-  updatedAt       DateTime  @updatedAt
+  updatedAt           DateTime               @updatedAt
 
   @@index([lastActiveAt])
 }
@@ -68,31 +72,31 @@ model Account {
 /// 공유 방 (초대 코드로 입장, 방 전용 식당/리뷰 리스트)
 model Room {
   /// 고유 식별자
-  id          String           @id @default(cuid())
+  id                  String           @id @default(cuid())
   /// 방 이름
-  name        String           @db.VarChar(100)
+  name                String           @db.VarChar(100)
   /// 8자 초대 코드
-  inviteCode  String           @unique @db.VarChar(8)
+  inviteCode          String           @unique @db.VarChar(8)
   /// 초대 코드 만료 시간 (null = 무제한)
   inviteCodeExpiresAt DateTime?
   /// 8자 공유 코드 (null = 한 번도 생성 안 함)
-  shareCode           String?  @unique @db.VarChar(8)
+  shareCode           String?          @unique @db.VarChar(8)
   /// 공유 코드 활성 여부
-  shareCodeEnabled    Boolean  @default(false)
+  shareCodeEnabled    Boolean          @default(false)
   /// 방장 (User FK)
-  owner       User             @relation("RoomOwner", fields: [ownerId], references: [id])
+  owner               User             @relation("RoomOwner", fields: [ownerId], references: [id])
   /// 방장 ID
-  ownerId     String
+  ownerId             String
   /// 멤버 목록
-  members     RoomMember[]
+  members             RoomMember[]
   /// 방 내 식당 목록
-  restaurants RoomRestaurant[]
+  restaurants         RoomRestaurant[]
   /// 강퇴 기록
-  kicks       RoomKick[]
+  kicks               RoomKick[]
   /// 생성일
-  createdAt   DateTime         @default(now())
+  createdAt           DateTime         @default(now())
   /// 최종 수정일
-  updatedAt   DateTime         @updatedAt
+  updatedAt           DateTime         @updatedAt
 
   @@index([ownerId])
 }
@@ -121,66 +125,126 @@ model RoomMember {
 /// 방 내 식당
 model RoomRestaurant {
   /// 고유 식별자
-  id           String       @id @default(cuid())
+  id           String      @id @default(cuid())
   /// 식당 이름
-  name         String       @db.VarChar(200)
+  name         String      @db.VarChar(200)
   /// 도로명/지번 주소
-  address      String       @db.VarChar(500)
+  address      String      @db.VarChar(500)
   /// 시/도
-  province     String       @db.VarChar(50)
+  province     String      @db.VarChar(50)
   /// 시/군/구
-  city         String       @db.VarChar(50)
+  city         String      @db.VarChar(50)
   /// 읍/면/동
-  neighborhood String       @db.VarChar(100)
+  neighborhood String      @db.VarChar(100)
   /// 카테고리
-  category     String       @db.VarChar(100)
+  category     String      @db.VarChar(100)
   /// 대표 이미지 URL
-  imageUrl     String?      @db.VarChar(500)
+  imageUrl     String?     @db.VarChar(500)
   /// 위도 (카카오맵 좌표)
   latitude     Float?
   /// 경도 (카카오맵 좌표)
   longitude    Float?
   /// 소속 방
-  room         Room         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  room         Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
   /// 방 ID (FK)
   roomId       String
   /// 등록자
-  addedBy      User         @relation(fields: [addedById], references: [id])
+  addedBy      User        @relation(fields: [addedById], references: [id])
   /// 등록자 ID (FK)
   addedById    String
-  /// 리뷰 목록
-  reviews      RoomReview[]
+  /// 웨이팅 (없음/~10분/~30분/~1시간/1시간+)
+  waitTime     String?     @db.VarChar(20)
+  /// 방문 기록 목록
+  visits       RoomVisit[]
   /// 등록일
-  createdAt    DateTime     @default(now())
+  createdAt    DateTime    @default(now())
 
   @@index([roomId])
   @@index([addedById])
 }
 
-/// 방 내 리뷰
+/// 방문 기록 (식당에 언제, 누구와 갔는지)
+model RoomVisit {
+  /// 고유 식별자
+  id           String                 @id @default(cuid())
+  /// 방문 날짜
+  visitedAt    DateTime               @db.Date
+  /// 방문 메모 (선택)
+  memo         String?                @db.VarChar(500)
+  /// 방문 대상 식당
+  restaurant   RoomRestaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  /// 식당 ID (FK)
+  restaurantId String
+  /// 방문 기록 생성자
+  createdBy    User                   @relation("VisitCreator", fields: [createdById], references: [id])
+  /// 생성자 ID (FK)
+  createdById  String
+  /// 함께 간 멤버 태그
+  participants RoomVisitParticipant[]
+  /// 개별 리뷰 목록
+  reviews      RoomReview[]
+  /// 생성일
+  createdAt    DateTime               @default(now())
+
+  @@index([restaurantId])
+  @@index([createdById])
+}
+
+/// 방문 참여자 태그
+model RoomVisitParticipant {
+  /// 고유 식별자
+  id      String    @id @default(cuid())
+  /// 방문 기록
+  visit   RoomVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  /// 방문 ID (FK)
+  visitId String
+  /// 참여 유저
+  user    User      @relation(fields: [userId], references: [id])
+  /// 유저 ID (FK)
+  userId  String
+
+  @@unique([visitId, userId])
+  @@index([userId])
+}
+
+/// 방 내 리뷰 (방문 기록당 1인 1리뷰)
 model RoomReview {
   /// 고유 식별자
-  id                 String         @id @default(cuid())
-  /// 1~5 평점
-  rating             Int
+  id                  String    @id @default(cuid())
+  /// 1~5 종합 평점
+  rating              Int
   /// 리뷰 본문
-  content            String         @db.Text
+  content             String    @db.Text
   /// 재방문 의사
-  wouldRevisit       Boolean        @default(true)
-  /// 리뷰 대상 방 식당
-  roomRestaurant     RoomRestaurant @relation(fields: [roomRestaurantId], references: [id], onDelete: Cascade)
-  /// 방 식당 ID (FK)
-  roomRestaurantId   String
+  wouldRevisit        Boolean   @default(true)
+  /// 맛 (1~5, 선택)
+  tasteRating         Int?
+  /// 가성비 (1~5, 선택)
+  valueRating         Int?
+  /// 서비스/친절함 (1~5, 선택)
+  serviceRating       Int?
+  /// 청결함 (1~5, 선택)
+  cleanlinessRating   Int?
+  /// 접근성 (1~5, 선택)
+  accessibilityRating Int?
+  /// 다시 먹어볼 메뉴
+  favoriteMenu        String?   @db.VarChar(200)
+  /// 다음에 먹어볼 메뉴
+  tryNextMenu         String?   @db.VarChar(200)
+  /// 소속 방문 기록
+  visit               RoomVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  /// 방문 ID (FK)
+  visitId             String
   /// 작성자
-  user               User           @relation(fields: [userId], references: [id])
+  user                User      @relation(fields: [userId], references: [id])
   /// 작성자 ID (FK)
-  userId             String
+  userId              String
   /// 작성일
-  createdAt          DateTime       @default(now())
+  createdAt           DateTime  @default(now())
   /// 최종 수정일
-  updatedAt          DateTime       @updatedAt
+  updatedAt           DateTime  @updatedAt
 
-  @@index([roomRestaurantId])
+  @@unique([visitId, userId])
   @@index([userId])
 }
 

@@ -4,7 +4,11 @@ export type {
   RoomRole,
   RoomMember,
   RoomMemberWithUser,
+  WaitTime,
   RoomRestaurant,
+  RoomVisit,
+  RoomVisitParticipant,
+  RoomVisitWithDetails,
   RoomReview,
   RoomReviewWithUser,
   RoomRestaurantDetail,
@@ -12,5 +16,6 @@ export type {
   SharedRoomDetail,
   SharedRoomRestaurant,
   SharedRoomRestaurantDetail,
+  SharedRoomVisit,
   SharedRoomReview,
 } from './room';

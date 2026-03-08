@@ -89,6 +89,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-bottom: 0.75rem;
   }
 
+  .invite-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #888;
+  }
+
   .invite-code {
     font-family: monospace;
     font-size: 0.95rem;
@@ -568,6 +574,166 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     accent-color: #111;
   }
 
+  .visit-card {
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    background: #fafafa;
+  }
+
+  .visit-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.8rem;
+  }
+
+  .visit-date {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .visit-participants {
+    color: #666;
+  }
+
+  .visit-creator {
+    color: #999;
+    font-size: 0.75rem;
+  }
+
+  .visit-memo {
+    color: #555;
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    background: #f0f0f0;
+    border-radius: 4px;
+  }
+
+  .visit-reviews {
+    margin-top: 0.4rem;
+  }
+
+  .visits-heading {
+    font-size: 0.95rem;
+    margin: 1rem 0 0.5rem;
+    color: #333;
+  }
+
+  .visit-form {
+    background: #f4f4f4;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .visit-form h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    color: #333;
+  }
+
+  .visit-form input[type="date"],
+  .visit-form input[type="text"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    margin-bottom: 0.5rem;
+  }
+
+  .participant-list {
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .participant-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: #555;
+  }
+
+  .participant-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-right: 0.75rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .review-detail-fields {
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .review-detail-fields summary {
+    cursor: pointer;
+    color: #666;
+    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .detail-rating-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .detail-rating-grid label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    color: #555;
+  }
+
+  .detail-rating-grid select {
+    width: 50px;
+    padding: 0.2rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    font-size: 0.78rem;
+  }
+
+  .review-detail-fields input[type="text"] {
+    width: 100%;
+    padding: 0.4rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    margin-bottom: 0.4rem;
+  }
+
+  .review-detail-ratings {
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 0.2rem;
+  }
+
+  .review-menu-info {
+    font-size: 0.75rem;
+    color: #777;
+    margin-top: 0.2rem;
+  }
+
+  .wait-badge {
+    font-size: 0.75rem;
+    color: #666;
+    background: #f0f0f0;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+  }
+
   .rest-search {
     width: 100%;
     padding: 0.6rem 0.75rem;
@@ -886,6 +1052,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: #999;
   }
 
+  .my-review-hint {
+    text-align: center;
+    padding: 0.75rem;
+    color: #888;
+    font-size: 0.8rem;
+    background: #f9f9f9;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+  }
+
   .region-hint {
     text-align: center;
     padding: 2rem;
@@ -961,11 +1137,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     fetchCurrentUser, fetchRoom, deleteRoom, leaveRoom,
     updateRoomMemberRole, kickRoomMember, transferOwnership,
     createRoomRestaurant, fetchRoomRestaurant, deleteRoomRestaurant,
+    createRoomVisit, deleteRoomVisit,
     createRoomReview, updateRoomReview, deleteRoomReview,
     toggleShareCode, updateRoom, regenerateInviteCode,
     showToast, showConfirm, showDangerConfirm,
   } from '@/lib/api';
-  import type { AuthUser, RoomDetailResponse, RoomMemberInfo, RoomRestaurantInfo, RoomReviewWithUser } from '@/lib/api';
+  import type { AuthUser, RoomDetailResponse, ReviewData } from '@/lib/api';
+  import type { RoomReviewWithUser, RoomVisitWithDetails } from '@repo/types';
   import { getCities, getNeighborhoods } from '@/data/areas';
 
   const loadingMsg = document.getElementById('loading-msg')!;
@@ -1050,6 +1228,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <input type="text" id="room-name-input" class="room-name-input" maxlength="100" hidden />
         </div>
         <div class="invite-row">
+          <span class="invite-label">초대 코드</span>
           <span class="invite-code" id="invite-code">${currentRoom.inviteCode}</span>
           <button type="button" class="btn-copy" id="copy-code-btn">복사</button>
           ${isOwner() ? '<button type="button" class="btn-regen" id="regen-code-btn">재생성</button>' : ''}
@@ -1428,6 +1607,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
         <input type="hidden" id="add-rest-lat" />
         <input type="hidden" id="add-rest-lng" />
+        <div class="form-row">
+          <select id="add-rest-waittime">
+            <option value="">웨이팅 (선택)</option>
+            <option value="없음">없음</option>
+            <option value="~10분">~10분</option>
+            <option value="~30분">~30분</option>
+            <option value="~1시간">~1시간</option>
+            <option value="1시간+">1시간+</option>
+          </select>
+        </div>
         <div class="add-rest-actions">
           <button type="button" class="btn-primary-sm" id="add-rest-submit">등록</button>
         </div>
@@ -1448,6 +1637,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="form-row">
           <input type="text" id="add-rest-neighborhood" placeholder="읍/면/동 (예: 역삼동)" required />
           <input type="text" id="add-rest-category" placeholder="카테고리 (예: 한식)" required />
+        </div>
+        <div class="form-row">
+          <select id="add-rest-waittime">
+            <option value="">웨이팅 (선택)</option>
+            <option value="없음">없음</option>
+            <option value="~10분">~10분</option>
+            <option value="~30분">~30분</option>
+            <option value="~1시간">~1시간</option>
+            <option value="1시간+">1시간+</option>
+          </select>
         </div>
         <div class="add-rest-actions">
           <button type="button" class="btn-primary-sm" id="add-rest-submit">등록</button>
@@ -1566,9 +1765,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const lngEl = document.getElementById('add-rest-lng') as HTMLInputElement | null;
       const latitude = latEl?.value ? Number(latEl.value) : undefined;
       const longitude = lngEl?.value ? Number(lngEl.value) : undefined;
+      const waitTimeEl = document.getElementById('add-rest-waittime') as HTMLSelectElement | null;
+      const waitTime = waitTimeEl?.value || undefined;
 
       try {
-        await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category, latitude, longitude });
+        await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category, latitude, longitude, waitTime } as Parameters<typeof createRoomRestaurant>[1]);
         currentRoom = await fetchRoom(currentRoom.id);
         renderRestaurantsTab();
         renderRegionTab();
@@ -1959,15 +2160,137 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   // ─── 식당 상세 (인라인) ───
 
+  function renderReviewCard(rev: RoomReviewWithUser): string {
+    const isReviewOwner = rev.userId === currentUser.id;
+    const canDeleteReview = isReviewOwner || isManagerOrAbove();
+    let actionsHtml = '';
+    if (isReviewOwner || canDeleteReview) {
+      actionsHtml = '<div class="room-review-actions">';
+      if (isReviewOwner) {
+        actionsHtml += `<button type="button" class="edit-rev-btn" data-rev-id="${rev.id}" data-rating="${rev.rating}" data-content="${escapeHtml(rev.content)}" data-revisit="${rev.wouldRevisit !== false}" data-taste="${rev.tasteRating ?? ''}" data-value="${rev.valueRating ?? ''}" data-service="${rev.serviceRating ?? ''}" data-cleanliness="${rev.cleanlinessRating ?? ''}" data-accessibility="${rev.accessibilityRating ?? ''}" data-fav-menu="${escapeHtml(rev.favoriteMenu ?? '')}" data-try-menu="${escapeHtml(rev.tryNextMenu ?? '')}">수정</button>`;
+      }
+      if (canDeleteReview) {
+        actionsHtml += `<button type="button" class="danger delete-rev-btn" data-rev-id="${rev.id}">삭제</button>`;
+      }
+      actionsHtml += '</div>';
+    }
+
+    const isEdited = rev.updatedAt && rev.updatedAt !== rev.createdAt;
+    const editedBadge = isEdited ? ' <span class="edited-badge">수정됨</span>' : '';
+    const revisitBadge = rev.wouldRevisit === false
+      ? '<span class="revisit-badge no">재방문 X</span>'
+      : '<span class="revisit-badge yes">재방문 O</span>';
+
+    const detailRatings = [
+      rev.tasteRating != null ? `맛 ${rev.tasteRating}` : null,
+      rev.valueRating != null ? `가성비 ${rev.valueRating}` : null,
+      rev.serviceRating != null ? `서비스 ${rev.serviceRating}` : null,
+      rev.cleanlinessRating != null ? `청결 ${rev.cleanlinessRating}` : null,
+      rev.accessibilityRating != null ? `접근성 ${rev.accessibilityRating}` : null,
+    ].filter(Boolean);
+    const detailLine = detailRatings.length > 0 ? `<div class="review-detail-ratings">${detailRatings.join(' · ')}</div>` : '';
+
+    const menuLine = [
+      rev.favoriteMenu ? `다시 먹을 메뉴: ${escapeHtml(rev.favoriteMenu)}` : null,
+      rev.tryNextMenu ? `다음에 먹을 메뉴: ${escapeHtml(rev.tryNextMenu)}` : null,
+    ].filter(Boolean);
+    const menuHtml = menuLine.length > 0 ? `<div class="review-menu-info">${menuLine.join(' | ')}</div>` : '';
+
+    return `
+      <div class="room-review-card" data-rev-id="${rev.id}">
+        <div class="room-review-header">
+          <span class="room-review-author">${escapeHtml(rev.user.nickname)} ${revisitBadge}</span>
+          <span class="room-review-rating">${renderStars(rev.rating)} ${rev.rating}</span>
+        </div>
+        ${detailLine}
+        <div class="room-review-content">${escapeHtml(rev.content)}</div>
+        ${menuHtml}
+        <div class="room-review-footer">
+          <span>${formatDate(rev.createdAt)}${editedBadge}</span>
+          ${actionsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderVisitCard(visit: RoomVisitWithDetails): string {
+    const canDeleteVisit = visit.createdById === currentUser.id || isManagerOrAbove();
+    const participantsHtml = visit.participants.length > 0
+      ? visit.participants.map((p) => escapeHtml(p.user.nickname)).join(', ')
+      : '';
+
+    const myReviewExists = visit.reviews.some((r) => r.userId === currentUser.id);
+    const reviewFormId = `review-form-${visit.id}`;
+
+    const reviewFormHtml = myReviewExists
+      ? ''
+      : `<button type="button" class="btn-outline-sm toggle-review-form-btn" data-visit-id="${visit.id}">리뷰 작성</button>
+         <div class="review-form" id="${reviewFormId}" style="display:none;">
+           <select class="new-review-rating">
+             <option value="5">5 - 최고</option><option value="4">4 - 좋음</option>
+             <option value="3" selected>3 - 보통</option><option value="2">2 - 별로</option>
+             <option value="1">1 - 나쁨</option>
+           </select>
+           <textarea class="new-review-content" placeholder="리뷰 내용을 작성해주세요"></textarea>
+           <label class="revisit-toggle"><input type="checkbox" class="new-review-revisit" checked /> 재방문 의사 있음</label>
+           <details class="review-detail-fields">
+             <summary>세부 평점 (선택)</summary>
+             <div class="detail-rating-grid">
+               <label>맛 <select class="new-review-taste"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+               <label>가성비 <select class="new-review-value"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+               <label>서비스 <select class="new-review-service"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+               <label>청결 <select class="new-review-cleanliness"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+               <label>접근성 <select class="new-review-accessibility"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+             </div>
+             <input type="text" class="new-review-fav-menu" placeholder="다시 먹을 메뉴" maxlength="200" />
+             <input type="text" class="new-review-try-menu" placeholder="다음에 먹을 메뉴" maxlength="200" />
+           </details>
+           <button type="button" class="btn-primary-sm submit-visit-review-btn" data-visit-id="${visit.id}">리뷰 작성</button>
+         </div>`;
+
+    const reviewsHtml = visit.reviews.map(renderReviewCard).join('');
+
+    return `
+      <div class="visit-card" data-visit-id="${visit.id}">
+        <div class="visit-header">
+          <span class="visit-date">${formatDate(visit.visitedAt)}</span>
+          ${participantsHtml ? `<span class="visit-participants">함께: ${participantsHtml}</span>` : ''}
+          <span class="visit-creator">기록: ${escapeHtml(visit.createdBy.nickname)}</span>
+          ${canDeleteVisit ? `<button type="button" class="btn-danger-sm delete-visit-btn" data-visit-id="${visit.id}">삭제</button>` : ''}
+        </div>
+        ${visit.memo ? `<div class="visit-memo">${escapeHtml(visit.memo)}</div>` : ''}
+        <div class="visit-reviews">
+          ${reviewsHtml || '<p class="empty-text">아직 리뷰가 없습니다.</p>'}
+        </div>
+        ${reviewFormHtml}
+      </div>
+    `;
+  }
+
+  function collectDetailFields(container: HTMLElement, prefix: string): Partial<ReviewData> {
+    const optInt = (sel: string) => { const v = container.querySelector<HTMLSelectElement>(sel)?.value; return v ? parseInt(v, 10) : undefined; };
+    const optStr = (sel: string) => { const v = container.querySelector<HTMLInputElement>(sel)?.value.trim(); return v || undefined; };
+    return {
+      tasteRating: optInt(`.${prefix}-taste`),
+      valueRating: optInt(`.${prefix}-value`),
+      serviceRating: optInt(`.${prefix}-service`),
+      cleanlinessRating: optInt(`.${prefix}-cleanliness`),
+      accessibilityRating: optInt(`.${prefix}-accessibility`),
+      favoriteMenu: optStr(`.${prefix}-fav-menu`),
+      tryNextMenu: optStr(`.${prefix}-try-menu`),
+    };
+  }
+
   async function loadRestaurantDetail(rid: string, areaId = 'restaurant-detail-area') {
     const area = document.getElementById(areaId)!;
     area.innerHTML = '<p class="empty-text">로딩 중...</p>';
 
     try {
       const detail = await fetchRoomRestaurant(currentRoom.id, rid);
+      const allReviews = detail.visits.flatMap((v) => v.reviews);
 
-      const avgRating = detail.reviews.length > 0
-        ? Math.round(detail.reviews.reduce((a, r) => a + r.rating, 0) / detail.reviews.length * 10) / 10
+      const avgRating = allReviews.length > 0
+        ? Math.round(allReviews.reduce((a, r) => a + r.rating, 0) / allReviews.length * 10) / 10
         : null;
 
       let deleteRestBtn = '';
@@ -1976,86 +2299,28 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         deleteRestBtn = `<button type="button" class="btn-danger-sm" id="delete-rest-btn">식당 삭제</button>`;
       }
 
-      const reviewFormHtml = `
-        <div class="review-form">
-          <select id="review-rating">
-            <option value="5">5 - 최고</option>
-            <option value="4">4 - 좋음</option>
-            <option value="3" selected>3 - 보통</option>
-            <option value="2">2 - 별로</option>
-            <option value="1">1 - 나쁨</option>
-          </select>
-          <textarea id="review-content" placeholder="한줄평을 남겨주세요"></textarea>
-          <label class="revisit-toggle"><input type="checkbox" id="review-revisit" checked /> 재방문 의사 있음</label>
-          <button type="button" class="btn-primary-sm" id="submit-review-btn">리뷰 작성</button>
+      const waitTimeLabel = detail.waitTime ? `웨이팅: ${escapeHtml(detail.waitTime)}` : '';
+
+      // 멤버 목록 (방문 기록 참여자 선택용)
+      const memberOptions = currentRoom.members
+        .filter((m) => m.userId !== currentUser.id)
+        .map((m) => `<label class="participant-check"><input type="checkbox" value="${m.userId}" /> ${escapeHtml(m.user.nickname)}</label>`)
+        .join('');
+
+      const visitFormHtml = `
+        <div class="visit-form">
+          <h4>방문 기록 추가</h4>
+          <input type="date" id="visit-date" value="${new Date().toISOString().slice(0, 10)}" />
+          <input type="text" id="visit-memo" placeholder="메모 (선택)" maxlength="500" />
+          ${memberOptions ? `<div class="participant-list"><span class="participant-label">함께 간 멤버:</span>${memberOptions}</div>` : ''}
+          <button type="button" class="btn-primary-sm" id="submit-visit-btn">방문 기록 추가</button>
         </div>
       `;
 
-      const reviewSortHtml = detail.reviews.length > 1
-        ? `<div class="review-sort-row">
-            <select id="review-sort">
-              <option value="latest">최신순</option>
-              <option value="oldest">오래된순</option>
-              <option value="rating-high">평점 높은순</option>
-              <option value="rating-low">평점 낮은순</option>
-            </select>
-          </div>`
-        : '';
-
-      function sortReviews(reviews: RoomReviewWithUser[], sortBy: string): RoomReviewWithUser[] {
-        const sorted = [...reviews];
-        switch (sortBy) {
-          case 'oldest': return sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-          case 'rating-high': return sorted.sort((a, b) => b.rating - a.rating);
-          case 'rating-low': return sorted.sort((a, b) => a.rating - b.rating);
-          default: return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        }
-      }
-
-      function renderReviewsList(reviews: RoomReviewWithUser[]): string {
-        return reviews.map((rev) => {
-            const isReviewOwner = rev.userId === currentUser.id;
-            const canDeleteReview = isReviewOwner || isManagerOrAbove();
-            let actionsHtml = '';
-            if (isReviewOwner || canDeleteReview) {
-              actionsHtml = '<div class="room-review-actions">';
-              if (isReviewOwner) {
-                actionsHtml += `<button type="button" class="edit-rev-btn" data-rev-id="${rev.id}" data-rating="${rev.rating}" data-content="${escapeHtml(rev.content)}" data-revisit="${rev.wouldRevisit !== false}">수정</button>`;
-              }
-              if (canDeleteReview) {
-                actionsHtml += `<button type="button" class="danger delete-rev-btn" data-rev-id="${rev.id}">삭제</button>`;
-              }
-              actionsHtml += '</div>';
-            }
-
-            const isEdited = rev.updatedAt && rev.updatedAt !== rev.createdAt;
-            const editedBadge = isEdited ? ' <span class="edited-badge">수정됨</span>' : '';
-            const revisitBadge = rev.wouldRevisit === false
-              ? '<span class="revisit-badge no">재방문 X</span>'
-              : '<span class="revisit-badge yes">재방문 O</span>';
-
-            return `
-              <div class="room-review-card" data-rev-id="${rev.id}">
-                <div class="room-review-header">
-                  <span class="room-review-author">${escapeHtml(rev.user.nickname)} ${revisitBadge}</span>
-                  <span class="room-review-rating">${renderStars(rev.rating)} ${rev.rating}</span>
-                </div>
-                <div class="room-review-content">${escapeHtml(rev.content)}</div>
-                <div class="room-review-footer">
-                  <span>${formatDate(rev.createdAt)}${editedBadge}</span>
-                  ${actionsHtml}
-                </div>
-              </div>
-            `;
-          }).join('');
-      }
-
-      let reviewsHtml = '';
-      if (detail.reviews.length === 0) {
-        reviewsHtml = '<p class="empty-text">아직 리뷰가 없습니다.</p>';
-      } else {
-        reviewsHtml = renderReviewsList(sortReviews(detail.reviews, 'latest'));
-      }
+      const sortedVisits = [...detail.visits].sort((a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime());
+      const visitsHtml = sortedVisits.length > 0
+        ? sortedVisits.map(renderVisitCard).join('')
+        : '<p class="empty-text">아직 방문 기록이 없습니다.</p>';
 
       area.innerHTML = `
         <div class="room-rest-detail">
@@ -2065,30 +2330,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="detail-meta">
             <span class="category-badge">${escapeHtml(detail.category)}</span>
             ${avgRating !== null ? `<span>${renderStars(Math.round(avgRating))} ${avgRating}</span>` : ''}
+            ${waitTimeLabel ? `<span class="wait-badge">${waitTimeLabel}</span>` : ''}
             <span>등록: ${escapeHtml(detail.addedBy.nickname)}</span>
             ${deleteRestBtn}
           </div>
-          ${reviewFormHtml}
-          ${reviewSortHtml}
-          <div id="reviews-list">${reviewsHtml}</div>
+          ${visitFormHtml}
+          <h3 class="visits-heading">방문 기록 (${detail.visits.length})</h3>
+          <div id="visits-list">${visitsHtml}</div>
         </div>
       `;
 
       // 닫기
       document.getElementById('close-detail-btn')!.addEventListener('click', () => { area.innerHTML = ''; });
 
-      // 리뷰 정렬
-      document.getElementById('review-sort')?.addEventListener('change', (e) => {
-        const sortBy = (e.target as HTMLSelectElement).value;
-        const sorted = sortReviews(detail.reviews, sortBy);
-        const listEl = document.getElementById('reviews-list')!;
-        listEl.innerHTML = sorted.length > 0 ? renderReviewsList(sorted) : '<p class="empty-text">아직 리뷰가 없습니다.</p>';
-        attachReviewHandlers(area, rid, detail, areaId);
-      });
-
       // 식당 삭제
       document.getElementById('delete-rest-btn')?.addEventListener('click', async () => {
-        if (!await showDangerConfirm('이 식당을 삭제하시겠습니까? 모든 리뷰도 삭제됩니다.')) return;
+        if (!await showDangerConfirm('이 식당을 삭제하시겠습니까? 모든 방문 기록과 리뷰도 삭제됩니다.')) return;
         try {
           await deleteRoomRestaurant(currentRoom.id, rid);
           area.innerHTML = '';
@@ -2099,29 +2356,73 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         } catch { showToast('삭제에 실패했습니다.'); }
       });
 
-      // 리뷰 작성
-      document.getElementById('submit-review-btn')!.addEventListener('click', async () => {
-        const rating = parseInt((document.getElementById('review-rating') as HTMLSelectElement).value, 10);
-        const reviewContent = (document.getElementById('review-content') as HTMLTextAreaElement).value.trim();
-        const wouldRevisit = (document.getElementById('review-revisit') as HTMLInputElement).checked;
-        if (!reviewContent) { showToast('내용을 입력해 주세요.', 'info'); return; }
+      // 방문 기록 추가
+      document.getElementById('submit-visit-btn')!.addEventListener('click', async () => {
+        const visitedAt = (document.getElementById('visit-date') as HTMLInputElement).value;
+        const memo = (document.getElementById('visit-memo') as HTMLInputElement).value.trim();
+        const participantIds = Array.from(area.querySelectorAll<HTMLInputElement>('.participant-check input:checked')).map((cb) => cb.value);
+        if (!visitedAt) { showToast('방문 날짜를 선택해주세요.', 'info'); return; }
 
         try {
-          await createRoomReview(currentRoom.id, rid, { rating, content: reviewContent, wouldRevisit });
+          await createRoomVisit(currentRoom.id, rid, { visitedAt, memo: memo || undefined, participantIds: participantIds.length > 0 ? participantIds : undefined });
+          currentRoom = await fetchRoom(currentRoom.id);
+          if (areaId === 'restaurant-detail-area') renderRegionTab();
+          await loadRestaurantDetail(rid, areaId);
+          showToast('방문 기록이 추가되었습니다.', 'success');
+        } catch (err) { showToast(err instanceof Error ? err.message : '방문 기록 추가에 실패했습니다.'); }
+      });
+
+      attachVisitAndReviewHandlers(area, rid, areaId);
+    } catch {
+      area.innerHTML = '<p class="empty-text">식당 정보를 불러올 수 없습니다.</p>';
+    }
+  }
+
+  function attachVisitAndReviewHandlers(area: HTMLElement, rid: string, areaId = 'restaurant-detail-area') {
+    // 방문 기록 삭제
+    for (const btn of area.querySelectorAll<HTMLButtonElement>('.delete-visit-btn')) {
+      btn.addEventListener('click', async () => {
+        if (!await showDangerConfirm('이 방문 기록을 삭제하시겠습니까? 포함된 리뷰도 삭제됩니다.')) return;
+        try {
+          await deleteRoomVisit(currentRoom.id, btn.dataset.visitId!);
+          currentRoom = await fetchRoom(currentRoom.id);
+          if (areaId === 'restaurant-detail-area') renderRegionTab();
+          await loadRestaurantDetail(rid, areaId);
+        } catch { showToast('방문 기록 삭제에 실패했습니다.'); }
+      });
+    }
+
+    // 리뷰 작성 폼 토글
+    for (const btn of area.querySelectorAll<HTMLButtonElement>('.toggle-review-form-btn')) {
+      btn.addEventListener('click', () => {
+        const form = document.getElementById(`review-form-${btn.dataset.visitId!}`);
+        if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+      });
+    }
+
+    // 리뷰 작성
+    for (const btn of area.querySelectorAll<HTMLButtonElement>('.submit-visit-review-btn')) {
+      btn.addEventListener('click', async () => {
+        const visitCard = btn.closest('.visit-card')!;
+        const visitId = btn.dataset.visitId!;
+        const rating = parseInt(visitCard.querySelector<HTMLSelectElement>('.new-review-rating')!.value, 10);
+        const content = visitCard.querySelector<HTMLTextAreaElement>('.new-review-content')!.value.trim();
+        const wouldRevisit = visitCard.querySelector<HTMLInputElement>('.new-review-revisit')!.checked;
+        if (!content) { showToast('내용을 입력해 주세요.', 'info'); return; }
+
+        const detailFields = collectDetailFields(visitCard as HTMLElement, 'new-review');
+
+        try {
+          await createRoomReview(currentRoom.id, visitId, { rating, content, wouldRevisit, ...detailFields });
           currentRoom = await fetchRoom(currentRoom.id);
           if (areaId === 'restaurant-detail-area') renderRegionTab();
           await loadRestaurantDetail(rid, areaId);
           showToast('리뷰가 작성되었습니다.', 'success');
         } catch (err) { showToast(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.'); }
       });
-
-      attachReviewHandlers(area, rid, detail, areaId);
-    } catch {
-      area.innerHTML = '<p class="empty-text">식당 정보를 불러올 수 없습니다.</p>';
     }
-  }
 
-  function attachReviewHandlers(area: HTMLElement, rid: string, detail: { reviews: RoomReviewWithUser[] }, areaId = 'restaurant-detail-area') {
+    // 리뷰 삭제
     for (const btn of area.querySelectorAll<HTMLButtonElement>('.delete-rev-btn')) {
       btn.addEventListener('click', async () => {
         if (!await showDangerConfirm('이 리뷰를 삭제하시겠습니까?')) return;
@@ -2134,6 +2435,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     }
 
+    // 리뷰 수정
     for (const btn of area.querySelectorAll<HTMLButtonElement>('.edit-rev-btn')) {
       btn.addEventListener('click', () => {
         const revId = btn.dataset.revId!;
@@ -2148,11 +2450,25 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           .map((v) => `<option value="${v}" ${v === Number(origRating) ? 'selected' : ''}>${v}점</option>`)
           .join('');
 
+        const setSelected = (val: string) => [1, 2, 3, 4, 5].map((v) => `<option value="${v}" ${v === Number(val) ? 'selected' : ''}>${v}</option>`).join('');
+
         card.insertAdjacentHTML('beforeend', `
           <div class="review-form">
             <select class="edit-rating">${ratingOptions}</select>
             <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
             <label class="revisit-toggle"><input type="checkbox" class="edit-revisit" ${origRevisit ? 'checked' : ''} /> 재방문 의사 있음</label>
+            <details class="review-detail-fields">
+              <summary>세부 평점 (선택)</summary>
+              <div class="detail-rating-grid">
+                <label>맛 <select class="edit-taste"><option value="">-</option>${setSelected(btn.dataset.taste || '')}</select></label>
+                <label>가성비 <select class="edit-value"><option value="">-</option>${setSelected(btn.dataset.value || '')}</select></label>
+                <label>서비스 <select class="edit-service"><option value="">-</option>${setSelected(btn.dataset.service || '')}</select></label>
+                <label>청결 <select class="edit-cleanliness"><option value="">-</option>${setSelected(btn.dataset.cleanliness || '')}</select></label>
+                <label>접근성 <select class="edit-accessibility"><option value="">-</option>${setSelected(btn.dataset.accessibility || '')}</select></label>
+              </div>
+              <input type="text" class="edit-fav-menu" placeholder="다시 먹을 메뉴" maxlength="200" value="${escapeHtml(btn.dataset.favMenu || '')}" />
+              <input type="text" class="edit-try-menu" placeholder="다음에 먹을 메뉴" maxlength="200" value="${escapeHtml(btn.dataset.tryMenu || '')}" />
+            </details>
             <div style="display:flex;gap:0.5rem;">
               <button type="button" class="btn-primary-sm save-edit-btn">저장</button>
               <button type="button" class="btn-outline-sm cancel-edit-btn">취소</button>
@@ -2166,8 +2482,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           const newRevisit = card.querySelector<HTMLInputElement>('.edit-revisit')!.checked;
           if (!newContent) { showToast('내용을 입력해 주세요.', 'info'); return; }
 
+          const detailFields = collectDetailFields(card, 'edit');
+
           try {
-            await updateRoomReview(currentRoom.id, revId, { rating: newRating, content: newContent, wouldRevisit: newRevisit });
+            await updateRoomReview(currentRoom.id, revId, { rating: newRating, content: newContent, wouldRevisit: newRevisit, ...detailFields });
             currentRoom = await fetchRoom(currentRoom.id);
             if (areaId === 'restaurant-detail-area') renderRegionTab();
             await loadRestaurantDetail(rid, areaId);

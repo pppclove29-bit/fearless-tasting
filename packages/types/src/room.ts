@@ -24,6 +24,8 @@ export interface RoomMemberWithUser extends RoomMember {
   user: { id: string; nickname: string; profileImageUrl: string | null };
 }
 
+export type WaitTime = '없음' | '~10분' | '~30분' | '~1시간' | '1시간+';
+
 export interface RoomRestaurant {
   id: string;
   name: string;
@@ -35,19 +37,54 @@ export interface RoomRestaurant {
   imageUrl?: string;
   latitude?: number | null;
   longitude?: number | null;
+  waitTime?: WaitTime | null;
   roomId: string;
   addedById: string;
   createdAt: string;
   avgRating: number | null;
+  _count: { visits: number; reviews: number };
+}
+
+// ─── 방문 기록 ───
+
+export interface RoomVisit {
+  id: string;
+  visitedAt: string;
+  memo?: string | null;
+  restaurantId: string;
+  createdById: string;
+  createdAt: string;
+}
+
+export interface RoomVisitParticipant {
+  id: string;
+  visitId: string;
+  userId: string;
+  user: { id: string; nickname: string; profileImageUrl: string | null };
+}
+
+export interface RoomVisitWithDetails extends RoomVisit {
+  createdBy: { id: string; nickname: string };
+  participants: RoomVisitParticipant[];
+  reviews: RoomReviewWithUser[];
   _count: { reviews: number };
 }
+
+// ─── 리뷰 ───
 
 export interface RoomReview {
   id: string;
   rating: number;
   content: string;
   wouldRevisit: boolean;
-  roomRestaurantId: string;
+  tasteRating?: number | null;
+  valueRating?: number | null;
+  serviceRating?: number | null;
+  cleanlinessRating?: number | null;
+  accessibilityRating?: number | null;
+  favoriteMenu?: string | null;
+  tryNextMenu?: string | null;
+  visitId: string;
   userId: string;
   createdAt: string;
   updatedAt: string;
@@ -57,8 +94,10 @@ export interface RoomReviewWithUser extends RoomReview {
   user: { id: string; nickname: string; profileImageUrl: string | null };
 }
 
+// ─── 식당 상세 ───
+
 export interface RoomRestaurantDetail extends RoomRestaurant {
-  reviews: RoomReviewWithUser[];
+  visits: RoomVisitWithDetails[];
   addedBy: { id: string; nickname: string };
 }
 
@@ -83,15 +122,30 @@ export interface SharedRoomRestaurant {
   reviewCount: number;
 }
 
+export interface SharedRoomVisit {
+  id: string;
+  visitedAt: string;
+  memo?: string | null;
+  reviews: SharedRoomReview[];
+}
+
 export interface SharedRoomReview {
   id: string;
   rating: number;
   content: string;
+  wouldRevisit: boolean;
+  tasteRating?: number | null;
+  valueRating?: number | null;
+  serviceRating?: number | null;
+  cleanlinessRating?: number | null;
+  accessibilityRating?: number | null;
+  favoriteMenu?: string | null;
+  tryNextMenu?: string | null;
   createdAt: string;
 }
 
 export interface SharedRoomRestaurantDetail extends SharedRoomRestaurant {
-  reviews: SharedRoomReview[];
+  visits: SharedRoomVisit[];
 }
 
 export interface SharedRoomDetail {

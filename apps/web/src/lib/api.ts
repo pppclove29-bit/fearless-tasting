@@ -1,5 +1,5 @@
 import type {
-  Room, RoomRestaurant, RoomReview,
+  Room, RoomRestaurant, RoomReview, RoomVisitWithDetails,
   SharedRoomDetail, SharedRoomRestaurantDetail,
 } from '@repo/types';
 
@@ -272,7 +272,6 @@ export interface RoomMemberInfo {
 
 export interface RoomRestaurantInfo extends RoomRestaurant {
   addedBy: { id: string; nickname: string };
-  _count: { reviews: number };
   avgRating: number | null;
 }
 
@@ -281,13 +280,23 @@ export interface RoomDetailResponse extends Room {
   restaurants: RoomRestaurantInfo[];
 }
 
-export interface RoomReviewWithUser extends RoomReview {
-  user: { id: string; nickname: string; profileImageUrl: string | null };
-}
-
-export interface RoomRestaurantDetailResponse extends RoomRestaurant {
+export interface RoomRestaurantDetailResponse {
+  id: string;
+  name: string;
+  address: string;
+  province: string;
+  city: string;
+  neighborhood: string;
+  category: string;
+  imageUrl?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  waitTime?: string | null;
+  roomId: string;
+  addedById: string;
+  createdAt: string;
   addedBy: { id: string; nickname: string };
-  reviews: RoomReviewWithUser[];
+  visits: RoomVisitWithDetails[];
 }
 
 /** 내 방 목록 */
@@ -400,13 +409,51 @@ export async function deleteRoomRestaurant(roomId: string, rid: string): Promise
   if (!res.ok) throw new Error('식당 삭제에 실패했습니다.');
 }
 
-/** 방 내 리뷰 작성 */
-export async function createRoomReview(
+// ─── 방문 기록 ───
+
+/** 방문 기록 생성 */
+export async function createRoomVisit(
   roomId: string,
   rid: string,
-  data: { rating: number; content: string; wouldRevisit?: boolean },
+  data: { visitedAt: string; memo?: string; participantIds?: string[] },
+): Promise<RoomVisitWithDetails> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}/visits`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('방문 기록 생성에 실패했습니다.');
+  return res.json();
+}
+
+/** 방문 기록 삭제 */
+export async function deleteRoomVisit(roomId: string, visitId: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/visits/${visitId}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('방문 기록 삭제에 실패했습니다.');
+}
+
+// ─── 리뷰 ───
+
+export interface ReviewData {
+  rating: number;
+  content: string;
+  wouldRevisit?: boolean;
+  tasteRating?: number | null;
+  valueRating?: number | null;
+  serviceRating?: number | null;
+  cleanlinessRating?: number | null;
+  accessibilityRating?: number | null;
+  favoriteMenu?: string | null;
+  tryNextMenu?: string | null;
+}
+
+/** 방문 기록에 리뷰 작성 */
+export async function createRoomReview(
+  roomId: string,
+  visitId: string,
+  data: ReviewData,
 ): Promise<RoomReview> {
-  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}/reviews`, {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/visits/${visitId}/reviews`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -415,11 +462,11 @@ export async function createRoomReview(
   return res.json();
 }
 
-/** 방 내 리뷰 수정 */
+/** 리뷰 수정 */
 export async function updateRoomReview(
   roomId: string,
   revId: string,
-  data: { rating?: number; content?: string; wouldRevisit?: boolean },
+  data: Partial<ReviewData>,
 ): Promise<RoomReview> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/reviews/${revId}`, {
     method: 'PATCH',
@@ -430,7 +477,7 @@ export async function updateRoomReview(
   return res.json();
 }
 
-/** 방 내 리뷰 삭제 */
+/** 리뷰 삭제 */
 export async function deleteRoomReview(roomId: string, revId: string): Promise<void> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/reviews/${revId}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('리뷰 삭제에 실패했습니다.');
