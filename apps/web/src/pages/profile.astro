@@ -321,7 +321,7 @@ export const prerender = false;
 
   const user = await fetchCurrentUser();
   if (!user) {
-    location.href = '/login';
+    location.href = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`;
   } else {
     profileLoading.hidden = true;
     profilePage.hidden = false;

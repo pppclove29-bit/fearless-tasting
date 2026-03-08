@@ -93,12 +93,12 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
         res = await fetch(url, { ...init, headers, credentials: 'omit' });
       } else {
         clearTokens();
-        if (!isPublicUrl) location.href = '/login';
+        if (!isPublicUrl) location.href = `${API_BASE}/auth/kakao`;
         return res;
       }
     } else if (!isPublicUrl) {
       clearTokens();
-      location.href = '/login';
+      location.href = `${API_BASE}/auth/kakao`;
       return res;
     }
   }

@@ -7,6 +7,7 @@ interface Props {
 const { title, description = '방 기반 맛집 리뷰 공유 플랫폼' } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
 const fullTitle = `${title} | 무모한 시식가`;
+const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`;
 ---
 
 <html lang="ko">
@@ -90,7 +91,7 @@ const fullTitle = `${title} | 무모한 시식가`;
             <span id="theme-label"></span>
           </button>
           <div class="nav-auth" id="auth-nav">
-            <a href="/login" id="login-link" class="nav-link nav-login">로그인</a>
+            <a href={kakaoLoginUrl} id="login-link" class="nav-link nav-login">로그인</a>
             <span id="user-info" hidden>
               <a href="/profile" id="user-nickname" class="user-nickname"></a>
               <button type="button" id="logout-btn">로그아웃</button>

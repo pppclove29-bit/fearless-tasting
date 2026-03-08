@@ -117,17 +117,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-bottom: -0.15rem;
   }
 
-  .invite-code {
-    font-family: monospace;
-    font-size: 0.85rem;
-    font-weight: 600;
-    background: var(--bg-hover);
-    color: var(--text-heading);
-    padding: 0.35rem 0.65rem;
-    border-radius: 6px;
-    letter-spacing: 0.05em;
-  }
-
   .btn-copy {
     padding: 0.3rem 0.6rem;
     background: var(--bg-card);
@@ -142,21 +131,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .btn-copy:hover { border-color: var(--text-muted); }
-
-  .btn-kakao-share {
-    padding: 0.3rem 0.6rem;
-    background: #FEE500;
-    color: #191919;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s;
-    font-family: inherit;
-  }
-
-  .btn-kakao-share:hover { background: #F0D800; }
 
   .btn-regen {
     padding: 0.3rem 0.6rem;
@@ -1808,9 +1782,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
         <div class="invite-row">
           <span class="invite-label">초대 링크</span>
-          <span class="invite-code" id="invite-code">${currentRoom.inviteCode}</span>
           <button type="button" class="btn-copy" id="copy-link-btn">링크 복사</button>
-          ${hasKakaoShare ? '<button type="button" class="btn-kakao-share" id="kakao-invite-btn">카톡 공유</button>' : ''}
           ${'share' in navigator ? '<button type="button" class="btn-copy" id="share-invite-btn">공유</button>' : ''}
           ${isOwner() ? '<button type="button" class="btn-regen" id="regen-code-btn">재생성</button>' : ''}
           ${currentRoom.inviteCodeExpiresAt ? `<span class="invite-expiry" id="invite-expiry">${new Date(currentRoom.inviteCodeExpiresAt) < new Date() ? '(만료됨)' : '(~' + formatDate(currentRoom.inviteCodeExpiresAt) + ')'}</span>` : ''}
@@ -1901,23 +1873,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       setTimeout(() => { btn.textContent = '링크 복사'; }, 1500);
     });
 
-    document.getElementById('kakao-invite-btn')?.addEventListener('click', () => {
-      if (!Kakao) return;
-      const inviteUrl = getInviteLink();
-      Kakao.Share.sendDefault({
-        objectType: 'feed',
-        content: {
-          title: `${currentRoom.name} - 무모한 시식가`,
-          description: `"${currentRoom.name}" 방에 초대합니다! 함께 맛집을 기록해요.`,
-          imageUrl: `${location.origin}/icons/icon-512.png`,
-          link: { mobileWebUrl: inviteUrl, webUrl: inviteUrl },
-        },
-        buttons: [
-          { title: '방 입장하기', link: { mobileWebUrl: inviteUrl, webUrl: inviteUrl } },
-        ],
-      });
-    });
-
     document.getElementById('share-invite-btn')?.addEventListener('click', () => {
       navigator.share({
         title: `${currentRoom.name} - 무모한 시식가`,
@@ -1927,17 +1882,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     });
 
     document.getElementById('regen-code-btn')?.addEventListener('click', async () => {
-      if (!await showConfirm('초대 코드를 재생성하시겠습니까? 기존 코드는 사용할 수 없게 됩니다.')) return;
+      if (!await showConfirm('초대 링크를 재생성하시겠습니까? 기존 링크는 사용할 수 없게 됩니다.')) return;
       try {
         const result = await regenerateInviteCode(currentRoom.id);
         currentRoom.inviteCode = result.inviteCode;
         currentRoom.inviteCodeExpiresAt = result.inviteCodeExpiresAt;
-        document.getElementById('invite-code')!.textContent = result.inviteCode;
         const expiryEl = document.getElementById('invite-expiry');
         if (expiryEl) expiryEl.textContent = '(~' + formatDate(result.inviteCodeExpiresAt) + ')';
-        showToast('초대 코드가 재생성되었습니다.', 'success');
+        showToast('초대 링크가 재생성되었습니다.', 'success');
       } catch {
-        showToast('초대 코드 재생성에 실패했습니다.');
+        showToast('초대 링크 재생성에 실패했습니다.');
       }
     });
 
