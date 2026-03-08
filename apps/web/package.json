@@ -12,6 +12,7 @@
     "clean": "rm -rf dist .astro"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^12.6.12",
     "@astrojs/sitemap": "^3.7.0",
     "@repo/types": "workspace:*",
     "@repo/utils": "workspace:*",
