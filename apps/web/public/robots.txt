@@ -1,7 +1,10 @@
 User-agent: *
 Allow: /
+Allow: /share
 Disallow: /admin
 Disallow: /login
 Disallow: /room
 Disallow: /rooms
 Disallow: /add
+
+Sitemap: https://fearless-tasting.pages.dev/sitemap-index.xml
