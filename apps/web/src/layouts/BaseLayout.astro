@@ -84,7 +84,11 @@ const fullTitle = `${title} | 무모한 시식가`;
       <slot />
     </main>
     <footer>
-      <p>&copy; 2026 무모한 시식가 · <a href="/privacy">개인정보처리방침</a></p>
+      <p class="footer-desc">둘만의 맛집 리스트를 만들고 공유하는 플랫폼</p>
+      <p class="footer-links">
+        <a href="/about">소개</a> · <a href="/rankings">랭킹</a> · <a href="/cs">문의</a> · <a href="/privacy">개인정보처리방침</a>
+      </p>
+      <p>&copy; 2026 무모한 시식가</p>
     </footer>
   </body>
 </html>
@@ -333,6 +337,15 @@ const fullTitle = `${title} | 무모한 시식가`;
     font-size: 0.8rem;
     color: #999;
     background: #fff;
+  }
+
+  .footer-desc {
+    color: #777;
+    margin-bottom: 0.4rem;
+  }
+
+  .footer-links {
+    margin-bottom: 0.4rem;
   }
 
   footer a {

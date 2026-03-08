@@ -1,0 +1,283 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="소개" description="무모한 시식가 - 둘만의 맛집 리스트를 만들고 공유하는 플랫폼. 초대 코드로 방을 만들고, 함께 맛집을 기록하세요.">
+  <slot name="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "AboutPage",
+      "name": "무모한 시식가 소개",
+      "description": "방 기반 맛집 리뷰 공유 플랫폼",
+      "url": (Astro.site ?? Astro.url.origin) + "/about",
+    })} />
+  </slot>
+
+  <div class="about-page">
+    <section class="about-hero">
+      <h1>무모한 시식가</h1>
+      <p class="about-tagline">둘만의 맛집 리스트를 만들고 공유하는 플랫폼</p>
+    </section>
+
+    <section class="about-section">
+      <h2>어떤 서비스인가요?</h2>
+      <p>
+        무모한 시식가는 <strong>방(Room) 기반 맛집 리뷰 공유 플랫폼</strong>입니다.
+        친구, 연인, 가족과 함께 프라이빗한 맛집 리스트를 만들고,
+        방문 기록과 솔직한 리뷰를 함께 쌓아갈 수 있습니다.
+      </p>
+      <p>
+        공개 리뷰 사이트와 달리, 가까운 사람들끼리만 공유하는 <strong>"우리만의 맛집 지도"</strong>를 만드는 것이 핵심입니다.
+      </p>
+    </section>
+
+    <section class="about-section">
+      <h2>이렇게 사용하세요</h2>
+      <div class="about-steps">
+        <div class="about-step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>카카오 로그인</h3>
+            <p>카카오 계정으로 간편하게 시작합니다. 별도 회원가입 없이 바로 사용할 수 있습니다.</p>
+          </div>
+        </div>
+        <div class="about-step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>방 만들기 & 초대</h3>
+            <p>맛집 리스트를 공유할 방을 만들고, 초대 코드로 함께할 사람을 초대합니다. 초대 코드는 24시간 유효합니다.</p>
+          </div>
+        </div>
+        <div class="about-step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>맛집 등록 & 리뷰</h3>
+            <p>카카오맵 연동으로 식당을 검색해서 등록하고, 방문할 때마다 솔직한 리뷰를 남깁니다.
+              맛, 가성비, 서비스, 청결, 접근성까지 세부 평가가 가능합니다.</p>
+          </div>
+        </div>
+        <div class="about-step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h3>통계 & 공유</h3>
+            <p>방 통계에서 멤버 행동 분석, 재방문 TOP, 카테고리 분포 등 다양한 인사이트를 확인하세요.
+              공유 링크로 비로그인 사용자에게도 맛집 리스트를 공개할 수 있습니다.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="about-section">
+      <h2>주요 기능</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🏠</div>
+          <h3>프라이빗 방</h3>
+          <p>초대 코드로 입장하는 비공개 맛집 리스트. 방장, 매니저, 멤버 권한 체계로 체계적으로 관리합니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📝</div>
+          <h3>상세 리뷰</h3>
+          <p>종합 평점 + 맛/가성비/서비스/청결/접근성 세부 평가. 또 먹고 싶은 메뉴, 다음에 시켜볼 메뉴까지 기록합니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🗺️</div>
+          <h3>지도 보기</h3>
+          <p>카카오맵 연동으로 등록된 맛집을 지도에서 한눈에. 지역별 필터로 원하는 동네만 볼 수 있습니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>통계 & 분석</h3>
+          <p>멤버 행동 분석, 평점 트렌드, 카테고리 다양성, 베스트 콤비 등 재미있는 인사이트를 제공합니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🏆</div>
+          <h3>업적 & 랭킹</h3>
+          <p>리뷰 수, 방문 수, 재방문율 등 다양한 기준으로 전체 유저 랭킹을 확인하고 업적을 모을 수 있습니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔗</div>
+          <h3>공유 링크</h3>
+          <p>비로그인 사용자도 볼 수 있는 공유 링크. 블로그나 SNS에 내 맛집 리스트를 공유하세요.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="about-section">
+      <h2>무료인가요?</h2>
+      <p>네, 무모한 시식가는 <strong>완전 무료</strong>입니다. 방 생성, 식당 등록, 리뷰 작성 등 모든 기능을 무료로 이용할 수 있습니다.</p>
+    </section>
+
+    <section class="about-section">
+      <h2>기술 스택</h2>
+      <p>프론트엔드는 <strong>Astro</strong>와 <strong>TypeScript</strong>로, 백엔드는 <strong>NestJS</strong>와 <strong>Prisma ORM</strong>으로 구축되었습니다.
+        <strong>Cloudflare Pages</strong>에서 서비스되며, 카카오 OAuth 인증과 카카오맵 SDK를 사용합니다.</p>
+    </section>
+
+    <section class="about-section about-cta">
+      <h2>시작해보세요</h2>
+      <p>카카오 계정만 있으면 바로 시작할 수 있습니다.</p>
+      <a href="/login" class="cta-btn">카카오로 시작하기</a>
+    </section>
+
+    <section class="about-section">
+      <h2>문의</h2>
+      <p>서비스 이용 중 불편한 점이나 건의사항이 있으시면 <a href="/cs">문의 페이지</a>를 통해 알려주세요.</p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .about-page {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .about-hero {
+    text-align: center;
+    padding: 2rem 0 1.5rem;
+  }
+
+  .about-hero h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .about-tagline {
+    font-size: 1rem;
+    color: #666;
+    margin-top: 0.4rem;
+  }
+
+  .about-section {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .about-section h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+  }
+
+  .about-section p {
+    font-size: 0.9rem;
+    color: #444;
+    line-height: 1.7;
+    margin: 0 0 0.5rem;
+  }
+
+  .about-section p:last-child {
+    margin-bottom: 0;
+  }
+
+  .about-section a {
+    color: #2563eb;
+    text-decoration: none;
+  }
+
+  .about-section a:hover {
+    text-decoration: underline;
+  }
+
+  .about-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .about-step {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .step-number {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 50%;
+    background: #111;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-top: 0.1rem;
+  }
+
+  .step-content h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem;
+  }
+
+  .step-content p {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .feature-card {
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    padding: 1rem;
+    transition: border-color 0.15s;
+  }
+
+  .feature-card:hover {
+    border-color: #d0d0d0;
+  }
+
+  .feature-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .feature-card h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem;
+  }
+
+  .feature-card p {
+    font-size: 0.78rem;
+    color: #777;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .about-cta {
+    text-align: center;
+  }
+
+  .cta-btn {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.7rem 2rem;
+    background: #111;
+    color: #fff;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background 0.15s;
+  }
+
+  .cta-btn:hover {
+    background: #333;
+    text-decoration: none;
+  }
+</style>
