@@ -22,4 +22,4 @@ RUN pnpm --filter @repo/api exec prisma generate
 
 RUN pnpm --filter @repo/api build
 
-CMD ["sh", "-c", "pnpm --filter @repo/api exec prisma migrate resolve --applied 0_init 2>/dev/null; pnpm --filter @repo/api exec prisma migrate deploy && node apps/api/dist/main"]
+CMD ["sh", "-c", "pnpm --filter @repo/api exec prisma migrate resolve --applied 0_init 2>/dev/null; pnpm --filter @repo/api exec prisma migrate resolve --rolled-back 20260308000000_account_deletion 2>/dev/null; pnpm --filter @repo/api exec prisma migrate deploy && node apps/api/dist/main"]
