@@ -37,9 +37,8 @@ export class UsersController {
     return this.usersService.deleteAccount(user.id);
   }
 
-  /** 글로벌 랭킹 + 업적 */
+  /** 글로벌 랭킹 + 업적 (공개) */
   @Get('rankings')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '글로벌 랭킹 + 업적' })
   getRankings() {
     return this.usersService.getRankings();

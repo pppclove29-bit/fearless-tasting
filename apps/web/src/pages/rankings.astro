@@ -271,10 +271,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   const contentEl = document.getElementById('rankings-content')!;
 
   const currentUser = await fetchCurrentUser();
-  if (!currentUser) {
-    location.href = '/login';
-    throw new Error('redirect');
-  }
 
   // 모든 업적 정의 (잠금 표시용)
   const ALL_ACHIEVEMENTS = [
@@ -335,9 +331,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     loadingEl.hidden = true;
     contentEl.hidden = false;
 
-    const me = data.rankings.find((u) => u.userId === currentUser.id);
+    const me = currentUser ? data.rankings.find((u) => u.userId === currentUser.id) : null;
 
-    // 내 프로필 카드
+    // 내 프로필 카드 (로그인 시에만)
     const myUnlocked = me ? me.achievements.map((a) => a.id) : [];
     const myProfileHtml = me ? `
       <div class="my-profile-card">
@@ -357,8 +353,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>
     ` : '';
 
-    // 내 업적 카드
-    const achievementsHtml = `
+    // 내 업적 카드 (로그인 시에만)
+    const achievementsHtml = currentUser ? `
       <div class="achievements-section">
         <h2>내 업적</h2>
         <div class="achievement-grid">
@@ -373,7 +369,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           }).join('')}
         </div>
       </div>
-    `;
+    ` : '';
 
     // 랭킹 카테고리 탭
     const tabsHtml = `
@@ -407,7 +403,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </thead>
           <tbody>
             ${sorted.map((u, i) => `
-              <tr class="${u.userId === currentUser.id ? 'is-me' : ''}">
+              <tr class="${currentUser && u.userId === currentUser.id ? 'is-me' : ''}">
                 <td>${getMedal(i + 1)}</td>
                 <td>
                   <div class="rank-user">
