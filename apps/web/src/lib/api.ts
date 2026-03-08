@@ -583,7 +583,7 @@ export interface RoomStats {
 
 export async function fetchRoomStats(roomId: string): Promise<RoomStats> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/stats`);
-  if (!res.ok) throw new Error('통계 조회에 실패했습니다.');
+  if (!res.ok || res.status === 204) throw new Error('통계 조회에 실패했습니다.');
   return res.json();
 }
 
