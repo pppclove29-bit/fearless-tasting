@@ -1440,9 +1440,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <input type="text" id="room-name-input" class="room-name-input" maxlength="100" hidden />
         </div>
         <div class="invite-row">
-          <span class="invite-label">초대 코드</span>
+          <span class="invite-label">초대 링크</span>
           <span class="invite-code" id="invite-code">${currentRoom.inviteCode}</span>
-          <button type="button" class="btn-copy" id="copy-code-btn">복사</button>
+          <button type="button" class="btn-copy" id="copy-link-btn">링크 복사</button>
+          ${'share' in navigator ? '<button type="button" class="btn-copy" id="share-invite-btn">공유</button>' : ''}
           ${isOwner() ? '<button type="button" class="btn-regen" id="regen-code-btn">재생성</button>' : ''}
           ${currentRoom.inviteCodeExpiresAt ? `<span class="invite-expiry" id="invite-expiry">${new Date(currentRoom.inviteCodeExpiresAt) < new Date() ? '(만료됨)' : '(~' + formatDate(currentRoom.inviteCodeExpiresAt) + ')'}</span>` : ''}
         </div>
@@ -1521,11 +1522,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     }
 
-    document.getElementById('copy-code-btn')?.addEventListener('click', () => {
-      navigator.clipboard.writeText(currentRoom.inviteCode);
-      const btn = document.getElementById('copy-code-btn')!;
+    function getInviteLink() {
+      return `${location.origin}/join?code=${currentRoom.inviteCode}`;
+    }
+
+    document.getElementById('copy-link-btn')?.addEventListener('click', () => {
+      navigator.clipboard.writeText(getInviteLink());
+      const btn = document.getElementById('copy-link-btn')!;
       btn.textContent = '복사됨!';
-      setTimeout(() => { btn.textContent = '복사'; }, 1500);
+      setTimeout(() => { btn.textContent = '링크 복사'; }, 1500);
+    });
+
+    document.getElementById('share-invite-btn')?.addEventListener('click', () => {
+      navigator.share({
+        title: `${currentRoom.name} - 무모한 시식가`,
+        text: `"${currentRoom.name}" 방에 초대합니다! 아래 링크로 입장하세요.`,
+        url: getInviteLink(),
+      }).catch(() => {});
     });
 
     document.getElementById('regen-code-btn')?.addEventListener('click', async () => {

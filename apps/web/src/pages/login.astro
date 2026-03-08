@@ -80,7 +80,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     successMsg.hidden = false;
 
     setTimeout(() => {
-      location.href = '/';
+      const redirect = localStorage.getItem('login_redirect');
+      localStorage.removeItem('login_redirect');
+      location.href = redirect || '/';
     }, 1500);
   }
 </script>

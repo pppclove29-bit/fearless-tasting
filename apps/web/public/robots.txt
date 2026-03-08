@@ -6,6 +6,8 @@ Disallow: /login
 Disallow: /room
 Disallow: /rooms
 Disallow: /add
+Disallow: /profile
 Allow: /rankings
+Allow: /discover
 
 Sitemap: https://fearless-tasting.pages.dev/sitemap-index.xml

@@ -1,0 +1,272 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+export const prerender = false;
+---
+
+<BaseLayout title="맛집 추천" description="무모한 시식가 유저들이 선택한 인기 맛집, 고평점 맛집, 재방문 맛집을 확인하세요.">
+  <slot name="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "맛집 추천 - 무모한 시식가",
+      "description": "유저들이 선택한 인기 맛집, 고평점 맛집, 재방문 맛집 리스트",
+      "url": (Astro.site ?? Astro.url.origin) + "/discover",
+    })} />
+  </slot>
+
+  <div class="discover-page">
+    <section class="discover-hero">
+      <h1>맛집 추천</h1>
+      <p class="discover-desc">무모한 시식가 유저들의 실제 방문 데이터를 기반으로 한 맛집 리스트</p>
+    </section>
+
+    <div class="discover-tabs">
+      <button type="button" class="discover-tab active" data-tab="topRated">고평점</button>
+      <button type="button" class="discover-tab" data-tab="mostRevisited">재방문</button>
+      <button type="button" class="discover-tab" data-tab="mostWishlisted">관심 맛집</button>
+    </div>
+
+    <div id="discover-content">
+      <div class="discover-loading">불러오는 중...</div>
+    </div>
+
+    <section class="discover-seo">
+      <h2>실제 방문 기반 맛집 추천</h2>
+      <p>무모한 시식가는 친구, 연인, 가족과 함께 만드는 프라이빗 맛집 리뷰 플랫폼입니다.
+        이 페이지에서는 유저들의 실제 방문 기록과 리뷰를 기반으로 선정된 맛집 리스트를 확인할 수 있습니다.</p>
+      <p><strong>고평점 맛집</strong>은 최근 90일간 리뷰 평균 평점이 높은 식당, <strong>재방문 맛집</strong>은 유저들이 여러 번 다시 찾는 식당,
+        <strong>관심 맛집</strong>은 유저들이 가보고 싶어하는 식당입니다.</p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .discover-page {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .discover-hero {
+    text-align: center;
+    padding: 2rem 0 1rem;
+  }
+
+  .discover-hero h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .discover-desc {
+    font-size: 0.9rem;
+    color: var(--text-sub);
+    margin-top: 0.3rem;
+  }
+
+  .discover-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+  }
+
+  .discover-tab {
+    padding: 0.6rem 1rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .discover-tab:hover {
+    color: var(--text-sub);
+  }
+
+  .discover-tab.active {
+    color: var(--text-heading);
+    border-bottom-color: var(--text-heading);
+  }
+
+  .discover-loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+  }
+
+  .discover-empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .discover-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .discover-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: border-color 0.15s;
+  }
+
+  .discover-card:hover {
+    border-color: var(--border-mid);
+  }
+
+  .discover-rank {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    min-width: 28px;
+    text-align: center;
+  }
+
+  .discover-rank.top-3 {
+    font-size: 1.3rem;
+  }
+
+  .discover-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .discover-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .discover-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .discover-stat {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .discover-stat-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .discover-stat-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    display: block;
+  }
+
+  .discover-seo {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .discover-seo h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    color: var(--text-heading);
+  }
+
+  .discover-seo p {
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    line-height: 1.7;
+    margin: 0 0 0.4rem;
+  }
+
+  .discover-seo p:last-child {
+    margin-bottom: 0;
+  }
+</style>
+
+<script>
+  import { fetchDiscover } from '@/lib/api';
+  import type { DiscoverResponse } from '@/lib/api';
+
+  const contentEl = document.getElementById('discover-content')!;
+  const tabs = document.querySelectorAll<HTMLButtonElement>('.discover-tab');
+  let data: DiscoverResponse | null = null;
+  let currentTab = 'topRated';
+
+  function renderList(tab: string) {
+    if (!data) return;
+
+    type ListItem = { name: string; address: string; category: string };
+    let items: ListItem[] = [];
+    let statFn: (item: ListItem, idx: number) => string = () => '';
+
+    if (tab === 'topRated') {
+      items = data.topRated;
+      statFn = (item) => {
+        const r = item as (typeof data)['topRated'][0];
+        return `<div class="discover-stat"><span class="discover-stat-value">${r.avgRating}</span><span class="discover-stat-label">평점 (${r.reviewCount}개)</span></div>`;
+      };
+    } else if (tab === 'mostRevisited') {
+      items = data.mostRevisited;
+      statFn = (item) => {
+        const r = item as (typeof data)['mostRevisited'][0];
+        return `<div class="discover-stat"><span class="discover-stat-value">${r.visitCount}회</span><span class="discover-stat-label">방문</span></div>`;
+      };
+    } else {
+      items = data.mostWishlisted;
+      statFn = (item) => {
+        const r = item as (typeof data)['mostWishlisted'][0];
+        return `<div class="discover-stat"><span class="discover-stat-value">${r.wishlistCount}</span><span class="discover-stat-label">관심</span></div>`;
+      };
+    }
+
+    if (items.length === 0) {
+      contentEl.innerHTML = '<div class="discover-empty">아직 데이터가 충분하지 않습니다.</div>';
+      return;
+    }
+
+    const medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49'];
+    contentEl.innerHTML = `<div class="discover-list">${items.map((item, i) => {
+      const rank = i < 3 ? `<span class="discover-rank top-3">${medals[i]}</span>` : `<span class="discover-rank">${i + 1}</span>`;
+      const shortAddr = item.address.replace(/^(.*?[시군구])\s*.*$/, '$1');
+      return `<div class="discover-card">${rank}<div class="discover-info"><div class="discover-name">${item.name}</div><div class="discover-meta">${shortAddr} · ${item.category}</div></div>${statFn(item, i)}</div>`;
+    }).join('')}</div>`;
+  }
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentTab = tab.dataset.tab!;
+      renderList(currentTab);
+    });
+  });
+
+  try {
+    data = await fetchDiscover();
+    renderList(currentTab);
+  } catch {
+    contentEl.innerHTML = '<div class="discover-empty">맛집 추천을 불러올 수 없습니다.</div>';
+  }
+</script>

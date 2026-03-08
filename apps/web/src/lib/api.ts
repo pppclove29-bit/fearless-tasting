@@ -626,6 +626,36 @@ export async function fetchRankings(): Promise<RankingsResponse> {
   return res.json();
 }
 
+// ─── 위시리스트 ───
+
+/** 위시리스트 토글 */
+export async function toggleWishlist(roomId: string, restaurantId: string): Promise<{ wishlisted: boolean }> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${restaurantId}/wishlist`, { method: 'POST' });
+  if (!res.ok) throw new Error('위시리스트 변경에 실패했습니다.');
+  return res.json();
+}
+
+// ─── 공개 맛집 추천 ───
+
+export interface DiscoverRestaurant {
+  name: string;
+  address: string;
+  category: string;
+}
+
+export interface DiscoverResponse {
+  topRated: (DiscoverRestaurant & { avgRating: number; reviewCount: number })[];
+  mostRevisited: (DiscoverRestaurant & { visitCount: number })[];
+  mostWishlisted: (DiscoverRestaurant & { wishlistCount: number })[];
+}
+
+/** 공개 맛집 추천 리스트 (비로그인 가능) */
+export async function fetchDiscover(): Promise<DiscoverResponse> {
+  const res = await apiFetch(`${API_BASE}/rooms/discover`);
+  if (!res.ok) throw new Error('맛집 추천 조회에 실패했습니다.');
+  return res.json();
+}
+
 // ─── 공유 링크 ───
 
 /** 공유 코드로 방 조회 (비로그인) */

@@ -1150,4 +1150,110 @@ export class RoomsService {
       peakMonth,
     };
   }
+
+  // ─── 위시리스트 ───
+
+  /** 위시리스트 토글 (추가/제거) */
+  async toggleWishlist(roomId: string, restaurantId: string, userId: string): Promise<{ wishlisted: boolean }> {
+    const restaurant = await this.prisma.read.roomRestaurant.findFirst({
+      where: { id: restaurantId, roomId },
+    });
+    if (!restaurant) throw new NotFoundException('식당을 찾을 수 없습니다.');
+
+    const existing = await this.prisma.read.roomWishlist.findUnique({
+      where: { userId_roomRestaurantId: { userId, roomRestaurantId: restaurantId } },
+    });
+
+    if (existing) {
+      await this.prisma.write.roomWishlist.delete({ where: { id: existing.id } });
+      return { wishlisted: false };
+    }
+
+    await this.prisma.write.roomWishlist.create({
+      data: { userId, roomRestaurantId: restaurantId },
+    });
+    return { wishlisted: true };
+  }
+
+  // ─── 공개 맛집 추천 ───
+
+  /** 공개 맛집 추천 리스트 (비로그인 가능) */
+  async getDiscoverRestaurants() {
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    // 1) 최근 고평점 식당 — 최근 90일 내 리뷰 기준
+    const recentReviews = await this.prisma.read.roomReview.findMany({
+      where: { createdAt: { gte: ninetyDaysAgo } },
+      select: {
+        rating: true,
+        visit: {
+          select: {
+            restaurant: { select: { name: true, address: true, category: true } },
+          },
+        },
+      },
+    });
+
+    const ratedMap = new Map<string, { name: string; address: string; category: string; totalRating: number; count: number }>();
+    for (const r of recentReviews) {
+      const rest = r.visit.restaurant;
+      const key = `${rest.name}||${rest.address}`;
+      const entry = ratedMap.get(key) ?? { name: rest.name, address: rest.address, category: rest.category, totalRating: 0, count: 0 };
+      entry.totalRating += r.rating;
+      entry.count += 1;
+      ratedMap.set(key, entry);
+    }
+
+    const topRated = Array.from(ratedMap.values())
+      .filter((e) => e.count >= 2)
+      .map((e) => ({ name: e.name, address: e.address, category: e.category, avgRating: Math.round((e.totalRating / e.count) * 10) / 10, reviewCount: e.count }))
+      .sort((a, b) => b.avgRating - a.avgRating || b.reviewCount - a.reviewCount)
+      .slice(0, 10);
+
+    // 2) 재방문 많은 식당 — 방문 2회 이상
+    const restaurants = await this.prisma.read.roomRestaurant.findMany({
+      select: {
+        name: true,
+        address: true,
+        category: true,
+        _count: { select: { visits: true } },
+      },
+    });
+
+    const revisitMap = new Map<string, { name: string; address: string; category: string; visitCount: number }>();
+    for (const r of restaurants) {
+      const key = `${r.name}||${r.address}`;
+      const entry = revisitMap.get(key) ?? { name: r.name, address: r.address, category: r.category, visitCount: 0 };
+      entry.visitCount += r._count.visits;
+      revisitMap.set(key, entry);
+    }
+
+    const mostRevisited = Array.from(revisitMap.values())
+      .filter((e) => e.visitCount >= 2)
+      .sort((a, b) => b.visitCount - a.visitCount)
+      .slice(0, 10);
+
+    // 3) 위시리스트 인기 식당
+    const wishlisted = await this.prisma.read.roomWishlist.findMany({
+      select: {
+        roomRestaurant: { select: { name: true, address: true, category: true } },
+      },
+    });
+
+    const wishMap = new Map<string, { name: string; address: string; category: string; wishlistCount: number }>();
+    for (const w of wishlisted) {
+      const rest = w.roomRestaurant;
+      const key = `${rest.name}||${rest.address}`;
+      const entry = wishMap.get(key) ?? { name: rest.name, address: rest.address, category: rest.category, wishlistCount: 0 };
+      entry.wishlistCount += 1;
+      wishMap.set(key, entry);
+    }
+
+    const mostWishlisted = Array.from(wishMap.values())
+      .sort((a, b) => b.wishlistCount - a.wishlistCount)
+      .slice(0, 10);
+
+    return { topRated, mostRevisited, mostWishlisted };
+  }
 }

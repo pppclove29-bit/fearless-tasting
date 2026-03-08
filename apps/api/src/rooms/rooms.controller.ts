@@ -66,6 +66,13 @@ export class RoomsController {
     return this.roomsService.getPlatformStats();
   }
 
+  /** 공개 맛집 추천 (로그인 불필요) */
+  @Get('discover')
+  @ApiOperation({ summary: '공개 맛집 추천 리스트 (비로그인 가능)' })
+  getDiscoverRestaurants() {
+    return this.roomsService.getDiscoverRestaurants();
+  }
+
   // ─── 공유 링크 (비로그인 공개) ───
 
   /** 공유 코드로 방 조회 */
@@ -386,6 +393,22 @@ export class RoomsController {
     @Req() req: RequestWithRoomMember,
   ) {
     return this.roomsService.removeReview(revId, user.id, req.roomMember.role);
+  }
+
+  // ─── 위시리스트 ───
+
+  /** 위시리스트 토글 */
+  @Post(':id/restaurants/:rid/wishlist')
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '위시리스트 토글 (추가/제거)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  @ApiParam({ name: 'rid', description: '식당 ID' })
+  toggleWishlist(
+    @Param('id') roomId: string,
+    @Param('rid') restaurantId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.roomsService.toggleWishlist(roomId, restaurantId, user.id);
   }
 
   // ─── 빠른 리뷰 ───
