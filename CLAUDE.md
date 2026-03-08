@@ -14,7 +14,7 @@
 ## 기술 스택
 
 - **모노레포**: Turborepo + pnpm
-- **프론트엔드**: Astro 5, TypeScript, 카카오맵 SDK
+- **프론트엔드**: Astro 5, TypeScript, 카카오맵 SDK, @astrojs/sitemap
 - **백엔드**: NestJS 11, Prisma, TypeScript
 - **DB**: MySQL 8.0 (Reader/Writer 분리)
 - **컨테이너**: Docker, docker-compose
@@ -54,8 +54,8 @@ apps/api/src/
 | Account              | OAuth 계정 (카카오)              | User                                     |
 | Room                 | 공유 방 (inviteCode + shareCode) | RoomMember, RoomRestaurant, RoomKick     |
 | RoomMember           | 방 멤버십 (owner/manager/member) | Room, User                               |
-| RoomRestaurant       | 방 내 식당 (waitTime 포함)       | Room, User, RoomVisit                    |
-| RoomVisit            | 방문 기록 (visitedAt, memo)      | RoomRestaurant, User, RoomVisitParticipant, RoomReview |
+| RoomRestaurant       | 방 내 식당                       | Room, User, RoomVisit                    |
+| RoomVisit            | 방문 기록 (visitedAt, memo, waitTime) | RoomRestaurant, User, RoomVisitParticipant, RoomReview |
 | RoomVisitParticipant | 방문 참여자 태그                 | RoomVisit, User                          |
 | RoomReview           | 방문별 리뷰 (세부 평점, 메뉴)    | RoomVisit, User                          |
 | RoomKick             | 방 강퇴 기록 (재입장 차단)       | Room, User                               |
@@ -145,8 +145,26 @@ apps/api/src/
 
 ## 식당/방문 수정
 
-- `PATCH /rooms/:id/restaurants/:rid` — 식당 이름, 카테고리, 웨이팅 수정 (본인 또는 매니저+)
-- `PATCH /rooms/:id/visits/:visitId` — 방문 날짜, 메모 수정 (생성자 또는 매니저+)
+- `PATCH /rooms/:id/restaurants/:rid` — 식당 이름, 카테고리 수정 (본인 또는 매니저+)
+- `PATCH /rooms/:id/visits/:visitId` — 방문 날짜, 메모, 웨이팅 수정 (생성자 또는 매니저+)
+
+## 방 통계
+
+- `GET /rooms/:id/stats` — 방 종합 통계 (RoomMemberGuard)
+- 요약 (식당·방문·리뷰 수, 평균 평점), 멤버별 활동 분석
+- 카테고리·지역 분포, 요일·월별 방문 패턴
+- 세부 평점 레이더 차트 (맛/가성비/서비스/청결/접근성)
+- 대기시간 분포, 인기 메뉴 (또 먹고 싶은 / 다음에 시켜볼)
+- TOP/BOTTOM 평점 식당, 재방문률 TOP 식당
+- 미리뷰 방문 알림, 랜덤 식당 추천
+
+## SEO
+
+- `@astrojs/sitemap` — 빌드 시 sitemap.xml 자동 생성 (공개 페이지만)
+- `robots.txt` — sitemap 참조, /share Allow, /admin·/login·/room·/rooms Disallow
+- Open Graph + Twitter Card 메타 태그 (BaseLayout.astro)
+- JSON-LD 구조화 데이터 (WebSite)
+- `SITE_URL` 환경변수로 sitemap 도메인 설정
 
 ## DB 마이그레이션
 
@@ -169,6 +187,7 @@ apps/api/src/
 
 - `PUBLIC_API_URL` — API 서버 주소
 - `PUBLIC_KAKAO_MAP_KEY` — 카카오맵 JavaScript 키 (빈 값이면 지도 숨김)
+- `SITE_URL` — 사이트 도메인 (sitemap 생성용, 예: `https://fearless-tasting.pages.dev`)
 
 ## 프론트엔드 인증 흐름
 
