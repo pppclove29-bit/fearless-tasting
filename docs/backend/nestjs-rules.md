@@ -2,7 +2,7 @@
 
 ## 모듈 구조
 
-- 기능 단위로 모듈을 분리한다 (`restaurants/`, `reviews/`, `users/`)
+- 기능 단위로 모듈을 분리한다 (`rooms/`, `users/`, `inquiries/`)
 - 각 모듈은 `*.module.ts`, `*.controller.ts`, `*.service.ts`로 구성한다
 - 필요 시 `dto/` 폴더에 DTO 클래스를 둔다
 - 공통 모듈은 `@Global()` 데코레이터로 전역 등록한다 (예: `PrismaModule`)
@@ -17,24 +17,22 @@
 ```typescript
 // 올바른 예 - Controller는 라우팅과 DTO 처리만
 @Post()
-create(@Body() dto: CreateRestaurantDto) {
-  return this.restaurantsService.create(
+create(@Body() dto: CreateRoomRestaurantDto, @CurrentUser() user: JwtPayload) {
+  return this.roomsService.createRestaurant(
+    roomId,
+    user.sub,
     dto.name,
     dto.address,
-    dto.neighborhood,
-    dto.latitude,
-    dto.longitude,
     dto.category,
-    dto.imageUrl,
   );
 }
 
 // 잘못된 예 - Controller에 비즈니스 로직
 @Post()
-async create(@Body() dto: CreateRestaurantDto) {
-  const exists = await this.prisma.read.restaurant.findFirst({ ... });  // X
-  if (exists) throw new ConflictException();                             // X
-  return this.prisma.write.restaurant.create({ ... });                   // X
+async create(@Body() dto: CreateRoomRestaurantDto) {
+  const exists = await this.prisma.read.roomRestaurant.findFirst({ ... });  // X
+  if (exists) throw new ConflictException();                                 // X
+  return this.prisma.write.roomRestaurant.create({ ... });                   // X
 }
 ```
 
@@ -47,10 +45,10 @@ async create(@Body() dto: CreateRestaurantDto) {
 
 ```typescript
 // 올바른 예 - 개별 파라미터
-async create(name: string, address: string, category: string) { ... }
+async createRestaurant(roomId: number, userId: number, name: string, address: string, category: string) { ... }
 
 // 잘못된 예 - DTO 직접 전달
-async create(dto: CreateRestaurantDto) { ... }
+async createRestaurant(dto: CreateRoomRestaurantDto) { ... }
 ```
 
 ## 에러 처리

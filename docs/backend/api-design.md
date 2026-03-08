@@ -2,16 +2,17 @@
 
 ## REST 원칙
 
-- 리소스 중심 URL: `/restaurants`, `/reviews`, `/users`, `/inquiries`
-- 복수형 명사를 사용한다 (`/restaurant` X → `/restaurants` O)
+- 리소스 중심 URL: `/rooms`, `/users`, `/inquiries`
+- 복수형 명사를 사용한다 (`/room` X → `/rooms` O)
 - 동사 대신 HTTP 메서드로 행위를 표현한다
+- 방 하위 리소스는 중첩 경로로 표현한다 (`/rooms/:id/restaurants`, `/rooms/:id/restaurants/:rid/visits`)
 
 | HTTP 메서드 | 용도 | 예시 |
 |-------------|------|------|
-| GET | 조회 | `GET /restaurants` |
-| POST | 생성 | `POST /restaurants` |
-| PATCH | 부분 수정 | `PATCH /restaurants/:id` |
-| DELETE | 삭제 | `DELETE /restaurants/:id` |
+| GET | 조회 | `GET /rooms/:id/restaurants` |
+| POST | 생성 | `POST /rooms/:id/restaurants` |
+| PATCH | 부분 수정 | `PATCH /rooms/:id/restaurants/:rid` |
+| DELETE | 삭제 | `DELETE /rooms/:id/restaurants/:rid` |
 
 ## 응답 코드
 
@@ -33,48 +34,69 @@
 - 응답 DTO가 필요하면 별도로 정의한다
 
 ```typescript
-// create-restaurant.dto.ts
-import { IsString, IsOptional } from 'class-validator';
+// create-room-restaurant.dto.ts
+import { IsString, IsOptional, IsNumber } from 'class-validator';
 
-export class CreateRestaurantDto {
+export class CreateRoomRestaurantDto {
   @IsString()
-  name: string;
-
-  @IsString()
-  address: string;
+  name!: string;
 
   @IsString()
-  province: string;
+  address!: string;
 
   @IsString()
-  city: string;
-
-  @IsString()
-  neighborhood: string;
-
-  @IsString()
-  category: string;
+  category!: string;
 
   @IsOptional()
   @IsString()
   imageUrl?: string;
+
+  @IsOptional()
+  @IsNumber()
+  waitTime?: number;
 }
 ```
 
 ## URL 설계 예시
 
-### 식당/리뷰/사용자
+### 방 (Rooms)
 
 | Method | URL | 인증 | 설명 |
 |--------|-----|------|------|
-| GET | `/restaurants` | X | 식당 목록 |
-| GET | `/restaurants/:id` | X | 식당 상세 |
-| POST | `/restaurants` | O | 식당 등록 |
-| PATCH | `/restaurants/:id` | O | 식당 수정 |
-| DELETE | `/restaurants/:id` | O | 식당 삭제 |
-| GET | `/restaurants/areas/counts` | X | 지역별 식당 수 |
-| GET | `/reviews/restaurant/:restaurantId` | X | 특정 식당의 리뷰 목록 |
-| POST | `/reviews` | O | 리뷰 작성 |
+| POST | `/rooms` | O | 방 생성 |
+| POST | `/rooms/join` | O | 초대 코드로 방 입장 |
+| GET | `/rooms/:id` | O | 방 상세 조회 |
+| DELETE | `/rooms/:id` | O | 방 삭제 (owner) |
+
+### 방 식당 (Room Restaurants)
+
+| Method | URL | 인증 | 설명 |
+|--------|-----|------|------|
+| GET | `/rooms/:id/restaurants` | O | 방 내 식당 목록 |
+| POST | `/rooms/:id/restaurants` | O | 방 내 식당 등록 |
+| PATCH | `/rooms/:id/restaurants/:rid` | O | 방 내 식당 수정 |
+| DELETE | `/rooms/:id/restaurants/:rid` | O | 방 내 식당 삭제 |
+
+### 방문 (Visits)
+
+| Method | URL | 인증 | 설명 |
+|--------|-----|------|------|
+| POST | `/rooms/:id/restaurants/:rid/visits` | O | 방문 기록 생성 |
+| GET | `/rooms/:id/visits/:visitId` | O | 방문 상세 조회 |
+| DELETE | `/rooms/:id/visits/:visitId` | O | 방문 기록 삭제 |
+
+### 리뷰 (Reviews)
+
+| Method | URL | 인증 | 설명 |
+|--------|-----|------|------|
+| POST | `/rooms/:id/visits/:visitId/reviews` | O | 방문별 리뷰 작성 |
+| PATCH | `/rooms/:id/reviews/:reviewId` | O | 리뷰 수정 |
+| DELETE | `/rooms/:id/reviews/:reviewId` | O | 리뷰 삭제 |
+
+### 사용자 (Users)
+
+| Method | URL | 인증 | 설명 |
+|--------|-----|------|------|
 | GET | `/users/:id` | X | 사용자 조회 |
 
 ### 문의 (Inquiries)

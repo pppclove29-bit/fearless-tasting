@@ -18,7 +18,7 @@ import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomManagerGuard } from './guards/room-manager.guard';
 
 interface RequestWithRoomMember extends Request {
-  roomMember: { role: string };
+  roomMember: { role: 'owner' | 'manager' | 'member' };
 }
 
 @ApiTags('방')
@@ -301,7 +301,18 @@ export class RoomsController {
     @CurrentUser() user: { id: string },
     @Body() dto: UpdateRoomReviewDto,
   ) {
-    return this.roomsService.updateReview(revId, user.id, dto);
+    return this.roomsService.updateReview(revId, user.id, {
+      rating: dto.rating,
+      content: dto.content,
+      wouldRevisit: dto.wouldRevisit,
+      tasteRating: dto.tasteRating,
+      valueRating: dto.valueRating,
+      serviceRating: dto.serviceRating,
+      cleanlinessRating: dto.cleanlinessRating,
+      accessibilityRating: dto.accessibilityRating,
+      favoriteMenu: dto.favoriteMenu,
+      tryNextMenu: dto.tryNextMenu,
+    });
   }
 
   /** 리뷰 삭제 (본인 또는 매니저+) */

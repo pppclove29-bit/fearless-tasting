@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ConflictException, ForbiddenException } 
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
-const MAX_ROOM_MEMBERS = 2;
+const MAX_ROOM_MEMBERS = 4;
 
 @Injectable()
 export class RoomsService {
@@ -427,7 +427,7 @@ export class RoomsService {
   }
 
   /** 방 내 식당 삭제 (본인 or manager+) */
-  async removeRestaurant(roomId: string, restaurantId: string, userId: string, memberRole: string) {
+  async removeRestaurant(roomId: string, restaurantId: string, userId: string, memberRole: 'owner' | 'manager' | 'member') {
     const restaurant = await this.prisma.read.roomRestaurant.findUnique({
       where: { id: restaurantId },
     });
@@ -506,7 +506,7 @@ export class RoomsService {
   }
 
   /** 방문 기록 삭제 (생성자 or manager+) */
-  async removeVisit(visitId: string, userId: string, memberRole: string) {
+  async removeVisit(visitId: string, userId: string, memberRole: 'owner' | 'manager' | 'member') {
     const visit = await this.prisma.read.roomVisit.findUnique({ where: { id: visitId } });
     if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
 
@@ -575,19 +575,25 @@ export class RoomsService {
     if (!review) throw new NotFoundException('리뷰를 찾을 수 없습니다');
     if (review.userId !== userId) throw new ForbiddenException('본인의 리뷰만 수정할 수 있습니다');
 
-    const updateData: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined) updateData[key] = value;
-    }
-
     return this.prisma.write.roomReview.update({
       where: { id: reviewId },
-      data: updateData,
+      data: {
+        ...(data.rating !== undefined && { rating: data.rating }),
+        ...(data.content !== undefined && { content: data.content }),
+        ...(data.wouldRevisit !== undefined && { wouldRevisit: data.wouldRevisit }),
+        ...(data.tasteRating !== undefined && { tasteRating: data.tasteRating }),
+        ...(data.valueRating !== undefined && { valueRating: data.valueRating }),
+        ...(data.serviceRating !== undefined && { serviceRating: data.serviceRating }),
+        ...(data.cleanlinessRating !== undefined && { cleanlinessRating: data.cleanlinessRating }),
+        ...(data.accessibilityRating !== undefined && { accessibilityRating: data.accessibilityRating }),
+        ...(data.favoriteMenu !== undefined && { favoriteMenu: data.favoriteMenu }),
+        ...(data.tryNextMenu !== undefined && { tryNextMenu: data.tryNextMenu }),
+      },
     });
   }
 
   /** 리뷰 삭제 (본인 or manager+) */
-  async removeReview(reviewId: string, userId: string, memberRole: string) {
+  async removeReview(reviewId: string, userId: string, memberRole: 'owner' | 'manager' | 'member') {
     const review = await this.prisma.read.roomReview.findUnique({ where: { id: reviewId } });
     if (!review) throw new NotFoundException('리뷰를 찾을 수 없습니다');
 

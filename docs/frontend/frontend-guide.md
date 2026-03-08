@@ -7,16 +7,16 @@
 ```
 apps/web/src/
 ├── pages/              # 라우팅 페이지
-│   ├── index.astro
-│   ├── map.astro
-│   └── my-list.astro
+│   ├── index.astro     # 홈 (내 방 목록)
+│   ├── room.astro      # 방 상세 (식당/방문/리뷰 CRUD)
+│   ├── share.astro     # 공유 열람 (비로그인)
+│   ├── login.astro
+│   └── cs.astro
 ├── layouts/            # 페이지 레이아웃
 │   └── BaseLayout.astro
 ├── components/         # 재사용 UI 컴포넌트
-│   ├── Map.astro
-│   ├── RestaurantCard.astro
-│   ├── ReviewForm.astro
-│   └── StarRating.astro
+│   ├── StarRating.astro
+│   └── ...
 ├── styles/             # 글로벌/공통 스타일
 │   └── global.css
 └── lib/                # 유틸리티, API 클라이언트

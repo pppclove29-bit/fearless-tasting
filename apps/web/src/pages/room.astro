@@ -1145,6 +1145,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import type { AuthUser, RoomDetailResponse, ReviewData } from '@/lib/api';
   import type { RoomReviewWithUser, RoomVisitWithDetails } from '@repo/types';
   import { getCities, getNeighborhoods } from '@/data/areas';
+  import { formatRating, formatDate } from '@repo/utils';
 
   const loadingMsg = document.getElementById('loading-msg')!;
   const errorMsg = document.getElementById('error-msg')!;
@@ -1159,13 +1160,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     return div.innerHTML;
   }
 
-  function renderStars(rating: number): string {
-    return '\u2605'.repeat(rating) + '\u2606'.repeat(5 - rating);
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
-  }
+  const renderStars = formatRating;
 
   const roleLabel: Record<string, string> = { owner: '방장', manager: '매니저', member: '멤버' };
 
@@ -1514,11 +1509,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       })
       .join('');
 
-    // 총 리뷰 수
+    // 총 방문/리뷰 수
+    const totalVisits = restaurants.reduce((sum, r) => sum + r._count.visits, 0);
     const totalReviews = restaurants.reduce((sum, r) => sum + r._count.reviews, 0);
+
+    // 평균 평점
+    const ratedRestaurants = restaurants.filter((r) => r.avgRating !== null);
+    const overallAvg = ratedRestaurants.length > 0
+      ? Math.round(ratedRestaurants.reduce((sum, r) => sum + r.avgRating!, 0) / ratedRestaurants.length * 10) / 10
+      : null;
 
     // 가장 리뷰 많은 식당
     const topReviewed = [...restaurants].sort((a, b) => b._count.reviews - a._count.reviews)[0];
+
+    // 가장 높은 평점 식당
+    const topRated = ratedRestaurants.length > 0
+      ? [...ratedRestaurants].sort((a, b) => b.avgRating! - a.avgRating!)[0]
+      : null;
+
+    // 가장 많이 방문한 식당
+    const topVisited = [...restaurants].sort((a, b) => b._count.visits - a._count.visits)[0];
 
     // 랜덤 추천
     const randomPickHtml = `
@@ -1536,14 +1546,32 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="stat-label">등록된 식당</div>
         </div>
         <div class="stat-card">
+          <div class="stat-value">${totalVisits}</div>
+          <div class="stat-label">총 방문</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-value">${totalReviews}</div>
           <div class="stat-label">총 리뷰</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">${categoryEntries.length}</div>
-          <div class="stat-label">카테고리</div>
+          <div class="stat-value">${overallAvg ?? '-'}</div>
+          <div class="stat-label">평균 평점</div>
         </div>
       </div>
+
+      ${topVisited && topVisited._count.visits > 0 ? `
+        <div class="stat-section">
+          <h3 class="stat-section-title">가장 많이 방문한 식당</h3>
+          <div class="stat-highlight">${escapeHtml(topVisited.name)} <span class="stat-highlight-sub">(${topVisited._count.visits}회 방문)</span></div>
+        </div>
+      ` : ''}
+
+      ${topRated ? `
+        <div class="stat-section">
+          <h3 class="stat-section-title">가장 높은 평점</h3>
+          <div class="stat-highlight">${escapeHtml(topRated.name)} <span class="stat-highlight-sub">(${renderStars(Math.round(topRated.avgRating!))} ${topRated.avgRating})</span></div>
+        </div>
+      ` : ''}
 
       ${topReviewed && topReviewed._count.reviews > 0 ? `
         <div class="stat-section">

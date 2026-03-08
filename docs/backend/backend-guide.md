@@ -20,16 +20,12 @@ apps/api/src/
 │   │   └── admin.guard.ts          # 관리자 역할 검증 Guard
 │   └── decorators/
 │       └── current-user.decorator.ts # @CurrentUser() 데코레이터
-├── restaurants/
-│   ├── restaurants.module.ts
-│   ├── restaurants.controller.ts
-│   ├── restaurants.service.ts
-│   └── dto/
-├── reviews/
-│   ├── reviews.module.ts
-│   ├── reviews.controller.ts
-│   ├── reviews.service.ts
-│   └── dto/
+├── rooms/
+│   ├── rooms.module.ts
+│   ├── rooms.controller.ts
+│   ├── rooms.service.ts
+│   ├── guards/                     # RoomMemberGuard, RoomManagerGuard
+│   └── dto/                        # CreateRoom, JoinRoom, ToggleShareCode 등
 ├── users/
 │   ├── users.module.ts
 │   ├── users.controller.ts

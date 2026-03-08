@@ -3,12 +3,43 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="홈" description="둘만의 맛집 리스트를 만들고 공유하세요">
-  <!-- 랜딩 (비로그인) -->
+  <!-- 내 방 목록 (로그인 시) -->
+  <div id="dashboard" hidden>
+    <h1>내 방</h1>
+    <p class="page-desc">방을 만들어 함께 맛집 리스트를 공유하세요.</p>
+
+    <div class="rooms-actions">
+      <form id="create-form" class="action-form">
+        <input type="text" id="create-name" placeholder="방 이름" required maxlength="100" />
+        <button type="submit" class="btn-primary">방 만들기</button>
+      </form>
+      <form id="join-form" class="action-form">
+        <input type="text" id="join-code" placeholder="초대 코드 (8자)" required maxlength="8" minlength="8" />
+        <button type="submit" class="btn-secondary">입장</button>
+      </form>
+    </div>
+
+    <div class="form-error" id="form-error" hidden></div>
+
+    <div class="rooms-sort-row" id="rooms-sort-row" hidden>
+      <select id="rooms-sort">
+        <option value="recent">최근 참여순</option>
+        <option value="name">이름순</option>
+        <option value="members">멤버 많은순</option>
+        <option value="restaurants">식당 많은순</option>
+      </select>
+    </div>
+
+    <div id="rooms-list"></div>
+    <p id="empty-msg" class="status-msg" hidden>참여 중인 방이 없습니다. 방을 만들거나 초대 코드로 입장하세요.</p>
+  </div>
+
+  <!-- 랜딩 (항상 표시) -->
   <div id="landing" hidden>
     <section class="hero">
       <h1 class="hero-title">둘만의 맛집 리스트</h1>
       <p class="hero-sub">함께 다녀온 맛집을 기록하고, 리뷰를 남기고, 링크 하나로 공유하세요.</p>
-      <a href="/login" class="hero-cta">카카오로 시작하기</a>
+      <a href="/login" class="hero-cta login-only-cta">카카오로 시작하기</a>
     </section>
 
     <section class="features">
@@ -100,7 +131,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <div class="faq-list">
         <details class="faq-item">
           <summary>한 방에 몇 명까지 참여할 수 있나요?</summary>
-          <p>현재 한 방에 최대 2명까지 참여할 수 있습니다.</p>
+          <p>현재 한 방에 최대 4명까지 참여할 수 있습니다.</p>
         </details>
         <details class="faq-item">
           <summary>초대 코드는 어떻게 공유하나요?</summary>
@@ -115,40 +146,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     <section class="bottom-cta">
       <p>지금 바로 시작해보세요.</p>
-      <a href="/login" class="hero-cta">카카오로 시작하기</a>
+      <a href="/login" class="hero-cta login-only-cta">카카오로 시작하기</a>
       <a href="/cs" class="bottom-cta-link">문의하기</a>
     </section>
-  </div>
-
-  <!-- 내 방 목록 (로그인) -->
-  <div id="dashboard" hidden>
-    <h1>내 방</h1>
-    <p class="page-desc">방을 만들어 함께 맛집 리스트를 공유하세요.</p>
-
-    <div class="rooms-actions">
-      <form id="create-form" class="action-form">
-        <input type="text" id="create-name" placeholder="방 이름" required maxlength="100" />
-        <button type="submit" class="btn-primary">방 만들기</button>
-      </form>
-      <form id="join-form" class="action-form">
-        <input type="text" id="join-code" placeholder="초대 코드 (8자)" required maxlength="8" minlength="8" />
-        <button type="submit" class="btn-secondary">입장</button>
-      </form>
-    </div>
-
-    <div class="form-error" id="form-error" hidden></div>
-
-    <div class="rooms-sort-row" id="rooms-sort-row" hidden>
-      <select id="rooms-sort">
-        <option value="recent">최근 참여순</option>
-        <option value="name">이름순</option>
-        <option value="members">멤버 많은순</option>
-        <option value="restaurants">식당 많은순</option>
-      </select>
-    </div>
-
-    <div id="rooms-list"></div>
-    <p id="empty-msg" class="status-msg" hidden>참여 중인 방이 없습니다. 방을 만들거나 초대 코드로 입장하세요.</p>
   </div>
 
   <!-- 로딩 -->
@@ -190,6 +190,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .hero-cta:hover {
     background: #F5DC00;
+  }
+
+  .hero-cta[hidden] {
+    display: none;
   }
 
   .features {
@@ -667,13 +671,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const user = await fetchCurrentUser();
     loadingMsg.hidden = true;
 
-    if (!user) {
-      landing.hidden = false;
-      return;
-    }
+    // 랜딩은 항상 표시
+    landing.hidden = false;
 
-    dashboard.hidden = false;
-    allRooms = await fetchMyRooms();
-    renderRooms(allRooms);
+    if (user) {
+      // 로그인 시 대시보드 표시 + 로그인 CTA 숨김
+      dashboard.hidden = false;
+      for (const cta of document.querySelectorAll<HTMLElement>('.login-only-cta')) {
+        cta.hidden = true;
+      }
+      allRooms = await fetchMyRooms();
+      renderRooms(allRooms);
+    }
   })();
 </script>

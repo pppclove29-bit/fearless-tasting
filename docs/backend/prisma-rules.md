@@ -21,21 +21,23 @@
 
 ```typescript
 // 올바른 예
-async findAll() {
-  return this.prisma.read.restaurant.findMany();  // Reader 사용
+async findAllRestaurants(roomId: number) {
+  return this.prisma.read.roomRestaurant.findMany({  // Reader 사용
+    where: { roomId },
+  });
 }
 
-async create(name: string) {
-  return this.prisma.write.restaurant.create({    // Writer 사용
-    data: { name },
+async createRestaurant(roomId: number, name: string) {
+  return this.prisma.write.roomRestaurant.create({   // Writer 사용
+    data: { roomId, name },
   });
 }
 
 // 트랜잭션 (Writer에서만)
-async transfer() {
+async createVisitWithReview() {
   return this.prisma.write.$transaction(async (tx) => {
-    await tx.restaurant.update({ ... });
-    await tx.review.create({ ... });
+    const visit = await tx.roomVisit.create({ ... });
+    await tx.roomReview.create({ ... });
   });
 }
 ```
@@ -56,16 +58,17 @@ async transfer() {
 
 ```typescript
 // 잘못된 예 - N+1 쿼리
-const restaurants = await this.prisma.read.restaurant.findMany();
+const restaurants = await this.prisma.read.roomRestaurant.findMany({ where: { roomId } });
 for (const r of restaurants) {
-  const reviews = await this.prisma.read.review.findMany({  // X
-    where: { restaurantId: r.id },
+  const visits = await this.prisma.read.roomVisit.findMany({  // X
+    where: { roomRestaurantId: r.id },
   });
 }
 
 // 올바른 예 - include 사용
-const restaurants = await this.prisma.read.restaurant.findMany({
-  include: { reviews: true },  // O
+const restaurants = await this.prisma.read.roomRestaurant.findMany({
+  where: { roomId },
+  include: { visits: { include: { reviews: true } } },  // O
 });
 ```
 
@@ -73,7 +76,8 @@ const restaurants = await this.prisma.read.restaurant.findMany({
 
 ```typescript
 // select로 필요한 필드만
-const names = await this.prisma.read.restaurant.findMany({
+const names = await this.prisma.read.roomRestaurant.findMany({
+  where: { roomId },
   select: { id: true, name: true },
 });
 ```

@@ -6,7 +6,7 @@
 
 - `apps/web/` - Astro 프론트엔드 (포트 4321)
 - `apps/api/` - NestJS 백엔드 API (포트 4000, Prisma ORM, MySQL)
-- `packages/types/` - 공유 타입 (`User`, `Room`, `RoomMember`, `RoomRestaurant`, `RoomReview`, `SharedRoom*` 등)
+- `packages/types/` - 공유 타입 (`User`, `Room`, `RoomMember`, `RoomRestaurant`, `RoomVisit`, `RoomReview`, `SharedRoom*` 등)
 - `packages/utils/` - 공유 유틸 (`formatRating`, `formatDate`)
 - `packages/typescript-config/` - 공유 tsconfig (base, astro, nestjs)
 - `packages/eslint-config/` - 공유 ESLint flat config (base, astro, nestjs)
@@ -48,16 +48,18 @@ apps/api/src/
 
 ## DB 모델
 
-| 모델           | 설명                             | 주요 관계                            |
-| -------------- | -------------------------------- | ------------------------------------ |
-| User           | 서비스 사용자                    | Account, Room, RoomMember, RoomKick  |
-| Account        | OAuth 계정 (카카오)              | User                                 |
-| Room           | 공유 방 (inviteCode + shareCode) | RoomMember, RoomRestaurant, RoomKick |
-| RoomMember     | 방 멤버십 (owner/manager/member) | Room, User                           |
-| RoomRestaurant | 방 내 식당                       | Room, User, RoomReview               |
-| RoomReview     | 방 내 리뷰                       | RoomRestaurant, User                 |
-| RoomKick       | 방 강퇴 기록 (재입장 차단)       | Room, User                           |
-| Inquiry        | 고객 문의                        | -                                    |
+| 모델                 | 설명                             | 주요 관계                                |
+| -------------------- | -------------------------------- | ---------------------------------------- |
+| User                 | 서비스 사용자                    | Account, Room, RoomMember, RoomKick      |
+| Account              | OAuth 계정 (카카오)              | User                                     |
+| Room                 | 공유 방 (inviteCode + shareCode) | RoomMember, RoomRestaurant, RoomKick     |
+| RoomMember           | 방 멤버십 (owner/manager/member) | Room, User                               |
+| RoomRestaurant       | 방 내 식당 (waitTime 포함)       | Room, User, RoomVisit                    |
+| RoomVisit            | 방문 기록 (visitedAt, memo)      | RoomRestaurant, User, RoomVisitParticipant, RoomReview |
+| RoomVisitParticipant | 방문 참여자 태그                 | RoomVisit, User                          |
+| RoomReview           | 방문별 리뷰 (세부 평점, 메뉴)    | RoomVisit, User                          |
+| RoomKick             | 방 강퇴 기록 (재입장 차단)       | Room, User                               |
+| Inquiry              | 고객 문의                        | -                                        |
 
 ## 방(Room) 권한 체계
 
@@ -111,7 +113,7 @@ apps/api/src/
 | --------- | ---- | ---- | ------------------------------------------------------------------------------------------------------------ |
 | 전역 기본 | 60초 | 60회 | 모든 엔드포인트                                                                                              |
 | 인증      | 60초 | 5회  | `GET /auth/kakao/callback`, `POST /auth/refresh`                                                             |
-| 생성      | 60초 | 10회 | `POST /rooms`, `POST /rooms/join`, `POST /rooms/:id/restaurants`, `POST /rooms/:id/restaurants/:rid/reviews` |
+| 생성      | 60초 | 10회 | `POST /rooms`, `POST /rooms/join`, `POST /rooms/:id/restaurants`, `POST /rooms/:id/restaurants/:rid/visits`, `POST /rooms/:id/visits/:visitId/reviews` |
 
 - 초과 시 HTTP 429 (Too Many Requests) 응답
 - IP 기반 추적 (ThrottlerGuard 기본)

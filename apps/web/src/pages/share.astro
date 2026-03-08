@@ -187,6 +187,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 <script>
   import { fetchSharedRoom, fetchSharedRestaurantDetail } from '@/lib/api';
   import type { SharedRoomDetail } from '@repo/types';
+  import { formatRating, formatDate } from '@repo/utils';
 
   const loadingMsg = document.getElementById('loading-msg')!;
   const errorMsg = document.getElementById('error-msg')!;
@@ -199,13 +200,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     return div.innerHTML;
   }
 
-  function renderStars(rating: number): string {
-    return '\u2605'.repeat(rating) + '\u2606'.repeat(5 - rating);
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
-  }
+  const renderStars = formatRating;
 
   let currentShareCode: string;
   let currentRoom: SharedRoomDetail;

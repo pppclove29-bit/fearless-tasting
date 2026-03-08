@@ -422,7 +422,10 @@ export async function createRoomVisit(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('방문 기록 생성에 실패했습니다.');
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.message || '방문 기록 생성에 실패했습니다.');
+  }
   return res.json();
 }
 
@@ -458,7 +461,10 @@ export async function createRoomReview(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('리뷰 작성에 실패했습니다.');
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.message || '리뷰 작성에 실패했습니다.');
+  }
   return res.json();
 }
 

@@ -31,7 +31,7 @@ Frontend ← 302 /login?success ← GET /auth/kakao/callback ← 카카오 redir
 ### apps/web (Astro)
 - 사용자에게 보여지는 프론트엔드
 - SSG/SSR 지원
-- 지도 기반 지역별 식당 탐색, 리뷰 목록, 식당 등록 UI
+- 방(Room) 기반 식당/방문/리뷰 관리 UI, 공유 링크 열람
 - API 서버와 HTTP 통신 (쿠키 기반 인증, `credentials: 'include'`)
 
 ### apps/api (NestJS)
@@ -44,7 +44,7 @@ Frontend ← 302 /login?success ← GET /auth/kakao/callback ← 카카오 redir
 
 ### @repo/types
 - 프론트엔드와 백엔드 간 공유 타입 정의
-- `Restaurant`, `Review`, `User` 인터페이스
+- `User`, `Room`, `RoomMember`, `RoomRestaurant`, `RoomVisit`, `RoomReview`, `SharedRoom*` 인터페이스
 - 수정 시 양쪽에 자동 반영
 
 ### @repo/utils
