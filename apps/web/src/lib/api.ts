@@ -311,7 +311,10 @@ export interface RoomRestaurantDetailResponse {
 /** 내 방 목록 */
 export async function fetchMyRooms(): Promise<RoomListItem[]> {
   const res = await apiFetch(`${API_BASE}/rooms`);
-  if (!res.ok) return [];
+  if (!res.ok) {
+    console.error('[fetchMyRooms] 실패:', res.status, res.statusText);
+    return [];
+  }
   return res.json();
 }
 

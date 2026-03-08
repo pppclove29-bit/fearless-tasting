@@ -1117,6 +1117,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         cta.hidden = true;
       }
       allRooms = await fetchMyRooms();
+      console.log('[홈] 방 목록:', allRooms.length, '개', allRooms);
       renderRooms(allRooms);
     }
   })();
