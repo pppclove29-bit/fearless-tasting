@@ -1428,7 +1428,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     document.getElementById('room-help-btn')?.addEventListener('click', showHelpModal);
     renderRestaurantsTab();
     renderRegionTab();
-    renderStatsTab();
+    renderStatsTab().catch((err) => console.error('[stats] unhandled:', err));
     renderMembersTab();
   }
 
@@ -1795,6 +1795,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             memberBehaviors, bestCombos, activityTrend, ratingInflation,
             staleRestaurants, diversityIndex, waitTolerance, peakMonth } = stats;
 
+    try {
     // ── 기본 요약 ──
     const summaryHtml = `
       <div class="stats-grid">
@@ -2038,7 +2039,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
 
     // 웨이팅 감수
-    if (waitTolerance !== null && totalVisits >= 3) {
+    if (waitTolerance !== null && summary.totalVisits >= 3) {
       const icon = waitTolerance >= 50 ? '⏰' : '🏃';
       const label = waitTolerance >= 50 ? '줄서기 마니아 ' + waitTolerance + '%' : '노웨이팅주의 ' + (100 - waitTolerance) + '%';
       roomBehaviorItems.push(`<div class="room-behavior-item">${icon} <strong>${label}</strong></div>`);
@@ -2100,6 +2101,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       result.classList.add('bounce');
       setTimeout(() => result.classList.remove('bounce'), 400);
     });
+
+    } catch (renderErr) {
+      console.error('[stats] render error:', renderErr);
+      panel.innerHTML = `<p class="empty-text">통계 렌더링 중 오류가 발생했습니다: ${renderErr instanceof Error ? renderErr.message : String(renderErr)}</p>`;
+    }
   }
 
   // ─── 식당 탭 ───

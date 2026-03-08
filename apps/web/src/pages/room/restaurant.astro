@@ -405,6 +405,41 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-bottom: 0.5rem;
   }
 
+  /* 별점 클릭 */
+  .star-rating {
+    display: inline-flex;
+    gap: 0.15rem;
+    align-items: center;
+  }
+
+  .star-rating .star {
+    cursor: pointer;
+    font-size: 1.4rem;
+    color: var(--border-mid);
+    transition: color 0.1s, transform 0.1s;
+    user-select: none;
+    line-height: 1;
+  }
+
+  .star-rating .star.active {
+    color: #e6a817;
+  }
+
+  .star-rating .star:hover {
+    transform: scale(1.15);
+  }
+
+  .star-rating.star-sm .star {
+    font-size: 1.1rem;
+  }
+
+  .star-rating .star-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-left: 0.3rem;
+    min-width: 1.5em;
+  }
+
   /* 세부 평점 */
   .review-detail-fields {
     margin-bottom: 0.5rem;
@@ -420,28 +455,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .detail-rating-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 0.5rem 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.6rem 1.2rem;
     margin-bottom: 0.75rem;
   }
 
-  .detail-rating-grid label {
+  .detail-rating-item {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
-    font-size: 0.78rem;
-    color: var(--text-sub);
-    white-space: nowrap;
+    gap: 0.4rem;
   }
 
-  .detail-rating-grid select {
-    width: 50px;
-    padding: 0.2rem;
-    border: 1px solid var(--border-mid);
-    border-radius: 4px;
+  .detail-rating-item .detail-label {
     font-size: 0.78rem;
-    background: var(--bg-input);
-    color: var(--text);
+    color: var(--text-sub);
+    min-width: 2.5rem;
+    white-space: nowrap;
   }
 
   .review-detail-fields input[type="text"] {
@@ -536,6 +565,51 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   const renderStars = formatRating;
 
+  /** 클릭 가능한 별점 UI 생성 */
+  function starRatingHtml(name: string, value: number, max = 5, size: 'default' | 'sm' = 'default'): string {
+    const stars = Array.from({ length: max }, (_, i) =>
+      `<span class="star ${i < value ? 'active' : ''}" data-value="${i + 1}">★</span>`
+    ).join('');
+    const sizeClass = size === 'sm' ? ' star-sm' : '';
+    return `<span class="star-rating${sizeClass}" data-name="${name}" data-value="${value}">${stars}<span class="star-label">${value || ''}</span></span>`;
+  }
+
+  /** 세부 평점 한 항목 */
+  function detailStarHtml(label: string, name: string, value: number | string): string {
+    const v = typeof value === 'string' ? (value ? parseInt(value, 10) : 0) : (value || 0);
+    return `<div class="detail-rating-item"><span class="detail-label">${label}</span>${starRatingHtml(name, v, 5, 'sm')}</div>`;
+  }
+
+  /** 컨테이너 내 별점 클릭 이벤트 바인딩 */
+  function attachStarRatingHandlers(container: HTMLElement) {
+    for (const ratingEl of container.querySelectorAll<HTMLElement>('.star-rating')) {
+      for (const star of ratingEl.querySelectorAll<HTMLElement>('.star')) {
+        star.addEventListener('click', () => {
+          const val = parseInt(star.dataset.value!, 10);
+          const current = parseInt(ratingEl.dataset.value || '0', 10);
+          // 같은 별 다시 클릭하면 해제 (세부 평점만)
+          const newVal = (current === val && ratingEl.classList.contains('star-sm')) ? 0 : val;
+          ratingEl.dataset.value = String(newVal);
+          const stars = ratingEl.querySelectorAll('.star');
+          stars.forEach((s, i) => s.classList.toggle('active', i < newVal));
+          const label = ratingEl.querySelector('.star-label');
+          if (label) label.textContent = newVal ? String(newVal) : '';
+        });
+      }
+    }
+  }
+
+  /** star-rating 요소에서 값 읽기 */
+  function getStarValue(container: HTMLElement, name: string): number {
+    const el = container.querySelector<HTMLElement>(`.star-rating[data-name="${name}"]`);
+    return el ? parseInt(el.dataset.value || '0', 10) : 0;
+  }
+
+  function getOptionalStarValue(container: HTMLElement, name: string): number | undefined {
+    const v = getStarValue(container, name);
+    return v > 0 ? v : undefined;
+  }
+
   function getMyRole(): string {
     const me = currentRoom.members.find((m) => m.userId === currentUser.id);
     return me?.role || 'member';
@@ -611,21 +685,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       ? ''
       : `<button type="button" class="btn-outline-sm toggle-review-form-btn" data-visit-id="${visit.id}">리뷰 작성</button>
          <div class="review-form" id="${reviewFormId}" style="display:none;">
-           <select class="new-review-rating">
-             <option value="5">5 - 최고</option><option value="4">4 - 좋음</option>
-             <option value="3" selected>3 - 보통</option><option value="2">2 - 별로</option>
-             <option value="1">1 - 나쁨</option>
-           </select>
+           ${starRatingHtml('new-review-rating', 3)}
            <textarea class="new-review-content" placeholder="리뷰 내용을 작성해주세요"></textarea>
            <label class="revisit-toggle"><input type="checkbox" class="new-review-revisit" checked /> 재방문 의사 있음</label>
            <details class="review-detail-fields">
              <summary>세부 평점 (선택)</summary>
              <div class="detail-rating-grid">
-               <label>맛 <select class="new-review-taste"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
-               <label>가성비 <select class="new-review-value"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
-               <label>서비스 <select class="new-review-service"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
-               <label>청결 <select class="new-review-cleanliness"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
-               <label>접근성 <select class="new-review-accessibility"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+               ${detailStarHtml('맛', 'new-review-taste', 0)}
+               ${detailStarHtml('가성비', 'new-review-value', 0)}
+               ${detailStarHtml('서비스', 'new-review-service', 0)}
+               ${detailStarHtml('청결', 'new-review-cleanliness', 0)}
+               ${detailStarHtml('접근성', 'new-review-accessibility', 0)}
              </div>
              <input type="text" class="new-review-fav-menu" placeholder="또 먹고 싶은 메뉴" maxlength="200" />
              <input type="text" class="new-review-try-menu" placeholder="다음에 시켜볼 메뉴" maxlength="200" />
@@ -655,14 +725,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   function collectDetailFields(container: HTMLElement, prefix: string): Partial<ReviewData> {
-    const optInt = (sel: string) => { const v = container.querySelector<HTMLSelectElement>(sel)?.value; return v ? parseInt(v, 10) : undefined; };
     const optStr = (sel: string) => { const v = container.querySelector<HTMLInputElement>(sel)?.value.trim(); return v || undefined; };
     return {
-      tasteRating: optInt(`.${prefix}-taste`),
-      valueRating: optInt(`.${prefix}-value`),
-      serviceRating: optInt(`.${prefix}-service`),
-      cleanlinessRating: optInt(`.${prefix}-cleanliness`),
-      accessibilityRating: optInt(`.${prefix}-accessibility`),
+      tasteRating: getOptionalStarValue(container, `${prefix}-taste`),
+      valueRating: getOptionalStarValue(container, `${prefix}-value`),
+      serviceRating: getOptionalStarValue(container, `${prefix}-service`),
+      cleanlinessRating: getOptionalStarValue(container, `${prefix}-cleanliness`),
+      accessibilityRating: getOptionalStarValue(container, `${prefix}-accessibility`),
       favoriteMenu: optStr(`.${prefix}-fav-menu`),
       tryNextMenu: optStr(`.${prefix}-try-menu`),
     };
@@ -712,21 +781,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <select id="qr-waittime" class="form-select">
             <option value="">웨이팅 (선택)</option><option value="없음">없음</option><option value="~10분">~10분</option><option value="~30분">~30분</option><option value="~1시간">~1시간</option><option value="1시간+">1시간+</option>
           </select>
-          <select id="qr-rating">
-            <option value="5">5 - 최고</option><option value="4">4 - 좋음</option>
-            <option value="3" selected>3 - 보통</option><option value="2">2 - 별로</option>
-            <option value="1">1 - 나쁨</option>
-          </select>
+          ${starRatingHtml('qr-rating', 3)}
           <textarea id="qr-content" placeholder="리뷰 내용을 작성해주세요" class="form-textarea"></textarea>
           <label class="revisit-toggle"><input type="checkbox" id="qr-revisit" checked /> 재방문 의사 있음</label>
           <details class="review-detail-fields">
             <summary>세부 평점 (선택)</summary>
             <div class="detail-rating-grid">
-              <label>맛 <select id="qr-taste"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
-              <label>가성비 <select id="qr-value"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
-              <label>서비스 <select id="qr-service"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
-              <label>청결 <select id="qr-cleanliness"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
-              <label>접근성 <select id="qr-accessibility"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+              ${detailStarHtml('맛', 'qr-taste', 0)}
+              ${detailStarHtml('가성비', 'qr-value', 0)}
+              ${detailStarHtml('서비스', 'qr-service', 0)}
+              ${detailStarHtml('청결', 'qr-cleanliness', 0)}
+              ${detailStarHtml('접근성', 'qr-accessibility', 0)}
             </div>
             <input type="text" id="qr-fav-menu" placeholder="또 먹고 싶은 메뉴" maxlength="200" />
             <input type="text" id="qr-try-menu" placeholder="다음에 시켜볼 메뉴" maxlength="200" />
@@ -824,13 +889,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       qrBtn.addEventListener('click', () => withLoading(qrBtn, async () => {
         const visitedAt = (document.getElementById('qr-date') as HTMLInputElement).value;
         const memo = (document.getElementById('qr-memo') as HTMLInputElement).value.trim();
-        const rating = parseInt((document.getElementById('qr-rating') as HTMLSelectElement).value, 10);
+        const qrSection = document.getElementById('quick-review-section')!;
+        const rating = getStarValue(qrSection, 'qr-rating');
         const content = (document.getElementById('qr-content') as HTMLTextAreaElement).value.trim();
         const wouldRevisit = (document.getElementById('qr-revisit') as HTMLInputElement).checked;
         if (!visitedAt) { showToast('방문 날짜를 선택해주세요.', 'info'); return; }
+        if (!rating) { showToast('평점을 선택해주세요.', 'info'); return; }
         if (!content) { showToast('리뷰 내용을 입력해주세요.', 'info'); return; }
 
-        const optInt = (id: string) => { const v = (document.getElementById(id) as HTMLSelectElement)?.value; return v ? parseInt(v, 10) : undefined; };
         const optStr = (id: string) => { const v = (document.getElementById(id) as HTMLInputElement)?.value.trim(); return v || undefined; };
 
         const qrWaitTime = (document.getElementById('qr-waittime') as HTMLSelectElement).value || undefined;
@@ -841,11 +907,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           rating,
           content,
           wouldRevisit,
-          tasteRating: optInt('qr-taste'),
-          valueRating: optInt('qr-value'),
-          serviceRating: optInt('qr-service'),
-          cleanlinessRating: optInt('qr-cleanliness'),
-          accessibilityRating: optInt('qr-accessibility'),
+          tasteRating: getOptionalStarValue(qrSection, 'qr-taste'),
+          valueRating: getOptionalStarValue(qrSection, 'qr-value'),
+          serviceRating: getOptionalStarValue(qrSection, 'qr-service'),
+          cleanlinessRating: getOptionalStarValue(qrSection, 'qr-cleanliness'),
+          accessibilityRating: getOptionalStarValue(qrSection, 'qr-accessibility'),
           favoriteMenu: optStr('qr-fav-menu'),
           tryNextMenu: optStr('qr-try-menu'),
         });
@@ -855,6 +921,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       }).catch((err) => showToast(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.')));
 
       attachVisitAndReviewHandlers();
+      attachStarRatingHandlers(area);
     } catch {
       area.innerHTML = '<p class="empty-text">식당 정보를 불러올 수 없습니다.</p>';
     }
@@ -926,9 +993,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       btn.addEventListener('click', () => withLoading(btn, async () => {
         const visitCard = btn.closest('.visit-card')!;
         const visitId = btn.dataset.visitId!;
-        const rating = parseInt(visitCard.querySelector<HTMLSelectElement>('.new-review-rating')!.value, 10);
+        const rating = getStarValue(visitCard as HTMLElement, 'new-review-rating');
         const content = visitCard.querySelector<HTMLTextAreaElement>('.new-review-content')!.value.trim();
         const wouldRevisit = visitCard.querySelector<HTMLInputElement>('.new-review-revisit')!.checked;
+        if (!rating) { showToast('평점을 선택해주세요.', 'info'); return; }
         if (!content) { showToast('내용을 입력해 주세요.', 'info'); return; }
 
         const detailFields = collectDetailFields(visitCard as HTMLElement, 'new-review');
@@ -963,25 +1031,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         if (card.querySelector('.review-form')) return;
 
-        const ratingOptions = [1, 2, 3, 4, 5]
-          .map((v) => `<option value="${v}" ${v === Number(origRating) ? 'selected' : ''}>${v}점</option>`)
-          .join('');
-
-        const setSelected = (val: string) => [1, 2, 3, 4, 5].map((v) => `<option value="${v}" ${v === Number(val) ? 'selected' : ''}>${v}</option>`).join('');
-
         card.insertAdjacentHTML('beforeend', `
           <div class="review-form">
-            <select class="edit-rating">${ratingOptions}</select>
+            ${starRatingHtml('edit-rating', Number(origRating))}
             <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
             <label class="revisit-toggle"><input type="checkbox" class="edit-revisit" ${origRevisit ? 'checked' : ''} /> 재방문 의사 있음</label>
             <details class="review-detail-fields">
               <summary>세부 평점 (선택)</summary>
               <div class="detail-rating-grid">
-                <label>맛 <select class="edit-taste"><option value="">-</option>${setSelected(btn.dataset.taste || '')}</select></label>
-                <label>가성비 <select class="edit-value"><option value="">-</option>${setSelected(btn.dataset.value || '')}</select></label>
-                <label>서비스 <select class="edit-service"><option value="">-</option>${setSelected(btn.dataset.service || '')}</select></label>
-                <label>청결 <select class="edit-cleanliness"><option value="">-</option>${setSelected(btn.dataset.cleanliness || '')}</select></label>
-                <label>접근성 <select class="edit-accessibility"><option value="">-</option>${setSelected(btn.dataset.accessibility || '')}</select></label>
+                ${detailStarHtml('맛', 'edit-taste', btn.dataset.taste || '')}
+                ${detailStarHtml('가성비', 'edit-value', btn.dataset.value || '')}
+                ${detailStarHtml('서비스', 'edit-service', btn.dataset.service || '')}
+                ${detailStarHtml('청결', 'edit-cleanliness', btn.dataset.cleanliness || '')}
+                ${detailStarHtml('접근성', 'edit-accessibility', btn.dataset.accessibility || '')}
               </div>
               <input type="text" class="edit-fav-menu" placeholder="또 먹고 싶은 메뉴" maxlength="200" value="${escapeHtml(btn.dataset.favMenu || '')}" />
               <input type="text" class="edit-try-menu" placeholder="다음에 시켜볼 메뉴" maxlength="200" value="${escapeHtml(btn.dataset.tryMenu || '')}" />
@@ -992,9 +1054,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             </div>
           </div>
         `);
+        attachStarRatingHandlers(card);
 
         card.querySelector('.save-edit-btn')!.addEventListener('click', async () => {
-          const newRating = parseInt(card.querySelector<HTMLSelectElement>('.edit-rating')!.value, 10);
+          const newRating = getStarValue(card, 'edit-rating');
           const newContent = card.querySelector<HTMLTextAreaElement>('.edit-content')!.value.trim();
           const newRevisit = card.querySelector<HTMLInputElement>('.edit-revisit')!.checked;
           if (!newContent) { showToast('내용을 입력해 주세요.', 'info'); return; }
