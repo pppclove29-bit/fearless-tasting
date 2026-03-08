@@ -68,6 +68,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
 
+  // 토큰이 없으면 바로 카카오 로그인으로 리다이렉트
+  if (!accessToken || !refreshToken) {
+    location.href = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`;
+  }
+
   if (accessToken && refreshToken) {
     saveTokens(accessToken, refreshToken);
 
