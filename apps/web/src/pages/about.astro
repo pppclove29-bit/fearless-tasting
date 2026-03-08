@@ -45,7 +45,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="step-number">2</div>
           <div class="step-content">
             <h3>방 만들기 & 초대</h3>
-            <p>맛집 리스트를 공유할 방을 만들고, 초대 코드로 함께할 사람을 초대합니다. 초대 코드는 24시간 유효합니다.</p>
+            <p>맛집 리스트를 공유할 방을 만들고, 초대 링크를 보내 함께할 사람을 초대합니다. 링크를 클릭하면 자동으로 방에 입장됩니다.</p>
           </div>
         </div>
         <div class="about-step">
@@ -59,9 +59,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="about-step">
           <div class="step-number">4</div>
           <div class="step-content">
-            <h3>통계 & 공유</h3>
+            <h3>통계 & 업적 & 공유</h3>
             <p>방 통계에서 멤버 행동 분석, 재방문 TOP, 카테고리 분포 등 다양한 인사이트를 확인하세요.
-              공유 링크로 비로그인 사용자에게도 맛집 리스트를 공개할 수 있습니다.</p>
+              활동에 따라 업적을 획득하고, 공유 링크로 맛집 리스트를 공개할 수 있습니다.</p>
           </div>
         </div>
       </div>
@@ -73,7 +73,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="feature-card">
           <div class="feature-icon">🏠</div>
           <h3>프라이빗 방</h3>
-          <p>초대 코드로 입장하는 비공개 맛집 리스트. 방장, 매니저, 멤버 권한 체계로 체계적으로 관리합니다.</p>
+          <p>초대 링크로 입장하는 비공개 맛집 리스트. 방장, 매니저, 멤버 권한 체계로 체계적으로 관리합니다.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">📝</div>
@@ -92,15 +92,61 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
         <div class="feature-card">
           <div class="feature-icon">🏆</div>
-          <h3>업적 & 랭킹</h3>
-          <p>리뷰 수, 방문 수, 재방문율 등 다양한 기준으로 전체 유저 랭킹을 확인하고 업적을 모을 수 있습니다.</p>
+          <h3>38개 업적</h3>
+          <p>방문, 리뷰, 별점, 지역, 공유, 랭킹까지 — 다양한 활동으로 업적을 달성하고 모아보세요.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">🔗</div>
           <h3>공유 링크</h3>
           <p>비로그인 사용자도 볼 수 있는 공유 링크. 블로그나 SNS에 내 맛집 리스트를 공유하세요.</p>
         </div>
+        <div class="feature-card">
+          <div class="feature-icon">📨</div>
+          <h3>초대 링크</h3>
+          <p>초대 링크 하나로 간편하게 방에 초대. 카카오톡이나 SNS로 바로 공유할 수 있습니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌙</div>
+          <h3>다크 모드</h3>
+          <p>시스템 설정에 따라 자동 전환되는 다크 모드. 수동 전환도 가능합니다.</p>
+        </div>
       </div>
+    </section>
+
+    <section class="about-section">
+      <h2>맛집 추천 & 랭킹</h2>
+      <div class="about-highlight-row">
+        <div class="about-highlight">
+          <h3><a href="/discover">맛집 추천</a></h3>
+          <p>유저들의 실제 방문 기록을 기반으로 <strong>고평점</strong>, <strong>재방문</strong>, <strong>관심 맛집</strong> 리스트를 로그인 없이 확인할 수 있습니다.</p>
+        </div>
+        <div class="about-highlight">
+          <h3><a href="/rankings">랭킹 & 업적</a></h3>
+          <p>전체 유저 중 나의 순위를 확인하고, 방문/리뷰/별점/지역/공유 등 <strong>38개 업적</strong>을 달성해 보세요.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="about-section">
+      <h2>업적 미리보기</h2>
+      <p class="about-achievement-desc">활동에 따라 다양한 업적을 획득할 수 있습니다. 일부 업적을 소개합니다.</p>
+      <div class="achievement-preview">
+        <span class="achievement-badge" title="첫 방문 달성">👣 첫 발자국</span>
+        <span class="achievement-badge" title="전설의 미식가 — 100회 방문">👑 전설의 미식가</span>
+        <span class="achievement-badge" title="리뷰 50개 작성">🏆 리뷰 마스터</span>
+        <span class="achievement-badge" title="5점 리뷰 10개 달성">💯 만점 사냥꾼</span>
+        <span class="achievement-badge" title="1~5점 모두 사용">🌡️ 풀 스펙트럼</span>
+        <span class="achievement-badge" title="세부 평가 5개 모두 기록 10회">🔍 꼼꼼한 리뷰어</span>
+        <span class="achievement-badge" title="맛 별점 평균 4.5 이상">👅 맛에 진심</span>
+        <span class="achievement-badge" title="5개 시/도 방문">🚄 전국 미식 투어</span>
+        <span class="achievement-badge" title="한 동네에서 10곳 등록">📍 동네 전문가</span>
+        <span class="achievement-badge" title="10곳 재방문 달성">💎 단골왕</span>
+        <span class="achievement-badge" title="방문마다 빠짐없이 리뷰">🎯 올 리뷰어</span>
+        <span class="achievement-badge" title="맛집 리스트를 세상에 공개">🔗 공유의 달인</span>
+        <span class="achievement-badge" title="리뷰 수 전체 1위">🥇 넘버원</span>
+        <span class="achievement-badge" title="최근 30일 가장 활발한 활동">🌟 라이징 스타</span>
+      </div>
+      <p class="about-achievement-more">... 외 24개 업적 — <a href="/rankings">랭킹 페이지</a>에서 확인하세요</p>
     </section>
 
     <section class="about-section">
@@ -135,18 +181,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .about-hero h1 {
     font-size: 1.8rem;
     font-weight: 700;
+    color: var(--text-heading);
     margin: 0;
   }
 
   .about-tagline {
     font-size: 1rem;
-    color: #666;
+    color: var(--text-sub);
     margin-top: 0.4rem;
   }
 
   .about-section {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1rem;
@@ -155,12 +202,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .about-section h2 {
     font-size: 1.1rem;
     font-weight: 700;
+    color: var(--text-heading);
     margin: 0 0 0.75rem;
   }
 
   .about-section p {
     font-size: 0.9rem;
-    color: #444;
+    color: var(--text-sub);
     line-height: 1.7;
     margin: 0 0 0.5rem;
   }
@@ -170,7 +218,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .about-section a {
-    color: #2563eb;
+    color: #3b82f6;
     text-decoration: none;
   }
 
@@ -195,8 +243,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     height: 32px;
     min-width: 32px;
     border-radius: 50%;
-    background: #111;
-    color: #fff;
+    background: var(--text-heading);
+    color: var(--bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -208,12 +256,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .step-content h3 {
     font-size: 0.95rem;
     font-weight: 600;
+    color: var(--text-heading);
     margin: 0 0 0.25rem;
   }
 
   .step-content p {
     font-size: 0.85rem;
-    color: #666;
+    color: var(--text-sub);
     margin: 0;
     line-height: 1.6;
   }
@@ -225,14 +274,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .feature-card {
-    border: 1px solid #f0f0f0;
+    border: 1px solid var(--border-light);
     border-radius: 10px;
     padding: 1rem;
     transition: border-color 0.15s;
   }
 
   .feature-card:hover {
-    border-color: #d0d0d0;
+    border-color: var(--border-mid);
   }
 
   .feature-icon {
@@ -243,14 +292,93 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .feature-card h3 {
     font-size: 0.9rem;
     font-weight: 600;
+    color: var(--text-heading);
     margin: 0 0 0.25rem;
   }
 
   .feature-card p {
     font-size: 0.78rem;
-    color: #777;
+    color: var(--text-muted);
     line-height: 1.5;
     margin: 0;
+  }
+
+  /* 맛집 추천 & 랭킹 하이라이트 */
+  .about-highlight-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 500px) {
+    .about-highlight-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .about-highlight {
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .about-highlight h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin: 0 0 0.4rem;
+  }
+
+  .about-highlight h3 a {
+    color: var(--text-heading);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--border-mid);
+  }
+
+  .about-highlight h3 a:hover {
+    border-bottom-style: solid;
+    text-decoration: none;
+  }
+
+  .about-highlight p {
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* 업적 미리보기 */
+  .about-achievement-desc {
+    margin-bottom: 0.75rem !important;
+  }
+
+  .achievement-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .achievement-badge {
+    display: inline-block;
+    padding: 0.3rem 0.6rem;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: var(--text-sub);
+    white-space: nowrap;
+    cursor: default;
+    transition: border-color 0.15s;
+  }
+
+  .achievement-badge:hover {
+    border-color: var(--border-mid);
+  }
+
+  .about-achievement-more {
+    font-size: 0.8rem !important;
+    color: var(--text-muted) !important;
   }
 
   .about-cta {
@@ -261,17 +389,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: inline-block;
     margin-top: 0.75rem;
     padding: 0.7rem 2rem;
-    background: #111;
-    color: #fff;
+    background: var(--text-heading);
+    color: var(--bg);
     border-radius: 8px;
     text-decoration: none;
     font-size: 0.9rem;
     font-weight: 600;
-    transition: background 0.15s;
+    transition: opacity 0.15s;
   }
 
   .cta-btn:hover {
-    background: #333;
+    opacity: 0.85;
     text-decoration: none;
   }
 </style>
