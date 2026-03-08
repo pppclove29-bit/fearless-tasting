@@ -164,6 +164,15 @@ export async function updateNickname(nickname: string): Promise<AuthUser> {
   return res.json();
 }
 
+/** 회원 탈퇴 */
+export async function deleteAccount(): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/users/me`, { method: 'DELETE' });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: '탈퇴에 실패했습니다.' }));
+    throw new Error(error.message || '탈퇴에 실패했습니다.');
+  }
+}
+
 /** 방 이름 수정 */
 export async function updateRoom(id: string, name: string): Promise<void> {
   const res = await apiFetch(`${API_BASE}/rooms/${id}`, {
@@ -271,7 +280,7 @@ export interface RoomMemberInfo {
 }
 
 export interface RoomRestaurantInfo extends RoomRestaurant {
-  addedBy: { id: string; nickname: string };
+  addedBy: { id: string; nickname: string } | null;
   avgRating: number | null;
 }
 
@@ -293,9 +302,9 @@ export interface RoomRestaurantDetailResponse {
   longitude?: number | null;
   waitTime?: string | null;
   roomId: string;
-  addedById: string;
+  addedById: string | null;
   createdAt: string;
-  addedBy: { id: string; nickname: string };
+  addedBy: { id: string; nickname: string } | null;
   visits: RoomVisitWithDetails[];
 }
 

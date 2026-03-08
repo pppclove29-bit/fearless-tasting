@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -39,6 +39,21 @@ export class UsersService {
       data: { nickname },
       select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true },
     });
+  }
+
+  /** 회원 탈퇴 (방장인 방이 있으면 거부) */
+  async deleteAccount(userId: string) {
+    const ownedRoom = await this.prisma.read.room.findFirst({
+      where: { ownerId: userId },
+      select: { id: true, name: true },
+    });
+    if (ownedRoom) {
+      throw new ForbiddenException(
+        `방장인 방(${ownedRoom.name})이 있습니다. 방장을 위임하거나 방을 삭제한 후 탈퇴해주세요.`,
+      );
+    }
+
+    await this.prisma.write.user.delete({ where: { id: userId } });
   }
 
   /** 관리자 대시보드 통계 */

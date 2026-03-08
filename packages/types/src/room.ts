@@ -39,7 +39,7 @@ export interface RoomRestaurant {
   longitude?: number | null;
   waitTime?: WaitTime | null;
   roomId: string;
-  addedById: string;
+  addedById: string | null;
   createdAt: string;
   avgRating: number | null;
   _count: { visits: number; reviews: number };
@@ -52,7 +52,7 @@ export interface RoomVisit {
   visitedAt: string;
   memo?: string | null;
   restaurantId: string;
-  createdById: string;
+  createdById: string | null;
   createdAt: string;
 }
 
@@ -64,7 +64,7 @@ export interface RoomVisitParticipant {
 }
 
 export interface RoomVisitWithDetails extends RoomVisit {
-  createdBy: { id: string; nickname: string };
+  createdBy: { id: string; nickname: string } | null;
   participants: RoomVisitParticipant[];
   reviews: RoomReviewWithUser[];
   _count: { reviews: number };
@@ -98,7 +98,7 @@ export interface RoomReviewWithUser extends RoomReview {
 
 export interface RoomRestaurantDetail extends RoomRestaurant {
   visits: RoomVisitWithDetails[];
-  addedBy: { id: string; nickname: string };
+  addedBy: { id: string; nickname: string } | null;
 }
 
 export interface RoomDetail extends Room {

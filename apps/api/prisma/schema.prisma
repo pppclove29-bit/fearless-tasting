@@ -56,7 +56,7 @@ model Account {
   /// bcrypt 해싱된 JWT Refresh Token
   refreshToken String?  @db.Text
   /// 연결된 사용자
-  user         User     @relation(fields: [userId], references: [id])
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// 사용자 ID (FK)
   userId       String
   /// 생성일
@@ -112,7 +112,7 @@ model RoomMember {
   /// 방 ID (FK)
   roomId   String
   /// 참여 유저
-  user     User     @relation(fields: [userId], references: [id])
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// 유저 ID (FK)
   userId   String
   /// 가입일
@@ -149,9 +149,9 @@ model RoomRestaurant {
   /// 방 ID (FK)
   roomId       String
   /// 등록자
-  addedBy      User        @relation(fields: [addedById], references: [id])
-  /// 등록자 ID (FK)
-  addedById    String
+  addedBy      User?       @relation(fields: [addedById], references: [id], onDelete: SetNull)
+  /// 등록자 ID (FK, 탈퇴 시 null)
+  addedById    String?
   /// 웨이팅 (없음/~10분/~30분/~1시간/1시간+)
   waitTime     String?     @db.VarChar(20)
   /// 방문 기록 목록
@@ -175,10 +175,10 @@ model RoomVisit {
   restaurant   RoomRestaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   /// 식당 ID (FK)
   restaurantId String
-  /// 방문 기록 생성자
-  createdBy    User                   @relation("VisitCreator", fields: [createdById], references: [id])
-  /// 생성자 ID (FK)
-  createdById  String
+  /// 방문 기록 생성자 (탈퇴 시 null)
+  createdBy    User?                  @relation("VisitCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  /// 생성자 ID (FK, 탈퇴 시 null)
+  createdById  String?
   /// 함께 간 멤버 태그
   participants RoomVisitParticipant[]
   /// 개별 리뷰 목록
@@ -199,7 +199,7 @@ model RoomVisitParticipant {
   /// 방문 ID (FK)
   visitId String
   /// 참여 유저
-  user    User      @relation(fields: [userId], references: [id])
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// 유저 ID (FK)
   userId  String
 
@@ -236,7 +236,7 @@ model RoomReview {
   /// 방문 ID (FK)
   visitId             String
   /// 작성자
-  user                User      @relation(fields: [userId], references: [id])
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// 작성자 ID (FK)
   userId              String
   /// 작성일
@@ -257,7 +257,7 @@ model RoomKick {
   /// 방 ID (FK)
   roomId   String
   /// 강퇴당한 유저
-  user     User     @relation(fields: [userId], references: [id])
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// 유저 ID (FK)
   userId   String
   /// 강퇴 일시

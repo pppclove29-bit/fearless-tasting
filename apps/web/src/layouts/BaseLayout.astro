@@ -72,6 +72,7 @@ const fullTitle = `${title} | 무모한 시식가`;
               <span id="user-nickname" class="user-nickname" title="클릭하여 닉네임 변경"></span>
               <input type="text" id="nickname-input" class="nickname-input" maxlength="50" hidden />
               <button type="button" id="logout-btn">로그아웃</button>
+              <button type="button" id="delete-account-btn" class="delete-account-btn">탈퇴</button>
             </span>
           </div>
         </div>
@@ -220,6 +221,24 @@ const fullTitle = `${title} | 무모한 시식가`;
     border-color: #999;
   }
 
+  .delete-account-btn {
+    padding: 0.35rem 0.7rem;
+    background: none;
+    border: 1px solid #e8c4c4;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: #999;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+
+  .delete-account-btn:hover {
+    background: #fef2f2;
+    border-color: #dc2626;
+    color: #dc2626;
+  }
+
   main {
     max-width: 960px;
     margin: 0 auto;
@@ -325,7 +344,7 @@ const fullTitle = `${title} | 무모한 시식가`;
 </style>
 
 <script>
-  import { fetchCurrentUser, logout, updateNickname, showToast } from '@/lib/api';
+  import { fetchCurrentUser, logout, deleteAccount, updateNickname, clearTokens, showToast, showDangerConfirm } from '@/lib/api';
 
   // 햄버거 메뉴 토글
   const hamburgerBtn = document.getElementById('hamburger-btn')!;
@@ -387,6 +406,24 @@ const fullTitle = `${title} | 무모한 시식가`;
   logoutBtn.addEventListener('click', () => {
     logout();
     location.href = '/';
+  });
+
+  // 탈퇴
+  const deleteAccountBtn = document.getElementById('delete-account-btn')!;
+  deleteAccountBtn.addEventListener('click', async () => {
+    const confirmed = await showDangerConfirm(
+      '정말 탈퇴하시겠습니까?\n\n계정, 리뷰, 방 멤버십 등 모든 개인 데이터가 즉시 삭제되며 복구할 수 없습니다.',
+      '탈퇴',
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteAccount();
+      clearTokens();
+      location.href = '/';
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '탈퇴에 실패했습니다.');
+    }
   });
 
   // PWA Service Worker 등록

@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { AdminGuard } from '../auth/guards/admin.guard';
@@ -27,6 +27,14 @@ export class UsersController {
     @Body() dto: UpdateUserDto,
   ) {
     return this.usersService.updateNickname(user.id, dto.nickname);
+  }
+
+  /** 회원 탈퇴 */
+  @Delete('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '회원 탈퇴' })
+  deleteMe(@CurrentUser() user: { id: string }) {
+    return this.usersService.deleteAccount(user.id);
   }
 
   /** 관리자 대시보드 통계 (DAU/WAU/MAU 등) */

@@ -439,7 +439,7 @@ export class RoomsService {
       throw new NotFoundException('식당을 찾을 수 없습니다');
     }
     const isOwnerOrManager = memberRole === 'owner' || memberRole === 'manager';
-    if (restaurant.addedById !== userId && !isOwnerOrManager) {
+    if ((!restaurant.addedById || restaurant.addedById !== userId) && !isOwnerOrManager) {
       throw new ForbiddenException('본인이 등록한 식당이거나 매니저 이상만 수정할 수 있습니다');
     }
 
@@ -463,7 +463,7 @@ export class RoomsService {
     }
 
     const isOwnerOrManager = memberRole === 'owner' || memberRole === 'manager';
-    if (restaurant.addedById !== userId && !isOwnerOrManager) {
+    if ((!restaurant.addedById || restaurant.addedById !== userId) && !isOwnerOrManager) {
       throw new ForbiddenException('본인이 등록한 식당이거나 매니저 이상만 삭제할 수 있습니다');
     }
 
@@ -543,7 +543,7 @@ export class RoomsService {
     if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
 
     const isOwnerOrManager = memberRole === 'owner' || memberRole === 'manager';
-    if (visit.createdById !== userId && !isOwnerOrManager) {
+    if ((!visit.createdById || visit.createdById !== userId) && !isOwnerOrManager) {
       throw new ForbiddenException('본인이 생성한 방문 기록이거나 매니저 이상만 수정할 수 있습니다');
     }
 
@@ -562,7 +562,7 @@ export class RoomsService {
     if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
 
     const isOwnerOrManager = memberRole === 'owner' || memberRole === 'manager';
-    if (visit.createdById !== userId && !isOwnerOrManager) {
+    if ((!visit.createdById || visit.createdById !== userId) && !isOwnerOrManager) {
       throw new ForbiddenException('본인이 생성한 방문 기록이거나 매니저 이상만 삭제할 수 있습니다');
     }
 

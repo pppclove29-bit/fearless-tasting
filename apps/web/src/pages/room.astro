@@ -1892,7 +1892,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <div class="room-rest-name">${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(Math.round(r.avgRating))} ${r.avgRating}</span>` : ''}</div>
             <div class="room-rest-meta">${escapeHtml(r.address)} · ${escapeHtml(r.category)}</div>
             <div class="room-rest-footer">
-              <span class="room-rest-added-by">${escapeHtml(r.addedBy.nickname)}</span>
+              <span class="room-rest-added-by">${escapeHtml(r.addedBy?.nickname ?? '(탈퇴한 사용자)')}</span>
               <span class="room-rest-reviews-count">리뷰 ${r._count.reviews}개</span>
             </div>
           </div>
@@ -1942,7 +1942,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <div class="room-rest-name">${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(Math.round(r.avgRating))} ${r.avgRating}</span>` : ''}</div>
             <div class="room-rest-meta">${escapeHtml(r.address)} · ${escapeHtml(r.category)}</div>
             <div class="room-rest-footer">
-              <span class="room-rest-added-by">${escapeHtml(r.addedBy.nickname)}</span>
+              <span class="room-rest-added-by">${escapeHtml(r.addedBy?.nickname ?? '(탈퇴한 사용자)')}</span>
               <span class="room-rest-reviews-count">리뷰 ${r._count.reviews}개</span>
             </div>
           </div>
@@ -2469,7 +2469,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="visit-header">
           <span class="visit-date">${formatDate(visit.visitedAt)}</span>
           ${participantsHtml ? `<span class="visit-participants">함께: ${participantsHtml}</span>` : ''}
-          <span class="visit-creator">기록: ${escapeHtml(visit.createdBy.nickname)}</span>
+          <span class="visit-creator">기록: ${escapeHtml(visit.createdBy?.nickname ?? '(탈퇴한 사용자)')}</span>
           ${canDeleteVisit ? `<button type="button" class="btn-outline-sm edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}">수정</button>` : ''}
           ${canDeleteVisit ? `<button type="button" class="btn-danger-sm delete-visit-btn" data-visit-id="${visit.id}">삭제</button>` : ''}
         </div>
@@ -2579,7 +2579,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <span class="category-badge">${escapeHtml(detail.category)}</span>
             ${avgRating !== null ? `<span>${renderStars(Math.round(avgRating))} ${avgRating}</span>` : ''}
             ${waitTimeLabel ? `<span class="wait-badge">${waitTimeLabel}</span>` : ''}
-            <span>등록: ${escapeHtml(detail.addedBy.nickname)}</span>
+            <span>등록: ${escapeHtml(detail.addedBy?.nickname ?? '(탈퇴한 사용자)')}</span>
             ${editRestBtn}
             ${deleteRestBtn}
           </div>
