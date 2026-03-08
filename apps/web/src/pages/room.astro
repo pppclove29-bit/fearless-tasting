@@ -14,7 +14,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .status-msg {
     text-align: center;
     padding: 3rem 1rem;
-    color: #999;
+    color: var(--text-muted);
     font-size: 0.9rem;
   }
 
@@ -28,15 +28,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: inline-block;
     margin-bottom: 1rem;
     font-size: 0.85rem;
-    color: #666;
+    color: var(--text-sub);
     text-decoration: none;
   }
 
-  .back-link:hover { color: #111; }
+  .back-link:hover { color: var(--text-heading); }
 
   .room-header {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.25rem;
@@ -46,13 +46,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
   }
 
   .room-header h1 {
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 800;
     margin: 0;
+    line-height: 1.3;
+    word-break: break-word;
+    color: var(--text-heading);
   }
 
   .btn-edit-name {
@@ -60,46 +63,53 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border: none;
     cursor: pointer;
     font-size: 1rem;
-    color: #999;
+    color: var(--text-muted);
     padding: 0.2rem;
     transition: color 0.15s;
   }
 
-  .btn-edit-name:hover { color: #333; }
+  .btn-edit-name:hover { color: var(--text-sub); }
 
   .room-name-input {
     font-size: 1.3rem;
     font-weight: 700;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 6px;
     padding: 0.25rem 0.5rem;
     font-family: inherit;
     flex: 1;
+    background: var(--bg-input);
+    color: var(--text-heading);
   }
 
   .room-name-input:focus {
     outline: none;
-    border-color: #333;
+    border-color: var(--text-sub);
   }
 
   .invite-row {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     margin-bottom: 0.75rem;
+    flex-wrap: wrap;
   }
 
   .invite-label {
     font-size: 0.8rem;
     font-weight: 500;
-    color: #888;
+    color: var(--text-muted);
+    white-space: nowrap;
+    width: 100%;
+    margin-bottom: -0.15rem;
   }
 
   .invite-code {
     font-family: monospace;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    background: #f5f5f5;
+    background: var(--bg-hover);
+    color: var(--text-heading);
     padding: 0.35rem 0.65rem;
     border-radius: 6px;
     letter-spacing: 0.05em;
@@ -107,15 +117,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .btn-copy {
     padding: 0.3rem 0.6rem;
-    background: #fff;
-    border: 1px solid #d0d0d0;
+    background: var(--bg-card);
+    color: var(--text-sub);
+    border: 1px solid var(--border-mid);
     border-radius: 6px;
     font-size: 0.75rem;
     cursor: pointer;
     transition: background 0.15s;
   }
 
-  .btn-copy:hover { background: #f0f0f0; }
+  .btn-copy:hover { background: var(--bg-hover); }
 
   .btn-kakao-share {
     padding: 0.3rem 0.6rem;
@@ -133,8 +144,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .btn-regen {
     padding: 0.3rem 0.6rem;
-    background: #111;
-    color: #fff;
+    background: var(--text-heading);
+    color: var(--bg);
     border: none;
     border-radius: 6px;
     font-size: 0.75rem;
@@ -142,39 +153,44 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     transition: background 0.15s;
   }
 
-  .btn-regen:hover { background: #333; }
+  .btn-regen:hover { background: var(--text-sub); }
 
   .invite-expiry {
     font-size: 0.75rem;
-    color: #999;
+    color: var(--text-muted);
   }
 
   .share-row {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     margin-bottom: 0.5rem;
     flex-wrap: wrap;
   }
 
   .share-label {
     font-size: 0.8rem;
-    color: #666;
+    color: var(--text-sub);
     font-weight: 500;
+    white-space: nowrap;
+    width: 100%;
+    margin-bottom: -0.15rem;
   }
 
   .share-link {
     font-family: monospace;
-    font-size: 0.8rem;
-    background: #f5f5f5;
+    font-size: 0.75rem;
+    background: var(--bg-hover);
     padding: 0.3rem 0.55rem;
     border-radius: 6px;
-    color: #333;
+    color: var(--text-sub);
     word-break: break-all;
-    max-width: 320px;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1;
+    min-width: 0;
   }
 
   .room-actions-bar {
@@ -182,7 +198,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     gap: 0.5rem;
     margin-top: 0.75rem;
     padding-top: 0.75rem;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border-light);
   }
 
   .btn-danger-sm {
@@ -201,9 +217,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .btn-outline-sm {
     padding: 0.35rem 0.7rem;
-    background: #fff;
-    color: #555;
-    border: 1px solid #d0d0d0;
+    background: var(--bg-card);
+    color: var(--text-sub);
+    border: 1px solid var(--border-mid);
     border-radius: 6px;
     font-size: 0.8rem;
     font-weight: 500;
@@ -211,34 +227,41 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     transition: background 0.15s;
   }
 
-  .btn-outline-sm:hover { background: #f0f0f0; }
+  .btn-outline-sm:hover { background: var(--bg-hover); }
 
   /* 탭 바 */
   .room-tab-bar {
     display: flex;
-    gap: 0.5rem;
+    gap: 0;
     margin-bottom: 1rem;
-    border-bottom: 1px solid #e8e8e8;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
 
+  .room-tab-bar::-webkit-scrollbar { display: none; }
+
   .room-tab-btn {
-    padding: 0.6rem 1rem;
+    padding: 0.6rem 0.85rem;
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     font-weight: 500;
-    color: #888;
+    color: var(--text-muted);
     cursor: pointer;
     transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
-  .room-tab-btn:hover { color: #333; }
+  .room-tab-btn:hover { color: var(--text-sub); }
 
   .room-tab-btn.active {
-    color: #111;
+    color: var(--text-heading);
     font-weight: 600;
-    border-bottom-color: #111;
+    border-bottom-color: var(--text-heading);
   }
 
   /* 멤버 리스트 */
@@ -252,8 +275,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem 1rem;
   }
@@ -267,6 +290,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .member-nickname {
     font-size: 0.9rem;
     font-weight: 500;
+    color: var(--text);
   }
 
   .member-role-badge {
@@ -275,8 +299,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-radius: 4px;
     font-size: 0.7rem;
     font-weight: 600;
-    background: #f0f0f0;
-    color: #555;
+    background: var(--bg-hover);
+    color: var(--text-sub);
   }
 
   .member-role-badge.owner { background: #fef3c7; color: #92400e; }
@@ -290,15 +314,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .member-actions select {
     padding: 0.25rem 0.4rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 4px;
     font-size: 0.75rem;
+    background: var(--bg-input);
+    color: var(--text);
   }
 
   /* 식당 카드 */
   .room-restaurant-card {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 1rem 1.25rem;
     margin-bottom: 0.6rem;
@@ -306,7 +332,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     transition: border-color 0.15s;
   }
 
-  .room-restaurant-card:hover { border-color: #ccc; }
+  .room-restaurant-card:hover { border-color: var(--border-mid); }
 
   .room-rest-name-row {
     display: flex;
@@ -318,7 +344,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .room-rest-name {
     font-size: 0.95rem;
     font-weight: 600;
-    color: #111;
+    color: var(--text-heading);
     margin-bottom: 0.15rem;
     flex: 1;
     min-width: 0;
@@ -329,7 +355,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border: none;
     cursor: pointer;
     padding: 0.15rem;
-    color: #ccc;
+    color: var(--border-mid);
     transition: color 0.15s, transform 0.2s;
     flex-shrink: 0;
   }
@@ -345,7 +371,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .room-rest-meta {
     font-size: 0.8rem;
-    color: #888;
+    color: var(--text-muted);
   }
 
   .room-rest-footer {
@@ -357,18 +383,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .room-rest-added-by {
     font-size: 0.75rem;
-    color: #aaa;
+    color: var(--text-muted);
   }
 
   .room-rest-reviews-count {
     font-size: 0.75rem;
-    color: #666;
+    color: var(--text-sub);
   }
 
   /* 식당 등록 폼 */
   .add-restaurant-form {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 1.25rem;
     margin-bottom: 1rem;
@@ -378,6 +404,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.9rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
+    color: var(--text-heading);
   }
 
   .form-row {
@@ -394,16 +421,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .add-restaurant-form input,
   .add-restaurant-form select {
     padding: 0.5rem 0.65rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 6px;
     font-size: 0.85rem;
     width: 100%;
+    background: var(--bg-input);
+    color: var(--text);
+    font-family: inherit;
   }
 
   .add-restaurant-form input:focus,
   .add-restaurant-form select:focus {
     outline: none;
-    border-color: #333;
+    border-color: var(--text-sub);
   }
 
   .add-rest-actions {
@@ -414,8 +444,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .btn-primary-sm {
     padding: 0.45rem 0.85rem;
-    background: #111;
-    color: #fff;
+    background: var(--text-heading);
+    color: var(--bg);
     border: none;
     border-radius: 6px;
     font-size: 0.8rem;
@@ -424,12 +454,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     transition: background 0.15s;
   }
 
-  .btn-primary-sm:hover { background: #333; }
+  .btn-primary-sm:hover { background: var(--text-sub); }
 
   /* 식당 상세 모달 (인라인) */
   .room-rest-detail {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1rem;
@@ -439,11 +469,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 1.1rem;
     font-weight: 700;
     margin: 0 0 0.25rem;
+    color: var(--text-heading);
   }
 
   .room-rest-detail .detail-address {
     font-size: 0.85rem;
-    color: #666;
+    color: var(--text-sub);
     margin-bottom: 0.5rem;
   }
 
@@ -453,28 +484,29 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     align-items: center;
     margin-bottom: 1rem;
     font-size: 0.8rem;
-    color: #888;
+    color: var(--text-muted);
   }
 
   .room-rest-detail .detail-meta .category-badge {
-    background: #f0f0f0;
+    background: var(--bg-hover);
     padding: 0.15rem 0.5rem;
     border-radius: 100px;
     font-size: 0.75rem;
-    color: #555;
+    color: var(--text-sub);
   }
 
   .detail-close-btn {
     float: right;
     padding: 0.3rem 0.6rem;
-    background: #fff;
-    border: 1px solid #d0d0d0;
+    background: var(--bg-card);
+    color: var(--text-sub);
+    border: 1px solid var(--border-mid);
     border-radius: 6px;
     font-size: 0.8rem;
     cursor: pointer;
   }
 
-  .detail-close-btn:hover { background: #f0f0f0; }
+  .detail-close-btn:hover { background: var(--bg-hover); }
 
   /* 리뷰 작성 폼 */
   .review-sort-row {
@@ -485,16 +517,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .review-sort-row select {
     padding: 0.3rem 0.6rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 6px;
     font-size: 0.8rem;
     font-family: inherit;
-    background: #fff;
+    background: var(--bg-card);
+    color: var(--text-sub);
     cursor: pointer;
   }
 
   .review-form {
-    background: #f9f9f9;
+    background: var(--bg-hover);
     border-radius: 8px;
     padding: 0.75rem;
     margin-bottom: 0.75rem;
@@ -504,11 +537,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .review-form textarea {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 6px;
     font-size: 0.85rem;
     font-family: inherit;
     margin-bottom: 0.5rem;
+    background: var(--bg-input);
+    color: var(--text);
   }
 
   .review-form textarea {
@@ -517,7 +552,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .room-review-card {
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-light);
     padding: 0.6rem 0;
     font-size: 0.85rem;
   }
@@ -533,7 +568,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .room-review-author {
     font-weight: 600;
-    color: #333;
+    color: var(--text-sub);
     font-size: 0.825rem;
   }
 
@@ -544,7 +579,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .room-review-content {
-    color: #444;
+    color: var(--text);
     line-height: 1.4;
   }
 
@@ -554,7 +589,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     align-items: center;
     margin-top: 0.2rem;
     font-size: 0.75rem;
-    color: #999;
+    color: var(--text-muted);
   }
 
   .room-review-actions {
@@ -564,22 +599,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .room-review-actions button {
     padding: 0.2rem 0.5rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 4px;
-    background: #fff;
+    background: var(--bg-card);
     font-size: 0.7rem;
     cursor: pointer;
-    color: #555;
+    color: var(--text-sub);
   }
 
-  .room-review-actions button:hover { background: #f0f0f0; }
+  .room-review-actions button:hover { background: var(--bg-hover); }
   .room-review-actions button.danger { color: #dc2626; border-color: #fca5a5; }
   .room-review-actions button.danger:hover { background: #fef2f2; }
 
   .edited-badge {
     display: inline-block;
     font-size: 0.65rem;
-    color: #aaa;
+    color: var(--text-muted);
     margin-left: 0.25rem;
     font-style: italic;
   }
@@ -601,21 +636,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     align-items: center;
     gap: 0.4rem;
     font-size: 0.8rem;
-    color: #555;
+    color: var(--text-sub);
     margin-bottom: 0.5rem;
     cursor: pointer;
   }
 
   .revisit-toggle input[type="checkbox"] {
-    accent-color: #111;
+    accent-color: var(--text-heading);
   }
 
   .visit-card {
-    border: 1px solid #e8e8e8;
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem;
     margin-bottom: 0.75rem;
-    background: #fafafa;
+    background: var(--bg-hover);
   }
 
   .visit-header {
@@ -629,24 +664,24 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .visit-date {
     font-weight: 600;
-    color: #333;
+    color: var(--text-heading);
   }
 
   .visit-participants {
-    color: #666;
+    color: var(--text-sub);
   }
 
   .visit-creator {
-    color: #999;
+    color: var(--text-muted);
     font-size: 0.75rem;
   }
 
   .visit-memo {
-    color: #555;
+    color: var(--text-sub);
     font-size: 0.8rem;
     margin-bottom: 0.5rem;
     padding: 0.3rem 0.5rem;
-    background: #f0f0f0;
+    background: var(--bg);
     border-radius: 4px;
   }
 
@@ -657,11 +692,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .visits-heading {
     font-size: 0.95rem;
     margin: 1rem 0 0.5rem;
-    color: #333;
+    color: var(--text-heading);
   }
 
   .visit-form {
-    background: #f4f4f4;
+    background: var(--bg-hover);
     border-radius: 8px;
     padding: 0.75rem;
     margin-top: 0.75rem;
@@ -670,18 +705,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .visit-form h4 {
     margin: 0 0 0.5rem;
     font-size: 0.85rem;
-    color: #333;
+    color: var(--text-heading);
   }
 
   .visit-form input[type="date"],
   .visit-form input[type="text"] {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 6px;
     font-size: 0.85rem;
     font-family: inherit;
     margin-bottom: 0.5rem;
+    background: var(--bg-input);
+    color: var(--text);
   }
 
   .participant-list {
@@ -693,7 +730,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: block;
     font-weight: 500;
     margin-bottom: 0.25rem;
-    color: #555;
+    color: var(--text-sub);
   }
 
   .participant-check {
@@ -712,7 +749,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .review-detail-fields summary {
     cursor: pointer;
-    color: #666;
+    color: var(--text-sub);
     font-size: 0.8rem;
     margin-bottom: 0.4rem;
   }
@@ -729,43 +766,47 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     align-items: center;
     gap: 0.3rem;
     font-size: 0.78rem;
-    color: #555;
+    color: var(--text-sub);
   }
 
   .detail-rating-grid select {
     width: 50px;
     padding: 0.2rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 4px;
     font-size: 0.78rem;
+    background: var(--bg-input);
+    color: var(--text);
   }
 
   .review-detail-fields input[type="text"] {
     width: 100%;
     padding: 0.4rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 6px;
     font-size: 0.8rem;
     font-family: inherit;
     margin-bottom: 0.4rem;
+    background: var(--bg-input);
+    color: var(--text);
   }
 
   .review-detail-ratings {
     font-size: 0.75rem;
-    color: #888;
+    color: var(--text-muted);
     margin-bottom: 0.2rem;
   }
 
   .review-menu-info {
     font-size: 0.75rem;
-    color: #777;
+    color: var(--text-tertiary);
     margin-top: 0.2rem;
   }
 
   .wait-badge {
     font-size: 0.75rem;
-    color: #666;
-    background: #f0f0f0;
+    color: var(--text-sub);
+    background: var(--bg-hover);
     padding: 0.1rem 0.4rem;
     border-radius: 4px;
   }
@@ -773,17 +814,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .rest-search {
     width: 100%;
     padding: 0.6rem 0.75rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 8px;
     font-size: 0.875rem;
     font-family: inherit;
     margin-bottom: 0.75rem;
     transition: border-color 0.15s;
+    background: var(--bg-input);
+    color: var(--text);
   }
+
+  .rest-search::placeholder { color: var(--text-muted); }
 
   .rest-search:focus {
     outline: none;
-    border-color: #111;
+    border-color: var(--text-heading);
   }
 
   .category-filter-row {
@@ -796,20 +841,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .category-filter-btn {
     padding: 0.3rem 0.7rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 100px;
-    background: #fff;
+    background: var(--bg-card);
+    color: var(--text-sub);
     font-size: 0.8rem;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
   }
 
-  .category-filter-btn:hover { background: #f0f0f0; }
+  .category-filter-btn:hover { background: var(--bg-hover); }
 
   .category-filter-btn.active {
-    background: #111;
-    color: #fff;
-    border-color: #111;
+    background: var(--text-heading);
+    color: var(--bg);
+    border-color: var(--text-heading);
   }
 
   /* ─── 도움말 ─── */
@@ -820,21 +866,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    border: 1px solid #d0d0d0;
-    background: #fff;
-    color: #888;
+    border: 1px solid var(--border-mid);
+    background: var(--bg-card);
+    color: var(--text-muted);
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
   }
 
-  .help-btn:hover { background: #f0f0f0; color: #333; }
+  .help-btn:hover { background: var(--bg-hover); color: var(--text-sub); }
 
   .help-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0,0,0,0.5);
     z-index: 200;
     display: flex;
     align-items: center;
@@ -843,12 +889,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .help-modal {
-    background: #fff;
+    background: var(--bg-card);
     border-radius: 14px;
     max-width: 420px;
     width: 100%;
     padding: 1.75rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
     max-height: 80vh;
     overflow-y: auto;
   }
@@ -857,6 +903,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 1.1rem;
     font-weight: 700;
     margin-bottom: 1rem;
+    color: var(--text-heading);
   }
 
   .help-step {
@@ -872,8 +919,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     justify-content: center;
     min-width: 24px;
     height: 24px;
-    background: #111;
-    color: #fff;
+    background: var(--text-heading);
+    color: var(--bg);
     font-size: 0.7rem;
     font-weight: 700;
     border-radius: 50%;
@@ -881,20 +928,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .help-step-text {
     font-size: 0.85rem;
-    color: #444;
+    color: var(--text);
     line-height: 1.5;
   }
 
-  .help-step-text strong { color: #111; }
+  .help-step-text strong { color: var(--text-heading); }
 
   .help-tip {
-    background: #f7f8fa;
-    border: 1px solid #e8e8e8;
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem;
     margin-top: 0.75rem;
     font-size: 0.8rem;
-    color: #666;
+    color: var(--text-sub);
     line-height: 1.5;
   }
 
@@ -903,8 +950,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     width: 100%;
     margin-top: 1rem;
     padding: 0.6rem;
-    background: #111;
-    color: #fff;
+    background: var(--text-heading);
+    color: var(--bg);
     border: none;
     border-radius: 8px;
     font-size: 0.85rem;
@@ -912,7 +959,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     cursor: pointer;
   }
 
-  .help-close-btn:hover { background: #333; }
+  .help-close-btn:hover { background: var(--text-sub); }
 
   .inline-help {
     background: #fffbeb;
@@ -934,8 +981,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .stat-card {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 1.25rem;
     text-align: center;
@@ -944,18 +991,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .stat-value {
     font-size: 1.8rem;
     font-weight: 700;
-    color: #111;
+    color: var(--text-heading);
     margin-bottom: 0.15rem;
   }
 
   .stat-label {
     font-size: 0.8rem;
-    color: #888;
+    color: var(--text-muted);
   }
 
   .stat-section {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 1.25rem;
     margin-bottom: 0.75rem;
@@ -965,18 +1012,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.9rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
+    color: var(--text-heading);
   }
 
   .stat-highlight {
     font-size: 1rem;
     font-weight: 600;
-    color: #111;
+    color: var(--text-heading);
   }
 
   .stat-highlight-sub {
     font-size: 0.8rem;
     font-weight: 400;
-    color: #888;
+    color: var(--text-muted);
   }
 
   .stat-bar-row {
@@ -989,27 +1037,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .stat-bar-label {
     font-size: 0.8rem;
     min-width: 60px;
-    color: #555;
+    color: var(--text-sub);
   }
 
   .stat-bar-track {
     flex: 1;
     height: 8px;
-    background: #f0f0f0;
+    background: var(--bg-hover);
     border-radius: 4px;
     overflow: hidden;
   }
 
   .stat-bar-fill {
     height: 100%;
-    background: #111;
+    background: var(--text-heading);
     border-radius: 4px;
     transition: width 0.3s;
   }
 
   .stat-bar-count {
     font-size: 0.75rem;
-    color: #888;
+    color: var(--text-muted);
     min-width: 30px;
     text-align: right;
   }
@@ -1039,7 +1087,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .random-picked {
-    background: #f9f9f9;
+    background: var(--bg-hover);
     border-radius: 8px;
     padding: 0.75rem 1rem;
   }
@@ -1047,19 +1095,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .random-picked-name {
     font-size: 1rem;
     font-weight: 700;
-    color: #111;
+    color: var(--text-heading);
     margin-bottom: 0.15rem;
   }
 
   .random-picked-meta {
     font-size: 0.8rem;
-    color: #888;
+    color: var(--text-muted);
   }
 
   .stat-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-  .stat-table th, .stat-table td { padding: 0.45rem 0.5rem; text-align: left; border-bottom: 1px solid #f0f0f0; }
-  .stat-table th { color: #888; font-weight: 500; font-size: 0.75rem; }
-  .stat-table td { color: #333; }
+  .stat-table th, .stat-table td { padding: 0.45rem 0.5rem; text-align: left; border-bottom: 1px solid var(--border-light); }
+  .stat-table th { color: var(--text-muted); font-weight: 500; font-size: 0.75rem; }
+  .stat-table td { color: var(--text-sub); }
   .stat-table .num { text-align: right; font-variant-numeric: tabular-nums; }
   .stat-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
   .stat-badge-gold { background: #fef3c7; color: #92400e; }
@@ -1069,13 +1117,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   /* 행동 분석 */
   .behavior-member {
     padding: 0.6rem 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-light);
   }
   .behavior-member:last-child { border-bottom: none; }
   .behavior-member-name {
     font-size: 0.85rem;
     font-weight: 600;
-    color: #333;
+    color: var(--text-sub);
     margin-bottom: 0.3rem;
   }
   .behavior-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
@@ -1084,8 +1132,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     padding: 0.2rem 0.5rem;
     border-radius: 100px;
     font-size: 0.72rem;
-    background: #f5f5f5;
-    color: #555;
+    background: var(--bg-hover);
+    color: var(--text-sub);
   }
   .behavior-tag.explorer { background: #dbeafe; color: #1e40af; }
   .behavior-tag.regular { background: #fef3c7; color: #92400e; }
@@ -1102,7 +1150,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .room-behavior-item {
     padding: 0.5rem 0;
     font-size: 0.82rem;
-    border-bottom: 1px solid #f5f5f5;
+    border-bottom: 1px solid var(--border-light);
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -1115,20 +1163,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .day-bars { display: flex; align-items: flex-end; gap: 0.25rem; height: 80px; margin: 0.5rem 0; }
   .day-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
-  .day-bar { width: 100%; border-radius: 3px 3px 0 0; background: #111; min-height: 2px; transition: height 0.3s; }
-  .day-bar-label { font-size: 0.65rem; color: #888; }
-  .day-bar-count { font-size: 0.6rem; color: #555; font-weight: 600; }
+  .day-bar { width: 100%; border-radius: 3px 3px 0 0; background: var(--text-heading); min-height: 2px; transition: height 0.3s; }
+  .day-bar-label { font-size: 0.65rem; color: var(--text-muted); }
+  .day-bar-count { font-size: 0.6rem; color: var(--text-sub); font-weight: 600; }
 
   .month-chart { display: flex; align-items: flex-end; gap: 2px; height: 80px; margin: 0.5rem 0; overflow-x: auto; }
   .month-bar-col { min-width: 28px; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
-  .month-bar { width: 100%; border-radius: 3px 3px 0 0; background: #111; min-height: 2px; }
-  .month-bar-label { font-size: 0.55rem; color: #888; white-space: nowrap; }
+  .month-bar { width: 100%; border-radius: 3px 3px 0 0; background: var(--text-heading); min-height: 2px; }
+  .month-bar-label { font-size: 0.55rem; color: var(--text-muted); white-space: nowrap; }
 
   .menu-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
-  .menu-tag { padding: 0.25rem 0.65rem; border-radius: 14px; font-size: 0.75rem; background: #f5f5f5; color: #333; border: 1px solid #e8e8e8; }
-  .menu-tag-count { color: #999; font-size: 0.65rem; margin-left: 0.2rem; }
+  .menu-tag { padding: 0.25rem 0.65rem; border-radius: 14px; font-size: 0.75rem; background: var(--bg-hover); color: var(--text-sub); border: 1px solid var(--border); }
+  .menu-tag-count { color: var(--text-muted); font-size: 0.65rem; margin-left: 0.2rem; }
 
-  .unreviewed-item { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid #f5f5f5; font-size: 0.82rem; }
+  .unreviewed-item { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border-light); font-size: 0.82rem; }
   .unreviewed-item:last-child { border-bottom: none; }
 
   @media (max-width: 500px) {
@@ -1138,7 +1186,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .empty-text {
     text-align: center;
     padding: 1.5rem;
-    color: #999;
+    color: var(--text-muted);
     font-size: 0.85rem;
   }
 
@@ -1150,8 +1198,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .region-depth {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 0.75rem 1rem;
   }
@@ -1160,7 +1208,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: block;
     font-size: 0.75rem;
     font-weight: 600;
-    color: #888;
+    color: var(--text-muted);
     margin-bottom: 0.5rem;
   }
 
@@ -1172,25 +1220,25 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .region-btn {
     padding: 0.4rem 0.75rem;
-    background: #f5f5f5;
-    border: 1px solid #e0e0e0;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 0.8rem;
     font-family: inherit;
-    color: #555;
+    color: var(--text-sub);
     cursor: pointer;
     transition: all 0.15s;
   }
 
   .region-btn:hover {
-    background: #eee;
-    color: #333;
+    background: var(--bg);
+    color: var(--text-heading);
   }
 
   .region-btn.active {
-    background: #111;
-    color: #fff;
-    border-color: #111;
+    background: var(--text-heading);
+    color: var(--bg);
+    border-color: var(--text-heading);
   }
 
   .region-avg {
@@ -1212,17 +1260,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .region-result-header {
     font-size: 0.8rem;
     font-weight: 600;
-    color: #666;
+    color: var(--text-sub);
   }
 
   .region-sort {
     padding: 0.3rem 0.5rem;
     font-size: 0.8rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 6px;
     font-family: inherit;
-    color: #555;
-    background: #fff;
+    color: var(--text-sub);
+    background: var(--bg-card);
   }
 
   .region-restaurant-list {
@@ -1232,8 +1280,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .region-rest-card {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 0.85rem 1rem;
     cursor: pointer;
@@ -1241,14 +1289,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .region-rest-card:hover {
-    border-color: #ccc;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-color: var(--border-mid);
+    box-shadow: 0 2px 8px var(--shadow);
   }
 
   .region-rest-name {
     font-size: 0.95rem;
     font-weight: 600;
-    color: #111;
+    color: var(--text-heading);
     margin-bottom: 0.3rem;
   }
 
@@ -1268,20 +1316,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .region-rest-reviews {
     font-size: 0.75rem;
-    color: #999;
+    color: var(--text-muted);
   }
 
   .region-rest-addr {
     font-size: 0.75rem;
-    color: #999;
+    color: var(--text-muted);
   }
 
   .my-review-hint {
     text-align: center;
     padding: 0.75rem;
-    color: #888;
+    color: var(--text-muted);
     font-size: 0.8rem;
-    background: #f9f9f9;
+    background: var(--bg-hover);
     border-radius: 8px;
     margin-bottom: 0.5rem;
   }
@@ -1289,7 +1337,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .region-hint {
     text-align: center;
     padding: 2rem;
-    color: #999;
+    color: var(--text-muted);
     font-size: 0.85rem;
   }
 
@@ -1303,26 +1351,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .map-region-btn {
     padding: 0.3rem 0.7rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 100px;
-    background: #fff;
+    background: var(--bg-card);
     font-size: 0.78rem;
-    color: #555;
+    color: var(--text-sub);
     cursor: pointer;
     transition: all 0.15s;
   }
 
-  .map-region-btn:hover { border-color: #999; }
+  .map-region-btn:hover { border-color: var(--text-muted); }
 
   .map-region-btn.active {
-    background: #111;
-    color: #fff;
-    border-color: #111;
+    background: var(--text-heading);
+    color: var(--bg);
+    border-color: var(--text-heading);
   }
 
   .map-container {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     overflow: hidden;
   }
@@ -1335,7 +1383,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .map-no-data {
     text-align: center;
     padding: 2rem;
-    color: #999;
+    color: var(--text-muted);
     font-size: 0.85rem;
   }
 
@@ -1350,34 +1398,34 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     left: 0;
     right: 0;
     z-index: 10;
-    background: #fff;
-    border: 1px solid #d0d0d0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-mid);
     border-top: none;
     border-radius: 0 0 6px 6px;
     max-height: 200px;
     overflow-y: auto;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px var(--shadow);
   }
 
   .address-result-item {
     padding: 0.5rem 0.65rem;
     font-size: 0.8rem;
     cursor: pointer;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-light);
   }
 
   .address-result-item:hover {
-    background: #f5f5f5;
+    background: var(--bg-hover);
   }
 
   .address-result-name {
     font-weight: 600;
-    color: #111;
+    color: var(--text-heading);
     margin-bottom: 0.1rem;
   }
 
   .address-result-addr {
-    color: #888;
+    color: var(--text-muted);
     font-size: 0.75rem;
   }
 </style>

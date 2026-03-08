@@ -94,11 +94,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   h1 {
     font-size: 1.4rem;
     margin-bottom: 0.25rem;
+    color: var(--text-heading);
   }
 
   .updated-at {
     font-size: 0.85rem;
-    color: #888;
+    color: var(--text-muted);
     margin-bottom: 2rem;
   }
 
@@ -110,11 +111,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 1.05rem;
     font-weight: 600;
     margin-bottom: 0.5rem;
+    color: var(--text-heading);
   }
 
   p, li {
     font-size: 0.9rem;
-    color: #444;
+    color: var(--text);
     line-height: 1.7;
   }
 
@@ -135,23 +137,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   th, td {
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border);
     padding: 0.6rem 0.75rem;
     text-align: left;
   }
 
   th {
-    background: #f7f8fa;
+    background: var(--bg-hover);
     font-weight: 600;
-    color: #333;
+    color: var(--text-heading);
   }
 
   td {
-    color: #555;
+    color: var(--text-sub);
   }
 
   a {
-    color: #111;
+    color: var(--text-heading);
     font-weight: 500;
   }
 </style>

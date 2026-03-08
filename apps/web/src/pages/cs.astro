@@ -50,30 +50,31 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   h1 {
     margin-bottom: 0.25rem;
     font-size: 1.4rem;
+    color: var(--text-heading);
   }
 
   .page-desc {
-    color: #888;
+    color: var(--text-muted);
     font-size: 0.875rem;
     margin-bottom: 0.5rem;
   }
 
   .email-info {
     font-size: 0.825rem;
-    color: #666;
+    color: var(--text-sub);
     margin-bottom: 1.5rem;
   }
 
   .email-info a {
-    color: #111;
+    color: var(--text-heading);
     font-weight: 500;
   }
 
   .inquiry-form {
-    background: #fff;
+    background: var(--bg-card);
     padding: 1.75rem;
     border-radius: 12px;
-    border: 1px solid #e8e8e8;
+    border: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -84,7 +85,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   label {
     font-size: 0.875rem;
     font-weight: 600;
-    color: #333;
+    color: var(--text-sub);
     margin-top: 0.5rem;
   }
 
@@ -92,18 +93,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   input,
   textarea {
     padding: 0.6rem 0.75rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 8px;
     font-size: 0.875rem;
     font-family: inherit;
     transition: border-color 0.15s;
+    background: var(--bg-input);
+    color: var(--text);
   }
 
   select:focus,
   input:focus,
   textarea:focus {
     outline: none;
-    border-color: #111;
+    border-color: var(--text-heading);
   }
 
   textarea {
@@ -113,8 +116,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   button[type="submit"] {
     margin-top: 1rem;
     padding: 0.7rem;
-    background: #111;
-    color: #fff;
+    background: var(--text-heading);
+    color: var(--bg);
     border: none;
     border-radius: 8px;
     font-size: 0.9rem;
@@ -124,11 +127,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   button[type="submit"]:hover {
-    background: #333;
+    background: var(--text-sub);
   }
 
   button[type="submit"]:disabled {
-    background: #999;
+    background: var(--text-muted);
     cursor: not-allowed;
   }
 

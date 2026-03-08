@@ -34,18 +34,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 1.3rem;
     font-weight: 700;
     margin: 0;
+    color: var(--text-heading);
   }
 
   .rankings-subtitle {
     font-size: 0.82rem;
-    color: #888;
+    color: var(--text-muted);
     margin-top: 0.15rem;
   }
 
   .loading-msg, .error-msg {
     text-align: center;
     padding: 3rem 1rem;
-    color: #999;
+    color: var(--text-muted);
     font-size: 0.9rem;
   }
 
@@ -65,43 +66,43 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .ranking-tab-btn {
     padding: 0.4rem 0.8rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 100px;
-    background: #fff;
+    background: var(--bg-card);
     font-size: 0.78rem;
-    color: #555;
+    color: var(--text-sub);
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.15s;
   }
 
-  .ranking-tab-btn:hover { border-color: #999; }
+  .ranking-tab-btn:hover { border-color: var(--text-muted); }
 
   .ranking-tab-btn.active {
-    background: #111;
-    color: #fff;
-    border-color: #111;
+    background: var(--text-heading);
+    color: var(--bg);
+    border-color: var(--text-heading);
   }
 
   /* 랭킹 테이블 */
   .ranking-table {
     width: 100%;
     border-collapse: collapse;
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 10px;
     overflow: hidden;
     margin-bottom: 1.5rem;
   }
 
   .ranking-table th {
-    background: #fafafa;
+    background: var(--bg-hover);
     font-size: 0.75rem;
     font-weight: 600;
-    color: #888;
+    color: var(--text-muted);
     padding: 0.6rem 0.75rem;
     text-align: left;
-    border-bottom: 1px solid #e8e8e8;
+    border-bottom: 1px solid var(--border);
   }
 
   .ranking-table th.num { text-align: right; }
@@ -109,8 +110,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .ranking-table td {
     padding: 0.6rem 0.75rem;
     font-size: 0.82rem;
-    border-bottom: 1px solid #f5f5f5;
+    border-bottom: 1px solid var(--border-light);
     vertical-align: middle;
+    color: var(--text);
   }
 
   .ranking-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -119,6 +121,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .ranking-table tr.is-me {
     background: #fffbeb;
+  }
+
+  [data-theme="dark"] .ranking-table tr.is-me {
+    background: #362f1a;
   }
 
   .rank-medal {
@@ -130,7 +136,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .rank-number {
     font-size: 0.78rem;
-    color: #999;
+    color: var(--text-muted);
     min-width: 24px;
     display: inline-block;
     text-align: center;
@@ -146,19 +152,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: #f0f0f0;
+    background: var(--bg-hover);
     object-fit: cover;
   }
 
   .rank-nickname {
     font-weight: 500;
-    color: #333;
+    color: var(--text-sub);
   }
 
   /* 업적 섹션 */
   .achievements-section {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
     margin-bottom: 1.5rem;
@@ -168,6 +174,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 1rem;
     font-weight: 700;
     margin: 0 0 0.75rem;
+    color: var(--text-heading);
   }
 
   .achievement-grid {
@@ -181,13 +188,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     flex-direction: column;
     align-items: center;
     padding: 0.75rem 0.5rem;
-    border: 1px solid #f0f0f0;
+    border: 1px solid var(--border-light);
     border-radius: 10px;
     text-align: center;
     transition: border-color 0.15s;
   }
 
-  .achievement-card:hover { border-color: #d0d0d0; }
+  .achievement-card:hover { border-color: var(--border-mid); }
 
   .achievement-card.locked {
     opacity: 0.35;
@@ -202,12 +209,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .achievement-name {
     font-size: 0.75rem;
     font-weight: 600;
-    color: #333;
+    color: var(--text-sub);
   }
 
   .achievement-desc {
     font-size: 0.65rem;
-    color: #999;
+    color: var(--text-muted);
     margin-top: 0.1rem;
   }
 
@@ -220,8 +227,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   /* 내 프로필 카드 */
   .my-profile-card {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
     margin-bottom: 1.25rem;
@@ -234,7 +241,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: #f0f0f0;
+    background: var(--bg-hover);
     object-fit: cover;
   }
 
@@ -245,6 +252,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .my-profile-name {
     font-size: 1rem;
     font-weight: 700;
+    color: var(--text-heading);
   }
 
   .my-profile-stats {
@@ -252,10 +260,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     gap: 0.75rem;
     margin-top: 0.3rem;
     font-size: 0.75rem;
-    color: #888;
+    color: var(--text-muted);
   }
 
-  .my-profile-stats strong { color: #333; }
+  .my-profile-stats strong { color: var(--text-sub); }
 
   .my-achievement-count {
     display: flex;

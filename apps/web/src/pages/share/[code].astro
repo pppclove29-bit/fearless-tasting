@@ -89,7 +89,7 @@ function escapeHtml(text: string): string {
   .status-msg {
     text-align: center;
     padding: 3rem 1rem;
-    color: #999;
+    color: var(--text-muted);
     font-size: 0.9rem;
   }
 
@@ -100,8 +100,8 @@ function escapeHtml(text: string): string {
 
 <style is:global>
   .share-header {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.25rem;
@@ -111,6 +111,7 @@ function escapeHtml(text: string): string {
     font-size: 1.3rem;
     font-weight: 700;
     margin: 0 0 0.25rem;
+    color: var(--text-heading);
   }
 
   .share-header .share-badge {
@@ -118,13 +119,13 @@ function escapeHtml(text: string): string {
     padding: 0.15rem 0.5rem;
     border-radius: 100px;
     font-size: 0.75rem;
-    background: #f0f0f0;
-    color: #666;
+    background: var(--bg-hover);
+    color: var(--text-sub);
   }
 
   .share-restaurant-card {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 1rem 1.25rem;
     margin-bottom: 0.6rem;
@@ -132,18 +133,18 @@ function escapeHtml(text: string): string {
     transition: border-color 0.15s;
   }
 
-  .share-restaurant-card:hover { border-color: #ccc; }
+  .share-restaurant-card:hover { border-color: var(--border-mid); }
 
   .share-rest-name {
     font-size: 0.95rem;
     font-weight: 600;
-    color: #111;
+    color: var(--text-heading);
     margin-bottom: 0.15rem;
   }
 
   .share-rest-meta {
     font-size: 0.8rem;
-    color: #888;
+    color: var(--text-muted);
   }
 
   .share-rest-footer {
@@ -154,12 +155,12 @@ function escapeHtml(text: string): string {
 
   .share-rest-reviews-count {
     font-size: 0.75rem;
-    color: #666;
+    color: var(--text-sub);
   }
 
   .share-rest-detail {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1rem;
@@ -169,11 +170,12 @@ function escapeHtml(text: string): string {
     font-size: 1.1rem;
     font-weight: 700;
     margin: 0 0 0.25rem;
+    color: var(--text-heading);
   }
 
   .share-rest-detail .detail-address {
     font-size: 0.85rem;
-    color: #666;
+    color: var(--text-sub);
     margin-bottom: 0.5rem;
   }
 
@@ -183,31 +185,32 @@ function escapeHtml(text: string): string {
     align-items: center;
     margin-bottom: 1rem;
     font-size: 0.8rem;
-    color: #888;
+    color: var(--text-muted);
   }
 
   .share-rest-detail .category-badge {
-    background: #f0f0f0;
+    background: var(--bg-hover);
     padding: 0.15rem 0.5rem;
     border-radius: 100px;
     font-size: 0.75rem;
-    color: #555;
+    color: var(--text-sub);
   }
 
   .detail-close-btn {
     float: right;
     padding: 0.3rem 0.6rem;
-    background: #fff;
-    border: 1px solid #d0d0d0;
+    background: var(--bg-card);
+    color: var(--text-sub);
+    border: 1px solid var(--border-mid);
     border-radius: 6px;
     font-size: 0.8rem;
     cursor: pointer;
   }
 
-  .detail-close-btn:hover { background: #f0f0f0; }
+  .detail-close-btn:hover { background: var(--bg-hover); }
 
   .share-review-card {
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-light);
     padding: 0.6rem 0;
     font-size: 0.85rem;
   }
@@ -227,20 +230,20 @@ function escapeHtml(text: string): string {
   }
 
   .share-review-content {
-    color: #444;
+    color: var(--text);
     line-height: 1.4;
   }
 
   .share-review-footer {
     margin-top: 0.2rem;
     font-size: 0.75rem;
-    color: #999;
+    color: var(--text-muted);
   }
 
   .empty-text {
     text-align: center;
     padding: 1.5rem;
-    color: #999;
+    color: var(--text-muted);
     font-size: 0.85rem;
   }
 </style>

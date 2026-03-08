@@ -73,12 +73,12 @@ export const prerender = false;
   .profile-loading {
     text-align: center;
     padding: 3rem;
-    color: #999;
+    color: var(--text-muted);
   }
 
   .profile-card {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1rem;
@@ -92,13 +92,13 @@ export const prerender = false;
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: #f0f0f0;
+    background: var(--bg-hover);
     margin: 0 auto 0.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
-    color: #999;
+    color: var(--text-muted);
     overflow: hidden;
   }
 
@@ -118,47 +118,50 @@ export const prerender = false;
     font-size: 1.3rem;
     font-weight: 700;
     margin: 0;
+    color: var(--text-heading);
   }
 
   .edit-name-btn {
     background: none;
     border: none;
     cursor: pointer;
-    color: #999;
+    color: var(--text-muted);
     padding: 0.2rem;
     border-radius: 4px;
     transition: color 0.15s, background 0.15s;
   }
 
   .edit-name-btn:hover {
-    color: #333;
-    background: #f0f0f0;
+    color: var(--text-sub);
+    background: var(--bg-hover);
   }
 
   .profile-email {
     font-size: 0.85rem;
-    color: #999;
+    color: var(--text-muted);
     margin-top: 0.2rem;
   }
 
   .nickname-edit-area {
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--border-light);
   }
 
   .nickname-input {
     width: 100%;
     padding: 0.6rem 0.8rem;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 8px;
     font-size: 0.9rem;
     font-family: inherit;
+    background: var(--bg-input);
+    color: var(--text);
   }
 
   .nickname-input:focus {
     outline: none;
-    border-color: #333;
+    border-color: var(--text-sub);
   }
 
   .nickname-edit-actions {
@@ -170,8 +173,8 @@ export const prerender = false;
 
   .btn-save {
     padding: 0.45rem 1rem;
-    background: #111;
-    color: #fff;
+    background: var(--text-heading);
+    color: var(--bg);
     border: none;
     border-radius: 6px;
     font-size: 0.85rem;
@@ -181,28 +184,28 @@ export const prerender = false;
   }
 
   .btn-save:hover {
-    background: #333;
+    background: var(--text-sub);
   }
 
   .btn-cancel {
     padding: 0.45rem 1rem;
     background: none;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 6px;
     font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
-    color: #555;
+    color: var(--text-sub);
     transition: background 0.15s;
   }
 
   .btn-cancel:hover {
-    background: #f0f0f0;
+    background: var(--bg-hover);
   }
 
   .profile-section {
-    background: #fff;
-    border: 1px solid #e8e8e8;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1rem;
@@ -212,6 +215,7 @@ export const prerender = false;
     font-size: 1rem;
     font-weight: 700;
     margin: 0 0 1rem;
+    color: var(--text-heading);
   }
 
   .stats-grid {
@@ -223,7 +227,7 @@ export const prerender = false;
   .stat-item {
     text-align: center;
     padding: 0.75rem;
-    background: #f7f8fa;
+    background: var(--bg);
     border-radius: 8px;
   }
 
@@ -231,13 +235,13 @@ export const prerender = false;
     display: block;
     font-size: 1.4rem;
     font-weight: 700;
-    color: #111;
+    color: var(--text-heading);
   }
 
   .stat-label {
     display: block;
     font-size: 0.78rem;
-    color: #888;
+    color: var(--text-muted);
     margin-top: 0.15rem;
   }
 
@@ -251,28 +255,28 @@ export const prerender = false;
     width: 100%;
     padding: 0.65rem;
     background: none;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     border-radius: 8px;
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    color: #555;
+    color: var(--text-sub);
     transition: background 0.15s, border-color 0.15s;
   }
 
   .btn-logout:hover {
-    background: #f0f0f0;
-    border-color: #999;
+    background: var(--bg-hover);
+    border-color: var(--text-muted);
   }
 
   .danger-zone {
     padding-top: 1rem;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--border-light);
   }
 
   .danger-desc {
     font-size: 0.8rem;
-    color: #999;
+    color: var(--text-muted);
     line-height: 1.5;
     margin: 0 0 0.75rem;
   }
@@ -286,7 +290,7 @@ export const prerender = false;
     font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
-    color: #999;
+    color: var(--text-muted);
     transition: background 0.15s, border-color 0.15s, color 0.15s;
   }
 

@@ -25,7 +25,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .error-code {
     font-size: 6rem;
     font-weight: 800;
-    color: #e0e0e0;
+    color: var(--border);
     letter-spacing: -0.05em;
     line-height: 1;
     display: block;
@@ -34,12 +34,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   h1 {
     font-size: 1.4rem;
     margin: 1rem 0 0.5rem;
-    color: #111;
+    color: var(--text-heading);
   }
 
   p {
     font-size: 0.9rem;
-    color: #888;
+    color: var(--text-muted);
     margin-bottom: 2.5rem;
     line-height: 1.6;
   }
@@ -54,8 +54,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .home-btn {
     display: inline-block;
     padding: 0.7rem 2rem;
-    background: #111;
-    color: #fff;
+    background: var(--text-heading);
+    color: var(--bg);
     font-size: 0.9rem;
     font-weight: 600;
     border-radius: 8px;
@@ -64,23 +64,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .home-btn:hover {
-    background: #333;
+    background: var(--text-sub);
   }
 
   .cs-link {
     display: inline-block;
     padding: 0.7rem 2rem;
-    background: #fff;
-    color: #555;
+    background: var(--bg-card);
+    color: var(--text-sub);
     font-size: 0.9rem;
     font-weight: 500;
     border-radius: 8px;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--border-mid);
     text-decoration: none;
     transition: background 0.15s;
   }
 
   .cs-link:hover {
-    background: #f5f5f5;
+    background: var(--bg-hover);
   }
 </style>
