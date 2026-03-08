@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
@@ -281,7 +284,7 @@ export class UsersService {
     }
 
     // 라이징 스타 — 최근 30일 방문 수 1위
-    const thirtyDaysAgoDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgoDate = new Date(Date.now() - THIRTY_DAYS_MS);
     const recentVisitCounts = users.map((u) => ({
       id: u.id,
       count: u.createdVisits.filter((v) => new Date(v.visitedAt) >= thirtyDaysAgoDate).length,
@@ -305,8 +308,8 @@ export class UsersService {
   async getStats() {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const sevenDaysAgo = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgo = new Date(todayStart.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(todayStart.getTime() - SEVEN_DAYS_MS);
+    const thirtyDaysAgo = new Date(todayStart.getTime() - THIRTY_DAYS_MS);
 
     const [totalUsers, dau, wau, mau, totalRooms, totalRoomRestaurants, totalRoomReviews] =
       await Promise.all([

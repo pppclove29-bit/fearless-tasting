@@ -1,1 +1,1 @@
-export { formatRating, formatDate } from './format';
+export { formatRating, formatDate, calcAvgRating } from './format';

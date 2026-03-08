@@ -1,12 +1,20 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
+import { calcAvgRating } from '@repo/utils';
 import { PrismaService } from '../prisma/prisma.service';
 
 const MAX_ROOM_MEMBERS = 4;
+const CODE_GEN_MAX_RETRIES = 10;
+const INVITE_CODE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24시간
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 @Injectable()
 export class RoomsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private isOwnerOrManager(role: string): boolean {
+    return role === 'owner' || role === 'manager';
+  }
 
   /** 플랫폼 공개 통계 (비로그인 가능) */
   async getPlatformStats() {
@@ -21,7 +29,7 @@ export class RoomsService {
 
   /** 고유 8자 초대 코드 생성 */
   private async generateInviteCode(): Promise<string> {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < CODE_GEN_MAX_RETRIES; i++) {
       const code = randomBytes(4).toString('hex');
       const existing = await this.prisma.read.room.findUnique({ where: { inviteCode: code } });
       if (!existing) return code;
@@ -38,7 +46,7 @@ export class RoomsService {
         data: {
           name,
           inviteCode,
-          inviteCodeExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          inviteCodeExpiresAt: new Date(Date.now() + INVITE_CODE_EXPIRY_MS),
           ownerId,
         },
       });
@@ -116,9 +124,7 @@ export class RoomsService {
         const allRatings = visits.flatMap((v) => v.reviews.map((r) => r.rating));
         return {
           ...rest,
-          avgRating: allRatings.length > 0
-            ? Math.round(allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length * 10) / 10
-            : null,
+          avgRating: calcAvgRating(allRatings),
           wishlisted: wishlistedSet.has(rest.id),
           _count: { ...rest._count, reviews: allRatings.length },
         };
@@ -182,7 +188,7 @@ export class RoomsService {
       where: { id: roomId },
       data: {
         inviteCode: newCode,
-        inviteCodeExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        inviteCodeExpiresAt: new Date(Date.now() + INVITE_CODE_EXPIRY_MS),
       },
       select: { inviteCode: true, inviteCodeExpiresAt: true },
     });
@@ -272,7 +278,7 @@ export class RoomsService {
 
   /** 고유 8자 공유 코드 생성 */
   private async generateShareCode(): Promise<string> {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < CODE_GEN_MAX_RETRIES; i++) {
       const code = randomBytes(4).toString('hex');
       const existing = await this.prisma.read.room.findFirst({ where: { shareCode: code } });
       if (!existing) return code;
@@ -458,7 +464,7 @@ export class RoomsService {
     if (!restaurant || restaurant.roomId !== roomId) {
       throw new NotFoundException('식당을 찾을 수 없습니다');
     }
-    const isOwnerOrManager = memberRole === 'owner' || memberRole === 'manager';
+    const isOwnerOrManager = this.isOwnerOrManager(memberRole);
     if ((!restaurant.addedById || restaurant.addedById !== userId) && !isOwnerOrManager) {
       throw new ForbiddenException('본인이 등록한 식당이거나 매니저 이상만 수정할 수 있습니다');
     }
@@ -481,7 +487,7 @@ export class RoomsService {
       throw new NotFoundException('식당을 찾을 수 없습니다');
     }
 
-    const isOwnerOrManager = memberRole === 'owner' || memberRole === 'manager';
+    const isOwnerOrManager = this.isOwnerOrManager(memberRole);
     if ((!restaurant.addedById || restaurant.addedById !== userId) && !isOwnerOrManager) {
       throw new ForbiddenException('본인이 등록한 식당이거나 매니저 이상만 삭제할 수 있습니다');
     }
@@ -562,7 +568,7 @@ export class RoomsService {
     const visit = await this.prisma.read.roomVisit.findUnique({ where: { id: visitId } });
     if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
 
-    const isOwnerOrManager = memberRole === 'owner' || memberRole === 'manager';
+    const isOwnerOrManager = this.isOwnerOrManager(memberRole);
     if ((!visit.createdById || visit.createdById !== userId) && !isOwnerOrManager) {
       throw new ForbiddenException('본인이 생성한 방문 기록이거나 매니저 이상만 수정할 수 있습니다');
     }
@@ -582,7 +588,7 @@ export class RoomsService {
     const visit = await this.prisma.read.roomVisit.findUnique({ where: { id: visitId } });
     if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
 
-    const isOwnerOrManager = memberRole === 'owner' || memberRole === 'manager';
+    const isOwnerOrManager = this.isOwnerOrManager(memberRole);
     if ((!visit.createdById || visit.createdById !== userId) && !isOwnerOrManager) {
       throw new ForbiddenException('본인이 생성한 방문 기록이거나 매니저 이상만 삭제할 수 있습니다');
     }
@@ -669,7 +675,7 @@ export class RoomsService {
     const review = await this.prisma.read.roomReview.findUnique({ where: { id: reviewId } });
     if (!review) throw new NotFoundException('리뷰를 찾을 수 없습니다');
 
-    const isOwnerOrManager = memberRole === 'owner' || memberRole === 'manager';
+    const isOwnerOrManager = this.isOwnerOrManager(memberRole);
     if (review.userId !== userId && !isOwnerOrManager) {
       throw new ForbiddenException('본인의 리뷰이거나 매니저 이상만 삭제할 수 있습니다');
     }
@@ -771,9 +777,7 @@ export class RoomsService {
     const totalRestaurants = room.restaurants.length;
     const totalVisits = allVisits.length;
     const totalReviews = allReviews.length;
-    const overallAvg = allReviews.length > 0
-      ? Math.round(allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length * 10) / 10
-      : null;
+    const overallAvg = calcAvgRating(allReviews.map((r) => r.rating));
 
     // ─── 멤버별 통계 ───
     const memberMap = new Map<string, { nickname: string; reviews: typeof allReviews; visitCount: number }>();
@@ -799,9 +803,7 @@ export class RoomsService {
 
     const memberStats = Array.from(memberMap.entries())
       .map(([uid, data]) => {
-        const avg = data.reviews.length > 0
-          ? Math.round(data.reviews.reduce((s, r) => s + r.rating, 0) / data.reviews.length * 10) / 10
-          : null;
+        const avg = calcAvgRating(data.reviews.map((r) => r.rating));
         // 실제 재방문율: 이 멤버가 방문한 식당 중 2회 이상 방문한 식당 비율
         const visitedRestMap = new Map<string, number>();
         for (const rest of room.restaurants) {
@@ -840,9 +842,7 @@ export class RoomsService {
       .map(([category, data]) => ({
         category,
         count: data.count,
-        avgRating: data.ratings.length > 0
-          ? Math.round(data.ratings.reduce((s, r) => s + r, 0) / data.ratings.length * 10) / 10
-          : null,
+        avgRating: calcAvgRating(data.ratings),
       }))
       .sort((a, b) => b.count - a.count);
 
@@ -859,9 +859,7 @@ export class RoomsService {
       .map(([region, data]) => ({
         region,
         count: data.count,
-        avgRating: data.ratings.length > 0
-          ? Math.round(data.ratings.reduce((s, r) => s + r, 0) / data.ratings.length * 10) / 10
-          : null,
+        avgRating: calcAvgRating(data.ratings),
       }))
       .sort((a, b) => b.count - a.count);
 
@@ -870,9 +868,7 @@ export class RoomsService {
     const detailRatingAvg: Record<string, number | null> = {};
     for (const field of detailFields) {
       const vals = allReviews.map((r) => r[field]).filter((v): v is number => v !== null);
-      detailRatingAvg[field] = vals.length > 0
-        ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length * 10) / 10
-        : null;
+      detailRatingAvg[field] = calcAvgRating(vals);
     }
 
     // ─── 월별 방문 트렌드 ───
@@ -932,9 +928,7 @@ export class RoomsService {
         const ratings = r.visits.flatMap((v) => v.reviews.map((rev) => rev.rating));
         return {
           name: r.name,
-          avgRating: ratings.length > 0
-            ? Math.round(ratings.reduce((s, v) => s + v, 0) / ratings.length * 10) / 10
-            : null,
+          avgRating: calcAvgRating(ratings),
           reviewCount: ratings.length,
         };
       })
@@ -955,184 +949,11 @@ export class RoomsService {
       .slice(0, 10);
 
     // ─── 멤버 행동 분석 ───
-
-    // 1. 탐험가 vs 단골러 (새 식당 vs 재방문 비율)
-    const memberBehaviors = Array.from(memberMap.entries()).map(([uid, data]) => {
-      // 이 멤버가 방문한 식당별 횟수
-      const restVisitMap = new Map<string, number>();
-      for (const rest of room.restaurants) {
-        for (const visit of rest.visits) {
-          const isParticipant = visit.createdById === uid || visit.participants.some((p) => p.userId === uid);
-          if (isParticipant) {
-            restVisitMap.set(rest.id, (restVisitMap.get(rest.id) || 0) + 1);
-          }
-        }
-      }
-      const totalRests = restVisitMap.size;
-      const revisitedRests = Array.from(restVisitMap.values()).filter((c) => c >= 2).length;
-      const explorerRate = totalRests > 0 ? Math.round((totalRests - revisitedRests) / totalRests * 100) : null;
-
-      // 2. 카테고리 편식도
-      const catCounts = new Map<string, number>();
-      for (const rest of room.restaurants) {
-        for (const visit of rest.visits) {
-          const isParticipant = visit.createdById === uid || visit.participants.some((p) => p.userId === uid);
-          if (isParticipant) {
-            catCounts.set(rest.category, (catCounts.get(rest.category) || 0) + 1);
-          }
-        }
-      }
-      const totalCatVisits = Array.from(catCounts.values()).reduce((s, c) => s + c, 0);
-      const topCat = Array.from(catCounts.entries()).sort((a, b) => b[1] - a[1])[0];
-      const topCatRate = topCat && totalCatVisits > 0 ? Math.round(topCat[1] / totalCatVisits * 100) : null;
-      const categoryBias = topCat ? { category: topCat[0], rate: topCatRate, uniqueCategories: catCounts.size } : null;
-
-      // 3. 평가 성향 (세부평점 중 가장 후한/엄격한 항목)
-      const detailAvgs: { field: string; label: string; avg: number }[] = [];
-      const fieldLabels: Record<string, string> = {
-        tasteRating: '맛', valueRating: '가성비', serviceRating: '서비스',
-        cleanlinessRating: '청결', accessibilityRating: '접근성',
-      };
-      for (const [field, label] of Object.entries(fieldLabels)) {
-        const vals = data.reviews.map((r) => r[field as keyof typeof r]).filter((v): v is number => v !== null && typeof v === 'number');
-        if (vals.length > 0) {
-          detailAvgs.push({ field, label, avg: Math.round(vals.reduce((s, v) => s + v, 0) / vals.length * 10) / 10 });
-        }
-      }
-      const generous = detailAvgs.length > 0 ? detailAvgs.reduce((a, b) => a.avg > b.avg ? a : b) : null;
-      const strict = detailAvgs.length > 0 ? detailAvgs.reduce((a, b) => a.avg < b.avg ? a : b) : null;
-      const ratingTendency = generous && strict && generous.field !== strict.field
-        ? { generousOn: generous.label, generousAvg: generous.avg, strictOn: strict.label, strictAvg: strict.avg }
-        : null;
-
-      // 4. 리뷰 성실도
-      let memberVisitCount = 0;
-      for (const rest of room.restaurants) {
-        for (const visit of rest.visits) {
-          const isParticipant = visit.createdById === uid || visit.participants.some((p) => p.userId === uid);
-          if (isParticipant) memberVisitCount++;
-        }
-      }
-      const reviewDiligence = memberVisitCount > 0
-        ? Math.round(data.reviews.length / memberVisitCount * 100)
-        : null;
-
-      // 5. 주말파 vs 평일파
-      let weekdayCount = 0;
-      let weekendCount = 0;
-      for (const rest of room.restaurants) {
-        for (const visit of rest.visits) {
-          const isParticipant = visit.createdById === uid || visit.participants.some((p) => p.userId === uid);
-          if (isParticipant) {
-            const day = new Date(visit.visitedAt).getDay();
-            if (day === 0 || day === 6) weekendCount++;
-            else weekdayCount++;
-          }
-        }
-      }
-      const dayPreference = (weekdayCount + weekendCount) > 0
-        ? { weekday: weekdayCount, weekend: weekendCount, type: weekendCount > weekdayCount ? 'weekend' as const : weekdayCount > weekendCount ? 'weekday' as const : 'balanced' as const }
-        : null;
-
-      return {
-        userId: uid,
-        nickname: data.nickname,
-        explorerRate,
-        categoryBias,
-        ratingTendency,
-        reviewDiligence,
-        dayPreference,
-      };
-    });
-
-    // 6. 베스트 콤비 (같은 방문에 참여한 멤버 조합)
-    const comboCounts = new Map<string, { userA: string; nickA: string; userB: string; nickB: string; count: number }>();
-    for (const visit of allVisits) {
-      const participantIds = [
-        ...(visit.createdById ? [visit.createdById] : []),
-        ...visit.participants.map((p) => p.userId),
-      ].filter((id, idx, arr) => arr.indexOf(id) === idx);
-
-      for (let i = 0; i < participantIds.length; i++) {
-        for (let j = i + 1; j < participantIds.length; j++) {
-          const [a, b] = [participantIds[i], participantIds[j]].sort();
-          const key = `${a}:${b}`;
-          const existing = comboCounts.get(key);
-          if (existing) {
-            existing.count++;
-          } else {
-            const nickA = memberMap.get(a)?.nickname || '알 수 없음';
-            const nickB = memberMap.get(b)?.nickname || '알 수 없음';
-            comboCounts.set(key, { userA: a, nickA, userB: b, nickB, count: 1 });
-          }
-        }
-      }
-    }
-    const bestCombos = Array.from(comboCounts.values())
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 3);
+    const { memberBehaviors, bestCombos } = this.analyzeMemberBehaviors(room.restaurants, allVisits, memberMap);
 
     // ─── 방 행동 분석 ───
-
-    // 7. 방 활성도 트렌드 (최근 3개월 vs 이전 3개월)
-    const now = new Date();
-    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
-    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
-    const recentVisits = allVisits.filter((v) => new Date(v.visitedAt) >= threeMonthsAgo).length;
-    const prevVisits = allVisits.filter((v) => {
-      const d = new Date(v.visitedAt);
-      return d >= sixMonthsAgo && d < threeMonthsAgo;
-    }).length;
-    const activityTrend = prevVisits > 0
-      ? { recent: recentVisits, previous: prevVisits, changeRate: Math.round((recentVisits - prevVisits) / prevVisits * 100) }
-      : { recent: recentVisits, previous: prevVisits, changeRate: null };
-
-    // 8. 평점 인플레이션 (전반기 vs 후반기)
-    const sortedVisits = [...allVisits].sort((a, b) => new Date(a.visitedAt).getTime() - new Date(b.visitedAt).getTime());
-    const mid = Math.floor(sortedVisits.length / 2);
-    let ratingInflation: { earlyAvg: number; lateAvg: number; change: number } | null = null;
-    if (sortedVisits.length >= 4) {
-      const earlyReviews = sortedVisits.slice(0, mid).flatMap((v) => v.reviews);
-      const lateReviews = sortedVisits.slice(mid).flatMap((v) => v.reviews);
-      if (earlyReviews.length > 0 && lateReviews.length > 0) {
-        const earlyAvg = Math.round(earlyReviews.reduce((s, r) => s + r.rating, 0) / earlyReviews.length * 10) / 10;
-        const lateAvg = Math.round(lateReviews.reduce((s, r) => s + r.rating, 0) / lateReviews.length * 10) / 10;
-        ratingInflation = { earlyAvg, lateAvg, change: Math.round((lateAvg - earlyAvg) * 10) / 10 };
-      }
-    }
-
-    // 9. 최장 미방문 식당
-    const staleRestaurants = room.restaurants
-      .filter((r) => r.visits.length > 0)
-      .map((r) => {
-        const lastVisit = r.visits.reduce((latest, v) =>
-          new Date(v.visitedAt) > new Date(latest.visitedAt) ? v : latest, r.visits[0]);
-        const daysSince = Math.floor((now.getTime() - new Date(lastVisit.visitedAt).getTime()) / (1000 * 60 * 60 * 24));
-        return { name: r.name, lastVisitedAt: lastVisit.visitedAt, daysSince };
-      })
-      .filter((r) => r.daysSince >= 14)
-      .sort((a, b) => b.daysSince - a.daysSince)
-      .slice(0, 5);
-
-    // 10. 카테고리 다양성 지수 (Simpson's Diversity Index)
-    const totalCatCount = Array.from(catMap.values()).reduce((s, d) => s + d.count, 0);
-    let diversityIndex: number | null = null;
-    if (totalCatCount > 1 && catMap.size > 1) {
-      const simpson = Array.from(catMap.values())
-        .reduce((s, d) => s + (d.count / totalCatCount) ** 2, 0);
-      diversityIndex = Math.round((1 - simpson) * 100);
-    }
-
-    // 11. 웨이팅 감수 지수
-    const visitsWithWait = allVisits.filter((v) => v.waitTime && v.waitTime !== '없음' && v.waitTime !== '0분').length;
-    const waitTolerance = allVisits.length > 0
-      ? Math.round(visitsWithWait / allVisits.length * 100)
-      : null;
-
-    // 12. 시간대별 패턴 (가장 활발한 월)
-    const peakMonth = monthlyVisits.length > 0
-      ? monthlyVisits.reduce((a, b) => a.count > b.count ? a : b)
-      : null;
+    const { activityTrend, ratingInflation, staleRestaurants, diversityIndex, waitTolerance, peakMonth } =
+      this.analyzeRoomBehaviors(room.restaurants, allVisits, catMap, monthlyVisits);
 
     return {
       summary: { totalRestaurants, totalVisits, totalReviews, overallAvg },
@@ -1159,6 +980,162 @@ export class RoomsService {
       waitTolerance,
       peakMonth,
     };
+  }
+
+  // ─── 통계 헬퍼 ───
+
+  private analyzeMemberBehaviors(
+    restaurants: { id: string; category: string; visits: { visitedAt: Date; createdById: string | null; participants: { userId: string }[]; reviews: { rating: number; userId: string; tasteRating: number | null; valueRating: number | null; serviceRating: number | null; cleanlinessRating: number | null; accessibilityRating: number | null }[] }[] }[],
+    allVisits: { createdById: string | null; participants: { userId: string }[] }[],
+    memberMap: Map<string, { nickname: string; reviews: { rating: number; tasteRating: number | null; valueRating: number | null; serviceRating: number | null; cleanlinessRating: number | null; accessibilityRating: number | null }[] }>,
+  ) {
+    const memberBehaviors = Array.from(memberMap.entries()).map(([uid, data]) => {
+      // 식당별 방문 횟수 + 카테고리 + 요일 — 한 번의 루프로 집계
+      const restVisitMap = new Map<string, number>();
+      const catCounts = new Map<string, number>();
+      let memberVisitCount = 0;
+      let weekdayCount = 0;
+      let weekendCount = 0;
+
+      for (const rest of restaurants) {
+        for (const visit of rest.visits) {
+          const isParticipant = visit.createdById === uid || visit.participants.some((p) => p.userId === uid);
+          if (!isParticipant) continue;
+          memberVisitCount++;
+          restVisitMap.set(rest.id, (restVisitMap.get(rest.id) || 0) + 1);
+          catCounts.set(rest.category, (catCounts.get(rest.category) || 0) + 1);
+          const day = new Date(visit.visitedAt).getDay();
+          if (day === 0 || day === 6) weekendCount++;
+          else weekdayCount++;
+        }
+      }
+
+      // 탐험가 vs 단골러
+      const totalRests = restVisitMap.size;
+      const revisitedRests = Array.from(restVisitMap.values()).filter((c) => c >= 2).length;
+      const explorerRate = totalRests > 0 ? Math.round((totalRests - revisitedRests) / totalRests * 100) : null;
+
+      // 카테고리 편식도
+      const totalCatVisits = Array.from(catCounts.values()).reduce((s, c) => s + c, 0);
+      const topCat = Array.from(catCounts.entries()).sort((a, b) => b[1] - a[1])[0];
+      const topCatRate = topCat && totalCatVisits > 0 ? Math.round(topCat[1] / totalCatVisits * 100) : null;
+      const categoryBias = topCat ? { category: topCat[0], rate: topCatRate, uniqueCategories: catCounts.size } : null;
+
+      // 평가 성향
+      const detailAvgs: { field: string; label: string; avg: number }[] = [];
+      const fieldLabels: Record<string, string> = {
+        tasteRating: '맛', valueRating: '가성비', serviceRating: '서비스',
+        cleanlinessRating: '청결', accessibilityRating: '접근성',
+      };
+      for (const [field, label] of Object.entries(fieldLabels)) {
+        const vals = data.reviews.map((r) => r[field as keyof typeof r]).filter((v): v is number => v !== null && typeof v === 'number');
+        if (vals.length > 0) detailAvgs.push({ field, label, avg: calcAvgRating(vals)! });
+      }
+      const generous = detailAvgs.length > 0 ? detailAvgs.reduce((a, b) => a.avg > b.avg ? a : b) : null;
+      const strict = detailAvgs.length > 0 ? detailAvgs.reduce((a, b) => a.avg < b.avg ? a : b) : null;
+      const ratingTendency = generous && strict && generous.field !== strict.field
+        ? { generousOn: generous.label, generousAvg: generous.avg, strictOn: strict.label, strictAvg: strict.avg }
+        : null;
+
+      // 리뷰 성실도
+      const reviewDiligence = memberVisitCount > 0 ? Math.round(data.reviews.length / memberVisitCount * 100) : null;
+
+      // 주말파 vs 평일파
+      const dayPreference = (weekdayCount + weekendCount) > 0
+        ? { weekday: weekdayCount, weekend: weekendCount, type: weekendCount > weekdayCount ? 'weekend' as const : weekdayCount > weekendCount ? 'weekday' as const : 'balanced' as const }
+        : null;
+
+      return { userId: uid, nickname: data.nickname, explorerRate, categoryBias, ratingTendency, reviewDiligence, dayPreference };
+    });
+
+    // 베스트 콤비
+    const comboCounts = new Map<string, { userA: string; nickA: string; userB: string; nickB: string; count: number }>();
+    for (const visit of allVisits) {
+      const participantIds = [
+        ...(visit.createdById ? [visit.createdById] : []),
+        ...visit.participants.map((p) => p.userId),
+      ].filter((id, idx, arr) => arr.indexOf(id) === idx);
+
+      for (let i = 0; i < participantIds.length; i++) {
+        for (let j = i + 1; j < participantIds.length; j++) {
+          const [a, b] = [participantIds[i], participantIds[j]].sort();
+          const key = `${a}:${b}`;
+          const existing = comboCounts.get(key);
+          if (existing) {
+            existing.count++;
+          } else {
+            const nickA = memberMap.get(a)?.nickname || '알 수 없음';
+            const nickB = memberMap.get(b)?.nickname || '알 수 없음';
+            comboCounts.set(key, { userA: a, nickA, userB: b, nickB, count: 1 });
+          }
+        }
+      }
+    }
+    const bestCombos = Array.from(comboCounts.values()).sort((a, b) => b.count - a.count).slice(0, 3);
+
+    return { memberBehaviors, bestCombos };
+  }
+
+  private analyzeRoomBehaviors(
+    restaurants: { name: string; visits: { visitedAt: Date; waitTime: string | null; reviews: { rating: number }[] }[] }[],
+    allVisits: { visitedAt: Date; waitTime: string | null; reviews: { rating: number }[] }[],
+    catMap: Map<string, { count: number; ratings: number[] }>,
+    monthlyVisits: { month: string; count: number }[],
+  ) {
+    const now = new Date();
+
+    // 활성도 트렌드
+    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+    const recentCount = allVisits.filter((v) => new Date(v.visitedAt) >= threeMonthsAgo).length;
+    const prevCount = allVisits.filter((v) => { const d = new Date(v.visitedAt); return d >= sixMonthsAgo && d < threeMonthsAgo; }).length;
+    const activityTrend = prevCount > 0
+      ? { recent: recentCount, previous: prevCount, changeRate: Math.round((recentCount - prevCount) / prevCount * 100) }
+      : { recent: recentCount, previous: prevCount, changeRate: null };
+
+    // 평점 인플레이션
+    const sortedVisits = [...allVisits].sort((a, b) => new Date(a.visitedAt).getTime() - new Date(b.visitedAt).getTime());
+    const mid = Math.floor(sortedVisits.length / 2);
+    let ratingInflation: { earlyAvg: number; lateAvg: number; change: number } | null = null;
+    if (sortedVisits.length >= 4) {
+      const earlyReviews = sortedVisits.slice(0, mid).flatMap((v) => v.reviews);
+      const lateReviews = sortedVisits.slice(mid).flatMap((v) => v.reviews);
+      if (earlyReviews.length > 0 && lateReviews.length > 0) {
+        const earlyAvg = calcAvgRating(earlyReviews.map((r) => r.rating))!;
+        const lateAvg = calcAvgRating(lateReviews.map((r) => r.rating))!;
+        ratingInflation = { earlyAvg, lateAvg, change: Math.round((lateAvg - earlyAvg) * 10) / 10 };
+      }
+    }
+
+    // 최장 미방문 식당
+    const staleRestaurants = restaurants
+      .filter((r) => r.visits.length > 0)
+      .map((r) => {
+        const lastVisit = r.visits.reduce((latest, v) =>
+          new Date(v.visitedAt) > new Date(latest.visitedAt) ? v : latest, r.visits[0]);
+        const daysSince = Math.floor((now.getTime() - new Date(lastVisit.visitedAt).getTime()) / MS_PER_DAY);
+        return { name: r.name, lastVisitedAt: lastVisit.visitedAt, daysSince };
+      })
+      .filter((r) => r.daysSince >= 14)
+      .sort((a, b) => b.daysSince - a.daysSince)
+      .slice(0, 5);
+
+    // 카테고리 다양성 지수
+    const totalCatCount = Array.from(catMap.values()).reduce((s, d) => s + d.count, 0);
+    let diversityIndex: number | null = null;
+    if (totalCatCount > 1 && catMap.size > 1) {
+      const simpson = Array.from(catMap.values()).reduce((s, d) => s + (d.count / totalCatCount) ** 2, 0);
+      diversityIndex = Math.round((1 - simpson) * 100);
+    }
+
+    // 웨이팅 감수 지수
+    const visitsWithWait = allVisits.filter((v) => v.waitTime && v.waitTime !== '없음' && v.waitTime !== '0분').length;
+    const waitTolerance = allVisits.length > 0 ? Math.round(visitsWithWait / allVisits.length * 100) : null;
+
+    // 가장 활발한 월
+    const peakMonth = monthlyVisits.length > 0 ? monthlyVisits.reduce((a, b) => a.count > b.count ? a : b) : null;
+
+    return { activityTrend, ratingInflation, staleRestaurants, diversityIndex, waitTolerance, peakMonth };
   }
 
   // ─── 위시리스트 ───

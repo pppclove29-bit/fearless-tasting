@@ -10,3 +10,9 @@ export function formatDate(dateStr: string): string {
     day: 'numeric',
   });
 }
+
+/** 평균 평점 계산 (소수점 1자리 반올림). 빈 배열이면 null 반환. */
+export function calcAvgRating(ratings: number[]): number | null {
+  if (ratings.length === 0) return null;
+  return Math.round((ratings.reduce((sum, r) => sum + r, 0) / ratings.length) * 10) / 10;
+}

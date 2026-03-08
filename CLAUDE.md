@@ -59,6 +59,7 @@ apps/api/src/
 | RoomVisitParticipant | 방문 참여자 태그                 | RoomVisit, User                          |
 | RoomReview           | 방문별 리뷰 (세부 평점, 메뉴)    | RoomVisit, User                          |
 | RoomKick             | 방 강퇴 기록 (재입장 차단)       | Room, User                               |
+| RoomWishlist         | 식당 위시리스트 (유저별)         | RoomRestaurant, User                     |
 | Inquiry              | 고객 문의                        | -                                        |
 
 ## 방(Room) 권한 체계
@@ -124,12 +125,16 @@ apps/api/src/
 
 | 경로              | 설명                                                |
 | ----------------- | --------------------------------------------------- |
-| `/`               | 홈 — 랜딩 페이지 (항상 표시) + 로그인 시 내 방 대시보드 |
-| `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 멤버 관리, 공유 링크 관리, 도움말 |
+| `/`               | 홈 — 랜딩 페이지 + 로그인 시 내 방 대시보드         |
+| `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 위시리스트, 멤버 관리, 공유 링크 |
 | `/share?code=xxx` | 공유 열람 — 비로그인, 읽기 전용 (식당/리뷰 열람)    |
+| `/join?code=xxx`  | 초대 링크 자동 입장 (미로그인 시 로그인 후 리다이렉트) |
 | `/login`          | 카카오 로그인                                       |
+| `/discover`       | 맛집 추천 — 고평점/재방문/관심 맛집 공개 랭킹       |
+| `/rankings`       | 유저 랭킹 — 리뷰 수/평균 평점/방문 수 기준          |
+| `/about`          | 서비스 소개 — 기능, 업적, 사용 흐름                 |
 | `/cs`             | 문의 등록                                           |
-| `/rooms`          | 방 목록 (홈과 동일)                                 |
+| `/profile`        | 프로필 — 닉네임 수정, 업적, 활동 통계               |
 | `/admin`          | 관리자 — 문의 관리                                  |
 
 ## 방 인원 제한
@@ -161,7 +166,7 @@ apps/api/src/
 ## SEO
 
 - `@astrojs/sitemap` — 빌드 시 sitemap.xml 자동 생성 (공개 페이지만)
-- `robots.txt` — sitemap 참조, /share Allow, /admin·/login·/room·/rooms Disallow
+- `robots.txt` — sitemap 참조, /share Allow, /admin·/login·/room Disallow
 - Open Graph + Twitter Card 메타 태그 (BaseLayout.astro)
 - JSON-LD 구조화 데이터 (WebSite)
 - `SITE_URL` 환경변수로 sitemap 도메인 설정
