@@ -4,10 +4,7 @@
 -- 1. 기존 리뷰 삭제 (visitId 없이 연결 불가, 신규 서비스로 데이터 소량)
 DELETE FROM `RoomReview`;
 
--- 2. restaurantId FK 제거 (존재하는 경우)
-ALTER TABLE `RoomReview` DROP FOREIGN KEY `RoomReview_restaurantId_fkey`;
-
--- 3. restaurantId 컬럼 제거
+-- 2. restaurantId 컬럼 제거 (TiDB에서 FK가 실제 생성되지 않으므로 DROP FK 생략)
 ALTER TABLE `RoomReview` DROP COLUMN `restaurantId`;
 
 -- 4. 누락된 컬럼 추가
