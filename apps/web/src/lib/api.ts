@@ -543,6 +543,31 @@ export async function createQuickReview(
   return res.json();
 }
 
+// ─── 통계 ───
+
+export interface RoomStats {
+  summary: { totalRestaurants: number; totalVisits: number; totalReviews: number; overallAvg: number | null };
+  memberStats: { userId: string; nickname: string; reviewCount: number; visitCount: number; avgRating: number | null; revisitRate: number | null }[];
+  categoryStats: { category: string; count: number; avgRating: number | null }[];
+  regionStats: { region: string; count: number; avgRating: number | null }[];
+  detailRatingAvg: Record<string, number | null>;
+  monthlyVisits: { month: string; count: number }[];
+  dayOfWeekVisits: number[];
+  waitTimeStats: { waitTime: string; count: number }[];
+  topFavoriteMenus: { menu: string; count: number }[];
+  topTryNextMenus: { menu: string; count: number }[];
+  topRevisitRestaurants: { name: string; rate: number; reviewCount: number }[];
+  topRatedRestaurants: { name: string; avgRating: number | null; reviewCount: number }[];
+  bottomRatedRestaurants: { name: string; avgRating: number | null; reviewCount: number }[];
+  unreviewedVisits: { visitId: string; restaurantName: string; visitedAt: string }[];
+}
+
+export async function fetchRoomStats(roomId: string): Promise<RoomStats> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/stats`);
+  if (!res.ok) throw new Error('통계 조회에 실패했습니다.');
+  return res.json();
+}
+
 // ─── 공유 링크 ───
 
 /** 공유 코드로 방 조회 (비로그인) */

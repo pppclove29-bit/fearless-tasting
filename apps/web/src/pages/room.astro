@@ -1020,8 +1020,39 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: #888;
   }
 
+  .stat-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .stat-table th, .stat-table td { padding: 0.45rem 0.5rem; text-align: left; border-bottom: 1px solid #f0f0f0; }
+  .stat-table th { color: #888; font-weight: 500; font-size: 0.75rem; }
+  .stat-table td { color: #333; }
+  .stat-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .stat-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+  .stat-badge-gold { background: #fef3c7; color: #92400e; }
+  .stat-badge-silver { background: #f3f4f6; color: #4b5563; }
+  .stat-badge-red { background: #fef2f2; color: #dc2626; }
+
+  .radar-chart { display: flex; justify-content: center; margin: 0.5rem 0; }
+  .radar-chart svg { max-width: 240px; }
+
+  .day-bars { display: flex; align-items: flex-end; gap: 0.25rem; height: 80px; margin: 0.5rem 0; }
+  .day-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+  .day-bar { width: 100%; border-radius: 3px 3px 0 0; background: #111; min-height: 2px; transition: height 0.3s; }
+  .day-bar-label { font-size: 0.65rem; color: #888; }
+  .day-bar-count { font-size: 0.6rem; color: #555; font-weight: 600; }
+
+  .month-chart { display: flex; align-items: flex-end; gap: 2px; height: 80px; margin: 0.5rem 0; overflow-x: auto; }
+  .month-bar-col { min-width: 28px; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+  .month-bar { width: 100%; border-radius: 3px 3px 0 0; background: #111; min-height: 2px; }
+  .month-bar-label { font-size: 0.55rem; color: #888; white-space: nowrap; }
+
+  .menu-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
+  .menu-tag { padding: 0.25rem 0.65rem; border-radius: 14px; font-size: 0.75rem; background: #f5f5f5; color: #333; border: 1px solid #e8e8e8; }
+  .menu-tag-count { color: #999; font-size: 0.65rem; margin-left: 0.2rem; }
+
+  .unreviewed-item { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid #f5f5f5; font-size: 0.82rem; }
+  .unreviewed-item:last-child { border-bottom: none; }
+
   @media (max-width: 500px) {
-    .stats-grid { grid-template-columns: 1fr 1fr 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
   }
 
   .empty-text {
@@ -1255,9 +1286,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     createRoomReview, updateRoomReview, deleteRoomReview,
     createQuickReview,
     toggleShareCode, updateRoom, regenerateInviteCode,
+    fetchRoomStats,
     showToast, showConfirm, showDangerConfirm,
   } from '@/lib/api';
-  import type { AuthUser, RoomDetailResponse, ReviewData } from '@/lib/api';
+  import type { AuthUser, RoomDetailResponse, ReviewData, RoomStats } from '@/lib/api';
   import type { RoomReviewWithUser, RoomVisitWithDetails } from '@repo/types';
   import { getCities, getNeighborhoods } from '@/data/areas';
   import { formatRating, formatDate } from '@repo/utils';
@@ -1632,7 +1664,74 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   // ─── 통계 탭 ───
 
-  function renderStatsTab() {
+  function renderBarChart(entries: [string, number][]): string {
+    if (entries.length === 0) return '';
+    const max = Math.max(...entries.map(([, c]) => c));
+    return entries.map(([label, count]) => {
+      const pct = Math.round((count / max) * 100);
+      return `<div class="stat-bar-row">
+        <span class="stat-bar-label">${escapeHtml(label)}</span>
+        <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
+        <span class="stat-bar-count">${count}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderRadarChart(values: Record<string, number | null>): string {
+    const labels: Record<string, string> = {
+      tasteRating: '맛', valueRating: '가성비', serviceRating: '서비스',
+      cleanlinessRating: '청결', accessibilityRating: '접근성',
+    };
+    const keys = Object.keys(labels);
+    const vals = keys.map((k) => values[k] ?? 0);
+    if (vals.every((v) => v === 0)) return '<p style="text-align:center;color:#999;font-size:0.82rem;">세부 평점 데이터가 아직 없습니다.</p>';
+
+    const cx = 120, cy = 120, r = 90;
+    const n = keys.length;
+    const angleStep = (2 * Math.PI) / n;
+    const offset = -Math.PI / 2;
+
+    // 그리드 원
+    const gridCircles = [1, 2, 3, 4, 5].map((lv) => {
+      const gr = (lv / 5) * r;
+      return `<circle cx="${cx}" cy="${cy}" r="${gr}" fill="none" stroke="#e8e8e8" stroke-width="0.5"/>`;
+    }).join('');
+
+    // 축선 + 라벨
+    const axes = keys.map((k, i) => {
+      const angle = offset + i * angleStep;
+      const x2 = cx + r * Math.cos(angle);
+      const y2 = cy + r * Math.sin(angle);
+      const lx = cx + (r + 16) * Math.cos(angle);
+      const ly = cy + (r + 16) * Math.sin(angle);
+      return `<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#e8e8e8" stroke-width="0.5"/>
+        <text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#666">${labels[k]}</text>`;
+    }).join('');
+
+    // 데이터 폴리곤
+    const points = vals.map((v, i) => {
+      const angle = offset + i * angleStep;
+      const dr = (v / 5) * r;
+      return `${cx + dr * Math.cos(angle)},${cy + dr * Math.sin(angle)}`;
+    }).join(' ');
+
+    // 점
+    const dots = vals.map((v, i) => {
+      const angle = offset + i * angleStep;
+      const dr = (v / 5) * r;
+      return `<circle cx="${cx + dr * Math.cos(angle)}" cy="${cy + dr * Math.sin(angle)}" r="3" fill="#111"/>`;
+    }).join('');
+
+    return `<div class="radar-chart">
+      <svg viewBox="0 0 240 240" width="240" height="240">
+        ${gridCircles}${axes}
+        <polygon points="${points}" fill="rgba(17,17,17,0.1)" stroke="#111" stroke-width="1.5"/>
+        ${dots}
+      </svg>
+    </div>`;
+  }
+
+  async function renderStatsTab() {
     const panel = document.getElementById('tab-stats')!;
     const restaurants = currentRoom.restaurants;
 
@@ -1641,109 +1740,203 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return;
     }
 
-    // 카테고리별 분포
-    const categoryMap: Record<string, number> = {};
-    for (const r of restaurants) {
-      categoryMap[r.category] = (categoryMap[r.category] || 0) + 1;
+    panel.innerHTML = '<p class="empty-text">통계를 불러오는 중...</p>';
+
+    let stats: RoomStats;
+    try {
+      stats = await fetchRoomStats(currentRoom.id);
+    } catch {
+      panel.innerHTML = '<p class="empty-text">통계를 불러올 수 없습니다.</p>';
+      return;
     }
-    const categoryEntries = Object.entries(categoryMap).sort((a, b) => b[1] - a[1]);
-    const maxCount = categoryEntries[0][1];
 
-    const categoryHtml = categoryEntries
-      .map(([cat, count]) => {
-        const pct = Math.round((count / maxCount) * 100);
-        return `<div class="stat-bar-row">
-          <span class="stat-bar-label">${escapeHtml(cat)}</span>
-          <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
-          <span class="stat-bar-count">${count}개</span>
-        </div>`;
-      })
-      .join('');
+    const { summary, memberStats, categoryStats, regionStats, detailRatingAvg,
+            monthlyVisits, dayOfWeekVisits, waitTimeStats,
+            topFavoriteMenus, topTryNextMenus, topRevisitRestaurants,
+            topRatedRestaurants, bottomRatedRestaurants, unreviewedVisits } = stats;
 
-    // 총 방문/리뷰 수
-    const totalVisits = restaurants.reduce((sum, r) => sum + r._count.visits, 0);
-    const totalReviews = restaurants.reduce((sum, r) => sum + r._count.reviews, 0);
+    // ── 기본 요약 ──
+    const summaryHtml = `
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value">${summary.totalRestaurants}</div><div class="stat-label">식당</div></div>
+        <div class="stat-card"><div class="stat-value">${summary.totalVisits}</div><div class="stat-label">방문</div></div>
+        <div class="stat-card"><div class="stat-value">${summary.totalReviews}</div><div class="stat-label">리뷰</div></div>
+        <div class="stat-card"><div class="stat-value">${summary.overallAvg ?? '-'}</div><div class="stat-label">평균 평점</div></div>
+      </div>`;
 
-    // 평균 평점
-    const ratedRestaurants = restaurants.filter((r) => r.avgRating !== null);
-    const overallAvg = ratedRestaurants.length > 0
-      ? Math.round(ratedRestaurants.reduce((sum, r) => sum + r.avgRating!, 0) / ratedRestaurants.length * 10) / 10
-      : null;
-
-    // 가장 리뷰 많은 식당
-    const topReviewed = [...restaurants].sort((a, b) => b._count.reviews - a._count.reviews)[0];
-
-    // 가장 높은 평점 식당
-    const topRated = ratedRestaurants.length > 0
-      ? [...ratedRestaurants].sort((a, b) => b.avgRating! - a.avgRating!)[0]
-      : null;
-
-    // 가장 많이 방문한 식당
-    const topVisited = [...restaurants].sort((a, b) => b._count.visits - a._count.visits)[0];
-
-    // 랜덤 추천
-    const randomPickHtml = `
+    // ── 랜덤 추천 ──
+    const randomHtml = `
       <div class="stat-card random-pick-card">
         <h3>오늘 뭐 먹지?</h3>
         <div id="random-result" class="random-result"></div>
         <button type="button" class="btn-primary-sm" id="random-pick-btn">랜덤 추천</button>
-      </div>
-    `;
+      </div>`;
 
-    panel.innerHTML = `
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value">${restaurants.length}</div>
-          <div class="stat-label">등록된 식당</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${totalVisits}</div>
-          <div class="stat-label">총 방문</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${totalReviews}</div>
-          <div class="stat-label">총 리뷰</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${overallAvg ?? '-'}</div>
-          <div class="stat-label">평균 평점</div>
-        </div>
-      </div>
+    // ── 멤버 분석 ──
+    const bestReviewer = memberStats.find((m) => m.reviewCount > 0);
+    const mostGenerous = [...memberStats].filter((m) => m.avgRating !== null).sort((a, b) => b.avgRating! - a.avgRating!)[0];
+    const strictest = [...memberStats].filter((m) => m.avgRating !== null).sort((a, b) => a.avgRating! - b.avgRating!)[0];
 
-      ${topVisited && topVisited._count.visits > 0 ? `
-        <div class="stat-section">
-          <h3 class="stat-section-title">가장 많이 방문한 식당</h3>
-          <div class="stat-highlight">${escapeHtml(topVisited.name)} <span class="stat-highlight-sub">(${topVisited._count.visits}회 방문)</span></div>
-        </div>
-      ` : ''}
+    const memberHtml = memberStats.length > 0 ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">멤버 활동</h3>
+        ${bestReviewer ? `<div style="margin-bottom:0.5rem;font-size:0.82rem;">
+          ${mostGenerous && mostGenerous.avgRating !== null ? `<span class="stat-badge stat-badge-gold">가장 후한 평가</span> ${escapeHtml(mostGenerous.nickname)} (평균 ${mostGenerous.avgRating})&nbsp;&nbsp;` : ''}
+          ${strictest && strictest.avgRating !== null && strictest.userId !== mostGenerous?.userId ? `<span class="stat-badge stat-badge-silver">가장 엄격한 평가</span> ${escapeHtml(strictest.nickname)} (평균 ${strictest.avgRating})` : ''}
+        </div>` : ''}
+        <table class="stat-table">
+          <thead><tr><th>멤버</th><th class="num">방문</th><th class="num">리뷰</th><th class="num">평균</th><th class="num">재방문율</th></tr></thead>
+          <tbody>${memberStats.map((m) => `
+            <tr>
+              <td>${escapeHtml(m.nickname)}</td>
+              <td class="num">${m.visitCount}</td>
+              <td class="num">${m.reviewCount}</td>
+              <td class="num">${m.avgRating ?? '-'}</td>
+              <td class="num">${m.revisitRate !== null ? m.revisitRate + '%' : '-'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : '';
 
-      ${topRated ? `
-        <div class="stat-section">
-          <h3 class="stat-section-title">가장 높은 평점</h3>
-          <div class="stat-highlight">${escapeHtml(topRated.name)} <span class="stat-highlight-sub">(${renderStars(Math.round(topRated.avgRating!))} ${topRated.avgRating})</span></div>
-        </div>
-      ` : ''}
+    // ── 식당 TOP / BOTTOM ──
+    const topRatedHtml = topRatedRestaurants.length > 0 ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">평점 TOP 식당</h3>
+        ${topRatedRestaurants.map((r, i) => `
+          <div class="stat-bar-row">
+            <span class="stat-bar-label" style="min-width:20px;font-weight:600;">${i + 1}</span>
+            <span style="flex:1;font-size:0.82rem;">${escapeHtml(r.name)}</span>
+            <span style="font-size:0.82rem;font-weight:600;">${renderStars(Math.round(r.avgRating!))} ${r.avgRating}</span>
+          </div>`).join('')}
+      </div>` : '';
 
-      ${topReviewed && topReviewed._count.reviews > 0 ? `
-        <div class="stat-section">
-          <h3 class="stat-section-title">리뷰가 가장 많은 식당</h3>
-          <div class="stat-highlight">${escapeHtml(topReviewed.name)} <span class="stat-highlight-sub">(리뷰 ${topReviewed._count.reviews}개)</span></div>
-        </div>
-      ` : ''}
+    const bottomRatedHtml = bottomRatedRestaurants.length > 0 && topRatedRestaurants.length > 1 ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">아쉬운 평점 식당</h3>
+        ${bottomRatedRestaurants.filter((r) => !topRatedRestaurants.some((t) => t.name === r.name)).slice(0, 3).map((r) => `
+          <div class="stat-bar-row">
+            <span style="flex:1;font-size:0.82rem;">${escapeHtml(r.name)}</span>
+            <span style="font-size:0.82rem;color:#888;">${r.avgRating} (${r.reviewCount}개 리뷰)</span>
+          </div>`).join('')}
+      </div>` : '';
 
+    // ── 재방문율 TOP ──
+    const revisitHtml = topRevisitRestaurants.length > 0 ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">재방문 의사 TOP</h3>
+        ${topRevisitRestaurants.map((r) => `
+          <div class="stat-bar-row">
+            <span style="flex:1;font-size:0.82rem;">${escapeHtml(r.name)}</span>
+            <span style="font-size:0.82rem;font-weight:600;color:${r.rate >= 80 ? '#16a34a' : r.rate >= 50 ? '#d97706' : '#dc2626'}">${r.rate}%</span>
+            <span style="font-size:0.72rem;color:#999;">(${r.reviewCount}명)</span>
+          </div>`).join('')}
+      </div>` : '';
+
+    // ── 카테고리 분포 ──
+    const catHtml = categoryStats.length > 0 ? `
       <div class="stat-section">
         <h3 class="stat-section-title">카테고리 분포</h3>
-        ${categoryHtml}
-      </div>
+        ${renderBarChart(categoryStats.map((c) => [c.category + (c.avgRating !== null ? ` (${c.avgRating})` : ''), c.count]))}
+      </div>` : '';
 
-      ${randomPickHtml}
+    // ── 지역 분포 ──
+    const regionHtml = regionStats.length > 1 ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">동네별 분포</h3>
+        ${renderBarChart(regionStats.slice(0, 10).map((r) => [r.region + (r.avgRating !== null ? ` (${r.avgRating})` : ''), r.count]))}
+      </div>` : '';
+
+    // ── 세부 평점 레이더 ──
+    const radarHtml = `
+      <div class="stat-section">
+        <h3 class="stat-section-title">세부 평점 분석</h3>
+        ${renderRadarChart(detailRatingAvg)}
+      </div>`;
+
+    // ── 요일별 방문 ──
+    const dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+    const maxDay = Math.max(...dayOfWeekVisits, 1);
+    const dayHtml = dayOfWeekVisits.some((c) => c > 0) ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">요일별 방문</h3>
+        <div class="day-bars">
+          ${dayOfWeekVisits.map((count, i) => `
+            <div class="day-bar-col">
+              <div class="day-bar-count">${count || ''}</div>
+              <div class="day-bar" style="height:${Math.max(count / maxDay * 60, 2)}px;${i === 0 || i === 6 ? 'background:#dc2626;opacity:0.7;' : ''}"></div>
+              <div class="day-bar-label">${dayLabels[i]}</div>
+            </div>`).join('')}
+        </div>
+      </div>` : '';
+
+    // ── 월별 트렌드 ──
+    const maxMonth = Math.max(...monthlyVisits.map((m) => m.count), 1);
+    const monthHtml = monthlyVisits.length > 1 ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">월별 방문 트렌드</h3>
+        <div class="month-chart">
+          ${monthlyVisits.map((m) => `
+            <div class="month-bar-col">
+              <div style="font-size:0.6rem;color:#555;">${m.count}</div>
+              <div class="month-bar" style="height:${Math.max(m.count / maxMonth * 60, 2)}px"></div>
+              <div class="month-bar-label">${m.month.slice(2)}</div>
+            </div>`).join('')}
+        </div>
+      </div>` : '';
+
+    // ── 웨이팅 분포 ──
+    const waitHtml = waitTimeStats.length > 0 ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">웨이팅 분포</h3>
+        ${renderBarChart(waitTimeStats.map((w) => [w.waitTime, w.count]))}
+      </div>` : '';
+
+    // ── 인기 메뉴 ──
+    const menuHtml = (topFavoriteMenus.length > 0 || topTryNextMenus.length > 0) ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">인기 메뉴</h3>
+        ${topFavoriteMenus.length > 0 ? `
+          <div style="font-size:0.78rem;color:#888;margin-bottom:0.3rem;">또 먹고 싶은 메뉴</div>
+          <div class="menu-tags">${topFavoriteMenus.map((m) => `<span class="menu-tag">${escapeHtml(m.menu)}<span class="menu-tag-count">×${m.count}</span></span>`).join('')}</div>
+        ` : ''}
+        ${topTryNextMenus.length > 0 ? `
+          <div style="font-size:0.78rem;color:#888;margin:0.6rem 0 0.3rem;">다음에 시켜볼 메뉴</div>
+          <div class="menu-tags">${topTryNextMenus.map((m) => `<span class="menu-tag">${escapeHtml(m.menu)}<span class="menu-tag-count">×${m.count}</span></span>`).join('')}</div>
+        ` : ''}
+      </div>` : '';
+
+    // ── 리뷰 안 쓴 방문 ──
+    const unreviewedHtml = unreviewedVisits.length > 0 ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title"><span class="stat-badge stat-badge-red">${unreviewedVisits.length}</span> 아직 리뷰를 안 쓴 방문</h3>
+        ${unreviewedVisits.map((v) => `
+          <div class="unreviewed-item">
+            <span>${escapeHtml(v.restaurantName)}</span>
+            <span style="color:#999;font-size:0.75rem;">${formatDate(v.visitedAt)}</span>
+          </div>`).join('')}
+      </div>` : '';
+
+    panel.innerHTML = `
+      ${summaryHtml}
+      ${randomHtml}
+      ${unreviewedHtml}
+      ${memberHtml}
+      ${topRatedHtml}
+      ${bottomRatedHtml}
+      ${revisitHtml}
+      ${radarHtml}
+      ${catHtml}
+      ${regionHtml}
+      ${dayHtml}
+      ${monthHtml}
+      ${waitHtml}
+      ${menuHtml}
     `;
 
     // 랜덤 추천 핸들러
     document.getElementById('random-pick-btn')!.addEventListener('click', () => {
       const result = document.getElementById('random-result')!;
       const pick = restaurants[Math.floor(Math.random() * restaurants.length)];
-
       result.innerHTML = `
         <div class="random-picked">
           <div class="random-picked-name">${escapeHtml(pick.name)}</div>

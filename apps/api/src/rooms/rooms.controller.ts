@@ -79,6 +79,15 @@ export class RoomsController {
     return this.roomsService.findSharedRestaurantDetail(shareCode, rid);
   }
 
+  /** 방 통계 */
+  @Get(':id/stats')
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '방 통계 조회' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  getRoomStats(@Param('id') id: string, @CurrentUser() user: { id: string }) {
+    return this.roomsService.getRoomStats(id, user.id);
+  }
+
   /** 방 상세 */
   @Get(':id')
   @UseGuards(RoomMemberGuard)

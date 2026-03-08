@@ -708,4 +708,245 @@ export class RoomsService {
       return { visit, review };
     });
   }
+
+  // ─── 통계 ───
+
+  /** 방 전체 통계 조회 */
+  async getRoomStats(roomId: string, userId: string) {
+    const room = await this.prisma.read.room.findUnique({
+      where: { id: roomId },
+      include: {
+        members: {
+          include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+        },
+        restaurants: {
+          select: {
+            id: true, name: true, category: true, province: true, city: true, neighborhood: true,
+            visits: {
+              select: {
+                id: true, visitedAt: true, waitTime: true, createdById: true,
+                participants: { select: { userId: true } },
+                reviews: {
+                  select: {
+                    id: true, rating: true, wouldRevisit: true, userId: true,
+                    tasteRating: true, valueRating: true, serviceRating: true,
+                    cleanlinessRating: true, accessibilityRating: true,
+                    favoriteMenu: true, tryNextMenu: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
+
+    const allVisits = room.restaurants.flatMap((r) => r.visits.map((v) => ({ ...v, restaurantName: r.name, restaurantId: r.id })));
+    const allReviews = allVisits.flatMap((v) => v.reviews);
+
+    // ─── 기본 요약 ───
+    const totalRestaurants = room.restaurants.length;
+    const totalVisits = allVisits.length;
+    const totalReviews = allReviews.length;
+    const overallAvg = allReviews.length > 0
+      ? Math.round(allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length * 10) / 10
+      : null;
+
+    // ─── 멤버별 통계 ───
+    const memberMap = new Map<string, { nickname: string; reviews: typeof allReviews; visitCount: number }>();
+    for (const m of room.members) {
+      memberMap.set(m.userId, { nickname: m.user.nickname, reviews: [], visitCount: 0 });
+    }
+    for (const review of allReviews) {
+      const entry = memberMap.get(review.userId);
+      if (entry) entry.reviews.push(review);
+    }
+    for (const visit of allVisits) {
+      // 생성자
+      if (visit.createdById) {
+        const entry = memberMap.get(visit.createdById);
+        if (entry) entry.visitCount++;
+      }
+      // 참여자
+      for (const p of visit.participants) {
+        const entry = memberMap.get(p.userId);
+        if (entry && p.userId !== visit.createdById) entry.visitCount++;
+      }
+    }
+
+    const memberStats = Array.from(memberMap.entries())
+      .map(([uid, data]) => {
+        const avg = data.reviews.length > 0
+          ? Math.round(data.reviews.reduce((s, r) => s + r.rating, 0) / data.reviews.length * 10) / 10
+          : null;
+        const revisitYes = data.reviews.filter((r) => r.wouldRevisit).length;
+        const revisitRate = data.reviews.length > 0
+          ? Math.round(revisitYes / data.reviews.length * 100)
+          : null;
+        return {
+          userId: uid,
+          nickname: data.nickname,
+          reviewCount: data.reviews.length,
+          visitCount: data.visitCount,
+          avgRating: avg,
+          revisitRate,
+        };
+      })
+      .sort((a, b) => b.reviewCount - a.reviewCount);
+
+    // ─── 카테고리별 통계 ───
+    const catMap = new Map<string, { count: number; ratings: number[] }>();
+    for (const r of room.restaurants) {
+      const ratings = r.visits.flatMap((v) => v.reviews.map((rev) => rev.rating));
+      const entry = catMap.get(r.category);
+      if (entry) { entry.count++; entry.ratings.push(...ratings); }
+      else catMap.set(r.category, { count: 1, ratings });
+    }
+    const categoryStats = Array.from(catMap.entries())
+      .map(([category, data]) => ({
+        category,
+        count: data.count,
+        avgRating: data.ratings.length > 0
+          ? Math.round(data.ratings.reduce((s, r) => s + r, 0) / data.ratings.length * 10) / 10
+          : null,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    // ─── 지역별 통계 ───
+    const regionMap = new Map<string, { count: number; ratings: number[] }>();
+    for (const r of room.restaurants) {
+      const key = r.neighborhood || r.city;
+      const ratings = r.visits.flatMap((v) => v.reviews.map((rev) => rev.rating));
+      const entry = regionMap.get(key);
+      if (entry) { entry.count++; entry.ratings.push(...ratings); }
+      else regionMap.set(key, { count: 1, ratings });
+    }
+    const regionStats = Array.from(regionMap.entries())
+      .map(([region, data]) => ({
+        region,
+        count: data.count,
+        avgRating: data.ratings.length > 0
+          ? Math.round(data.ratings.reduce((s, r) => s + r, 0) / data.ratings.length * 10) / 10
+          : null,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    // ─── 세부 평점 평균 (레이더 차트용) ───
+    const detailFields = ['tasteRating', 'valueRating', 'serviceRating', 'cleanlinessRating', 'accessibilityRating'] as const;
+    const detailRatingAvg: Record<string, number | null> = {};
+    for (const field of detailFields) {
+      const vals = allReviews.map((r) => r[field]).filter((v): v is number => v !== null);
+      detailRatingAvg[field] = vals.length > 0
+        ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length * 10) / 10
+        : null;
+    }
+
+    // ─── 월별 방문 트렌드 ───
+    const monthMap = new Map<string, number>();
+    for (const v of allVisits) {
+      const month = new Date(v.visitedAt).toISOString().slice(0, 7);
+      monthMap.set(month, (monthMap.get(month) || 0) + 1);
+    }
+    const monthlyVisits = Array.from(monthMap.entries())
+      .map(([month, count]) => ({ month, count }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+
+    // ─── 요일별 방문 분포 ───
+    const dayOfWeekCounts = [0, 0, 0, 0, 0, 0, 0]; // 일~토
+    for (const v of allVisits) {
+      const day = new Date(v.visitedAt).getDay();
+      dayOfWeekCounts[day]++;
+    }
+
+    // ─── 웨이팅 분포 ───
+    const waitTimeMap = new Map<string, number>();
+    for (const v of allVisits) {
+      if (v.waitTime) {
+        waitTimeMap.set(v.waitTime, (waitTimeMap.get(v.waitTime) || 0) + 1);
+      }
+    }
+    const waitTimeStats = Array.from(waitTimeMap.entries())
+      .map(([waitTime, count]) => ({ waitTime, count }))
+      .sort((a, b) => b.count - a.count);
+
+    // ─── 인기 메뉴 ───
+    const favMenuMap = new Map<string, number>();
+    const tryMenuMap = new Map<string, number>();
+    for (const r of allReviews) {
+      if (r.favoriteMenu) favMenuMap.set(r.favoriteMenu, (favMenuMap.get(r.favoriteMenu) || 0) + 1);
+      if (r.tryNextMenu) tryMenuMap.set(r.tryNextMenu, (tryMenuMap.get(r.tryNextMenu) || 0) + 1);
+    }
+    const topFavoriteMenus = Array.from(favMenuMap.entries())
+      .map(([menu, count]) => ({ menu, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    const topTryNextMenus = Array.from(tryMenuMap.entries())
+      .map(([menu, count]) => ({ menu, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    // ─── 재방문율 TOP 식당 ───
+    const revisitByRestaurant = new Map<string, { name: string; yes: number; total: number }>();
+    for (const rest of room.restaurants) {
+      const reviews = rest.visits.flatMap((v) => v.reviews);
+      if (reviews.length >= 2) {
+        revisitByRestaurant.set(rest.id, {
+          name: rest.name,
+          yes: reviews.filter((r) => r.wouldRevisit).length,
+          total: reviews.length,
+        });
+      }
+    }
+    const topRevisitRestaurants = Array.from(revisitByRestaurant.values())
+      .map((d) => ({ name: d.name, rate: Math.round(d.yes / d.total * 100), reviewCount: d.total }))
+      .sort((a, b) => b.rate - a.rate)
+      .slice(0, 5);
+
+    // ─── 식당별 평균 평점 TOP/BOTTOM ───
+    const restaurantRatings = room.restaurants
+      .map((r) => {
+        const ratings = r.visits.flatMap((v) => v.reviews.map((rev) => rev.rating));
+        return {
+          name: r.name,
+          avgRating: ratings.length > 0
+            ? Math.round(ratings.reduce((s, v) => s + v, 0) / ratings.length * 10) / 10
+            : null,
+          reviewCount: ratings.length,
+        };
+      })
+      .filter((r) => r.avgRating !== null && r.reviewCount >= 1);
+
+    const topRatedRestaurants = [...restaurantRatings].sort((a, b) => b.avgRating! - a.avgRating!).slice(0, 5);
+    const bottomRatedRestaurants = [...restaurantRatings].sort((a, b) => a.avgRating! - b.avgRating!).slice(0, 5);
+
+    // ─── 리뷰 안 쓴 방문 (현재 유저) ───
+    const unreviewedVisits = allVisits
+      .filter((v) => {
+        const isParticipant = v.createdById === userId || v.participants.some((p) => p.userId === userId);
+        const hasMyReview = v.reviews.some((r) => r.userId === userId);
+        return isParticipant && !hasMyReview;
+      })
+      .map((v) => ({ visitId: v.id, restaurantName: v.restaurantName, visitedAt: v.visitedAt }))
+      .sort((a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime())
+      .slice(0, 10);
+
+    return {
+      summary: { totalRestaurants, totalVisits, totalReviews, overallAvg },
+      memberStats,
+      categoryStats,
+      regionStats,
+      detailRatingAvg,
+      monthlyVisits,
+      dayOfWeekVisits: dayOfWeekCounts,
+      waitTimeStats,
+      topFavoriteMenus,
+      topTryNextMenus,
+      topRevisitRestaurants,
+      topRatedRestaurants,
+      bottomRatedRestaurants,
+      unreviewedVisits,
+    };
+  }
 }
