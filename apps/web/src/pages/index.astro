@@ -3,6 +3,38 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="홈" description="둘만의 맛집 리스트를 만들고 공유하세요">
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "한 방에 몇 명까지 참여할 수 있나요?",
+        "acceptedAnswer": { "@type": "Answer", "text": "현재 한 방에 최대 4명까지 참여할 수 있습니다." }
+      },
+      {
+        "@type": "Question",
+        "name": "초대 코드는 어떻게 공유하나요?",
+        "acceptedAnswer": { "@type": "Answer", "text": "방을 만들면 초대 코드가 자동으로 생성됩니다. 코드를 복사해서 카톡 등으로 상대방에게 보내주세요. 코드는 24시간 유효합니다." }
+      },
+      {
+        "@type": "Question",
+        "name": "공유 링크는 누구나 볼 수 있나요?",
+        "acceptedAnswer": { "@type": "Answer", "text": "네, 공유 링크를 통해 비회원도 맛집 리스트를 열람할 수 있습니다. 단, 수정이나 리뷰 작성은 방 멤버만 가능합니다." }
+      },
+      {
+        "@type": "Question",
+        "name": "무모한 시식가는 무료인가요?",
+        "acceptedAnswer": { "@type": "Answer", "text": "네, 무모한 시식가의 모든 기능은 무료로 이용할 수 있습니다. 카카오 계정으로 간편하게 가입하세요." }
+      },
+      {
+        "@type": "Question",
+        "name": "맛집 리뷰에 어떤 정보를 남길 수 있나요?",
+        "acceptedAnswer": { "@type": "Answer", "text": "종합 별점(1~5), 세부 평점(맛, 가성비, 서비스, 청결, 접근성), 리뷰 본문, 재방문 의사, 또 먹고 싶은 메뉴, 다음에 시켜볼 메뉴 등을 기록할 수 있습니다." }
+      }
+    ]
+  })} />
+
   <!-- 내 방 목록 (로그인 시) -->
   <div id="dashboard" hidden>
     <h1>내 방</h1>
@@ -141,6 +173,36 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <summary>공유 링크는 누구나 볼 수 있나요?</summary>
           <p>네, 공유 링크를 통해 비회원도 맛집 리스트를 열람할 수 있습니다. 단, 수정이나 리뷰 작성은 방 멤버만 가능합니다.</p>
         </details>
+        <details class="faq-item">
+          <summary>무모한 시식가는 무료인가요?</summary>
+          <p>네, 무모한 시식가의 모든 기능은 무료로 이용할 수 있습니다. 카카오 계정으로 간편하게 가입하세요.</p>
+        </details>
+        <details class="faq-item">
+          <summary>맛집 리뷰에 어떤 정보를 남길 수 있나요?</summary>
+          <p>종합 별점(1~5), 세부 평점(맛, 가성비, 서비스, 청결, 접근성), 리뷰 본문, 재방문 의사, 또 먹고 싶은 메뉴, 다음에 시켜볼 메뉴 등을 기록할 수 있습니다.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="platform-stats" id="platform-stats" hidden>
+      <h2 class="section-title">지금까지의 기록</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-number" id="stat-rooms">-</span>
+          <span class="stat-label">개의 방</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number" id="stat-users">-</span>
+          <span class="stat-label">명의 시식가</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number" id="stat-restaurants">-</span>
+          <span class="stat-label">곳의 맛집</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number" id="stat-reviews">-</span>
+          <span class="stat-label">개의 리뷰</span>
+        </div>
       </div>
     </section>
 
@@ -377,6 +439,44 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     line-height: 1.6;
   }
 
+  /* ─── 플랫폼 통계 ─── */
+  .platform-stats {
+    padding: 0 0 3rem;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .stat-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 1.25rem 0.5rem;
+    text-align: center;
+  }
+
+  .stat-number {
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: #888;
+  }
+
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
   /* ─── 하단 CTA ─── */
   .bottom-cta {
     text-align: center;
@@ -562,7 +662,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <script>
-  import { fetchCurrentUser, fetchMyRooms, createRoom, joinRoom } from '@/lib/api';
+  import { fetchCurrentUser, fetchMyRooms, createRoom, joinRoom, fetchPlatformStats } from '@/lib/api';
   import type { RoomListItem } from '@/lib/api';
 
   const landing = document.getElementById('landing')!;
@@ -666,6 +766,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       showError(err instanceof Error ? err.message : '입장에 실패했습니다.');
     }
   });
+
+  // 플랫폼 통계 로드 (비동기, 실패해도 무시)
+  (async () => {
+    try {
+      const stats = await fetchPlatformStats();
+      const fmt = (n: number) => n.toLocaleString('ko-KR');
+      document.getElementById('stat-rooms')!.textContent = fmt(stats.roomCount);
+      document.getElementById('stat-users')!.textContent = fmt(stats.userCount);
+      document.getElementById('stat-restaurants')!.textContent = fmt(stats.restaurantCount);
+      document.getElementById('stat-reviews')!.textContent = fmt(stats.reviewCount);
+      document.getElementById('platform-stats')!.hidden = false;
+    } catch { /* 통계 로드 실패 시 섹션 숨김 유지 */ }
+  })();
 
   (async () => {
     const user = await fetchCurrentUser();

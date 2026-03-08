@@ -568,6 +568,21 @@ export async function fetchRoomStats(roomId: string): Promise<RoomStats> {
   return res.json();
 }
 
+// ─── 플랫폼 공개 통계 ───
+
+export interface PlatformStats {
+  roomCount: number;
+  userCount: number;
+  restaurantCount: number;
+  reviewCount: number;
+}
+
+export async function fetchPlatformStats(): Promise<PlatformStats> {
+  const res = await apiFetch(`${API_BASE}/rooms/platform-stats`);
+  if (!res.ok) throw new Error('통계 조회에 실패했습니다.');
+  return res.json();
+}
+
 // ─── 공유 링크 ───
 
 /** 공유 코드로 방 조회 (비로그인) */

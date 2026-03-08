@@ -57,6 +57,15 @@ export class RoomsController {
     return this.roomsService.join(dto.inviteCode, user.id);
   }
 
+  // ─── 공개 API (비로그인) ───
+
+  /** 플랫폼 공개 통계 */
+  @Get('platform-stats')
+  @ApiOperation({ summary: '플랫폼 공개 통계 (비로그인 가능)' })
+  getPlatformStats() {
+    return this.roomsService.getPlatformStats();
+  }
+
   // ─── 공유 링크 (비로그인 공개) ───
 
   /** 공유 코드로 방 조회 */

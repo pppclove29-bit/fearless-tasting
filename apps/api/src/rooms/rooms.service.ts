@@ -8,6 +8,17 @@ const MAX_ROOM_MEMBERS = 4;
 export class RoomsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** 플랫폼 공개 통계 (비로그인 가능) */
+  async getPlatformStats() {
+    const [roomCount, userCount, restaurantCount, reviewCount] = await Promise.all([
+      this.prisma.read.room.count(),
+      this.prisma.read.user.count(),
+      this.prisma.read.roomRestaurant.count(),
+      this.prisma.read.roomReview.count(),
+    ]);
+    return { roomCount, userCount, restaurantCount, reviewCount };
+  }
+
   /** 고유 8자 초대 코드 생성 */
   private async generateInviteCode(): Promise<string> {
     for (let i = 0; i < 10; i++) {
