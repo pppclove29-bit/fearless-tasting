@@ -1,0 +1,451 @@
+---
+export const prerender = false;
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="랭킹" description="전체 유저 랭킹과 업적을 확인하세요">
+  <div id="rankings-page">
+    <div class="rankings-header">
+      <h1>랭킹</h1>
+      <p class="rankings-subtitle">전체 유저 랭킹과 업적</p>
+    </div>
+
+    <div id="rankings-loading" class="loading-msg">로딩 중...</div>
+    <div id="rankings-error" class="error-msg" hidden></div>
+    <div id="rankings-content" hidden></div>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  .rankings-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .rankings-header h1 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .rankings-subtitle {
+    font-size: 0.82rem;
+    color: #888;
+    margin-top: 0.15rem;
+  }
+
+  .loading-msg, .error-msg {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #999;
+    font-size: 0.9rem;
+  }
+
+  .error-msg { color: #dc2626; }
+
+  /* 랭킹 카테고리 탭 */
+  .ranking-tabs {
+    display: flex;
+    gap: 0.3rem;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .ranking-tabs::-webkit-scrollbar { display: none; }
+
+  .ranking-tab-btn {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 100px;
+    background: #fff;
+    font-size: 0.78rem;
+    color: #555;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+
+  .ranking-tab-btn:hover { border-color: #999; }
+
+  .ranking-tab-btn.active {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+  }
+
+  /* 랭킹 테이블 */
+  .ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .ranking-table th {
+    background: #fafafa;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #888;
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e8e8e8;
+  }
+
+  .ranking-table th.num { text-align: right; }
+
+  .ranking-table td {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.82rem;
+    border-bottom: 1px solid #f5f5f5;
+    vertical-align: middle;
+  }
+
+  .ranking-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .ranking-table tr:last-child td { border-bottom: none; }
+
+  .ranking-table tr.is-me {
+    background: #fffbeb;
+  }
+
+  .rank-medal {
+    font-size: 1rem;
+    min-width: 24px;
+    display: inline-block;
+    text-align: center;
+  }
+
+  .rank-number {
+    font-size: 0.78rem;
+    color: #999;
+    min-width: 24px;
+    display: inline-block;
+    text-align: center;
+  }
+
+  .rank-user {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .rank-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    object-fit: cover;
+  }
+
+  .rank-nickname {
+    font-weight: 500;
+    color: #333;
+  }
+
+  /* 업적 섹션 */
+  .achievements-section {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .achievements-section h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+  }
+
+  .achievement-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .achievement-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.75rem 0.5rem;
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    text-align: center;
+    transition: border-color 0.15s;
+  }
+
+  .achievement-card:hover { border-color: #d0d0d0; }
+
+  .achievement-card.locked {
+    opacity: 0.35;
+    filter: grayscale(1);
+  }
+
+  .achievement-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .achievement-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .achievement-desc {
+    font-size: 0.65rem;
+    color: #999;
+    margin-top: 0.1rem;
+  }
+
+  .achievement-count {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #f59e0b;
+    margin-top: 0.15rem;
+  }
+
+  /* 내 프로필 카드 */
+  .my-profile-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .my-profile-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    object-fit: cover;
+  }
+
+  .my-profile-info {
+    flex: 1;
+  }
+
+  .my-profile-name {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .my-profile-stats {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.3rem;
+    font-size: 0.75rem;
+    color: #888;
+  }
+
+  .my-profile-stats strong { color: #333; }
+
+  .my-achievement-count {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.7rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #92400e;
+  }
+</style>
+
+<script>
+  import { fetchCurrentUser, fetchRankings, showToast } from '@/lib/api';
+  import type { RankingUser } from '@/lib/api';
+
+  const loadingEl = document.getElementById('rankings-loading')!;
+  const errorEl = document.getElementById('rankings-error')!;
+  const contentEl = document.getElementById('rankings-content')!;
+
+  const currentUser = await fetchCurrentUser();
+  if (!currentUser) {
+    location.href = '/login';
+    throw new Error('redirect');
+  }
+
+  // 모든 업적 정의 (잠금 표시용)
+  const ALL_ACHIEVEMENTS = [
+    { id: 'first-visit', name: '첫 발자국', icon: '👣', description: '첫 방문 달성' },
+    { id: 'visit-10', name: '동네 탐험가', icon: '🗺️', description: '10회 방문 달성' },
+    { id: 'visit-50', name: '미식 여행자', icon: '✈️', description: '50회 방문 달성' },
+    { id: 'visit-100', name: '전설의 미식가', icon: '👑', description: '100회 방문 달성' },
+    { id: 'first-review', name: '첫 한마디', icon: '💬', description: '첫 리뷰 작성' },
+    { id: 'review-10', name: '리뷰 루키', icon: '📝', description: '리뷰 10개 작성' },
+    { id: 'review-50', name: '리뷰 마스터', icon: '🏆', description: '리뷰 50개 작성' },
+    { id: 'review-100', name: '리뷰의 신', icon: '⭐', description: '리뷰 100개 작성' },
+    { id: 'cat-5', name: '잡식성', icon: '🌈', description: '5개 카테고리 방문' },
+    { id: 'cat-10', name: '미식 박사', icon: '🎓', description: '10개 카테고리 정복' },
+    { id: 'rest-10', name: '맛집 수집가', icon: '📌', description: '10곳 식당 등록' },
+    { id: 'rest-50', name: '맛집 사전', icon: '📖', description: '50곳 식당 등록' },
+    { id: 'hood-5', name: '동네 개척자', icon: '🏘️', description: '5개 동네 탐험' },
+    { id: 'hood-10', name: '전국구', icon: '🇰🇷', description: '10개 동네 정복' },
+    { id: 'revisit-1', name: '또 왔어요', icon: '🔁', description: '첫 재방문' },
+    { id: 'revisit-5', name: '단골 5곳', icon: '🏅', description: '5곳 재방문 달성' },
+    { id: 'revisit-10', name: '단골왕', icon: '💎', description: '10곳 재방문 달성' },
+    { id: 'all-review', name: '올 리뷰어', icon: '🎯', description: '방문마다 빠짐없이 리뷰' },
+    { id: 'social-3', name: '소셜 미식가', icon: '🤝', description: '3개 방 참여' },
+    { id: 'social-5', name: '인싸 미식가', icon: '🎉', description: '5개 방 참여' },
+  ];
+
+  type RankingCategory = {
+    key: string;
+    label: string;
+    getValue: (u: RankingUser) => number | null;
+    format: (v: number) => string;
+  };
+
+  const RANKING_CATEGORIES: RankingCategory[] = [
+    { key: 'review', label: '리뷰 수', getValue: (u) => u.reviewCount, format: (v) => `${v}개` },
+    { key: 'visit', label: '방문 수', getValue: (u) => u.visitCount, format: (v) => `${v}회` },
+    { key: 'restaurant', label: '등록 식당', getValue: (u) => u.restaurantCount, format: (v) => `${v}곳` },
+    { key: 'avgRating', label: '평균 평점', getValue: (u) => u.avgRating, format: (v) => `${v}` },
+    { key: 'revisit', label: '재방문율', getValue: (u) => u.revisitRate, format: (v) => `${v}%` },
+    { key: 'diligence', label: '리뷰 성실도', getValue: (u) => u.reviewDiligence, format: (v) => `${v}%` },
+    { key: 'achievement', label: '업적 수', getValue: (u) => u.achievements.length, format: (v) => `${v}개` },
+  ];
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function getMedal(rank: number): string {
+    if (rank === 1) return '<span class="rank-medal">🥇</span>';
+    if (rank === 2) return '<span class="rank-medal">🥈</span>';
+    if (rank === 3) return '<span class="rank-medal">🥉</span>';
+    return `<span class="rank-number">${rank}</span>`;
+  }
+
+  try {
+    const data = await fetchRankings();
+    loadingEl.hidden = true;
+    contentEl.hidden = false;
+
+    const me = data.rankings.find((u) => u.userId === currentUser.id);
+
+    // 내 프로필 카드
+    const myUnlocked = me ? me.achievements.map((a) => a.id) : [];
+    const myProfileHtml = me ? `
+      <div class="my-profile-card">
+        ${me.profileImageUrl
+          ? `<img src="${escapeHtml(me.profileImageUrl)}" class="my-profile-avatar" alt="" />`
+          : '<div class="my-profile-avatar"></div>'}
+        <div class="my-profile-info">
+          <div class="my-profile-name">${escapeHtml(me.nickname)}</div>
+          <div class="my-profile-stats">
+            <span>방문 <strong>${me.visitCount}</strong></span>
+            <span>리뷰 <strong>${me.reviewCount}</strong></span>
+            <span>식당 <strong>${me.restaurantCount}</strong></span>
+            <span>평균 <strong>${me.avgRating ?? '-'}</strong></span>
+          </div>
+        </div>
+        <div class="my-achievement-count">🏅 ${me.achievements.length} / ${ALL_ACHIEVEMENTS.length}</div>
+      </div>
+    ` : '';
+
+    // 내 업적 카드
+    const achievementsHtml = `
+      <div class="achievements-section">
+        <h2>내 업적</h2>
+        <div class="achievement-grid">
+          ${ALL_ACHIEVEMENTS.map((a) => {
+            const unlocked = myUnlocked.includes(a.id);
+            return `
+              <div class="achievement-card ${unlocked ? '' : 'locked'}">
+                <div class="achievement-icon">${a.icon}</div>
+                <div class="achievement-name">${a.name}</div>
+                <div class="achievement-desc">${a.description}</div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    // 랭킹 카테고리 탭
+    const tabsHtml = `
+      <div class="ranking-tabs">
+        ${RANKING_CATEGORIES.map((cat, i) =>
+          `<button type="button" class="ranking-tab-btn ${i === 0 ? 'active' : ''}" data-cat="${cat.key}">${cat.label}</button>`
+        ).join('')}
+      </div>
+    `;
+
+    // 랭킹 테이블 생성 함수
+    function buildRankingTable(catKey: string): string {
+      const cat = RANKING_CATEGORIES.find((c) => c.key === catKey)!;
+      const sorted = [...data.rankings]
+        .filter((u) => cat.getValue(u) !== null && cat.getValue(u)! > 0)
+        .sort((a, b) => cat.getValue(b)! - cat.getValue(a)!);
+
+      if (sorted.length === 0) {
+        return '<p style="text-align:center;padding:2rem;color:#999;font-size:0.85rem;">아직 데이터가 없습니다.</p>';
+      }
+
+      return `
+        <table class="ranking-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>유저</th>
+              <th class="num">${cat.label}</th>
+              <th class="num">업적</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sorted.map((u, i) => `
+              <tr class="${u.userId === currentUser.id ? 'is-me' : ''}">
+                <td>${getMedal(i + 1)}</td>
+                <td>
+                  <div class="rank-user">
+                    ${u.profileImageUrl
+                      ? `<img src="${escapeHtml(u.profileImageUrl)}" class="rank-avatar" alt="" />`
+                      : '<div class="rank-avatar"></div>'}
+                    <span class="rank-nickname">${escapeHtml(u.nickname)}</span>
+                  </div>
+                </td>
+                <td class="num" style="font-weight:600;">${cat.format(cat.getValue(u)!)}</td>
+                <td class="num">${u.achievements.length}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    contentEl.innerHTML = `
+      ${myProfileHtml}
+      ${achievementsHtml}
+      <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.75rem;">전체 랭킹</h2>
+      ${tabsHtml}
+      <div id="ranking-table-area">${buildRankingTable('review')}</div>
+    `;
+
+    // 탭 전환
+    const tableArea = document.getElementById('ranking-table-area')!;
+    for (const btn of contentEl.querySelectorAll<HTMLElement>('.ranking-tab-btn')) {
+      btn.addEventListener('click', () => {
+        contentEl.querySelector('.ranking-tab-btn.active')?.classList.remove('active');
+        btn.classList.add('active');
+        tableArea.innerHTML = buildRankingTable(btn.dataset.cat!);
+      });
+    }
+  } catch (err) {
+    loadingEl.hidden = true;
+    errorEl.hidden = false;
+    errorEl.textContent = err instanceof Error ? err.message : '랭킹을 불러올 수 없습니다.';
+  }
+</script>

@@ -37,6 +37,14 @@ export class UsersController {
     return this.usersService.deleteAccount(user.id);
   }
 
+  /** 글로벌 랭킹 + 업적 */
+  @Get('rankings')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '글로벌 랭킹 + 업적' })
+  getRankings() {
+    return this.usersService.getRankings();
+  }
+
   /** 관리자 대시보드 통계 (DAU/WAU/MAU 등) */
   @Get('stats')
   @UseGuards(AdminGuard)

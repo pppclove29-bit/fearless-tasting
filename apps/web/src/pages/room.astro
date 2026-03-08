@@ -1030,6 +1030,50 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .stat-badge-silver { background: #f3f4f6; color: #4b5563; }
   .stat-badge-red { background: #fef2f2; color: #dc2626; }
 
+  /* 행동 분석 */
+  .behavior-member {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .behavior-member:last-child { border-bottom: none; }
+  .behavior-member-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.3rem;
+  }
+  .behavior-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .behavior-tag {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 100px;
+    font-size: 0.72rem;
+    background: #f5f5f5;
+    color: #555;
+  }
+  .behavior-tag.explorer { background: #dbeafe; color: #1e40af; }
+  .behavior-tag.regular { background: #fef3c7; color: #92400e; }
+  .behavior-tag.balanced { background: #f0fdf4; color: #166534; }
+  .behavior-tag.picky { background: #fce7f3; color: #9d174d; }
+  .behavior-tag.diverse { background: #ede9fe; color: #5b21b6; }
+  .behavior-tag.tendency { background: #dcfce7; color: #166534; }
+  .behavior-tag.tendency-strict { background: #fee2e2; color: #991b1b; }
+  .behavior-tag.diligent { background: #dbeafe; color: #1e40af; }
+  .behavior-tag.lazy { background: #fef3c7; color: #92400e; }
+  .behavior-tag.weekend { background: #fce7f3; color: #9d174d; }
+  .behavior-tag.weekday { background: #e0e7ff; color: #3730a3; }
+
+  .room-behavior-item {
+    padding: 0.5rem 0;
+    font-size: 0.82rem;
+    border-bottom: 1px solid #f5f5f5;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+  }
+  .room-behavior-item:last-child { border-bottom: none; }
+
   .radar-chart { display: flex; justify-content: center; margin: 0.5rem 0; }
   .radar-chart svg { max-width: 240px; }
 
@@ -1779,7 +1823,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const { summary, memberStats, categoryStats, regionStats, detailRatingAvg,
             monthlyVisits, dayOfWeekVisits, waitTimeStats,
             topFavoriteMenus, topTryNextMenus, topRevisitRestaurants,
-            topRatedRestaurants, bottomRatedRestaurants, unreviewedVisits } = stats;
+            topRatedRestaurants, bottomRatedRestaurants, unreviewedVisits,
+            memberBehaviors, bestCombos, activityTrend, ratingInflation,
+            staleRestaurants, diversityIndex, waitTolerance, peakMonth } = stats;
 
     // ── 기본 요약 ──
     const summaryHtml = `
@@ -1942,14 +1988,128 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </div>`).join('')}
       </div>` : '';
 
+    // ── 멤버 행동 분석 ──
+    const behaviorHtml = memberBehaviors && memberBehaviors.length > 0 ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">멤버 행동 분석</h3>
+        ${memberBehaviors.map((m) => {
+          const tags: string[] = [];
+          // 탐험가 vs 단골러
+          if (m.explorerRate !== null) {
+            if (m.explorerRate >= 80) tags.push('<span class="behavior-tag explorer">🧭 탐험가 ' + m.explorerRate + '%</span>');
+            else if (m.explorerRate <= 30) tags.push('<span class="behavior-tag regular">🏠 단골러 ' + (100 - m.explorerRate) + '%</span>');
+            else tags.push('<span class="behavior-tag balanced">⚖️ 균형파 ' + m.explorerRate + '% 탐험</span>');
+          }
+          // 카테고리 편식
+          if (m.categoryBias) {
+            if (m.categoryBias.rate !== null && m.categoryBias.rate >= 60) {
+              tags.push('<span class="behavior-tag picky">🍽️ ' + escapeHtml(m.categoryBias.category) + ' 올인 ' + m.categoryBias.rate + '%</span>');
+            } else if (m.categoryBias.uniqueCategories >= 5) {
+              tags.push('<span class="behavior-tag diverse">🌈 잡식성 (' + m.categoryBias.uniqueCategories + '종)</span>');
+            }
+          }
+          // 평가 성향
+          if (m.ratingTendency) {
+            tags.push('<span class="behavior-tag tendency">👍 ' + m.ratingTendency.generousOn + '에 후함 ' + m.ratingTendency.generousAvg + '</span>');
+            tags.push('<span class="behavior-tag tendency-strict">👎 ' + m.ratingTendency.strictOn + '에 엄격 ' + m.ratingTendency.strictAvg + '</span>');
+          }
+          // 리뷰 성실도
+          if (m.reviewDiligence !== null) {
+            if (m.reviewDiligence >= 90) tags.push('<span class="behavior-tag diligent">✍️ 리뷰 개근 ' + m.reviewDiligence + '%</span>');
+            else if (m.reviewDiligence <= 40) tags.push('<span class="behavior-tag lazy">😴 귀차니즘 ' + m.reviewDiligence + '%</span>');
+            else tags.push('<span class="behavior-tag">✍️ 리뷰율 ' + m.reviewDiligence + '%</span>');
+          }
+          // 주말파 vs 평일파
+          if (m.dayPreference) {
+            if (m.dayPreference.type === 'weekend') tags.push('<span class="behavior-tag weekend">🌅 주말파</span>');
+            else if (m.dayPreference.type === 'weekday') tags.push('<span class="behavior-tag weekday">💼 평일파</span>');
+          }
+          if (tags.length === 0) return '';
+          return '<div class="behavior-member"><div class="behavior-member-name">' + escapeHtml(m.nickname) + '</div><div class="behavior-tags">' + tags.join('') + '</div></div>';
+        }).filter(Boolean).join('')}
+      </div>` : '';
+
+    // ── 베스트 콤비 ──
+    const comboHtml = bestCombos && bestCombos.length > 0 ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">베스트 맛집 메이트</h3>
+        ${bestCombos.map((c, i) => `
+          <div class="stat-bar-row">
+            <span class="stat-bar-label" style="min-width:20px;font-weight:600;">${['🥇','🥈','🥉'][i] || (i+1)}</span>
+            <span style="flex:1;font-size:0.82rem;">${escapeHtml(c.nickA)} & ${escapeHtml(c.nickB)}</span>
+            <span style="font-size:0.82rem;font-weight:600;">${c.count}회 동행</span>
+          </div>`).join('')}
+      </div>` : '';
+
+    // ── 방 행동 분석 ──
+    const roomBehaviorItems: string[] = [];
+
+    // 활성도 트렌드
+    if (activityTrend) {
+      const icon = activityTrend.changeRate !== null
+        ? (activityTrend.changeRate > 0 ? '📈' : activityTrend.changeRate < 0 ? '📉' : '➡️')
+        : '🆕';
+      const label = activityTrend.changeRate !== null
+        ? (activityTrend.changeRate > 0 ? '활성도 상승 +' + activityTrend.changeRate + '%' : activityTrend.changeRate < 0 ? '소강 상태 ' + activityTrend.changeRate + '%' : '유지 중')
+        : '최근 3개월 ' + activityTrend.recent + '회 방문';
+      roomBehaviorItems.push(`<div class="room-behavior-item">${icon} <strong>${label}</strong><span style="font-size:0.72rem;color:#999;margin-left:0.4rem;">최근 ${activityTrend.recent}회 vs 이전 ${activityTrend.previous}회</span></div>`);
+    }
+
+    // 평점 인플레이션
+    if (ratingInflation) {
+      const icon = ratingInflation.change > 0 ? '😊' : ratingInflation.change < 0 ? '🧐' : '😐';
+      const label = ratingInflation.change > 0 ? '점점 후한 평가' : ratingInflation.change < 0 ? '점점 엄격한 평가' : '일관된 평가';
+      roomBehaviorItems.push(`<div class="room-behavior-item">${icon} <strong>${label}</strong><span style="font-size:0.72rem;color:#999;margin-left:0.4rem;">초반 ${ratingInflation.earlyAvg} → 최근 ${ratingInflation.lateAvg} (${ratingInflation.change > 0 ? '+' : ''}${ratingInflation.change})</span></div>`);
+    }
+
+    // 카테고리 다양성
+    if (diversityIndex !== null) {
+      const icon = diversityIndex >= 70 ? '🌈' : diversityIndex >= 40 ? '🍽️' : '🎯';
+      const label = diversityIndex >= 70 ? '미식 탐험대' : diversityIndex >= 40 ? '적당한 다양성' : '편식 방';
+      roomBehaviorItems.push(`<div class="room-behavior-item">${icon} <strong>${label}</strong><span style="font-size:0.72rem;color:#999;margin-left:0.4rem;">다양성 지수 ${diversityIndex}%</span></div>`);
+    }
+
+    // 웨이팅 감수
+    if (waitTolerance !== null && totalVisits >= 3) {
+      const icon = waitTolerance >= 50 ? '⏰' : '🏃';
+      const label = waitTolerance >= 50 ? '줄서기 마니아 ' + waitTolerance + '%' : '노웨이팅주의 ' + (100 - waitTolerance) + '%';
+      roomBehaviorItems.push(`<div class="room-behavior-item">${icon} <strong>${label}</strong></div>`);
+    }
+
+    // 피크 시즌
+    if (peakMonth && monthlyVisits.length > 1) {
+      roomBehaviorItems.push(`<div class="room-behavior-item">🔥 <strong>${peakMonth.month.slice(2)} 폭발적 활동</strong><span style="font-size:0.72rem;color:#999;margin-left:0.4rem;">${peakMonth.count}회 방문</span></div>`);
+    }
+
+    const roomBehaviorHtml = roomBehaviorItems.length > 0 ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">방 행동 분석</h3>
+        ${roomBehaviorItems.join('')}
+      </div>` : '';
+
+    // ── 오래 안 간 식당 ──
+    const staleHtml = staleRestaurants && staleRestaurants.length > 0 ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">오랫동안 안 간 식당</h3>
+        ${staleRestaurants.map((r) => `
+          <div class="stat-bar-row">
+            <span style="flex:1;font-size:0.82rem;">${escapeHtml(r.name)}</span>
+            <span style="font-size:0.78rem;color:#dc2626;font-weight:600;">${r.daysSince}일째 미방문</span>
+          </div>`).join('')}
+      </div>` : '';
+
     panel.innerHTML = `
       ${summaryHtml}
       ${randomHtml}
       ${unreviewedHtml}
+      ${roomBehaviorHtml}
+      ${behaviorHtml}
+      ${comboHtml}
       ${memberHtml}
       ${topRatedHtml}
       ${bottomRatedHtml}
       ${revisitHtml}
+      ${staleHtml}
       ${radarHtml}
       ${catHtml}
       ${regionHtml}

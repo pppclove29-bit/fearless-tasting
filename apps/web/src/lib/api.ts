@@ -556,10 +556,25 @@ export interface RoomStats {
   waitTimeStats: { waitTime: string; count: number }[];
   topFavoriteMenus: { menu: string; count: number }[];
   topTryNextMenus: { menu: string; count: number }[];
-  topRevisitRestaurants: { name: string; rate: number; reviewCount: number }[];
+  topRevisitRestaurants: { name: string; visitCount: number }[];
   topRatedRestaurants: { name: string; avgRating: number | null; reviewCount: number }[];
   bottomRatedRestaurants: { name: string; avgRating: number | null; reviewCount: number }[];
   unreviewedVisits: { visitId: string; restaurantName: string; visitedAt: string }[];
+  // 행동 분석
+  memberBehaviors: {
+    userId: string; nickname: string; explorerRate: number | null;
+    categoryBias: { category: string; rate: number | null; uniqueCategories: number } | null;
+    ratingTendency: { generousOn: string; generousAvg: number; strictOn: string; strictAvg: number } | null;
+    reviewDiligence: number | null;
+    dayPreference: { weekday: number; weekend: number; type: 'weekend' | 'weekday' | 'balanced' } | null;
+  }[];
+  bestCombos: { nickA: string; nickB: string; count: number }[];
+  activityTrend: { recent: number; previous: number; changeRate: number | null };
+  ratingInflation: { earlyAvg: number; lateAvg: number; change: number } | null;
+  staleRestaurants: { name: string; lastVisitedAt: string; daysSince: number }[];
+  diversityIndex: number | null;
+  waitTolerance: number | null;
+  peakMonth: { month: string; count: number } | null;
 }
 
 export async function fetchRoomStats(roomId: string): Promise<RoomStats> {
@@ -580,6 +595,34 @@ export interface PlatformStats {
 export async function fetchPlatformStats(): Promise<PlatformStats> {
   const res = await apiFetch(`${API_BASE}/rooms/platform-stats`);
   if (!res.ok) throw new Error('통계 조회에 실패했습니다.');
+  return res.json();
+}
+
+// ─── 글로벌 랭킹 ───
+
+export interface RankingUser {
+  userId: string;
+  nickname: string;
+  profileImageUrl: string | null;
+  reviewCount: number;
+  visitCount: number;
+  restaurantCount: number;
+  roomCount: number;
+  avgRating: number | null;
+  revisitRate: number | null;
+  reviewDiligence: number | null;
+  uniqueCategories: number;
+  achievements: { id: string; name: string; icon: string; description: string }[];
+}
+
+export interface RankingsResponse {
+  rankings: RankingUser[];
+  totalUsers: number;
+}
+
+export async function fetchRankings(): Promise<RankingsResponse> {
+  const res = await apiFetch(`${API_BASE}/users/rankings`);
+  if (!res.ok) throw new Error('랭킹 조회에 실패했습니다.');
   return res.json();
 }
 
