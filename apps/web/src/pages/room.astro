@@ -294,12 +294,34 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .room-restaurant-card:hover { border-color: #ccc; }
 
+  .room-rest-name-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
   .room-rest-name {
     font-size: 0.95rem;
     font-weight: 600;
     color: #111;
     margin-bottom: 0.15rem;
+    flex: 1;
+    min-width: 0;
   }
+
+  .btn-wishlist {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.15rem;
+    color: #ccc;
+    transition: color 0.15s, transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .btn-wishlist:hover { color: #e74c6f; }
+  .btn-wishlist.active { color: #e74c6f; }
 
   .room-rest-rating {
     font-size: 0.8rem;
@@ -1356,10 +1378,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     createRoomReview, updateRoomReview, deleteRoomReview,
     createQuickReview,
     toggleShareCode, updateRoom, regenerateInviteCode,
-    fetchRoomStats,
+    fetchRoomStats, toggleWishlist,
     showToast, showConfirm, showDangerConfirm,
   } from '@/lib/api';
-  import type { AuthUser, RoomDetailResponse, ReviewData, RoomStats } from '@/lib/api';
+  import type { AuthUser, RoomDetailResponse, RoomRestaurantInfo, ReviewData, RoomStats } from '@/lib/api';
   import type { RoomReviewWithUser, RoomVisitWithDetails } from '@repo/types';
   import { getCities, getNeighborhoods } from '@/data/areas';
   import { formatRating, formatDate } from '@repo/utils';
@@ -1378,6 +1400,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   const renderStars = formatRating;
+
+  function renderRestaurantCard(r: RoomRestaurantInfo): string {
+    return `
+      <div class="room-restaurant-card" data-rid="${r.id}">
+        <div class="room-rest-name-row">
+          <div class="room-rest-name">${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(Math.round(r.avgRating))} ${r.avgRating}</span>` : ''}</div>
+          <button type="button" class="btn-wishlist ${r.wishlisted ? 'active' : ''}" data-rid="${r.id}" title="위시리스트">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="${r.wishlisted ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </button>
+        </div>
+        <div class="room-rest-meta">${escapeHtml(r.address)} · ${escapeHtml(r.category)}</div>
+        <div class="room-rest-footer">
+          <span class="room-rest-added-by">${escapeHtml(r.addedBy?.nickname ?? '(탈퇴한 사용자)')}</span>
+          <span class="room-rest-reviews-count">리뷰 ${r._count.reviews}개</span>
+        </div>
+      </div>`;
+  }
 
   const roleLabel: Record<string, string> = { owner: '방장', manager: '매니저', member: '멤버' };
 
@@ -2257,20 +2296,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     } else if (sorted.length === 0) {
       listHtml = '<p class="empty-text">해당 카테고리의 식당이 없습니다.</p>';
     } else {
-      listHtml = sorted
-        .map(
-          (r) => `
-          <div class="room-restaurant-card" data-rid="${r.id}">
-            <div class="room-rest-name">${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(Math.round(r.avgRating))} ${r.avgRating}</span>` : ''}</div>
-            <div class="room-rest-meta">${escapeHtml(r.address)} · ${escapeHtml(r.category)}</div>
-            <div class="room-rest-footer">
-              <span class="room-rest-added-by">${escapeHtml(r.addedBy?.nickname ?? '(탈퇴한 사용자)')}</span>
-              <span class="room-rest-reviews-count">리뷰 ${r._count.reviews}개</span>
-            </div>
-          </div>
-        `,
-        )
-        .join('');
+      listHtml = sorted.map((r) => renderRestaurantCard(r)).join('');
     }
 
     panel.innerHTML = addFormHtml + '<div id="restaurant-detail-area"></div>' + searchHtml + filterHtml + sortHtml + '<div id="restaurant-list">' + listHtml + '</div>';
@@ -2309,16 +2335,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       if (filtered.length === 0) {
         listEl.innerHTML = '<p class="empty-text">검색 결과가 없습니다.</p>';
       } else {
-        listEl.innerHTML = filtered.map((r) => `
-          <div class="room-restaurant-card" data-rid="${r.id}">
-            <div class="room-rest-name">${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(Math.round(r.avgRating))} ${r.avgRating}</span>` : ''}</div>
-            <div class="room-rest-meta">${escapeHtml(r.address)} · ${escapeHtml(r.category)}</div>
-            <div class="room-rest-footer">
-              <span class="room-rest-added-by">${escapeHtml(r.addedBy?.nickname ?? '(탈퇴한 사용자)')}</span>
-              <span class="room-rest-reviews-count">리뷰 ${r._count.reviews}개</span>
-            </div>
-          </div>
-        `).join('');
+        listEl.innerHTML = filtered.map((r) => renderRestaurantCard(r)).join('');
       }
       attachRestaurantCardHandlers();
     });
@@ -2794,9 +2811,28 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   function attachRestaurantCardHandlers() {
     for (const card of document.querySelectorAll<HTMLElement>('.room-restaurant-card')) {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('.btn-wishlist')) return;
         const rid = card.dataset.rid!;
         loadRestaurantDetail(rid);
+      });
+    }
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('.btn-wishlist')) {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const rid = btn.dataset.rid!;
+        try {
+          const { wishlisted } = await toggleWishlist(currentRoom.id, rid);
+          const rest = currentRoom.restaurants.find((r) => r.id === rid);
+          if (rest) rest.wishlisted = wishlisted;
+          btn.classList.toggle('active', wishlisted);
+          const svg = btn.querySelector('svg path');
+          if (svg) svg.setAttribute('fill', wishlisted ? 'currentColor' : 'none');
+          btn.style.transform = 'scale(1.3)';
+          setTimeout(() => { btn.style.transform = ''; }, 200);
+        } catch {
+          showToast('위시리스트 변경에 실패했습니다.', 'error');
+        }
       });
     }
   }

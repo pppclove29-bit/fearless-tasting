@@ -109,8 +109,8 @@ export class RoomsController {
   @UseGuards(RoomMemberGuard)
   @ApiOperation({ summary: '방 상세 조회' })
   @ApiParam({ name: 'id', description: '방 ID' })
-  findOne(@Param('id') id: string) {
-    return this.roomsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: { id: string }) {
+    return this.roomsService.findOne(id, user.id);
   }
 
   /** 방 이름 수정 */

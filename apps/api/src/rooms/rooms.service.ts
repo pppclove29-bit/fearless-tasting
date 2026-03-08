@@ -74,7 +74,7 @@ export class RoomsService {
   }
 
   /** 방 상세 조회 */
-  async findOne(roomId: string) {
+  async findOne(roomId: string, userId?: string) {
     const room = await this.prisma.read.room.findUnique({
       where: { id: roomId },
       include: {
@@ -101,6 +101,15 @@ export class RoomsService {
 
     if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
 
+    const wishlistedSet = new Set<string>();
+    if (userId) {
+      const wishlists = await this.prisma.read.roomWishlist.findMany({
+        where: { userId, roomRestaurantId: { in: room.restaurants.map((r) => r.id) } },
+        select: { roomRestaurantId: true },
+      });
+      for (const w of wishlists) wishlistedSet.add(w.roomRestaurantId);
+    }
+
     return {
       ...room,
       restaurants: room.restaurants.map(({ visits, ...rest }) => {
@@ -110,6 +119,7 @@ export class RoomsService {
           avgRating: allRatings.length > 0
             ? Math.round(allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length * 10) / 10
             : null,
+          wishlisted: wishlistedSet.has(rest.id),
           _count: { ...rest._count, reviews: allRatings.length },
         };
       }),
