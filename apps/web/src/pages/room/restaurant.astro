@@ -642,8 +642,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${visit.waitTime ? `<span class="wait-badge">웨이팅: ${escapeHtml(visit.waitTime)}</span>` : ''}
           ${participantsHtml ? `<span class="visit-participants">함께: ${participantsHtml}</span>` : ''}
           <span class="visit-creator">기록: ${escapeHtml(visit.createdBy?.nickname ?? '(탈퇴한 사용자)')}</span>
-          ${canDeleteVisit ? `<button type="button" class="btn-outline-sm edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}">수정</button>` : ''}
-          ${canDeleteVisit ? `<button type="button" class="btn-danger-sm delete-visit-btn" data-visit-id="${visit.id}">삭제</button>` : ''}
+          ${canDeleteVisit ? `<button type="button" class="btn-outline-sm edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}">방문 수정</button>` : ''}
+          ${canDeleteVisit ? `<button type="button" class="btn-danger-sm delete-visit-btn" data-visit-id="${visit.id}">방문 삭제</button>` : ''}
         </div>
         ${visit.memo ? `<div class="visit-memo">${escapeHtml(visit.memo)}</div>` : ''}
         <div class="visit-reviews">

@@ -360,7 +360,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     { key: 'avgRating', label: '평균 평점', getValue: (u) => u.avgRating, format: (v) => `${v}` },
     { key: 'revisit', label: '재방문율', getValue: (u) => u.revisitRate, format: (v) => `${v}%` },
     { key: 'diligence', label: '리뷰 성실도', getValue: (u) => u.reviewDiligence, format: (v) => `${v}%` },
-    { key: 'achievement', label: '업적 수', getValue: (u) => u.achievements.length, format: (v) => `${v}개` },
+    { key: 'achievement', label: '업적', getValue: (u) => u.achievements.length, format: (v) => `${v}` },
   ];
 
   function escapeHtml(text: string): string {

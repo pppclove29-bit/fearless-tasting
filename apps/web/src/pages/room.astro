@@ -1782,8 +1782,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     let stats: RoomStats;
     try {
       stats = await fetchRoomStats(currentRoom.id);
-    } catch {
-      panel.innerHTML = '<p class="empty-text">통계를 불러올 수 없습니다.</p>';
+    } catch (err) {
+      console.error('[stats] fetchRoomStats failed:', err);
+      panel.innerHTML = '<p class="empty-text">통계를 불러올 수 없습니다. 새로고침 후 다시 시도해주세요.</p>';
       return;
     }
 
@@ -2110,9 +2111,30 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   function renderRestaurantsTab() {
     const panel = document.getElementById('tab-restaurants')!;
 
-    const addFormHtml = hasKakaoMap ? `
-      <div class="add-restaurant-form">
-        <h3>식당 등록</h3>
+    const manualFormHtml = `
+      <div id="manual-form-area" ${hasKakaoMap ? 'hidden' : ''}>
+        <div class="form-row full">
+          <input type="text" id="add-rest-name" placeholder="식당 이름" required />
+        </div>
+        <div class="form-row full">
+          <input type="text" id="add-rest-address" placeholder="주소" required />
+        </div>
+        <div class="form-row full">
+          <input type="text" id="add-rest-address-detail" placeholder="상세 주소 (예: 2층, 골목 안쪽)" maxlength="100" />
+        </div>
+        <div class="form-row">
+          <input type="text" id="add-rest-province" placeholder="시/도 (예: 서울특별시)" required />
+          <input type="text" id="add-rest-city" placeholder="시/군/구 (예: 강남구)" required />
+        </div>
+        <div class="form-row">
+          <input type="text" id="add-rest-neighborhood" placeholder="읍/면/동 (예: 역삼동)" required />
+          <input type="text" id="add-rest-category" placeholder="카테고리 (예: 한식)" required />
+        </div>
+      </div>
+    `;
+
+    const kakaoFormHtml = hasKakaoMap ? `
+      <div id="kakao-form-area">
         <div class="form-row full address-search-wrap">
           <input type="text" id="add-rest-search" placeholder="식당 이름으로 검색 (카카오)" autocomplete="off" />
           <div id="address-results" class="address-results" hidden></div>
@@ -2135,30 +2157,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <input type="hidden" id="add-rest-neighborhood" />
         <input type="hidden" id="add-rest-lat" />
         <input type="hidden" id="add-rest-lng" />
-        <div class="add-rest-actions">
-          <button type="button" class="btn-primary-sm" id="add-rest-submit">등록</button>
-        </div>
       </div>
-    ` : `
+    ` : '';
+
+    const toggleBtnHtml = hasKakaoMap
+      ? `<button type="button" class="btn-outline-sm" id="toggle-manual-btn" style="margin-bottom:0.75rem;font-size:0.78rem;">카카오에 없는 식당? 직접 입력</button>`
+      : '';
+
+    const addFormHtml = `
       <div class="add-restaurant-form">
         <h3>식당 등록</h3>
-        <div class="form-row full">
-          <input type="text" id="add-rest-name" placeholder="식당 이름" required />
-        </div>
-        <div class="form-row full">
-          <input type="text" id="add-rest-address" placeholder="주소" required />
-        </div>
-        <div class="form-row full">
-          <input type="text" id="add-rest-address-detail" placeholder="상세 주소 (예: 2층, 골목 안쪽)" maxlength="100" />
-        </div>
-        <div class="form-row">
-          <input type="text" id="add-rest-province" placeholder="시/도 (예: 서울특별시)" required />
-          <input type="text" id="add-rest-city" placeholder="시/군/구 (예: 강남구)" required />
-        </div>
-        <div class="form-row">
-          <input type="text" id="add-rest-neighborhood" placeholder="읍/면/동 (예: 역삼동)" required />
-          <input type="text" id="add-rest-category" placeholder="카테고리 (예: 한식)" required />
-        </div>
+        ${toggleBtnHtml}
+        ${kakaoFormHtml}
+        ${manualFormHtml}
         <div class="add-rest-actions">
           <button type="button" class="btn-primary-sm" id="add-rest-submit">등록</button>
         </div>
@@ -2222,7 +2233,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     panel.innerHTML = addFormHtml + listTitle + searchHtml + filterHtml + sortHtml + '<div id="restaurant-list">' + listHtml + '</div>';
     attachRestaurantFormHandler();
-    if (hasKakaoMap) attachPlaceSearchHandler();
+    if (hasKakaoMap) {
+      attachPlaceSearchHandler();
+      attachManualToggle();
+    }
     attachRestaurantCardHandlers();
     attachCategoryFilterHandlers();
     attachSearchHandler();
@@ -2278,6 +2292,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         sortOrder = val;
         renderRestaurantsTab();
       });
+    });
+  }
+
+  function attachManualToggle() {
+    const toggleBtn = document.getElementById('toggle-manual-btn');
+    if (!toggleBtn) return;
+    let isManual = false;
+    toggleBtn.addEventListener('click', () => {
+      isManual = !isManual;
+      const kakaoArea = document.getElementById('kakao-form-area');
+      const manualArea = document.getElementById('manual-form-area');
+      if (kakaoArea) kakaoArea.hidden = isManual;
+      if (manualArea) manualArea.hidden = !isManual;
+      toggleBtn.textContent = isManual ? '카카오에서 검색하기' : '카카오에 없는 식당? 직접 입력';
     });
   }
 
