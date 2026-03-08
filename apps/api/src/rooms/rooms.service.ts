@@ -419,10 +419,9 @@ export class RoomsService {
     imageUrl?: string,
     latitude?: number,
     longitude?: number,
-    waitTime?: string,
   ) {
     return this.prisma.write.roomRestaurant.create({
-      data: { roomId, addedById, name, address, province, city, neighborhood, category, imageUrl, latitude, longitude, waitTime },
+      data: { roomId, addedById, name, address, province, city, neighborhood, category, imageUrl, latitude, longitude },
     });
   }
 
@@ -432,7 +431,7 @@ export class RoomsService {
     restaurantId: string,
     userId: string,
     memberRole: 'owner' | 'manager' | 'member',
-    data: { name?: string; category?: string; waitTime?: string | null },
+    data: { name?: string; category?: string },
   ) {
     const restaurant = await this.prisma.read.roomRestaurant.findUnique({ where: { id: restaurantId } });
     if (!restaurant || restaurant.roomId !== roomId) {
@@ -448,7 +447,6 @@ export class RoomsService {
       data: {
         ...(data.name !== undefined && { name: data.name }),
         ...(data.category !== undefined && { category: data.category }),
-        ...(data.waitTime !== undefined && { waitTime: data.waitTime }),
       },
     });
   }
@@ -503,7 +501,7 @@ export class RoomsService {
   // ─── 방문 기록 ───
 
   /** 방문 기록 생성 */
-  async createVisit(roomId: string, restaurantId: string, userId: string, visitedAt: string, memo?: string, participantIds?: string[]) {
+  async createVisit(roomId: string, restaurantId: string, userId: string, visitedAt: string, memo?: string, waitTime?: string, participantIds?: string[]) {
     const restaurant = await this.prisma.read.roomRestaurant.findUnique({ where: { id: restaurantId } });
     if (!restaurant || restaurant.roomId !== roomId) {
       throw new NotFoundException('식당을 찾을 수 없습니다');
@@ -515,6 +513,7 @@ export class RoomsService {
         createdById: userId,
         visitedAt: new Date(visitedAt),
         memo,
+        waitTime,
         participants: participantIds && participantIds.length > 0
           ? { create: participantIds.map((uid) => ({ userId: uid })) }
           : undefined,
@@ -537,7 +536,7 @@ export class RoomsService {
     visitId: string,
     userId: string,
     memberRole: 'owner' | 'manager' | 'member',
-    data: { visitedAt?: string; memo?: string | null },
+    data: { visitedAt?: string; memo?: string | null; waitTime?: string | null },
   ) {
     const visit = await this.prisma.read.roomVisit.findUnique({ where: { id: visitId } });
     if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
@@ -552,6 +551,7 @@ export class RoomsService {
       data: {
         ...(data.visitedAt !== undefined && { visitedAt: new Date(data.visitedAt) }),
         ...(data.memo !== undefined && { memo: data.memo }),
+        ...(data.waitTime !== undefined && { waitTime: data.waitTime }),
       },
     });
   }
@@ -665,6 +665,7 @@ export class RoomsService {
     userId: string,
     visitedAt: string,
     memo: string | undefined,
+    waitTime: string | undefined,
     participantIds: string[] | undefined,
     rating: number,
     content: string,
@@ -689,6 +690,7 @@ export class RoomsService {
           createdById: userId,
           visitedAt: new Date(visitedAt),
           memo,
+          waitTime,
           participants: participantIds && participantIds.length > 0
             ? { create: participantIds.map((uid) => ({ userId: uid })) }
             : undefined,

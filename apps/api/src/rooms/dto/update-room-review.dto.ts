@@ -54,13 +54,13 @@ export class UpdateRoomReviewDto {
   @Max(5)
   accessibilityRating?: number;
 
-  @ApiPropertyOptional({ description: '다시 먹어볼 메뉴' })
+  @ApiPropertyOptional({ description: '또 먹고 싶은 메뉴' })
   @IsOptional()
   @IsString()
   @MaxLength(200)
   favoriteMenu?: string;
 
-  @ApiPropertyOptional({ description: '다음에 먹어볼 메뉴' })
+  @ApiPropertyOptional({ description: '다음에 시켜볼 메뉴' })
   @IsOptional()
   @IsString()
   @MaxLength(200)

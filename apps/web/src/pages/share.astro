@@ -281,8 +281,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 ].filter(Boolean);
                 const detailLine = detailRatings.length > 0 ? `<div style="font-size:0.72rem;color:#999;">${detailRatings.join(' · ')}</div>` : '';
                 const menuLine = [
-                  rev.favoriteMenu ? `다시 먹을 메뉴: ${escapeHtml(rev.favoriteMenu)}` : null,
-                  rev.tryNextMenu ? `다음에 먹을 메뉴: ${escapeHtml(rev.tryNextMenu)}` : null,
+                  rev.favoriteMenu ? `또 먹고 싶은 메뉴: ${escapeHtml(rev.favoriteMenu)}` : null,
+                  rev.tryNextMenu ? `다음에 시켜볼 메뉴: ${escapeHtml(rev.tryNextMenu)}` : null,
                 ].filter(Boolean);
                 const menuHtml = menuLine.length > 0 ? `<div style="font-size:0.72rem;color:#888;margin-top:0.15rem;">${menuLine.join(' | ')}</div>` : '';
                 const revisitBadge = rev.wouldRevisit === false

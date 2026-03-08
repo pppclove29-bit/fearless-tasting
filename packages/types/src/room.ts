@@ -37,7 +37,6 @@ export interface RoomRestaurant {
   imageUrl?: string;
   latitude?: number | null;
   longitude?: number | null;
-  waitTime?: WaitTime | null;
   roomId: string;
   addedById: string | null;
   createdAt: string;
@@ -51,6 +50,7 @@ export interface RoomVisit {
   id: string;
   visitedAt: string;
   memo?: string | null;
+  waitTime?: WaitTime | null;
   restaurantId: string;
   createdById: string | null;
   createdAt: string;

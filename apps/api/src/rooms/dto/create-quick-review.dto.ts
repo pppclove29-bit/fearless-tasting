@@ -1,4 +1,6 @@
-import { IsString, IsNumber, IsBoolean, IsOptional, IsDateString, IsArray, Min, Max, MaxLength } from 'class-validator';
+import { IsString, IsNumber, IsBoolean, IsOptional, IsDateString, IsArray, IsIn, Min, Max, MaxLength } from 'class-validator';
+
+const WAIT_TIMES = ['없음', '~10분', '~30분', '~1시간', '1시간+'] as const;
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateQuickReviewDto {
@@ -13,6 +15,12 @@ export class CreateQuickReviewDto {
   @IsString()
   @MaxLength(500)
   memo?: string;
+
+  @ApiPropertyOptional({ description: '웨이팅 (없음/~10분/~30분/~1시간/1시간+)' })
+  @IsOptional()
+  @IsString()
+  @IsIn(WAIT_TIMES)
+  waitTime?: string;
 
   @ApiPropertyOptional({ description: '함께 간 멤버 ID 목록' })
   @IsOptional()
@@ -72,13 +80,13 @@ export class CreateQuickReviewDto {
   @Max(5)
   accessibilityRating?: number;
 
-  @ApiPropertyOptional({ description: '다시 먹어볼 메뉴' })
+  @ApiPropertyOptional({ description: '또 먹고 싶은 메뉴' })
   @IsOptional()
   @IsString()
   @MaxLength(200)
   favoriteMenu?: string;
 
-  @ApiPropertyOptional({ description: '다음에 먹어볼 메뉴' })
+  @ApiPropertyOptional({ description: '다음에 시켜볼 메뉴' })
   @IsOptional()
   @IsString()
   @MaxLength(200)

@@ -152,8 +152,6 @@ model RoomRestaurant {
   addedBy      User?       @relation(fields: [addedById], references: [id], onDelete: SetNull)
   /// 등록자 ID (FK, 탈퇴 시 null)
   addedById    String?
-  /// 웨이팅 (없음/~10분/~30분/~1시간/1시간+)
-  waitTime     String?     @db.VarChar(20)
   /// 방문 기록 목록
   visits       RoomVisit[]
   /// 등록일
@@ -171,6 +169,8 @@ model RoomVisit {
   visitedAt    DateTime               @db.Date
   /// 방문 메모 (선택)
   memo         String?                @db.VarChar(500)
+  /// 웨이팅 (없음/~10분/~30분/~1시간/1시간+)
+  waitTime     String?                @db.VarChar(20)
   /// 방문 대상 식당
   restaurant   RoomRestaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   /// 식당 ID (FK)

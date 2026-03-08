@@ -1787,16 +1787,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
         <input type="hidden" id="add-rest-lat" />
         <input type="hidden" id="add-rest-lng" />
-        <div class="form-row">
-          <select id="add-rest-waittime">
-            <option value="">웨이팅 (선택)</option>
-            <option value="없음">없음</option>
-            <option value="~10분">~10분</option>
-            <option value="~30분">~30분</option>
-            <option value="~1시간">~1시간</option>
-            <option value="1시간+">1시간+</option>
-          </select>
-        </div>
         <div class="add-rest-actions">
           <button type="button" class="btn-primary-sm" id="add-rest-submit">등록</button>
         </div>
@@ -1817,16 +1807,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="form-row">
           <input type="text" id="add-rest-neighborhood" placeholder="읍/면/동 (예: 역삼동)" required />
           <input type="text" id="add-rest-category" placeholder="카테고리 (예: 한식)" required />
-        </div>
-        <div class="form-row">
-          <select id="add-rest-waittime">
-            <option value="">웨이팅 (선택)</option>
-            <option value="없음">없음</option>
-            <option value="~10분">~10분</option>
-            <option value="~30분">~30분</option>
-            <option value="~1시간">~1시간</option>
-            <option value="1시간+">1시간+</option>
-          </select>
         </div>
         <div class="add-rest-actions">
           <button type="button" class="btn-primary-sm" id="add-rest-submit">등록</button>
@@ -1979,11 +1959,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const lngEl = document.getElementById('add-rest-lng') as HTMLInputElement | null;
       const latitude = latEl?.value ? Number(latEl.value) : undefined;
       const longitude = lngEl?.value ? Number(lngEl.value) : undefined;
-      const waitTimeEl = document.getElementById('add-rest-waittime') as HTMLSelectElement | null;
-      const waitTime = waitTimeEl?.value || undefined;
-
       try {
-        await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category, latitude, longitude, waitTime } as Parameters<typeof createRoomRestaurant>[1]);
+        await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category, latitude, longitude } as Parameters<typeof createRoomRestaurant>[1]);
         currentRoom = await fetchRoom(currentRoom.id);
         renderRestaurantsTab();
         renderRegionTab();
@@ -2405,8 +2382,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const detailLine = detailRatings.length > 0 ? `<div class="review-detail-ratings">${detailRatings.join(' · ')}</div>` : '';
 
     const menuLine = [
-      rev.favoriteMenu ? `다시 먹을 메뉴: ${escapeHtml(rev.favoriteMenu)}` : null,
-      rev.tryNextMenu ? `다음에 먹을 메뉴: ${escapeHtml(rev.tryNextMenu)}` : null,
+      rev.favoriteMenu ? `또 먹고 싶은 메뉴: ${escapeHtml(rev.favoriteMenu)}` : null,
+      rev.tryNextMenu ? `다음에 시켜볼 메뉴: ${escapeHtml(rev.tryNextMenu)}` : null,
     ].filter(Boolean);
     const menuHtml = menuLine.length > 0 ? `<div class="review-menu-info">${menuLine.join(' | ')}</div>` : '';
 
@@ -2456,8 +2433,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                <label>청결 <select class="new-review-cleanliness"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
                <label>접근성 <select class="new-review-accessibility"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
              </div>
-             <input type="text" class="new-review-fav-menu" placeholder="다시 먹을 메뉴" maxlength="200" />
-             <input type="text" class="new-review-try-menu" placeholder="다음에 먹을 메뉴" maxlength="200" />
+             <input type="text" class="new-review-fav-menu" placeholder="또 먹고 싶은 메뉴" maxlength="200" />
+             <input type="text" class="new-review-try-menu" placeholder="다음에 시켜볼 메뉴" maxlength="200" />
            </details>
            <button type="button" class="btn-primary-sm submit-visit-review-btn" data-visit-id="${visit.id}">리뷰 작성</button>
          </div>`;
@@ -2468,6 +2445,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <div class="visit-card" data-visit-id="${visit.id}">
         <div class="visit-header">
           <span class="visit-date">${formatDate(visit.visitedAt)}</span>
+          ${visit.waitTime ? `<span class="wait-badge">웨이팅: ${escapeHtml(visit.waitTime)}</span>` : ''}
           ${participantsHtml ? `<span class="visit-participants">함께: ${participantsHtml}</span>` : ''}
           <span class="visit-creator">기록: ${escapeHtml(visit.createdBy?.nickname ?? '(탈퇴한 사용자)')}</span>
           ${canDeleteVisit ? `<button type="button" class="btn-outline-sm edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}">수정</button>` : ''}
@@ -2516,8 +2494,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         deleteRestBtn = `<button type="button" class="btn-danger-sm" id="delete-rest-btn">식당 삭제</button>`;
       }
 
-      const waitTimeLabel = detail.waitTime ? `웨이팅: ${escapeHtml(detail.waitTime)}` : '';
-
       // 멤버 목록 (방문 기록 참여자 선택용)
       const memberOptions = currentRoom.members
         .filter((m) => m.userId !== currentUser.id)
@@ -2529,6 +2505,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <h4>방문 기록 추가</h4>
           <input type="date" id="visit-date" value="${new Date().toISOString().slice(0, 10)}" />
           <input type="text" id="visit-memo" placeholder="메모 (선택)" maxlength="500" />
+          <select id="visit-waittime" style="padding:0.5rem;border:1px solid #d0d0d0;border-radius:6px;font-size:0.85rem;">
+            <option value="">웨이팅 (선택)</option><option value="없음">없음</option><option value="~10분">~10분</option><option value="~30분">~30분</option><option value="~1시간">~1시간</option><option value="1시간+">1시간+</option>
+          </select>
           ${memberOptions ? `<div class="participant-list"><span class="participant-label">함께 간 멤버:</span>${memberOptions}</div>` : ''}
           <button type="button" class="btn-primary-sm" id="submit-visit-btn">방문 기록 추가</button>
         </div>
@@ -2542,6 +2521,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <p style="font-size:0.78rem;color:#888;margin-bottom:0.5rem;">방문 기록과 리뷰를 한번에 남길 수 있습니다.</p>
           <input type="date" id="qr-date" value="${new Date().toISOString().slice(0, 10)}" />
           <input type="text" id="qr-memo" placeholder="메모 (선택)" maxlength="500" />
+          <select id="qr-waittime" style="padding:0.5rem;border:1px solid #d0d0d0;border-radius:6px;font-size:0.85rem;">
+            <option value="">웨이팅 (선택)</option><option value="없음">없음</option><option value="~10분">~10분</option><option value="~30분">~30분</option><option value="~1시간">~1시간</option><option value="1시간+">1시간+</option>
+          </select>
           ${memberOptions ? `<div class="participant-list"><span class="participant-label">함께 간 멤버:</span>${memberOptions.replace(/participant-check/g, 'qr-participant-check')}</div>` : ''}
           <select id="qr-rating">
             <option value="5">5 - 최고</option><option value="4">4 - 좋음</option>
@@ -2559,8 +2541,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <label>청결 <select id="qr-cleanliness"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
               <label>접근성 <select id="qr-accessibility"><option value="">-</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
             </div>
-            <input type="text" id="qr-fav-menu" placeholder="다시 먹을 메뉴" maxlength="200" />
-            <input type="text" id="qr-try-menu" placeholder="다음에 먹을 메뉴" maxlength="200" />
+            <input type="text" id="qr-fav-menu" placeholder="또 먹고 싶은 메뉴" maxlength="200" />
+            <input type="text" id="qr-try-menu" placeholder="다음에 시켜볼 메뉴" maxlength="200" />
           </details>
           <button type="button" class="btn-primary-sm" id="submit-quick-review">빠른 리뷰 작성</button>
         </div>
@@ -2578,7 +2560,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="detail-meta">
             <span class="category-badge">${escapeHtml(detail.category)}</span>
             ${avgRating !== null ? `<span>${renderStars(Math.round(avgRating))} ${avgRating}</span>` : ''}
-            ${waitTimeLabel ? `<span class="wait-badge">${waitTimeLabel}</span>` : ''}
             <span>등록: ${escapeHtml(detail.addedBy?.nickname ?? '(탈퇴한 사용자)')}</span>
             ${editRestBtn}
             ${deleteRestBtn}
@@ -2598,19 +2579,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const metaEl = area.querySelector('.detail-meta')!;
         if (metaEl.querySelector('.edit-rest-form')) return;
 
-        const waitOptions = ['', '없음', '~10분', '~30분', '~1시간', '1시간+'];
-        const waitSelect = waitOptions.map((w) =>
-          `<option value="${w}" ${(detail.waitTime || '') === w ? 'selected' : ''}>${w || '웨이팅 (선택)'}</option>`
-        ).join('');
-
         metaEl.insertAdjacentHTML('afterend', `
           <div class="edit-rest-form" style="background:#f9f9f9;border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
             <div class="form-row full" style="margin-bottom:0.5rem;">
               <input type="text" id="edit-rest-name" value="${escapeHtml(detail.name)}" placeholder="식당 이름" style="width:100%;padding:0.5rem;border:1px solid #d0d0d0;border-radius:6px;font-size:0.85rem;" />
             </div>
-            <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">
-              <input type="text" id="edit-rest-category" value="${escapeHtml(detail.category)}" placeholder="카테고리" style="padding:0.5rem;border:1px solid #d0d0d0;border-radius:6px;font-size:0.85rem;" />
-              <select id="edit-rest-waittime" style="padding:0.5rem;border:1px solid #d0d0d0;border-radius:6px;font-size:0.85rem;">${waitSelect}</select>
+            <div class="form-row" style="margin-bottom:0.5rem;">
+              <input type="text" id="edit-rest-category" value="${escapeHtml(detail.category)}" placeholder="카테고리" style="width:100%;padding:0.5rem;border:1px solid #d0d0d0;border-radius:6px;font-size:0.85rem;" />
             </div>
             <div style="display:flex;gap:0.5rem;">
               <button type="button" class="btn-primary-sm" id="save-rest-edit">저장</button>
@@ -2626,11 +2601,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         document.getElementById('save-rest-edit')!.addEventListener('click', async () => {
           const newName = (document.getElementById('edit-rest-name') as HTMLInputElement).value.trim();
           const newCategory = (document.getElementById('edit-rest-category') as HTMLInputElement).value.trim();
-          const newWaitTime = (document.getElementById('edit-rest-waittime') as HTMLSelectElement).value;
           if (!newName || !newCategory) { showToast('이름과 카테고리를 입력해주세요.', 'info'); return; }
 
           try {
-            await updateRoomRestaurant(currentRoom.id, rid, { name: newName, category: newCategory, waitTime: newWaitTime });
+            await updateRoomRestaurant(currentRoom.id, rid, { name: newName, category: newCategory });
             currentRoom = await fetchRoom(currentRoom.id);
             renderRestaurantsTab();
             renderRegionTab();
@@ -2657,11 +2631,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       document.getElementById('submit-visit-btn')!.addEventListener('click', async () => {
         const visitedAt = (document.getElementById('visit-date') as HTMLInputElement).value;
         const memo = (document.getElementById('visit-memo') as HTMLInputElement).value.trim();
+        const waitTime = (document.getElementById('visit-waittime') as HTMLSelectElement).value || undefined;
         const participantIds = Array.from(area.querySelectorAll<HTMLInputElement>('.participant-check input:checked')).map((cb) => cb.value);
         if (!visitedAt) { showToast('방문 날짜를 선택해주세요.', 'info'); return; }
 
         try {
-          await createRoomVisit(currentRoom.id, rid, { visitedAt, memo: memo || undefined, participantIds: participantIds.length > 0 ? participantIds : undefined });
+          await createRoomVisit(currentRoom.id, rid, { visitedAt, memo: memo || undefined, waitTime, participantIds: participantIds.length > 0 ? participantIds : undefined });
           currentRoom = await fetchRoom(currentRoom.id);
           if (areaId === 'restaurant-detail-area') renderRegionTab();
           await loadRestaurantDetail(rid, areaId);
@@ -2685,9 +2660,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const optStr = (id: string) => { const v = (document.getElementById(id) as HTMLInputElement)?.value.trim(); return v || undefined; };
 
         try {
+          const qrWaitTime = (document.getElementById('qr-waittime') as HTMLSelectElement).value || undefined;
           await createQuickReview(currentRoom.id, rid, {
             visitedAt,
             memo: memo || undefined,
+            waitTime: qrWaitTime,
             participantIds: participantIds.length > 0 ? participantIds : undefined,
             rating,
             content,
@@ -2842,8 +2819,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 <label>청결 <select class="edit-cleanliness"><option value="">-</option>${setSelected(btn.dataset.cleanliness || '')}</select></label>
                 <label>접근성 <select class="edit-accessibility"><option value="">-</option>${setSelected(btn.dataset.accessibility || '')}</select></label>
               </div>
-              <input type="text" class="edit-fav-menu" placeholder="다시 먹을 메뉴" maxlength="200" value="${escapeHtml(btn.dataset.favMenu || '')}" />
-              <input type="text" class="edit-try-menu" placeholder="다음에 먹을 메뉴" maxlength="200" value="${escapeHtml(btn.dataset.tryMenu || '')}" />
+              <input type="text" class="edit-fav-menu" placeholder="또 먹고 싶은 메뉴" maxlength="200" value="${escapeHtml(btn.dataset.favMenu || '')}" />
+              <input type="text" class="edit-try-menu" placeholder="다음에 시켜볼 메뉴" maxlength="200" value="${escapeHtml(btn.dataset.tryMenu || '')}" />
             </details>
             <div style="display:flex;gap:0.5rem;">
               <button type="button" class="btn-primary-sm save-edit-btn">저장</button>

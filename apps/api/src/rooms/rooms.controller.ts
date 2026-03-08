@@ -210,7 +210,7 @@ export class RoomsController {
     @Body() dto: CreateRoomRestaurantDto,
   ) {
     return this.roomsService.createRestaurant(
-      id, user.id, dto.name, dto.address, dto.province, dto.city, dto.neighborhood, dto.category, dto.imageUrl, dto.latitude, dto.longitude, dto.waitTime,
+      id, user.id, dto.name, dto.address, dto.province, dto.city, dto.neighborhood, dto.category, dto.imageUrl, dto.latitude, dto.longitude,
     );
   }
 
@@ -240,7 +240,6 @@ export class RoomsController {
     return this.roomsService.updateRestaurant(id, rid, user.id, req.roomMember.role, {
       name: dto.name,
       category: dto.category,
-      waitTime: dto.waitTime,
     });
   }
 
@@ -274,7 +273,7 @@ export class RoomsController {
     @CurrentUser() user: { id: string },
     @Body() dto: CreateRoomVisitDto,
   ) {
-    return this.roomsService.createVisit(id, rid, user.id, dto.visitedAt, dto.memo, dto.participantIds);
+    return this.roomsService.createVisit(id, rid, user.id, dto.visitedAt, dto.memo, dto.waitTime, dto.participantIds);
   }
 
   /** 방문 기록 수정 (생성자 or 매니저+) */
@@ -292,6 +291,7 @@ export class RoomsController {
     return this.roomsService.updateVisit(visitId, user.id, req.roomMember.role, {
       visitedAt: dto.visitedAt,
       memo: dto.memo,
+      waitTime: dto.waitTime,
     });
   }
 
@@ -387,7 +387,7 @@ export class RoomsController {
   ) {
     return this.roomsService.createQuickReview(
       id, rid, user.id,
-      dto.visitedAt, dto.memo, dto.participantIds,
+      dto.visitedAt, dto.memo, dto.waitTime, dto.participantIds,
       dto.rating, dto.content, dto.wouldRevisit ?? true,
       dto.tasteRating, dto.valueRating, dto.serviceRating,
       dto.cleanlinessRating, dto.accessibilityRating,

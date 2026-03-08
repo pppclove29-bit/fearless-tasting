@@ -300,7 +300,6 @@ export interface RoomRestaurantDetailResponse {
   imageUrl?: string;
   latitude?: number | null;
   longitude?: number | null;
-  waitTime?: string | null;
   roomId: string;
   addedById: string | null;
   createdAt: string;
@@ -422,7 +421,7 @@ export async function deleteRoomRestaurant(roomId: string, rid: string): Promise
 export async function updateRoomRestaurant(
   roomId: string,
   rid: string,
-  data: { name?: string; category?: string; waitTime?: string },
+  data: { name?: string; category?: string },
 ): Promise<void> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}`, {
     method: 'PATCH',
@@ -438,7 +437,7 @@ export async function updateRoomRestaurant(
 export async function createRoomVisit(
   roomId: string,
   rid: string,
-  data: { visitedAt: string; memo?: string; participantIds?: string[] },
+  data: { visitedAt: string; memo?: string; waitTime?: string; participantIds?: string[] },
 ): Promise<RoomVisitWithDetails> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}/visits`, {
     method: 'POST',
@@ -530,7 +529,7 @@ export async function deleteRoomReview(roomId: string, revId: string): Promise<v
 export async function createQuickReview(
   roomId: string,
   rid: string,
-  data: { visitedAt: string; memo?: string; participantIds?: string[] } & ReviewData,
+  data: { visitedAt: string; memo?: string; waitTime?: string; participantIds?: string[] } & ReviewData,
 ): Promise<{ visit: RoomVisitWithDetails; review: RoomReview }> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}/quick-review`, {
     method: 'POST',
