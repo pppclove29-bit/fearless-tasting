@@ -57,6 +57,12 @@ const fullTitle = `${title} | 무모한 시식가`;
     {import.meta.env.PUBLIC_KAKAO_MAP_KEY && (
       <script type="text/javascript" src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.PUBLIC_KAKAO_MAP_KEY}&libraries=services&autoload=false`}></script>
     )}
+    {import.meta.env.PUBLIC_KAKAO_MAP_KEY && (
+      <script type="text/javascript" src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js" crossorigin="anonymous"></script>
+    )}
+    {import.meta.env.PUBLIC_KAKAO_MAP_KEY && (
+      <meta name="kakao-app-key" content={import.meta.env.PUBLIC_KAKAO_MAP_KEY} />
+    )}
     <slot name="head" />
     <title>{fullTitle}</title>
     <script is:inline>

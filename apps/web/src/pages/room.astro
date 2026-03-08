@@ -117,6 +117,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .btn-copy:hover { background: #f0f0f0; }
 
+  .btn-kakao-share {
+    padding: 0.3rem 0.6rem;
+    background: #FEE500;
+    color: #191919;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-kakao-share:hover { background: #F0D800; }
+
   .btn-regen {
     padding: 0.3rem 0.6rem;
     background: #111;
@@ -1393,6 +1407,25 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   // 카카오맵 SDK 로드 여부
   const hasKakaoMap = typeof window !== 'undefined' && 'kakao' in window;
 
+  // 카카오 공유 SDK 초기화
+  interface KakaoSDK {
+    isInitialized: () => boolean;
+    init: (key: string) => void;
+    Share: {
+      sendDefault: (params: {
+        objectType: string;
+        content: { title: string; description: string; imageUrl: string; link: { mobileWebUrl: string; webUrl: string } };
+        buttons?: { title: string; link: { mobileWebUrl: string; webUrl: string } }[];
+      }) => void;
+    };
+  }
+  const Kakao = (window as { Kakao?: KakaoSDK }).Kakao;
+  const hasKakaoShare = !!Kakao;
+  if (Kakao && !Kakao.isInitialized()) {
+    const kakaoKey = document.querySelector<HTMLMetaElement>('meta[name="kakao-app-key"]')?.content;
+    if (kakaoKey) Kakao.init(kakaoKey);
+  }
+
   function escapeHtml(text: string): string {
     const div = document.createElement('div');
     div.textContent = text;
@@ -1482,6 +1515,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <span class="invite-label">초대 링크</span>
           <span class="invite-code" id="invite-code">${currentRoom.inviteCode}</span>
           <button type="button" class="btn-copy" id="copy-link-btn">링크 복사</button>
+          ${hasKakaoShare ? '<button type="button" class="btn-kakao-share" id="kakao-invite-btn">카톡 공유</button>' : ''}
           ${'share' in navigator ? '<button type="button" class="btn-copy" id="share-invite-btn">공유</button>' : ''}
           ${isOwner() ? '<button type="button" class="btn-regen" id="regen-code-btn">재생성</button>' : ''}
           ${currentRoom.inviteCodeExpiresAt ? `<span class="invite-expiry" id="invite-expiry">${new Date(currentRoom.inviteCodeExpiresAt) < new Date() ? '(만료됨)' : '(~' + formatDate(currentRoom.inviteCodeExpiresAt) + ')'}</span>` : ''}
@@ -1570,6 +1604,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const btn = document.getElementById('copy-link-btn')!;
       btn.textContent = '복사됨!';
       setTimeout(() => { btn.textContent = '링크 복사'; }, 1500);
+    });
+
+    document.getElementById('kakao-invite-btn')?.addEventListener('click', () => {
+      if (!Kakao) return;
+      const inviteUrl = getInviteLink();
+      Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: `${currentRoom.name} - 무모한 시식가`,
+          description: `"${currentRoom.name}" 방에 초대합니다! 함께 맛집을 기록해요.`,
+          imageUrl: `${location.origin}/icons/icon-512.png`,
+          link: { mobileWebUrl: inviteUrl, webUrl: inviteUrl },
+        },
+        buttons: [
+          { title: '방 입장하기', link: { mobileWebUrl: inviteUrl, webUrl: inviteUrl } },
+        ],
+      });
     });
 
     document.getElementById('share-invite-btn')?.addEventListener('click', () => {
