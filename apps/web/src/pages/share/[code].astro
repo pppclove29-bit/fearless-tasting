@@ -255,6 +255,64 @@ function escapeHtml(text: string): string {
     color: var(--text-muted);
     font-size: 0.85rem;
   }
+
+  .share-detail-ratings {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  .share-menu-info {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+
+  .revisit-badge {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+  }
+
+  .revisit-no {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .revisit-yes {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  [data-theme="dark"] .revisit-no {
+    background: #451a1a;
+    color: #fca5a5;
+  }
+
+  [data-theme="dark"] .revisit-yes {
+    background: #14332a;
+    color: #86efac;
+  }
+
+  .share-visit-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.85rem;
+    margin-bottom: 0.6rem;
+    background: var(--bg-hover);
+  }
+
+  .share-visit-header {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin-bottom: 0.4rem;
+  }
+
+  .share-visit-memo {
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 0.5rem;
+  }
 </style>
 
 <script>
@@ -307,15 +365,15 @@ function escapeHtml(text: string): string {
                   rev.cleanlinessRating != null ? `청결 ${rev.cleanlinessRating}` : null,
                   rev.accessibilityRating != null ? `접근성 ${rev.accessibilityRating}` : null,
                 ].filter(Boolean);
-                const detailLine = detailRatings.length > 0 ? `<div style="font-size:0.72rem;color:#999;">${detailRatings.join(' · ')}</div>` : '';
+                const detailLine = detailRatings.length > 0 ? `<div class="share-detail-ratings">${detailRatings.join(' · ')}</div>` : '';
                 const menuLine = [
                   rev.favoriteMenu ? `또 먹고 싶은 메뉴: ${escapeHtml(rev.favoriteMenu)}` : null,
                   rev.tryNextMenu ? `다음에 시켜볼 메뉴: ${escapeHtml(rev.tryNextMenu)}` : null,
                 ].filter(Boolean);
-                const menuHtml = menuLine.length > 0 ? `<div style="font-size:0.72rem;color:#888;margin-top:0.15rem;">${menuLine.join(' | ')}</div>` : '';
+                const menuHtml = menuLine.length > 0 ? `<div class="share-menu-info">${menuLine.join(' | ')}</div>` : '';
                 const revisitBadge = rev.wouldRevisit === false
-                  ? '<span style="font-size:0.65rem;padding:0.1rem 0.3rem;border-radius:4px;background:#fee2e2;color:#991b1b;">재방문 X</span>'
-                  : '<span style="font-size:0.65rem;padding:0.1rem 0.3rem;border-radius:4px;background:#dcfce7;color:#166534;">재방문 O</span>';
+                  ? '<span class="revisit-badge revisit-no">재방문 X</span>'
+                  : '<span class="revisit-badge revisit-yes">재방문 O</span>';
                 return `
                   <div class="share-review-card">
                     <div class="share-review-header">
@@ -329,13 +387,13 @@ function escapeHtml(text: string): string {
                   </div>
                 `;
               }).join('')
-            : '<p class="empty-text" style="padding:0.5rem;">리뷰 없음</p>';
+            : '<p class="empty-text">리뷰 없음</p>';
 
           return `
-            <div style="border:1px solid var(--border);border-radius:12px;padding:0.85rem;margin-bottom:0.6rem;background:var(--bg-hover);">
-              <div style="font-size:0.8rem;font-weight:600;color:var(--text-heading);margin-bottom:0.4rem;">
+            <div class="share-visit-card">
+              <div class="share-visit-header">
                 ${formatDate(visit.visitedAt)}
-                ${visit.memo ? `<span style="font-weight:400;color:var(--text-muted);margin-left:0.5rem;">${escapeHtml(visit.memo)}</span>` : ''}
+                ${visit.memo ? `<span class="share-visit-memo">${escapeHtml(visit.memo)}</span>` : ''}
               </div>
               ${reviewsHtml}
             </div>
