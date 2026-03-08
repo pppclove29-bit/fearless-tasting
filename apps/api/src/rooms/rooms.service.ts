@@ -792,9 +792,20 @@ export class RoomsService {
         const avg = data.reviews.length > 0
           ? Math.round(data.reviews.reduce((s, r) => s + r.rating, 0) / data.reviews.length * 10) / 10
           : null;
-        const revisitYes = data.reviews.filter((r) => r.wouldRevisit).length;
-        const revisitRate = data.reviews.length > 0
-          ? Math.round(revisitYes / data.reviews.length * 100)
+        // 실제 재방문율: 이 멤버가 방문한 식당 중 2회 이상 방문한 식당 비율
+        const visitedRestMap = new Map<string, number>();
+        for (const rest of room.restaurants) {
+          for (const visit of rest.visits) {
+            const isParticipant = visit.createdById === uid || visit.participants.some((p) => p.userId === uid);
+            if (isParticipant) {
+              visitedRestMap.set(rest.id, (visitedRestMap.get(rest.id) || 0) + 1);
+            }
+          }
+        }
+        const totalVisitedRests = visitedRestMap.size;
+        const revisitedRests = Array.from(visitedRestMap.values()).filter((c) => c >= 2).length;
+        const revisitRate = totalVisitedRests > 0
+          ? Math.round(revisitedRests / totalVisitedRests * 100)
           : null;
         return {
           userId: uid,
@@ -898,21 +909,11 @@ export class RoomsService {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    // ─── 재방문율 TOP 식당 ───
-    const revisitByRestaurant = new Map<string, { name: string; yes: number; total: number }>();
-    for (const rest of room.restaurants) {
-      const reviews = rest.visits.flatMap((v) => v.reviews);
-      if (reviews.length >= 2) {
-        revisitByRestaurant.set(rest.id, {
-          name: rest.name,
-          yes: reviews.filter((r) => r.wouldRevisit).length,
-          total: reviews.length,
-        });
-      }
-    }
-    const topRevisitRestaurants = Array.from(revisitByRestaurant.values())
-      .map((d) => ({ name: d.name, rate: Math.round(d.yes / d.total * 100), reviewCount: d.total }))
-      .sort((a, b) => b.rate - a.rate)
+    // ─── 재방문 TOP 식당 (실제 방문 2회 이상) ───
+    const topRevisitRestaurants = room.restaurants
+      .map((r) => ({ name: r.name, visitCount: r.visits.length }))
+      .filter((r) => r.visitCount >= 2)
+      .sort((a, b) => b.visitCount - a.visitCount)
       .slice(0, 5);
 
     // ─── 식당별 평균 평점 TOP/BOTTOM ───

@@ -1214,6 +1214,32 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   /* 카카오맵 지도 */
+  .map-region-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .map-region-btn {
+    padding: 0.3rem 0.7rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 100px;
+    background: #fff;
+    font-size: 0.78rem;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .map-region-btn:hover { border-color: #999; }
+
+  .map-region-btn.active {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+  }
+
   .map-container {
     background: #fff;
     border: 1px solid #e8e8e8;
@@ -1785,7 +1811,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${strictest && strictest.avgRating !== null && strictest.userId !== mostGenerous?.userId ? `<span class="stat-badge stat-badge-silver">가장 엄격한 평가</span> ${escapeHtml(strictest.nickname)} (평균 ${strictest.avgRating})` : ''}
         </div>` : ''}
         <table class="stat-table">
-          <thead><tr><th>멤버</th><th class="num">방문</th><th class="num">리뷰</th><th class="num">평균</th><th class="num">재방문율</th></tr></thead>
+          <thead><tr><th>멤버</th><th class="num">방문</th><th class="num">리뷰</th><th class="num">평균</th><th class="num">재방문</th></tr></thead>
           <tbody>${memberStats.map((m) => `
             <tr>
               <td>${escapeHtml(m.nickname)}</td>
@@ -1820,15 +1846,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </div>`).join('')}
       </div>` : '';
 
-    // ── 재방문율 TOP ──
+    // ── 재방문 TOP ──
     const revisitHtml = topRevisitRestaurants.length > 0 ? `
       <div class="stat-section">
-        <h3 class="stat-section-title">재방문 의사 TOP</h3>
-        ${topRevisitRestaurants.map((r) => `
+        <h3 class="stat-section-title">재방문 TOP 식당</h3>
+        ${topRevisitRestaurants.map((r, i) => `
           <div class="stat-bar-row">
+            <span class="stat-bar-label" style="min-width:20px;font-weight:600;">${i + 1}</span>
             <span style="flex:1;font-size:0.82rem;">${escapeHtml(r.name)}</span>
-            <span style="font-size:0.82rem;font-weight:600;color:${r.rate >= 80 ? '#16a34a' : r.rate >= 50 ? '#d97706' : '#dc2626'}">${r.rate}%</span>
-            <span style="font-size:0.72rem;color:#999;">(${r.reviewCount}명)</span>
+            <span style="font-size:0.82rem;font-weight:600;">${r.visitCount}회 방문</span>
           </div>`).join('')}
       </div>` : '';
 
@@ -2455,7 +2481,25 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return;
     }
 
-    panel.innerHTML = '<div class="map-container"><div id="kakao-map"></div></div><div id="map-detail-area"></div>';
+    // 지역별 그룹핑
+    const regionGroups = new Map<string, typeof restaurantsWithCoords>();
+    for (const r of restaurantsWithCoords) {
+      const region = r.neighborhood || r.city || '기타';
+      const group = regionGroups.get(region);
+      if (group) group.push(r);
+      else regionGroups.set(region, [r]);
+    }
+
+    const regionBtns = regionGroups.size > 1
+      ? `<div class="map-region-filters">
+          <button type="button" class="map-region-btn active" data-region="all">전체 (${restaurantsWithCoords.length})</button>
+          ${Array.from(regionGroups.entries()).map(([region, rests]) =>
+            `<button type="button" class="map-region-btn" data-region="${escapeHtml(region)}">${escapeHtml(region)} (${rests.length})</button>`
+          ).join('')}
+        </div>`
+      : '';
+
+    panel.innerHTML = `${regionBtns}<div class="map-container"><div id="kakao-map"></div></div><div id="map-detail-area"></div>`;
 
     await loadKakaoMaps();
 
@@ -2474,13 +2518,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     );
 
     const map = new MapConstructor(container, { center, level: 5 });
-    const bounds = new LatLngBounds();
 
     let activeOverlay: Record<string, unknown> | null = null;
+    const markerOverlayPairs: { marker: Record<string, unknown>; overlay: Record<string, unknown>; region: string }[] = [];
 
     for (const r of restaurantsWithCoords) {
       const position = new LatLng(r.latitude!, r.longitude!);
-      bounds.extend(position);
+      const region = r.neighborhood || r.city || '기타';
 
       const marker = new MarkerConstructor({ map, position });
 
@@ -2517,6 +2561,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         (overlay as Record<string, (m: unknown) => void>).setMap(map);
         activeOverlay = overlay;
       });
+
+      markerOverlayPairs.push({ marker, overlay, region });
     }
 
     // 지도 클릭 시 오버레이 닫기
@@ -2528,8 +2574,48 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       }
     });
 
-    if (restaurantsWithCoords.length > 1) {
-      (map as Record<string, (b: unknown) => void>).setBounds(bounds);
+    // 전체 마커 범위로 이동
+    function fitBoundsToRegion(targetRegion: string | null) {
+      const bounds = new LatLngBounds();
+      let count = 0;
+
+      for (const pair of markerOverlayPairs) {
+        const show = !targetRegion || pair.region === targetRegion;
+        (pair.marker as Record<string, (m: unknown) => void>).setMap(show ? map : null as unknown as never);
+        if (pair.overlay === activeOverlay && !show) {
+          (pair.overlay as Record<string, () => void>).setMap(null as unknown as never);
+          activeOverlay = null;
+        }
+        if (show) {
+          bounds.extend((pair.marker as Record<string, () => unknown>).getPosition());
+          count++;
+        }
+      }
+
+      if (count > 1) {
+        (map as Record<string, (b: unknown) => void>).setBounds(bounds);
+      } else if (count === 1) {
+        for (const pair of markerOverlayPairs) {
+          const show = !targetRegion || pair.region === targetRegion;
+          if (show) {
+            (map as Record<string, (c: unknown) => void>).setCenter((pair.marker as Record<string, () => unknown>).getPosition());
+            (map as Record<string, (l: number) => void>).setLevel(4);
+            break;
+          }
+        }
+      }
+    }
+
+    fitBoundsToRegion(null);
+
+    // 지역 필터 버튼 이벤트
+    for (const btn of panel.querySelectorAll<HTMLElement>('.map-region-btn')) {
+      btn.addEventListener('click', () => {
+        panel.querySelector('.map-region-btn.active')?.classList.remove('active');
+        btn.classList.add('active');
+        const region = btn.dataset.region!;
+        fitBoundsToRegion(region === 'all' ? null : region);
+      });
     }
   }
 
