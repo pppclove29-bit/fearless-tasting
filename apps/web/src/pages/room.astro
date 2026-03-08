@@ -392,6 +392,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-sub);
   }
 
+  .section-subtitle {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin: 1.25rem 0 0.5rem;
+  }
+
+  .section-count {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
   /* 식당 등록 폼 */
   .add-restaurant-form {
     background: var(--bg-card);
@@ -399,6 +412,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-radius: 14px;
     padding: 1.25rem;
     margin-bottom: 1rem;
+  }
+
+  .auto-filled-info {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    background: var(--bg-hover);
+    padding: 0.4rem 0.65rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
   }
 
   .add-restaurant-form h3 {
@@ -784,27 +807,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-bottom: 0.5rem;
   }
 
-  .participant-list {
-    margin-bottom: 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  .participant-label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 0.25rem;
-    color: var(--text-sub);
-  }
-
-  .participant-check {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    margin-right: 0.75rem;
-    font-size: 0.8rem;
-    cursor: pointer;
-  }
-
   .review-detail-fields {
     margin-bottom: 0.5rem;
     font-size: 0.8rem;
@@ -819,8 +821,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .detail-rating-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 0.4rem;
+    grid-template-columns: repeat(auto-fill, minmax(110px, max-content));
+    gap: 0.35rem 0.75rem;
     margin-bottom: 0.5rem;
   }
 
@@ -830,6 +832,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     gap: 0.3rem;
     font-size: 0.78rem;
     color: var(--text-sub);
+    white-space: nowrap;
   }
 
   .detail-rating-grid select {
@@ -1659,6 +1662,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     return div.innerHTML;
   }
 
+  /** 버튼 중복 클릭 방지 래퍼 */
+  async function withLoading(btn: HTMLButtonElement, fn: () => Promise<void>) {
+    if (btn.disabled) return;
+    const original = btn.textContent!;
+    btn.disabled = true;
+    btn.textContent = '처리 중...';
+    try { await fn(); }
+    finally { btn.disabled = false; btn.textContent = original; }
+  }
+
   const renderStars = formatRating;
 
   // ── 바텀시트 유틸 ──
@@ -1994,7 +2007,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
         <div class="help-step">
           <span class="help-step-num">3</span>
-          <div class="help-step-text"><strong>방문 기록 추가</strong> — 식당 상세에서 방문 날짜를 선택하고 "방문 기록 추가"를 눌러주세요. 함께 간 멤버를 태그할 수도 있어요.</div>
+          <div class="help-step-text"><strong>방문 기록 추가</strong> — 식당 상세에서 방문 날짜를 선택하고 "방문 기록 추가"를 눌러주세요.</div>
         </div>
         <div class="help-step">
           <span class="help-step-num">4</span>
@@ -2505,17 +2518,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="form-row full">
           <input type="text" id="add-rest-name" placeholder="식당 이름" required />
         </div>
+        <div class="auto-filled-info" id="auto-filled-info" hidden>
+          <span id="auto-filled-address"></span>
+        </div>
         <div class="form-row full">
-          <input type="text" id="add-rest-address" placeholder="주소" required readonly />
+          <input type="text" id="add-rest-address-detail" placeholder="상세 주소 (예: 2층, 골목 안쪽)" maxlength="100" />
         </div>
-        <div class="form-row">
-          <input type="text" id="add-rest-province" placeholder="시/도" required readonly />
-          <input type="text" id="add-rest-city" placeholder="시/군/구" required readonly />
-        </div>
-        <div class="form-row">
-          <input type="text" id="add-rest-neighborhood" placeholder="읍/면/동" required readonly />
+        <div class="form-row full">
           <input type="text" id="add-rest-category" placeholder="카테고리 (예: 한식)" required />
         </div>
+        <input type="hidden" id="add-rest-address" />
+        <input type="hidden" id="add-rest-province" />
+        <input type="hidden" id="add-rest-city" />
+        <input type="hidden" id="add-rest-neighborhood" />
         <input type="hidden" id="add-rest-lat" />
         <input type="hidden" id="add-rest-lng" />
         <div class="add-rest-actions">
@@ -2530,6 +2545,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
         <div class="form-row full">
           <input type="text" id="add-rest-address" placeholder="주소" required />
+        </div>
+        <div class="form-row full">
+          <input type="text" id="add-rest-address-detail" placeholder="상세 주소 (예: 2층, 골목 안쪽)" maxlength="100" />
         </div>
         <div class="form-row">
           <input type="text" id="add-rest-province" placeholder="시/도 (예: 서울특별시)" required />
@@ -2596,7 +2614,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       listHtml = sorted.map((r) => renderRestaurantCard(r)).join('');
     }
 
-    panel.innerHTML = addFormHtml + '<div id="restaurant-detail-area"></div>' + searchHtml + filterHtml + sortHtml + '<div id="restaurant-list">' + listHtml + '</div>';
+    const listTitle = currentRoom.restaurants.length > 0
+      ? `<h3 class="section-subtitle">식당 목록 <span class="section-count">${currentRoom.restaurants.length}</span></h3>`
+      : '';
+
+    panel.innerHTML = addFormHtml + '<div id="restaurant-detail-area"></div>' + listTitle + searchHtml + filterHtml + sortHtml + '<div id="restaurant-list">' + listHtml + '</div>';
     attachRestaurantFormHandler();
     if (hasKakaoMap) attachPlaceSearchHandler();
     attachRestaurantCardHandlers();
@@ -2658,15 +2680,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   function attachRestaurantFormHandler() {
-    document.getElementById('add-rest-submit')?.addEventListener('click', async () => {
+    const btn = document.getElementById('add-rest-submit') as HTMLButtonElement | null;
+    btn?.addEventListener('click', () => withLoading(btn, async () => {
       const name = (document.getElementById('add-rest-name') as HTMLInputElement).value.trim();
-      const address = (document.getElementById('add-rest-address') as HTMLInputElement).value.trim();
+      const baseAddress = (document.getElementById('add-rest-address') as HTMLInputElement).value.trim();
+      const addressDetail = (document.getElementById('add-rest-address-detail') as HTMLInputElement).value.trim();
+      const address = addressDetail ? `${baseAddress} ${addressDetail}` : baseAddress;
       const province = (document.getElementById('add-rest-province') as HTMLInputElement).value.trim();
       const city = (document.getElementById('add-rest-city') as HTMLInputElement).value.trim();
       const neighborhood = (document.getElementById('add-rest-neighborhood') as HTMLInputElement).value.trim();
       const category = (document.getElementById('add-rest-category') as HTMLInputElement).value.trim();
 
-      if (!name || !address || !province || !city || !neighborhood || !category) {
+      if (!name || !baseAddress || !province || !city || !neighborhood || !category) {
         showToast('모든 항목을 입력해 주세요.', 'info');
         return;
       }
@@ -2675,14 +2700,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const lngEl = document.getElementById('add-rest-lng') as HTMLInputElement | null;
       const latitude = latEl?.value ? Number(latEl.value) : undefined;
       const longitude = lngEl?.value ? Number(lngEl.value) : undefined;
-      try {
-        await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category, latitude, longitude } as Parameters<typeof createRoomRestaurant>[1]);
-        currentRoom = await fetchRoom(currentRoom.id);
-        renderRestaurantsTab();
-        renderRegionTab();
-        showToast('식당이 등록되었습니다.', 'success');
-      } catch (err) { showToast(err instanceof Error ? err.message : '등록에 실패했습니다.'); }
-    });
+      await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category, latitude, longitude } as Parameters<typeof createRoomRestaurant>[1]);
+      currentRoom = await fetchRoom(currentRoom.id);
+      renderRestaurantsTab();
+      renderRegionTab();
+      showToast('식당이 등록되었습니다.', 'success');
+    }).catch((err) => showToast(err instanceof Error ? err.message : '등록에 실패했습니다.')));
   }
 
   // ─── 카카오 장소 검색 (식당 등록 폼) ───
@@ -2787,6 +2810,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const lastCat = catParts[catParts.length - 1] || '';
     if (lastCat && lastCat !== '음식점') {
       categoryInput.value = lastCat;
+    }
+
+    // 자동 입력 주소 요약 표시
+    const infoEl = document.getElementById('auto-filled-info');
+    const infoAddr = document.getElementById('auto-filled-address');
+    if (infoEl && infoAddr) {
+      infoAddr.textContent = place.address_name;
+      infoEl.hidden = false;
     }
 
     categoryInput.focus();
@@ -3208,7 +3239,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   function renderVisitCard(visit: RoomVisitWithDetails): string {
     const canDeleteVisit = visit.createdById === currentUser.id || isManagerOrAbove();
-    const participantsHtml = visit.participants.length > 0
+    const participantsHtml = visit.participants && visit.participants.length > 0
       ? visit.participants.map((p) => escapeHtml(p.user.nickname)).join(', ')
       : '';
 
@@ -3296,12 +3327,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         deleteRestBtn = `<button type="button" class="btn-danger-sm" id="delete-rest-btn">식당 삭제</button>`;
       }
 
-      // 멤버 목록 (방문 기록 참여자 선택용)
-      const memberOptions = currentRoom.members
-        .filter((m) => m.userId !== currentUser.id)
-        .map((m) => `<label class="participant-check"><input type="checkbox" value="${m.userId}" /> ${escapeHtml(m.user.nickname)}</label>`)
-        .join('');
-
       const visitFormHtml = `
         <div class="visit-form">
           <h4>방문 기록 추가</h4>
@@ -3310,7 +3335,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <select id="visit-waittime" class="form-select">
             <option value="">웨이팅 (선택)</option><option value="없음">없음</option><option value="~10분">~10분</option><option value="~30분">~30분</option><option value="~1시간">~1시간</option><option value="1시간+">1시간+</option>
           </select>
-          ${memberOptions ? `<div class="participant-list"><span class="participant-label">함께 간 멤버:</span>${memberOptions}</div>` : ''}
           <button type="button" class="btn-primary-sm" id="submit-visit-btn">방문 기록 추가</button>
         </div>
       `;
@@ -3326,7 +3350,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <select id="qr-waittime" class="form-select">
             <option value="">웨이팅 (선택)</option><option value="없음">없음</option><option value="~10분">~10분</option><option value="~30분">~30분</option><option value="~1시간">~1시간</option><option value="1시간+">1시간+</option>
           </select>
-          ${memberOptions ? `<div class="participant-list"><span class="participant-label">함께 간 멤버:</span>${memberOptions.replace(/participant-check/g, 'qr-participant-check')}</div>` : ''}
           <select id="qr-rating">
             <option value="5">5 - 최고</option><option value="4">4 - 좋음</option>
             <option value="3" selected>3 - 보통</option><option value="2">2 - 별로</option>
@@ -3430,61 +3453,55 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
 
       // 방문 기록 추가
-      document.getElementById('submit-visit-btn')!.addEventListener('click', async () => {
+      const visitBtn = document.getElementById('submit-visit-btn') as HTMLButtonElement;
+      visitBtn.addEventListener('click', () => withLoading(visitBtn, async () => {
         const visitedAt = (document.getElementById('visit-date') as HTMLInputElement).value;
         const memo = (document.getElementById('visit-memo') as HTMLInputElement).value.trim();
         const waitTime = (document.getElementById('visit-waittime') as HTMLSelectElement).value || undefined;
-        const participantIds = Array.from(area.querySelectorAll<HTMLInputElement>('.participant-check input:checked')).map((cb) => cb.value);
         if (!visitedAt) { showToast('방문 날짜를 선택해주세요.', 'info'); return; }
 
-        try {
-          await createRoomVisit(currentRoom.id, rid, { visitedAt, memo: memo || undefined, waitTime, participantIds: participantIds.length > 0 ? participantIds : undefined });
-          currentRoom = await fetchRoom(currentRoom.id);
-          if (areaId === 'restaurant-detail-area') renderRegionTab();
-          await loadRestaurantDetail(rid, areaId);
-          showToast('방문 기록이 추가되었습니다.', 'success');
-        } catch (err) { showToast(err instanceof Error ? err.message : '방문 기록 추가에 실패했습니다.'); }
-      });
+        await createRoomVisit(currentRoom.id, rid, { visitedAt, memo: memo || undefined, waitTime });
+        currentRoom = await fetchRoom(currentRoom.id);
+        if (areaId === 'restaurant-detail-area') renderRegionTab();
+        await loadRestaurantDetail(rid, areaId);
+        showToast('방문 기록이 추가되었습니다.', 'success');
+      }).catch((err) => showToast(err instanceof Error ? err.message : '방문 기록 추가에 실패했습니다.')));
 
       // 빠른 리뷰 작성
-      document.getElementById('submit-quick-review')!.addEventListener('click', async () => {
+      const qrBtn = document.getElementById('submit-quick-review') as HTMLButtonElement;
+      qrBtn.addEventListener('click', () => withLoading(qrBtn, async () => {
         const visitedAt = (document.getElementById('qr-date') as HTMLInputElement).value;
         const memo = (document.getElementById('qr-memo') as HTMLInputElement).value.trim();
         const rating = parseInt((document.getElementById('qr-rating') as HTMLSelectElement).value, 10);
         const content = (document.getElementById('qr-content') as HTMLTextAreaElement).value.trim();
         const wouldRevisit = (document.getElementById('qr-revisit') as HTMLInputElement).checked;
-        const participantIds = Array.from(area.querySelectorAll<HTMLInputElement>('.qr-participant-check input:checked')).map((cb) => cb.value);
-
         if (!visitedAt) { showToast('방문 날짜를 선택해주세요.', 'info'); return; }
         if (!content) { showToast('리뷰 내용을 입력해주세요.', 'info'); return; }
 
         const optInt = (id: string) => { const v = (document.getElementById(id) as HTMLSelectElement)?.value; return v ? parseInt(v, 10) : undefined; };
         const optStr = (id: string) => { const v = (document.getElementById(id) as HTMLInputElement)?.value.trim(); return v || undefined; };
 
-        try {
-          const qrWaitTime = (document.getElementById('qr-waittime') as HTMLSelectElement).value || undefined;
-          await createQuickReview(currentRoom.id, rid, {
-            visitedAt,
-            memo: memo || undefined,
-            waitTime: qrWaitTime,
-            participantIds: participantIds.length > 0 ? participantIds : undefined,
-            rating,
-            content,
-            wouldRevisit,
-            tasteRating: optInt('qr-taste'),
-            valueRating: optInt('qr-value'),
-            serviceRating: optInt('qr-service'),
-            cleanlinessRating: optInt('qr-cleanliness'),
-            accessibilityRating: optInt('qr-accessibility'),
-            favoriteMenu: optStr('qr-fav-menu'),
-            tryNextMenu: optStr('qr-try-menu'),
-          });
-          currentRoom = await fetchRoom(currentRoom.id);
-          if (areaId === 'restaurant-detail-area') renderRegionTab();
-          await loadRestaurantDetail(rid, areaId);
-          showToast('리뷰가 작성되었습니다.', 'success');
-        } catch (err) { showToast(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.'); }
-      });
+        const qrWaitTime = (document.getElementById('qr-waittime') as HTMLSelectElement).value || undefined;
+        await createQuickReview(currentRoom.id, rid, {
+          visitedAt,
+          memo: memo || undefined,
+          waitTime: qrWaitTime,
+          rating,
+          content,
+          wouldRevisit,
+          tasteRating: optInt('qr-taste'),
+          valueRating: optInt('qr-value'),
+          serviceRating: optInt('qr-service'),
+          cleanlinessRating: optInt('qr-cleanliness'),
+          accessibilityRating: optInt('qr-accessibility'),
+          favoriteMenu: optStr('qr-fav-menu'),
+          tryNextMenu: optStr('qr-try-menu'),
+        });
+        currentRoom = await fetchRoom(currentRoom.id);
+        if (areaId === 'restaurant-detail-area') renderRegionTab();
+        await loadRestaurantDetail(rid, areaId);
+        showToast('리뷰가 작성되었습니다.', 'success');
+      }).catch((err) => showToast(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.')));
 
       attachVisitAndReviewHandlers(area, rid, areaId);
     } catch {
@@ -3557,7 +3574,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     // 리뷰 작성
     for (const btn of area.querySelectorAll<HTMLButtonElement>('.submit-visit-review-btn')) {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', () => withLoading(btn, async () => {
         const visitCard = btn.closest('.visit-card')!;
         const visitId = btn.dataset.visitId!;
         const rating = parseInt(visitCard.querySelector<HTMLSelectElement>('.new-review-rating')!.value, 10);
@@ -3567,14 +3584,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         const detailFields = collectDetailFields(visitCard as HTMLElement, 'new-review');
 
-        try {
-          await createRoomReview(currentRoom.id, visitId, { rating, content, wouldRevisit, ...detailFields });
-          currentRoom = await fetchRoom(currentRoom.id);
-          if (areaId === 'restaurant-detail-area') renderRegionTab();
-          await loadRestaurantDetail(rid, areaId);
-          showToast('리뷰가 작성되었습니다.', 'success');
-        } catch (err) { showToast(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.'); }
-      });
+        await createRoomReview(currentRoom.id, visitId, { rating, content, wouldRevisit, ...detailFields });
+        currentRoom = await fetchRoom(currentRoom.id);
+        if (areaId === 'restaurant-detail-area') renderRegionTab();
+        await loadRestaurantDetail(rid, areaId);
+        showToast('리뷰가 작성되었습니다.', 'success');
+      }).catch((err) => showToast(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.')));
     }
 
     // 리뷰 삭제
