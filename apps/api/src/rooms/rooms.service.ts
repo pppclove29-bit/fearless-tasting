@@ -426,6 +426,33 @@ export class RoomsService {
     });
   }
 
+  /** 방 내 식당 수정 (본인 or manager+) */
+  async updateRestaurant(
+    roomId: string,
+    restaurantId: string,
+    userId: string,
+    memberRole: 'owner' | 'manager' | 'member',
+    data: { name?: string; category?: string; waitTime?: string | null },
+  ) {
+    const restaurant = await this.prisma.read.roomRestaurant.findUnique({ where: { id: restaurantId } });
+    if (!restaurant || restaurant.roomId !== roomId) {
+      throw new NotFoundException('식당을 찾을 수 없습니다');
+    }
+    const isOwnerOrManager = memberRole === 'owner' || memberRole === 'manager';
+    if (restaurant.addedById !== userId && !isOwnerOrManager) {
+      throw new ForbiddenException('본인이 등록한 식당이거나 매니저 이상만 수정할 수 있습니다');
+    }
+
+    return this.prisma.write.roomRestaurant.update({
+      where: { id: restaurantId },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.category !== undefined && { category: data.category }),
+        ...(data.waitTime !== undefined && { waitTime: data.waitTime }),
+      },
+    });
+  }
+
   /** 방 내 식당 삭제 (본인 or manager+) */
   async removeRestaurant(roomId: string, restaurantId: string, userId: string, memberRole: 'owner' | 'manager' | 'member') {
     const restaurant = await this.prisma.read.roomRestaurant.findUnique({
@@ -501,6 +528,30 @@ export class RoomsService {
           include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
         },
         _count: { select: { reviews: true } },
+      },
+    });
+  }
+
+  /** 방문 기록 수정 (생성자 or manager+) */
+  async updateVisit(
+    visitId: string,
+    userId: string,
+    memberRole: 'owner' | 'manager' | 'member',
+    data: { visitedAt?: string; memo?: string | null },
+  ) {
+    const visit = await this.prisma.read.roomVisit.findUnique({ where: { id: visitId } });
+    if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
+
+    const isOwnerOrManager = memberRole === 'owner' || memberRole === 'manager';
+    if (visit.createdById !== userId && !isOwnerOrManager) {
+      throw new ForbiddenException('본인이 생성한 방문 기록이거나 매니저 이상만 수정할 수 있습니다');
+    }
+
+    return this.prisma.write.roomVisit.update({
+      where: { id: visitId },
+      data: {
+        ...(data.visitedAt !== undefined && { visitedAt: new Date(data.visitedAt) }),
+        ...(data.memo !== undefined && { memo: data.memo }),
       },
     });
   }
@@ -603,5 +654,56 @@ export class RoomsService {
     }
 
     return this.prisma.write.roomReview.delete({ where: { id: reviewId } });
+  }
+
+  // ─── 빠른 리뷰 (방문 + 리뷰 동시 생성) ───
+
+  /** 방문 기록과 리뷰를 한 번에 생성 */
+  async createQuickReview(
+    roomId: string,
+    restaurantId: string,
+    userId: string,
+    visitedAt: string,
+    memo: string | undefined,
+    participantIds: string[] | undefined,
+    rating: number,
+    content: string,
+    wouldRevisit: boolean,
+    tasteRating?: number,
+    valueRating?: number,
+    serviceRating?: number,
+    cleanlinessRating?: number,
+    accessibilityRating?: number,
+    favoriteMenu?: string,
+    tryNextMenu?: string,
+  ) {
+    const restaurant = await this.prisma.read.roomRestaurant.findUnique({ where: { id: restaurantId } });
+    if (!restaurant || restaurant.roomId !== roomId) {
+      throw new NotFoundException('식당을 찾을 수 없습니다');
+    }
+
+    return this.prisma.write.$transaction(async (tx) => {
+      const visit = await tx.roomVisit.create({
+        data: {
+          restaurantId,
+          createdById: userId,
+          visitedAt: new Date(visitedAt),
+          memo,
+          participants: participantIds && participantIds.length > 0
+            ? { create: participantIds.map((uid) => ({ userId: uid })) }
+            : undefined,
+        },
+      });
+
+      const review = await tx.roomReview.create({
+        data: {
+          visitId: visit.id, userId, rating, content, wouldRevisit,
+          tasteRating, valueRating, serviceRating, cleanlinessRating, accessibilityRating,
+          favoriteMenu, tryNextMenu,
+        },
+      });
+
+      return { visit, review };
+    });
   }
 }

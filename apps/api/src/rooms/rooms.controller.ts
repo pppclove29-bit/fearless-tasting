@@ -15,6 +15,9 @@ import { CreateRoomVisitDto } from './dto/create-room-visit.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 import { ToggleShareCodeDto } from './dto/toggle-share-code.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { CreateQuickReviewDto } from './dto/create-quick-review.dto';
+import { UpdateRoomRestaurantDto } from './dto/update-room-restaurant.dto';
+import { UpdateRoomVisitDto } from './dto/update-room-visit.dto';
 import { RoomManagerGuard } from './guards/room-manager.guard';
 
 interface RequestWithRoomMember extends Request {
@@ -221,6 +224,26 @@ export class RoomsController {
     return this.roomsService.findRestaurantDetail(id, rid);
   }
 
+  /** 방 내 식당 수정 */
+  @Patch(':id/restaurants/:rid')
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '방 내 식당 수정 (본인 또는 매니저+)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  @ApiParam({ name: 'rid', description: '식당 ID' })
+  updateRestaurant(
+    @Param('id') id: string,
+    @Param('rid') rid: string,
+    @CurrentUser() user: { id: string },
+    @Req() req: RequestWithRoomMember,
+    @Body() dto: UpdateRoomRestaurantDto,
+  ) {
+    return this.roomsService.updateRestaurant(id, rid, user.id, req.roomMember.role, {
+      name: dto.name,
+      category: dto.category,
+      waitTime: dto.waitTime,
+    });
+  }
+
   /** 방 내 식당 삭제 */
   @Delete(':id/restaurants/:rid')
   @UseGuards(RoomMemberGuard)
@@ -252,6 +275,24 @@ export class RoomsController {
     @Body() dto: CreateRoomVisitDto,
   ) {
     return this.roomsService.createVisit(id, rid, user.id, dto.visitedAt, dto.memo, dto.participantIds);
+  }
+
+  /** 방문 기록 수정 (생성자 or 매니저+) */
+  @Patch(':id/visits/:visitId')
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '방문 기록 수정 (생성자 또는 매니저+)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  @ApiParam({ name: 'visitId', description: '방문 ID' })
+  updateVisit(
+    @Param('visitId') visitId: string,
+    @CurrentUser() user: { id: string },
+    @Req() req: RequestWithRoomMember,
+    @Body() dto: UpdateRoomVisitDto,
+  ) {
+    return this.roomsService.updateVisit(visitId, user.id, req.roomMember.role, {
+      visitedAt: dto.visitedAt,
+      memo: dto.memo,
+    });
   }
 
   /** 방문 기록 삭제 (생성자 or 매니저+) */
@@ -327,5 +368,30 @@ export class RoomsController {
     @Req() req: RequestWithRoomMember,
   ) {
     return this.roomsService.removeReview(revId, user.id, req.roomMember.role);
+  }
+
+  // ─── 빠른 리뷰 ───
+
+  /** 빠른 리뷰 (방문 + 리뷰 동시 생성) */
+  @Post(':id/restaurants/:rid/quick-review')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '빠른 리뷰 (방문 + 리뷰 동시 생성)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  @ApiParam({ name: 'rid', description: '식당 ID' })
+  createQuickReview(
+    @Param('id') id: string,
+    @Param('rid') rid: string,
+    @CurrentUser() user: { id: string },
+    @Body() dto: CreateQuickReviewDto,
+  ) {
+    return this.roomsService.createQuickReview(
+      id, rid, user.id,
+      dto.visitedAt, dto.memo, dto.participantIds,
+      dto.rating, dto.content, dto.wouldRevisit ?? true,
+      dto.tasteRating, dto.valueRating, dto.serviceRating,
+      dto.cleanlinessRating, dto.accessibilityRating,
+      dto.favoriteMenu, dto.tryNextMenu,
+    );
   }
 }

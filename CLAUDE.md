@@ -113,7 +113,7 @@ apps/api/src/
 | --------- | ---- | ---- | ------------------------------------------------------------------------------------------------------------ |
 | 전역 기본 | 60초 | 60회 | 모든 엔드포인트                                                                                              |
 | 인증      | 60초 | 5회  | `GET /auth/kakao/callback`, `POST /auth/refresh`                                                             |
-| 생성      | 60초 | 10회 | `POST /rooms`, `POST /rooms/join`, `POST /rooms/:id/restaurants`, `POST /rooms/:id/restaurants/:rid/visits`, `POST /rooms/:id/visits/:visitId/reviews` |
+| 생성      | 60초 | 10회 | `POST /rooms`, `POST /rooms/join`, `POST /rooms/:id/restaurants`, `POST /rooms/:id/restaurants/:rid/visits`, `POST /rooms/:id/visits/:visitId/reviews`, `POST /rooms/:id/restaurants/:rid/quick-review` |
 
 - 초과 시 HTTP 429 (Too Many Requests) 응답
 - IP 기반 추적 (ThrottlerGuard 기본)
@@ -124,13 +124,36 @@ apps/api/src/
 
 | 경로              | 설명                                                |
 | ----------------- | --------------------------------------------------- |
-| `/`               | 홈 — 내 방 목록 + 방 만들기 + 초대 코드 입장        |
-| `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 멤버 관리, 공유 링크 관리 |
+| `/`               | 홈 — 랜딩 페이지 (항상 표시) + 로그인 시 내 방 대시보드 |
+| `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 멤버 관리, 공유 링크 관리, 도움말 |
 | `/share?code=xxx` | 공유 열람 — 비로그인, 읽기 전용 (식당/리뷰 열람)    |
 | `/login`          | 카카오 로그인                                       |
 | `/cs`             | 문의 등록                                           |
 | `/rooms`          | 방 목록 (홈과 동일)                                 |
 | `/admin`          | 관리자 — 문의 관리                                  |
+
+## 방 인원 제한
+
+- `MAX_ROOM_MEMBERS = 4` (rooms.service.ts)
+- 초대 코드 입장 시 멤버 수 체크, 초과 시 403
+
+## 빠른 리뷰
+
+- `POST /rooms/:id/restaurants/:rid/quick-review` — 방문 기록 + 리뷰를 한 번에 생성 (트랜잭션)
+- 기존 2단계 (방문 추가 → 리뷰 작성)를 1단계로 단축
+- 프론트엔드: 식당 상세의 "빠른 리뷰" 폼
+
+## 식당/방문 수정
+
+- `PATCH /rooms/:id/restaurants/:rid` — 식당 이름, 카테고리, 웨이팅 수정 (본인 또는 매니저+)
+- `PATCH /rooms/:id/visits/:visitId` — 방문 날짜, 메모 수정 (생성자 또는 매니저+)
+
+## DB 마이그레이션
+
+- **프로덕션**: `prisma migrate deploy` (Dockerfile CMD에서 실행)
+- **개발**: `prisma migrate dev` (`pnpm --filter @repo/api prisma:migrate`)
+- 마이그레이션 파일: `apps/api/prisma/migrations/`
+- 초기 baseline: `0_init` (기존 `db push`에서 전환)
 
 ## 환경 변수
 

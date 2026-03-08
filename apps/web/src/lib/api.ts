@@ -409,6 +409,20 @@ export async function deleteRoomRestaurant(roomId: string, rid: string): Promise
   if (!res.ok) throw new Error('식당 삭제에 실패했습니다.');
 }
 
+/** 방 내 식당 수정 */
+export async function updateRoomRestaurant(
+  roomId: string,
+  rid: string,
+  data: { name?: string; category?: string; waitTime?: string },
+): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('식당 수정에 실패했습니다.');
+}
+
 // ─── 방문 기록 ───
 
 /** 방문 기록 생성 */
@@ -433,6 +447,20 @@ export async function createRoomVisit(
 export async function deleteRoomVisit(roomId: string, visitId: string): Promise<void> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/visits/${visitId}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('방문 기록 삭제에 실패했습니다.');
+}
+
+/** 방문 기록 수정 */
+export async function updateRoomVisit(
+  roomId: string,
+  visitId: string,
+  data: { visitedAt?: string; memo?: string },
+): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/visits/${visitId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('방문 기록 수정에 실패했습니다.');
 }
 
 // ─── 리뷰 ───
@@ -487,6 +515,24 @@ export async function updateRoomReview(
 export async function deleteRoomReview(roomId: string, revId: string): Promise<void> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/reviews/${revId}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('리뷰 삭제에 실패했습니다.');
+}
+
+/** 빠른 리뷰 (방문 + 리뷰 동시 생성) */
+export async function createQuickReview(
+  roomId: string,
+  rid: string,
+  data: { visitedAt: string; memo?: string; participantIds?: string[] } & ReviewData,
+): Promise<{ visit: RoomVisitWithDetails; review: RoomReview }> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}/quick-review`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.message || '빠른 리뷰 작성에 실패했습니다.');
+  }
+  return res.json();
 }
 
 // ─── 공유 링크 ───
