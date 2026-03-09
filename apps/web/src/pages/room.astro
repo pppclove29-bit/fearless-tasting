@@ -1010,48 +1010,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     text-align: right;
   }
 
-  .random-pick-card {
-    margin-bottom: 0.75rem;
-  }
-
-  .random-pick-card h3 {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-  }
-
-  .random-result {
-    min-height: 48px;
-    margin-bottom: 0.75rem;
-  }
-
-  .random-result.bounce {
-    animation: bounce 0.4s;
-  }
-
-  @keyframes bounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.03); }
-  }
-
-  .random-picked {
-    background: var(--bg-hover);
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-  }
-
-  .random-picked-name {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-heading);
-    margin-bottom: 0.15rem;
-  }
-
-  .random-picked-meta {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-  }
-
   .stat-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
   .stat-table th, .stat-table td { padding: 0.45rem 0.5rem; text-align: left; border-bottom: 1px solid var(--border-light); }
   .stat-table th { color: var(--text-muted); font-weight: 500; font-size: 0.75rem; }
@@ -2117,13 +2075,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="stat-card"><div class="stat-value">${summary.overallAvg ?? '-'}</div><div class="stat-label">평균 평점</div></div>
       </div>`;
 
-    // ── 랜덤 추천 ──
-    const randomHtml = `
-      <div class="stat-card random-pick-card">
-        <h3>오늘 뭐 먹지?</h3>
-        <div id="random-result" class="random-result"></div>
-        <button type="button" class="btn-primary-sm" id="random-pick-btn">랜덤 추천</button>
-      </div>`;
 
     // ── 멤버 분석 ──
     const bestReviewer = memberStats.find((m) => m.reviewCount > 0);
@@ -2381,7 +2332,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     panel.innerHTML = `
       ${summaryHtml}
-      ${randomHtml}
       ${unreviewedHtml}
       ${roomBehaviorHtml}
       ${behaviorHtml}
@@ -2399,20 +2349,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       ${waitHtml}
       ${menuHtml}
     `;
-
-    // 랜덤 추천 핸들러
-    document.getElementById('random-pick-btn')!.addEventListener('click', () => {
-      const result = document.getElementById('random-result')!;
-      const pick = restaurants[Math.floor(Math.random() * restaurants.length)];
-      result.innerHTML = `
-        <div class="random-picked">
-          <div class="random-picked-name">${escapeHtml(pick.name)}</div>
-          <div class="random-picked-meta">${escapeHtml(pick.address)} · ${escapeHtml(pick.category)}</div>
-        </div>
-      `;
-      result.classList.add('bounce');
-      setTimeout(() => result.classList.remove('bounce'), 400);
-    });
 
     } catch (renderErr) {
       console.error('[stats] render error:', renderErr);
