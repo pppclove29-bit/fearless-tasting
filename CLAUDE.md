@@ -114,7 +114,7 @@ apps/api/src/
 | --------- | ---- | ---- | ------------------------------------------------------------------------------------------------------------ |
 | 전역 기본 | 60초 | 60회 | 모든 엔드포인트                                                                                              |
 | 인증      | 60초 | 5회  | `GET /auth/kakao/callback`, `POST /auth/refresh`                                                             |
-| 생성      | 60초 | 10회 | `POST /rooms`, `POST /rooms/join`, `POST /rooms/:id/restaurants`, `POST /rooms/:id/restaurants/:rid/visits`, `POST /rooms/:id/visits/:visitId/reviews`, `POST /rooms/:id/restaurants/:rid/quick-review` |
+| 생성      | 60초 | 10회 | `POST /rooms`, `POST /rooms/join`, `POST /rooms/:id/restaurants`, `POST /rooms/:id/restaurants/:rid/visits`, `POST /rooms/:id/visits/:visitId/reviews` |
 
 - 초과 시 HTTP 429 (Too Many Requests) 응답
 - IP 기반 추적 (ThrottlerGuard 기본)
@@ -143,12 +143,6 @@ apps/api/src/
 - `MAX_ROOM_MEMBERS = 4` (rooms.service.ts)
 - `MAX_ROOMS_PER_USER = 30` — 유저당 참여 가능한 방 수 제한
 - 초대 코드 입장 및 방 생성 시 멤버 수/방 수 체크, 초과 시 403
-
-## 빠른 리뷰
-
-- `POST /rooms/:id/restaurants/:rid/quick-review` — 방문 기록 + 리뷰를 한 번에 생성 (트랜잭션)
-- 기존 2단계 (방문 추가 → 리뷰 작성)를 1단계로 단축
-- 프론트엔드: 식당 상세의 "빠른 리뷰" 폼
 
 ## 식당/방문 수정
 

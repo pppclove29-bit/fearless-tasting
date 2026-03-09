@@ -15,7 +15,6 @@ import { CreateRoomVisitDto } from './dto/create-room-visit.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 import { ToggleShareCodeDto } from './dto/toggle-share-code.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
-import { CreateQuickReviewDto } from './dto/create-quick-review.dto';
 import { UpdateRoomRestaurantDto } from './dto/update-room-restaurant.dto';
 import { UpdateRoomVisitDto } from './dto/update-room-visit.dto';
 import { CreatePollDto } from './dto/create-poll.dto';
@@ -410,31 +409,6 @@ export class RoomsController {
     @CurrentUser() user: { id: string },
   ) {
     return this.roomsService.toggleWishlist(roomId, restaurantId, user.id);
-  }
-
-  // ─── 빠른 리뷰 ───
-
-  /** 빠른 리뷰 (방문 + 리뷰 동시 생성) */
-  @Post(':id/restaurants/:rid/quick-review')
-  @Throttle({ default: { ttl: 60000, limit: 10 } })
-  @UseGuards(RoomMemberGuard)
-  @ApiOperation({ summary: '빠른 리뷰 (방문 + 리뷰 동시 생성)' })
-  @ApiParam({ name: 'id', description: '방 ID' })
-  @ApiParam({ name: 'rid', description: '식당 ID' })
-  createQuickReview(
-    @Param('id') id: string,
-    @Param('rid') rid: string,
-    @CurrentUser() user: { id: string },
-    @Body() dto: CreateQuickReviewDto,
-  ) {
-    return this.roomsService.createQuickReview(
-      id, rid, user.id,
-      dto.visitedAt, dto.memo, dto.waitTime, dto.participantIds,
-      dto.rating, dto.content, dto.wouldRevisit ?? true,
-      dto.tasteRating, dto.valueRating, dto.serviceRating,
-      dto.cleanlinessRating, dto.accessibilityRating,
-      dto.favoriteMenu, dto.tryNextMenu,
-    );
   }
 
   // ─── 투표 ───

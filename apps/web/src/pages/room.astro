@@ -1669,10 +1669,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <span class="quick-action-emoji">🍽️</span>
           <span class="quick-action-label">식당 등록</span>
         </button>
-        <button type="button" class="quick-action-btn" id="qa-quick-review">
-          <span class="quick-action-emoji">✏️</span>
-          <span class="quick-action-label">빠른 리뷰</span>
-        </button>
         <button type="button" class="quick-action-btn" id="qa-poll">
           <span class="quick-action-emoji">🗳️</span>
           <span class="quick-action-label">투표</span>
@@ -1866,14 +1862,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       setTimeout(() => {
         const nameInput = document.getElementById('add-rest-search') || document.getElementById('add-rest-name');
         if (nameInput) { nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); (nameInput as HTMLInputElement).focus(); }
-      }, 100);
-    });
-
-    document.getElementById('qa-quick-review')?.addEventListener('click', () => {
-      switchToTab('restaurants');
-      setTimeout(() => {
-        const list = document.getElementById('restaurant-list');
-        if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     });
 

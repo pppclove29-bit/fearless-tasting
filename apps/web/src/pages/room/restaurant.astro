@@ -530,7 +530,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     updateRoomRestaurant, deleteRoomRestaurant,
     createRoomVisit, deleteRoomVisit, updateRoomVisit,
     createRoomReview, updateRoomReview, deleteRoomReview,
-    createQuickReview,
     showToast, showConfirm, showDangerConfirm,
   } from '@/lib/api';
   import type { AuthUser, RoomDetailResponse, ReviewData } from '@/lib/api';
@@ -772,33 +771,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       const sortedVisits = [...detail.visits].sort((a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime());
 
-      const quickReviewHtml = `
-        <div class="visit-form" id="quick-review-section">
-          <h4>빠른 리뷰</h4>
-          <p class="form-hint">방문 기록과 리뷰를 한번에 남길 수 있습니다.</p>
-          <input type="date" id="qr-date" value="${new Date().toISOString().slice(0, 10)}" />
-          <input type="text" id="qr-memo" placeholder="메모 (선택)" maxlength="500" />
-          <select id="qr-waittime" class="form-select">
-            <option value="">웨이팅 (선택)</option><option value="없음">없음</option><option value="~10분">~10분</option><option value="~30분">~30분</option><option value="~1시간">~1시간</option><option value="1시간+">1시간+</option>
-          </select>
-          ${starRatingHtml('qr-rating', 3)}
-          <textarea id="qr-content" placeholder="리뷰 내용을 작성해주세요" class="form-textarea"></textarea>
-          <label class="revisit-toggle"><input type="checkbox" id="qr-revisit" checked /> 재방문 의사 있음</label>
-          <details class="review-detail-fields">
-            <summary>세부 평점 (선택)</summary>
-            <div class="detail-rating-grid">
-              ${detailStarHtml('맛', 'qr-taste', 0)}
-              ${detailStarHtml('가성비', 'qr-value', 0)}
-              ${detailStarHtml('서비스', 'qr-service', 0)}
-              ${detailStarHtml('청결', 'qr-cleanliness', 0)}
-              ${detailStarHtml('접근성', 'qr-accessibility', 0)}
-            </div>
-            <input type="text" id="qr-fav-menu" placeholder="또 먹고 싶은 메뉴" maxlength="200" />
-            <input type="text" id="qr-try-menu" placeholder="다음에 시켜볼 메뉴" maxlength="200" />
-          </details>
-          <button type="button" class="btn-primary-sm" id="submit-quick-review">빠른 리뷰 작성</button>
-        </div>
-      `;
 
       const visitsHtml = sortedVisits.length > 0
         ? sortedVisits.map(renderVisitCard).join('')
@@ -815,7 +787,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             ${editRestBtn}
             ${deleteRestBtn}
           </div>
-          ${quickReviewHtml}
           ${visitFormHtml}
           <h3 class="visits-heading">방문 기록 (${detail.visits.length})</h3>
           <div id="visits-list">${visitsHtml}</div>
@@ -883,42 +854,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         await loadRestaurantDetail();
         showToast('방문 기록이 추가되었습니다.', 'success');
       }).catch((err) => showToast(err instanceof Error ? err.message : '방문 기록 추가에 실패했습니다.')));
-
-      // 빠른 리뷰 작성
-      const qrBtn = document.getElementById('submit-quick-review') as HTMLButtonElement;
-      qrBtn.addEventListener('click', () => withLoading(qrBtn, async () => {
-        const visitedAt = (document.getElementById('qr-date') as HTMLInputElement).value;
-        const memo = (document.getElementById('qr-memo') as HTMLInputElement).value.trim();
-        const qrSection = document.getElementById('quick-review-section')!;
-        const rating = getStarValue(qrSection, 'qr-rating');
-        const content = (document.getElementById('qr-content') as HTMLTextAreaElement).value.trim();
-        const wouldRevisit = (document.getElementById('qr-revisit') as HTMLInputElement).checked;
-        if (!visitedAt) { showToast('방문 날짜를 선택해주세요.', 'info'); return; }
-        if (!rating) { showToast('평점을 선택해주세요.', 'info'); return; }
-        if (!content) { showToast('리뷰 내용을 입력해주세요.', 'info'); return; }
-
-        const optStr = (id: string) => { const v = (document.getElementById(id) as HTMLInputElement)?.value.trim(); return v || undefined; };
-
-        const qrWaitTime = (document.getElementById('qr-waittime') as HTMLSelectElement).value || undefined;
-        await createQuickReview(currentRoom.id, restaurantId, {
-          visitedAt,
-          memo: memo || undefined,
-          waitTime: qrWaitTime,
-          rating,
-          content,
-          wouldRevisit,
-          tasteRating: getOptionalStarValue(qrSection, 'qr-taste'),
-          valueRating: getOptionalStarValue(qrSection, 'qr-value'),
-          serviceRating: getOptionalStarValue(qrSection, 'qr-service'),
-          cleanlinessRating: getOptionalStarValue(qrSection, 'qr-cleanliness'),
-          accessibilityRating: getOptionalStarValue(qrSection, 'qr-accessibility'),
-          favoriteMenu: optStr('qr-fav-menu'),
-          tryNextMenu: optStr('qr-try-menu'),
-        });
-        currentRoom = await fetchRoom(currentRoom.id);
-        await loadRestaurantDetail();
-        showToast('리뷰가 작성되었습니다.', 'success');
-      }).catch((err) => showToast(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.')));
 
       attachVisitAndReviewHandlers();
       attachStarRatingHandlers(area);

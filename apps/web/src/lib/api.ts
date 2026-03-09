@@ -529,24 +529,6 @@ export async function deleteRoomReview(roomId: string, revId: string): Promise<v
   if (!res.ok) throw new Error('리뷰 삭제에 실패했습니다.');
 }
 
-/** 빠른 리뷰 (방문 + 리뷰 동시 생성) */
-export async function createQuickReview(
-  roomId: string,
-  rid: string,
-  data: { visitedAt: string; memo?: string; waitTime?: string; participantIds?: string[] } & ReviewData,
-): Promise<{ visit: RoomVisitWithDetails; review: RoomReview }> {
-  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}/quick-review`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => null);
-    throw new Error(body?.message || '빠른 리뷰 작성에 실패했습니다.');
-  }
-  return res.json();
-}
-
 // ─── 통계 ───
 
 export interface RoomStats {

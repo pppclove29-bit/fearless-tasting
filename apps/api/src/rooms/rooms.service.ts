@@ -731,67 +731,6 @@ export class RoomsService {
     return this.prisma.write.roomReview.delete({ where: { id: reviewId } });
   }
 
-  // ─── 빠른 리뷰 (방문 + 리뷰 동시 생성) ───
-
-  /** 방문 기록과 리뷰를 한 번에 생성 */
-  async createQuickReview(
-    roomId: string,
-    restaurantId: string,
-    userId: string,
-    visitedAt: string,
-    memo: string | undefined,
-    waitTime: string | undefined,
-    participantIds: string[] | undefined,
-    rating: number,
-    content: string,
-    wouldRevisit: boolean,
-    tasteRating?: number,
-    valueRating?: number,
-    serviceRating?: number,
-    cleanlinessRating?: number,
-    accessibilityRating?: number,
-    favoriteMenu?: string,
-    tryNextMenu?: string,
-  ) {
-    const restaurant = await this.prisma.read.roomRestaurant.findUnique({ where: { id: restaurantId } });
-    if (!restaurant || restaurant.roomId !== roomId) {
-      throw new NotFoundException('식당을 찾을 수 없습니다');
-    }
-
-    const result = await this.prisma.write.$transaction(async (tx) => {
-      const visit = await tx.roomVisit.create({
-        data: {
-          restaurantId,
-          createdById: userId,
-          visitedAt: new Date(visitedAt),
-          memo,
-          waitTime,
-          participants: participantIds && participantIds.length > 0
-            ? { create: participantIds.map((uid) => ({ userId: uid })) }
-            : undefined,
-        },
-      });
-
-      const review = await tx.roomReview.create({
-        data: {
-          visitId: visit.id, userId, rating, content, wouldRevisit,
-          tasteRating, valueRating, serviceRating, cleanlinessRating, accessibilityRating,
-          favoriteMenu, tryNextMenu,
-        },
-      });
-
-      return { visit, review };
-    });
-
-    // 알림: 빠른 리뷰 (방문 + 리뷰)
-    const reviewer = await this.prisma.read.user.findUnique({ where: { id: userId }, select: { nickname: true } });
-    if (reviewer) {
-      this.createNotificationForRoom(roomId, userId, 'review_added', `${reviewer.nickname}님이 "${restaurant.name}"에 리뷰를 남겼습니다. (${rating}점)`).catch(() => {});
-    }
-
-    return result;
-  }
-
   // ─── 통계 ───
 
   /** 방 전체 통계 조회 */
