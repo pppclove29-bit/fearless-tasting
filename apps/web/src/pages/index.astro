@@ -58,6 +58,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     <div class="form-error" id="form-error" hidden></div>
 
+    <div id="home-search-wrap" hidden>
+      <input type="text" id="home-search" class="home-search" placeholder="방 이름 검색" />
+    </div>
+
     <div class="rooms-toolbar" id="rooms-toolbar" hidden>
       <span class="rooms-count" id="rooms-count"></span>
       <button type="button" class="sort-trigger" id="sort-trigger">
@@ -655,6 +659,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.9rem;
   }
 
+  .home-search {
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: var(--bg-card);
+    color: var(--text);
+    margin-bottom: 0.75rem;
+    box-sizing: border-box;
+  }
+
+  .home-search:focus { outline: none; border-color: var(--text-heading); }
+
   .rooms-actions {
     display: flex;
     gap: 0.75rem;
@@ -1014,6 +1033,25 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   let allRooms: RoomListItem[] = [];
   let currentSort = 'recent';
+  let homeSearchQuery = '';
+
+  const homeSearchWrap = document.getElementById('home-search-wrap')!;
+  const homeSearchInput = document.getElementById('home-search') as HTMLInputElement;
+
+  function filterHomeRooms(rooms: RoomListItem[]): RoomListItem[] {
+    if (!homeSearchQuery) return rooms;
+    const q = homeSearchQuery.toLowerCase();
+    return rooms.filter((r) => r.name.toLowerCase().includes(q));
+  }
+
+  function applyAndRenderHome() {
+    renderRooms(filterHomeRooms(sortRooms(allRooms, currentSort)));
+  }
+
+  homeSearchInput.addEventListener('input', () => {
+    homeSearchQuery = homeSearchInput.value.trim();
+    applyAndRenderHome();
+  });
 
   const sortLabels: Record<string, string> = {
     recent: '최근 참여순',
@@ -1092,7 +1130,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       for (const b of sortOptions.querySelectorAll('.sheet-option')) b.classList.remove('active');
       btn.classList.add('active');
 
-      renderRooms(sortRooms(allRooms, currentSort));
+      applyAndRenderHome();
       closeSortSheet();
     });
   }
@@ -1112,7 +1150,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       await createRoom(name);
       createNameInput.value = '';
       allRooms = await fetchMyRooms();
-      renderRooms(sortRooms(allRooms, currentSort));
+      homeSearchWrap.hidden = allRooms.length === 0;
+      applyAndRenderHome();
     } catch (err) {
       showError(err instanceof Error ? err.message : '방 생성에 실패했습니다.');
     }
@@ -1162,7 +1201,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         cta.hidden = true;
       }
       allRooms = await fetchMyRooms();
-      renderRooms(allRooms);
+      homeSearchWrap.hidden = allRooms.length === 0;
+      applyAndRenderHome();
     }
   })();
 </script>

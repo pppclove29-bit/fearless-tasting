@@ -850,7 +850,7 @@ export async function fetchUnreadNotificationCount(): Promise<number> {
   const res = await apiFetch(`${API_BASE}/users/me/notifications/unread-count`);
   if (!res.ok) return 0;
   const data = await res.json();
-  return data.count;
+  return typeof data.count === 'number' ? data.count : 0;
 }
 
 /** 알림 모두 읽음 처리 */
