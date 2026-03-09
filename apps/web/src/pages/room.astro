@@ -537,6 +537,62 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-color: var(--text-heading);
   }
 
+  .category-chips {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+
+  .category-chips-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-right: 0.1rem;
+    width: 100%;
+    margin-bottom: 0.1rem;
+  }
+
+  .cat-chip {
+    padding: 0.28rem 0.6rem;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    background: var(--bg-card);
+    color: var(--text-sub);
+    font-size: 0.76rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .cat-chip:hover { border-color: var(--text-muted); }
+
+  .cat-chip.active {
+    background: var(--text-heading);
+    color: var(--bg);
+    border-color: var(--text-heading);
+  }
+
+  .cat-chip-custom {
+    flex: 1;
+    min-width: 80px;
+    max-width: 140px;
+    padding: 0.28rem 0.5rem;
+    border: 1.5px solid var(--border-mid);
+    border-radius: 20px;
+    font-size: 0.76rem;
+    font-family: inherit;
+    background: var(--bg-card);
+    color: var(--text);
+  }
+
+  .cat-chip-custom:focus {
+    outline: none;
+    border-color: var(--text-heading);
+  }
+
   .add-rest-actions {
     display: flex;
     gap: 0.5rem;
@@ -2608,6 +2664,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   function renderRestaurantsTab() {
     const panel = document.getElementById('tab-restaurants')!;
 
+    const categoryChipsHtml = `
+      <div class="category-chips" id="add-rest-category-chips">
+        <span class="category-chips-label">카테고리</span>
+        <button type="button" class="cat-chip" data-cat="한식">한식</button>
+        <button type="button" class="cat-chip" data-cat="중식">중식</button>
+        <button type="button" class="cat-chip" data-cat="일식">일식</button>
+        <button type="button" class="cat-chip" data-cat="양식">양식</button>
+        <button type="button" class="cat-chip" data-cat="카페">카페</button>
+        <button type="button" class="cat-chip" data-cat="분식">분식</button>
+        <button type="button" class="cat-chip" data-cat="치킨">치킨</button>
+        <button type="button" class="cat-chip" data-cat="피자">피자</button>
+        <button type="button" class="cat-chip" data-cat="고기">고기</button>
+        <button type="button" class="cat-chip" data-cat="해산물">해산물</button>
+        <button type="button" class="cat-chip" data-cat="술집">술집</button>
+        <button type="button" class="cat-chip" data-cat="베이커리">베이커리</button>
+        <button type="button" class="cat-chip" data-cat="기타">기타</button>
+        <input type="text" class="cat-chip-custom" id="add-rest-category-custom" placeholder="직접 입력" maxlength="30" hidden />
+      </div>
+      <input type="hidden" id="add-rest-category" />
+    `;
+
     const manualFormHtml = `
       <div id="manual-form-area" ${hasKakaoMap ? 'hidden' : ''}>
         <div class="form-row full">
@@ -2616,9 +2693,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="form-row full">
           <input type="text" id="add-rest-address" placeholder="주소 (예: 서울특별시 강남구 역삼동 123-4)" required />
         </div>
-        <div class="form-row full">
-          <input type="text" id="add-rest-category" placeholder="카테고리 (예: 한식)" required />
-        </div>
+        ${categoryChipsHtml}
         <input type="hidden" id="add-rest-province" />
         <input type="hidden" id="add-rest-city" />
         <input type="hidden" id="add-rest-neighborhood" />
@@ -2697,6 +2772,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     panel.innerHTML = addFormHtml + listTitle + searchHtml + filterHtml + sortHtml + '<div id="restaurant-list"></div>';
     renderRestaurantList();
     attachRestaurantFormHandler();
+    attachCategoryChipHandlers();
     if (hasKakaoMap) {
       attachPlaceSearchHandler();
       attachManualToggle();
@@ -2818,6 +2894,35 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     kakaoBtn.addEventListener('click', () => setMode('kakao'));
     manualBtn.addEventListener('click', () => setMode('manual'));
+  }
+
+  function attachCategoryChipHandlers() {
+    const catInput = document.getElementById('add-rest-category') as HTMLInputElement | null;
+    const customInput = document.getElementById('add-rest-category-custom') as HTMLInputElement | null;
+    if (!catInput) return;
+
+    for (const chip of document.querySelectorAll<HTMLButtonElement>('.cat-chip')) {
+      chip.addEventListener('click', () => {
+        const val = chip.dataset.cat || '';
+        document.querySelectorAll('.cat-chip').forEach((c) => c.classList.remove('active'));
+        chip.classList.add('active');
+
+        if (val === '기타' && customInput) {
+          customInput.hidden = false;
+          customInput.focus();
+          catInput.value = '';
+        } else {
+          if (customInput) { customInput.hidden = true; customInput.value = ''; }
+          catInput.value = val;
+        }
+      });
+    }
+
+    if (customInput) {
+      customInput.addEventListener('input', () => {
+        catInput.value = customInput.value.trim();
+      });
+    }
   }
 
   const shortProvinceMap: Record<string, string> = {

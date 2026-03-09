@@ -745,7 +745,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <span class="room-review-rating">${renderStars(rev.rating)} ${rev.rating}</span>
         </div>
         ${detailLine}
-        <div class="room-review-content">${escapeHtml(rev.content)}</div>
+        ${rev.content ? `<div class="room-review-content">${escapeHtml(rev.content)}</div>` : ''}
         ${menuHtml}
         <div class="room-review-footer">
           <span>${formatDate(rev.createdAt)}${editedBadge}</span>
@@ -769,7 +769,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       : `<button type="button" class="btn-outline-sm toggle-review-form-btn" data-visit-id="${visit.id}">리뷰 작성</button>
          <div class="review-form" id="${reviewFormId}" style="display:none;">
            ${starRatingHtml('new-review-rating', 3)}
-           <textarea class="new-review-content" placeholder="한줄 리뷰"></textarea>
+           <textarea class="new-review-content" placeholder="한줄 리뷰 (선택)"></textarea>
            <div class="review-form-extras">
              <label class="revisit-toggle"><input type="checkbox" class="new-review-revisit" checked /> 재방문 의사</label>
              <div class="detail-rating-inline">
@@ -1038,8 +1038,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const content = visitCard.querySelector<HTMLTextAreaElement>('.new-review-content')!.value.trim();
         const wouldRevisit = visitCard.querySelector<HTMLInputElement>('.new-review-revisit')!.checked;
         if (!rating) { showToast('평점을 선택해주세요.', 'info'); return; }
-        if (!content) { showToast('내용을 입력해 주세요.', 'info'); return; }
-
         const detailFields = collectDetailFields(visitCard as HTMLElement, 'new-review');
 
         await createRoomReview(currentRoom.id, visitId, { rating, content, wouldRevisit, ...detailFields });
@@ -1096,8 +1094,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           const newRating = getStarValue(card, 'edit-rating');
           const newContent = card.querySelector<HTMLTextAreaElement>('.edit-content')!.value.trim();
           const newRevisit = card.querySelector<HTMLInputElement>('.edit-revisit')!.checked;
-          if (!newContent) { showToast('내용을 입력해 주세요.', 'info'); return; }
-
           const detailFields = collectDetailFields(card, 'edit');
 
           try {
