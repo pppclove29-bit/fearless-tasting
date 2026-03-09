@@ -22,6 +22,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     <div id="rankings-loading" class="loading-msg">로딩 중...</div>
     <div id="rankings-error" class="error-msg" hidden></div>
     <div id="rankings-content" hidden></div>
+
+    <section class="rankings-seo">
+      <h2>유저 활동 기반 랭킹</h2>
+      <p>무모한 시식가에서 활동하는 유저들의 랭킹입니다.
+        리뷰 수, 방문 수, 평균 평점, 재방문율 등 다양한 기준으로 순위를 확인할 수 있습니다.</p>
+      <p>맛집을 많이 방문하고 리뷰를 남기면 순위가 올라가며, 활동에 따라 20개 업적을 달성할 수 있습니다.</p>
+    </section>
   </div>
 </BaseLayout>
 
@@ -43,6 +50,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
     margin-top: 0.25rem;
   }
+
+  .rankings-seo {
+    margin-top: 2rem;
+    padding: 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.85rem;
+    color: var(--text-sub);
+    line-height: 1.7;
+  }
+
+  .rankings-seo h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 0.5rem;
+  }
+
+  .rankings-seo p { margin-bottom: 0.4rem; }
+  .rankings-seo p:last-child { margin-bottom: 0; }
 
   .loading-msg, .error-msg {
     text-align: center;
@@ -388,7 +416,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const myProfileHtml = me ? `
       <div class="my-profile-card">
         ${me.profileImageUrl
-          ? `<img src="${escapeHtml(me.profileImageUrl)}" class="my-profile-avatar" alt="" />`
+          ? `<img src="${escapeHtml(me.profileImageUrl)}" class="my-profile-avatar" alt="${escapeHtml(me.nickname)} 프로필" />`
           : '<div class="my-profile-avatar"></div>'}
         <div class="my-profile-info">
           <div class="my-profile-name">${escapeHtml(me.nickname)}</div>
@@ -458,7 +486,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 <td>
                   <div class="rank-user">
                     ${u.profileImageUrl
-                      ? `<img src="${escapeHtml(u.profileImageUrl)}" class="rank-avatar" alt="" />`
+                      ? `<img src="${escapeHtml(u.profileImageUrl)}" class="rank-avatar" alt="${escapeHtml(u.nickname)} 프로필" />`
                       : '<div class="rank-avatar"></div>'}
                     <span class="rank-nickname">${escapeHtml(u.nickname)}</span>
                   </div>
