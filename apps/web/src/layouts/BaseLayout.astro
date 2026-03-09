@@ -492,8 +492,8 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
 </style>
 
 <script>
-  import { fetchCurrentUser, logout, fetchMyNotifications, fetchUnreadNotificationCount, markNotificationsRead } from '@/lib/api';
-  import type { Notification } from '@/lib/api';
+  import { fetchCurrentUser, getCachedUser, logout, fetchMyNotifications, fetchUnreadNotificationCount, markNotificationsRead } from '@/lib/api';
+  import type { AuthUser, Notification } from '@/lib/api';
   import { formatDate } from '@repo/utils';
 
   // 햄버거 메뉴 토글
@@ -510,13 +510,11 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
   const nicknameEl = document.getElementById('user-nickname')!;
   const logoutBtn = document.getElementById('logout-btn')!;
 
-  const user = await fetchCurrentUser();
-  if (user) {
+  function applyUserUI(user: AuthUser) {
     loginLink.hidden = true;
     userInfo.hidden = false;
     nicknameEl.textContent = user.nickname;
 
-    // 로그인 시 "내 방" 링크 표시
     const myRoomsLink = document.getElementById('my-rooms-link');
     if (myRoomsLink) myRoomsLink.hidden = false;
     const footerRoomsLink = document.getElementById('footer-rooms-link');
@@ -528,6 +526,22 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
       const adminLink = document.getElementById('admin-link');
       if (adminLink) adminLink.hidden = false;
     }
+  }
+
+  function resetUserUI() {
+    loginLink.hidden = false;
+    userInfo.hidden = true;
+    nicknameEl.textContent = '';
+  }
+
+  // 캐시된 유저로 즉시 헤더 렌더링 (깜빡임 방지)
+  const cachedUser = getCachedUser();
+  if (cachedUser) applyUserUI(cachedUser);
+
+  // 백그라운드에서 실제 유저 검증
+  const user = await fetchCurrentUser();
+  if (user) {
+    applyUserUI(user);
 
     // 알림 벨 초기화
     const bellBtn = document.getElementById('notif-bell');
@@ -597,6 +611,9 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
         setTimeout(() => document.addEventListener('click', closeDropdown), 0);
       });
     }
+  } else if (cachedUser) {
+    // 캐시는 있었지만 실제 인증 실패 (토큰 만료 등) → UI 원복
+    resetUserUI();
   }
 
   logoutBtn.addEventListener('click', () => {

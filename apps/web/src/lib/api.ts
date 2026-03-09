@@ -186,16 +186,52 @@ export async function updateRoom(id: string, name: string): Promise<void> {
 /** 현재 로그인 유저 조회 (비로그인 시 null, 같은 페이지 내 중복 호출 캐싱) */
 let currentUserCache: Promise<AuthUser | null> | null = null;
 
+const USER_CACHE_KEY = 'cached_user';
+
+/** sessionStorage에 캐싱된 유저 정보 즉시 반환 (네트워크 없이) */
+export function getCachedUser(): AuthUser | null {
+  try {
+    const raw = sessionStorage.getItem(USER_CACHE_KEY);
+    if (!raw) return null;
+    if (!getAccessToken() && !getRefreshToken()) {
+      sessionStorage.removeItem(USER_CACHE_KEY);
+      return null;
+    }
+    return JSON.parse(raw) as AuthUser;
+  } catch {
+    return null;
+  }
+}
+
+function cacheUser(user: AuthUser | null) {
+  try {
+    if (user) {
+      sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+    } else {
+      sessionStorage.removeItem(USER_CACHE_KEY);
+    }
+  } catch { /* sessionStorage 사용 불가 환경 무시 */ }
+}
+
 export function fetchCurrentUser(): Promise<AuthUser | null> {
-  if (!getAccessToken() && !getRefreshToken()) return Promise.resolve(null);
+  if (!getAccessToken() && !getRefreshToken()) {
+    cacheUser(null);
+    return Promise.resolve(null);
+  }
   if (currentUserCache) return currentUserCache;
 
   currentUserCache = (async () => {
     try {
       const res = await apiFetch(`${API_BASE}/auth/me`);
-      if (!res.ok) return null;
-      return res.json() as Promise<AuthUser>;
+      if (!res.ok) {
+        cacheUser(null);
+        return null;
+      }
+      const user = await res.json() as AuthUser;
+      cacheUser(user);
+      return user;
     } catch {
+      cacheUser(null);
       return null;
     }
   })();
@@ -212,6 +248,7 @@ export async function refreshToken(): Promise<boolean> {
 export function logout(): void {
   logoutState.active = true;
   currentUserCache = null;
+  cacheUser(null);
   const accessToken = getAccessToken();
   const rt = getRefreshToken();
   clearTokens();
