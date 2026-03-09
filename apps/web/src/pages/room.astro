@@ -446,13 +446,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .auto-filled-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
     font-size: 0.78rem;
-    color: var(--text-muted);
+    color: var(--text-sub);
     background: var(--bg-hover);
-    padding: 0.4rem 0.65rem;
-    border-radius: 6px;
+    padding: 0.55rem 0.75rem;
+    border-radius: 8px;
     margin-bottom: 0.5rem;
+    border: 1px solid var(--border);
     line-height: 1.4;
+  }
+
+  .auto-filled-info span:first-child {
+    font-weight: 600;
+    color: var(--text-heading);
+  }
+
+  .auto-filled-info span:last-child {
+    font-size: 0.72rem;
+    color: var(--text-muted);
   }
 
   .add-restaurant-form h3 {
@@ -2600,44 +2614,34 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <input type="text" id="add-rest-name" placeholder="식당 이름" required />
         </div>
         <div class="form-row full">
-          <input type="text" id="add-rest-address" placeholder="주소" required />
+          <input type="text" id="add-rest-address" placeholder="주소 (예: 서울특별시 강남구 역삼동 123-4)" required />
         </div>
         <div class="form-row full">
-          <input type="text" id="add-rest-address-detail" placeholder="상세 주소 (예: 2층, 골목 안쪽)" maxlength="100" />
-        </div>
-        <div class="form-row">
-          <input type="text" id="add-rest-province" placeholder="시/도 (예: 서울특별시)" required />
-          <input type="text" id="add-rest-city" placeholder="시/군/구 (예: 강남구)" required />
-        </div>
-        <div class="form-row">
-          <input type="text" id="add-rest-neighborhood" placeholder="읍/면/동 (예: 역삼동)" required />
           <input type="text" id="add-rest-category" placeholder="카테고리 (예: 한식)" required />
         </div>
+        <input type="hidden" id="add-rest-province" />
+        <input type="hidden" id="add-rest-city" />
+        <input type="hidden" id="add-rest-neighborhood" />
       </div>
     `;
 
     const kakaoFormHtml = hasKakaoMap ? `
       <div id="kakao-form-area">
         <div class="form-row full address-search-wrap">
-          <input type="text" id="add-rest-search" placeholder="식당 이름으로 검색 (카카오)" autocomplete="off" />
+          <input type="text" id="add-rest-search" placeholder="식당 이름으로 검색" autocomplete="off" />
           <div id="address-results" class="address-results" hidden></div>
         </div>
-        <div class="form-row full">
-          <input type="text" id="add-rest-name" placeholder="식당 이름" required />
-        </div>
         <div class="auto-filled-info" id="auto-filled-info" hidden>
+          <span id="auto-filled-name"></span>
           <span id="auto-filled-address"></span>
+          <span id="auto-filled-category"></span>
         </div>
-        <div class="form-row full">
-          <input type="text" id="add-rest-address-detail" placeholder="상세 주소 (예: 2층, 골목 안쪽)" maxlength="100" />
-        </div>
-        <div class="form-row full">
-          <input type="text" id="add-rest-category" placeholder="카테고리 (예: 한식)" required />
-        </div>
+        <input type="hidden" id="add-rest-name" />
         <input type="hidden" id="add-rest-address" />
         <input type="hidden" id="add-rest-province" />
         <input type="hidden" id="add-rest-city" />
         <input type="hidden" id="add-rest-neighborhood" />
+        <input type="hidden" id="add-rest-category" />
         <input type="hidden" id="add-rest-lat" />
         <input type="hidden" id="add-rest-lng" />
       </div>
@@ -2816,33 +2820,57 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     manualBtn.addEventListener('click', () => setMode('manual'));
   }
 
+  const shortProvinceMap: Record<string, string> = {
+    '서울': '서울특별시', '부산': '부산광역시', '대구': '대구광역시',
+    '인천': '인천광역시', '광주': '광주광역시', '대전': '대전광역시',
+    '울산': '울산광역시', '세종': '세종특별자치시', '경기': '경기도',
+    '강원': '강원특별자치도', '충북': '충청북도', '충남': '충청남도',
+    '전북': '전북특별자치도', '전남': '전라남도', '경북': '경상북도',
+    '경남': '경상남도', '제주': '제주특별자치도',
+  };
+
+  /** 주소 문자열에서 시/도, 시군구, 읍면동 자동 파싱 */
+  function parseAddress(address: string): { province: string; city: string; neighborhood: string } {
+    const parts = address.split(' ').filter(Boolean);
+    const rawProvince = parts[0] || '';
+    const province = shortProvinceMap[rawProvince] || rawProvince;
+    return { province, city: parts[1] || '', neighborhood: parts[2] || '' };
+  }
+
   function attachRestaurantFormHandler() {
     const btn = document.getElementById('add-rest-submit') as HTMLButtonElement | null;
     btn?.addEventListener('click', () => withLoading(btn, async () => {
       const name = (document.getElementById('add-rest-name') as HTMLInputElement).value.trim();
-      const baseAddress = (document.getElementById('add-rest-address') as HTMLInputElement).value.trim();
-      const addressDetail = (document.getElementById('add-rest-address-detail') as HTMLInputElement).value.trim();
-      const address = addressDetail ? `${baseAddress} ${addressDetail}` : baseAddress;
-      const rawProvince = (document.getElementById('add-rest-province') as HTMLInputElement).value.trim();
-      const city = (document.getElementById('add-rest-city') as HTMLInputElement).value.trim();
-      const neighborhood = (document.getElementById('add-rest-neighborhood') as HTMLInputElement).value.trim();
+      const address = (document.getElementById('add-rest-address') as HTMLInputElement).value.trim();
       const category = (document.getElementById('add-rest-category') as HTMLInputElement).value.trim();
 
-      if (!name || !baseAddress || !rawProvince || !city || !neighborhood || !category) {
-        showToast('모든 항목을 입력해 주세요.', 'info');
+      if (!name || !address || !category) {
+        showToast('식당 이름, 주소, 카테고리를 입력해 주세요.', 'info');
         return;
       }
 
-      // 짧은 시/도 이름 정규화 (예: "부산" → "부산광역시")
-      const shortProvinceMap: Record<string, string> = {
-        '서울': '서울특별시', '부산': '부산광역시', '대구': '대구광역시',
-        '인천': '인천광역시', '광주': '광주광역시', '대전': '대전광역시',
-        '울산': '울산광역시', '세종': '세종특별자치시', '경기': '경기도',
-        '강원': '강원특별자치도', '충북': '충청북도', '충남': '충청남도',
-        '전북': '전북특별자치도', '전남': '전라남도', '경북': '경상북도',
-        '경남': '경상남도', '제주': '제주특별자치도',
-      };
-      const province = shortProvinceMap[rawProvince] || rawProvince;
+      // hidden 필드에 값이 있으면 사용 (카카오), 없으면 주소에서 파싱 (수동)
+      const provinceEl = document.getElementById('add-rest-province') as HTMLInputElement;
+      const cityEl = document.getElementById('add-rest-city') as HTMLInputElement;
+      const neighborhoodEl = document.getElementById('add-rest-neighborhood') as HTMLInputElement;
+
+      let province = provinceEl.value.trim();
+      let city = cityEl.value.trim();
+      let neighborhood = neighborhoodEl.value.trim();
+
+      if (!province || !city || !neighborhood) {
+        const parsed = parseAddress(address);
+        province = parsed.province;
+        city = parsed.city;
+        neighborhood = parsed.neighborhood;
+      } else {
+        province = shortProvinceMap[province] || province;
+      }
+
+      if (!province || !city) {
+        showToast('주소를 "시/도 시/군/구 읍/면/동 ..." 형식으로 입력해 주세요.', 'info');
+        return;
+      }
 
       const latEl = document.getElementById('add-rest-lat') as HTMLInputElement | null;
       const lngEl = document.getElementById('add-rest-lng') as HTMLInputElement | null;
@@ -2850,6 +2878,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const longitude = lngEl?.value ? Number(lngEl.value) : undefined;
       await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category, latitude, longitude } as Parameters<typeof createRoomRestaurant>[1]);
       currentRoom = await fetchRoom(currentRoom.id);
+      restPage = 1;
       renderRestaurantsTab();
       renderRegionTab();
       showToast('식당이 등록되었습니다.', 'success');
@@ -2947,28 +2976,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     latInput.value = place.y;
     lngInput.value = place.x;
 
-    // 주소에서 시/도, 시/군/구, 읍/면/동 파싱
-    const parts = place.address_name.split(' ');
-    provinceInput.value = parts[0] || '';
-    cityInput.value = parts[1] || '';
-    neighborhoodInput.value = parts[2] || '';
+    const parsed = parseAddress(place.address_name);
+    provinceInput.value = parsed.province;
+    cityInput.value = parsed.city;
+    neighborhoodInput.value = parsed.neighborhood;
 
     // 카카오 카테고리에서 마지막 카테고리 추출 (예: "음식점 > 한식 > 국밥" → "국밥")
     const catParts = (place.category_name || '').split(' > ');
     const lastCat = catParts[catParts.length - 1] || '';
-    if (lastCat && lastCat !== '음식점') {
-      categoryInput.value = lastCat;
-    }
+    categoryInput.value = (lastCat && lastCat !== '음식점') ? lastCat : '음식점';
 
-    // 자동 입력 주소 요약 표시
+    // 요약 표시
     const infoEl = document.getElementById('auto-filled-info');
+    const infoName = document.getElementById('auto-filled-name');
     const infoAddr = document.getElementById('auto-filled-address');
-    if (infoEl && infoAddr) {
-      infoAddr.textContent = place.address_name;
+    const infoCat = document.getElementById('auto-filled-category');
+    if (infoEl) {
+      if (infoName) infoName.textContent = place.place_name;
+      if (infoAddr) infoAddr.textContent = place.address_name;
+      if (infoCat) infoCat.textContent = categoryInput.value;
       infoEl.hidden = false;
     }
-
-    categoryInput.focus();
   }
 
   // ─── 지역 탭 ───

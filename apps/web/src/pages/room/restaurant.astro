@@ -489,23 +489,32 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   /* 세부 평점 */
-  .review-detail-fields {
+  .review-form-extras {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
     margin-bottom: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    background: var(--bg-hover);
+    border-radius: 8px;
     font-size: 0.8rem;
   }
 
-  .review-detail-fields summary {
-    cursor: pointer;
-    color: var(--text-sub);
+  .review-form-extras input[type="text"] {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
     font-size: 0.8rem;
-    margin-bottom: 0.4rem;
+    font-family: inherit;
+    background: var(--bg-card);
+    color: var(--text);
   }
 
-  .detail-rating-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 0.6rem 1.2rem;
-    margin-bottom: 0.75rem;
+  .detail-rating-inline {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
 
   .detail-rating-item {
@@ -521,17 +530,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     white-space: nowrap;
   }
 
-  .review-detail-fields input[type="text"] {
-    width: 100%;
-    padding: 0.4rem;
-    border: 1px solid var(--border-mid);
-    border-radius: 6px;
-    font-size: 0.8rem;
-    font-family: inherit;
-    margin-bottom: 0.4rem;
-    background: var(--bg-input);
-    color: var(--text);
-  }
 
   .review-detail-ratings {
     font-size: 0.75rem;
@@ -733,20 +731,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       : `<button type="button" class="btn-outline-sm toggle-review-form-btn" data-visit-id="${visit.id}">리뷰 작성</button>
          <div class="review-form" id="${reviewFormId}" style="display:none;">
            ${starRatingHtml('new-review-rating', 3)}
-           <textarea class="new-review-content" placeholder="리뷰 내용을 작성해주세요"></textarea>
-           <label class="revisit-toggle"><input type="checkbox" class="new-review-revisit" checked /> 재방문 의사 있음</label>
-           <details class="review-detail-fields">
-             <summary>세부 평점 (선택)</summary>
-             <div class="detail-rating-grid">
+           <textarea class="new-review-content" placeholder="한줄 리뷰"></textarea>
+           <div class="review-form-extras">
+             <label class="revisit-toggle"><input type="checkbox" class="new-review-revisit" checked /> 재방문 의사</label>
+             <div class="detail-rating-inline">
                ${detailStarHtml('맛', 'new-review-taste', 0)}
                ${detailStarHtml('가성비', 'new-review-value', 0)}
-               ${detailStarHtml('서비스', 'new-review-service', 0)}
-               ${detailStarHtml('청결', 'new-review-cleanliness', 0)}
-               ${detailStarHtml('접근성', 'new-review-accessibility', 0)}
              </div>
-             <input type="text" class="new-review-fav-menu" placeholder="또 먹고 싶은 메뉴" maxlength="200" />
-             <input type="text" class="new-review-try-menu" placeholder="다음에 시켜볼 메뉴" maxlength="200" />
-           </details>
+             <input type="text" class="new-review-fav-menu" placeholder="추천 메뉴 (선택)" maxlength="200" />
+           </div>
            <button type="button" class="btn-primary-sm submit-visit-review-btn" data-visit-id="${visit.id}">리뷰 작성</button>
          </div>`;
 
@@ -776,11 +769,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     return {
       tasteRating: getOptionalStarValue(container, `${prefix}-taste`),
       valueRating: getOptionalStarValue(container, `${prefix}-value`),
-      serviceRating: getOptionalStarValue(container, `${prefix}-service`),
-      cleanlinessRating: getOptionalStarValue(container, `${prefix}-cleanliness`),
-      accessibilityRating: getOptionalStarValue(container, `${prefix}-accessibility`),
       favoriteMenu: optStr(`.${prefix}-fav-menu`),
-      tryNextMenu: optStr(`.${prefix}-try-menu`),
     };
   }
 
@@ -811,7 +800,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <input type="date" id="visit-date" value="${new Date().toISOString().slice(0, 10)}" />
           <input type="text" id="visit-memo" placeholder="메모 (선택)" maxlength="500" />
           <select id="visit-waittime" class="form-select">
-            <option value="">웨이팅 (선택)</option><option value="없음">없음</option><option value="~10분">~10분</option><option value="~30분">~30분</option><option value="~1시간">~1시간</option><option value="1시간+">1시간+</option>
+            <option value="">웨이팅 (선택)</option><option value="~10분">~10분</option><option value="~30분">~30분</option><option value="~1시간">~1시간</option><option value="1시간+">1시간+</option>
           </select>
           <button type="button" class="btn-primary-sm" id="submit-visit-btn">방문 기록 추가</button>
         </div>
@@ -1029,19 +1018,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="review-form">
             ${starRatingHtml('edit-rating', Number(origRating))}
             <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
-            <label class="revisit-toggle"><input type="checkbox" class="edit-revisit" ${origRevisit ? 'checked' : ''} /> 재방문 의사 있음</label>
-            <details class="review-detail-fields">
-              <summary>세부 평점 (선택)</summary>
-              <div class="detail-rating-grid">
+            <div class="review-form-extras">
+              <label class="revisit-toggle"><input type="checkbox" class="edit-revisit" ${origRevisit ? 'checked' : ''} /> 재방문 의사</label>
+              <div class="detail-rating-inline">
                 ${detailStarHtml('맛', 'edit-taste', btn.dataset.taste || '')}
                 ${detailStarHtml('가성비', 'edit-value', btn.dataset.value || '')}
-                ${detailStarHtml('서비스', 'edit-service', btn.dataset.service || '')}
-                ${detailStarHtml('청결', 'edit-cleanliness', btn.dataset.cleanliness || '')}
-                ${detailStarHtml('접근성', 'edit-accessibility', btn.dataset.accessibility || '')}
               </div>
-              <input type="text" class="edit-fav-menu" placeholder="또 먹고 싶은 메뉴" maxlength="200" value="${escapeHtml(btn.dataset.favMenu || '')}" />
-              <input type="text" class="edit-try-menu" placeholder="다음에 시켜볼 메뉴" maxlength="200" value="${escapeHtml(btn.dataset.tryMenu || '')}" />
-            </details>
+              <input type="text" class="edit-fav-menu" placeholder="추천 메뉴 (선택)" maxlength="200" value="${escapeHtml(btn.dataset.favMenu || '')}" />
+            </div>
             <div style="display:flex;gap:0.5rem;">
               <button type="button" class="btn-primary-sm save-edit-btn">저장</button>
               <button type="button" class="btn-outline-sm cancel-edit-btn">취소</button>
