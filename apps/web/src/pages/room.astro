@@ -829,6 +829,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .poll-option-pct { position: relative; z-index: 1; color: var(--text-muted); font-size: 0.75rem; white-space: nowrap; }
 
   .poll-close-btn { margin-top: 0.5rem; }
+  .poll-revote-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem; }
 
   /* ─── 타임라인 ─── */
   .timeline-list {
@@ -2519,7 +2520,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             ${poll.options.map((opt) => {
               const pct = total > 0 ? Math.round((opt.votes.length / total) * 100) : 0;
               const isMyVote = myChoice === opt.id;
-              const canVote = poll.status === 'active' && !myChoice;
+              const canVote = poll.status === 'active' && !isMyVote;
               return `
                 <div class="poll-option-row ${isMyVote ? 'my-vote' : ''} ${canVote ? 'votable' : ''}"
                      ${canVote ? `data-poll-id="${poll.id}" data-option-id="${opt.id}"` : ''}>
@@ -2529,6 +2530,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 </div>`;
             }).join('')}
           </div>
+          ${myChoice && poll.status === 'active' ? '<p class="poll-revote-hint">다른 선택지를 눌러 투표를 변경할 수 있습니다</p>' : ''}
           ${isCreator && poll.status === 'active' ? `<button type="button" class="btn-outline-sm poll-close-btn" data-poll-id="${poll.id}">투표 마감</button>` : ''}
         </div>`;
     };
