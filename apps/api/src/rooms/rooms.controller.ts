@@ -485,4 +485,5 @@ export class RoomsController {
   compareReviews(@Param('rid') rid: string) {
     return this.roomsService.compareReviews(rid);
   }
+
 }

@@ -255,7 +255,14 @@ export class RoomsService {
     });
     if (!member) throw new NotFoundException('해당 멤버를 찾을 수 없습니다');
 
-    return this.prisma.write.roomMember.delete({ where: { id: member.id } });
+    await this.prisma.write.$transaction(async (tx) => {
+      await tx.roomMember.delete({ where: { id: member.id } });
+      await tx.roomKick.upsert({
+        where: { roomId_userId: { roomId, userId: targetUserId } },
+        create: { roomId, userId: targetUserId },
+        update: {},
+      });
+    });
   }
 
   /** 방장 위임 (owner만) */

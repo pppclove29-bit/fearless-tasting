@@ -152,6 +152,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-left: auto;
   }
 
+  @media (max-width: 480px) {
+    .room-action-chip--right {
+      margin-left: 0;
+    }
+  }
+
   .invite-expiry {
     font-size: 0.72rem;
     color: var(--text-muted);
@@ -163,10 +169,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     align-items: center;
     gap: 0.4rem;
     margin-top: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .share-row:has(.share-link) {
     padding: 0.5rem 0.65rem;
     background: var(--bg-hover);
     border-radius: 8px;
-    flex-wrap: wrap;
   }
 
   .share-label {
@@ -457,6 +466,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-bottom: 0.5rem;
     border: 1px solid var(--border);
     line-height: 1.4;
+  }
+
+  .auto-filled-info[hidden] {
+    display: none;
   }
 
   .auto-filled-info span:first-child {
