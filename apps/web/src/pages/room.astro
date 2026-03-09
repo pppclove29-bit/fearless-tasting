@@ -2569,11 +2569,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       member_joined: '👋',
     };
 
+    const getUserName = (d: Record<string, unknown>): string => {
+      const user = d.user as { nickname?: string } | null;
+      return user?.nickname || '';
+    };
+
     const descMap: Record<string, (data: Record<string, unknown>) => string> = {
-      restaurant_added: (d) => `<strong>${escapeHtml(String(d.userName || ''))}</strong>님이 <strong>${escapeHtml(String(d.restaurantName || ''))}</strong>을(를) 등록했습니다.`,
-      visit_added: (d) => `<strong>${escapeHtml(String(d.userName || ''))}</strong>님이 <strong>${escapeHtml(String(d.restaurantName || ''))}</strong>을(를) 방문했습니다.`,
-      review_added: (d) => `<strong>${escapeHtml(String(d.userName || ''))}</strong>님이 <strong>${escapeHtml(String(d.restaurantName || ''))}</strong>에 리뷰를 남겼습니다.${d.rating ? ` (${renderStars(Number(d.rating))})` : ''}`,
-      member_joined: (d) => `<strong>${escapeHtml(String(d.userName || ''))}</strong>님이 방에 참여했습니다.`,
+      restaurant_added: (d) => `<strong>${escapeHtml(getUserName(d))}</strong>님이 <strong>${escapeHtml(String(d.restaurantName || ''))}</strong>을(를) 등록했습니다.`,
+      visit_added: (d) => `<strong>${escapeHtml(getUserName(d))}</strong>님이 <strong>${escapeHtml(String(d.restaurantName || ''))}</strong>을(를) 방문했습니다.`,
+      review_added: (d) => `<strong>${escapeHtml(getUserName(d))}</strong>님이 <strong>${escapeHtml(String(d.restaurantName || ''))}</strong>에 리뷰를 남겼습니다.${d.rating ? ` (${renderStars(Number(d.rating))})` : ''}`,
+      member_joined: (d) => `<strong>${escapeHtml(getUserName(d))}</strong>님이 방에 참여했습니다.`,
     };
 
     const timelineHtml = items.map((item) => `
