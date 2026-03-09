@@ -41,7 +41,7 @@ apps/api/src/
 ├── rooms/          # 방 기능 (초대 코드, 공유 링크, 멤버/식당/리뷰 관리)
 │   ├── guards/     # RoomMemberGuard, RoomManagerGuard
 │   └── dto/        # 방 관련 DTO (CreateRoom, JoinRoom, ToggleShareCode 등)
-├── users/          # 유저 조회, 닉네임 수정
+├── users/          # 유저 조회, 닉네임 수정, 찜 목록
 ├── inquiries/      # 문의 CRUD
 └── prisma/         # PrismaService (Reader/Writer 분리)
 ```
@@ -59,7 +59,7 @@ apps/api/src/
 | RoomVisitParticipant | 방문 참여자 태그                 | RoomVisit, User                          |
 | RoomReview           | 방문별 리뷰 (세부 평점, 메뉴)    | RoomVisit, User                          |
 | RoomKick             | 방 강퇴 기록 (재입장 차단)       | Room, User                               |
-| RoomWishlist         | 식당 위시리스트 (유저별)         | RoomRestaurant, User                     |
+| RoomWishlist         | 식당 찜 (유저별)                 | RoomRestaurant, User                     |
 | Inquiry              | 고객 문의                        | -                                        |
 
 ## 방(Room) 권한 체계
@@ -126,7 +126,8 @@ apps/api/src/
 | 경로              | 설명                                                |
 | ----------------- | --------------------------------------------------- |
 | `/`               | 홈 — 랜딩 페이지 + 로그인 시 내 방 대시보드         |
-| `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 위시리스트, 멤버 관리, 공유 링크 |
+| `/rooms`          | 내 방 — 방 목록, 검색, 정렬, 방 생성                |
+| `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 찜, 멤버 관리, 공유 링크 |
 | `/share?code=xxx` | 공유 열람 — 비로그인, 읽기 전용 (식당/리뷰 열람)    |
 | `/join?code=xxx`  | 초대 링크 자동 입장 (미로그인 시 로그인 후 리다이렉트) |
 | `/login`          | 카카오 로그인                                       |
@@ -134,13 +135,14 @@ apps/api/src/
 | `/rankings`       | 유저 랭킹 — 리뷰 수/평균 평점/방문 수 기준          |
 | `/about`          | 서비스 소개 — 기능, 업적, 사용 흐름                 |
 | `/cs`             | 문의 등록                                           |
-| `/profile`        | 프로필 — 닉네임 수정, 업적, 활동 통계               |
+| `/profile`        | 프로필 — 닉네임 수정, 업적, 활동 통계, 찜 목록, 화면 설정 (테마) |
 | `/admin`          | 관리자 — 문의 관리                                  |
 
 ## 방 인원 제한
 
 - `MAX_ROOM_MEMBERS = 4` (rooms.service.ts)
-- 초대 코드 입장 시 멤버 수 체크, 초과 시 403
+- `MAX_ROOMS_PER_USER = 30` — 유저당 참여 가능한 방 수 제한
+- 초대 코드 입장 및 방 생성 시 멤버 수/방 수 체크, 초과 시 403
 
 ## 빠른 리뷰
 

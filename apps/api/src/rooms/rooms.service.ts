@@ -9,6 +9,7 @@ function calcAvgRating(ratings: number[]): number | null {
 }
 
 const MAX_ROOM_MEMBERS = 4;
+const MAX_ROOMS_PER_USER = 30;
 const CODE_GEN_MAX_RETRIES = 10;
 const INVITE_CODE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24시간
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -44,6 +45,11 @@ export class RoomsService {
 
   /** 방 생성 (생성자 = owner) */
   async create(name: string, ownerId: string) {
+    const joinedCount = await this.prisma.read.roomMember.count({ where: { userId: ownerId } });
+    if (joinedCount >= MAX_ROOMS_PER_USER) {
+      throw new ForbiddenException(`참여할 수 있는 방은 최대 ${MAX_ROOMS_PER_USER}개입니다.`);
+    }
+
     const inviteCode = await this.generateInviteCode();
 
     return this.prisma.write.$transaction(async (tx) => {
@@ -155,6 +161,11 @@ export class RoomsService {
       where: { roomId_userId: { roomId: room.id, userId } },
     });
     if (existing) throw new ConflictException('이미 이 방에 참여하고 있습니다');
+
+    const userRoomCount = await this.prisma.read.roomMember.count({ where: { userId } });
+    if (userRoomCount >= MAX_ROOMS_PER_USER) {
+      throw new ForbiddenException(`참여할 수 있는 방은 최대 ${MAX_ROOMS_PER_USER}개입니다.`);
+    }
 
     const memberCount = await this.prisma.read.roomMember.count({
       where: { roomId: room.id },
