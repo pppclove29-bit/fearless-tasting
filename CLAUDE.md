@@ -114,7 +114,7 @@ apps/api/src/
 | --------- | ---- | ---- | ------------------------------------------------------------------------------------------------------------ |
 | 전역 기본 | 60초 | 60회 | 모든 엔드포인트                                                                                              |
 | 인증      | 60초 | 5회  | `GET /auth/kakao/callback`, `POST /auth/refresh`                                                             |
-| 생성      | 60초 | 10회 | `POST /rooms`, `POST /rooms/join`, `POST /rooms/:id/restaurants`, `POST /rooms/:id/restaurants/:rid/visits`, `POST /rooms/:id/visits/:visitId/reviews` |
+| 생성      | 60초 | 10회 | `POST /rooms`, `POST /rooms/join`, `POST /rooms/:id/restaurants`, `POST /rooms/:id/restaurants/:rid/visits`, `POST /rooms/:id/visits/:visitId/reviews`, `POST /rooms/:id/restaurants/:rid/quick-review` |
 
 - 초과 시 HTTP 429 (Too Many Requests) 응답
 - IP 기반 추적 (ThrottlerGuard 기본)
@@ -127,7 +127,7 @@ apps/api/src/
 | ----------------- | --------------------------------------------------- |
 | `/`               | 홈 — 랜딩 페이지 + 로그인 시 내 방 대시보드         |
 | `/rooms`          | 내 방 — 방 목록, 검색, 정렬, 방 생성                |
-| `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 찜, 멤버 관리, 공유 링크 |
+| `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 찜, 멤버 관리, 공유 링크, 검색/페이지네이션 |
 | `/share?code=xxx` | 공유 열람 — 비로그인, 읽기 전용 (식당/리뷰 열람)    |
 | `/join?code=xxx`  | 초대 링크 자동 입장 (미로그인 시 로그인 후 리다이렉트) |
 | `/login`          | 카카오 로그인                                       |
@@ -144,6 +144,12 @@ apps/api/src/
 - `MAX_ROOMS_PER_USER = 30` — 유저당 참여 가능한 방 수 제한
 - 초대 코드 입장 및 방 생성 시 멤버 수/방 수 체크, 초과 시 403
 
+## 빠른 리뷰
+
+- `POST /rooms/:id/restaurants/:rid/quick-review` — 방문 기록 + 리뷰를 한 번에 생성 (트랜잭션)
+- 기존 2단계 (방문 추가 → 리뷰 작성)를 1단계로 단축
+- 프론트엔드: 식당 상세의 "빠른 리뷰" 폼
+
 ## 식당/방문 수정
 
 - `PATCH /rooms/:id/restaurants/:rid` — 식당 이름, 카테고리 수정 (본인 또는 매니저+)
@@ -154,10 +160,19 @@ apps/api/src/
 - `GET /rooms/:id/stats` — 방 종합 통계 (RoomMemberGuard)
 - 요약 (식당·방문·리뷰 수, 평균 평점), 멤버별 활동 분석
 - 카테고리·지역 분포, 요일·월별 방문 패턴
-- 세부 평점 레이더 차트 (맛/가성비/서비스/청결/접근성)
-- 대기시간 분포, 인기 메뉴 (또 먹고 싶은 / 다음에 시켜볼)
+- 세부 평점 레이더 차트 (맛/가성비)
+- 대기시간 분포, 인기 메뉴 (또 먹고 싶은)
 - TOP/BOTTOM 평점 식당, 재방문률 TOP 식당
 - 미리뷰 방문 알림
+
+## 리뷰 입력 간소화
+
+- 리뷰 본문(content): 선택 입력 (별점만으로 리뷰 가능)
+- 세부 평점: 맛(tasteRating), 가성비(valueRating) 2항목만 UI 노출 (서비스/청결/접근성은 API에만 존재)
+- 또 먹고 싶은 메뉴(favoriteMenu)만 UI 노출 (다음에 시켜볼 메뉴는 API에만 존재)
+- 카테고리: 칩 셀렉터 (13종 프리셋 + "기타" 커스텀 입력)
+- 웨이팅: 칩 버튼 (없음/5분/10분/15분/20분/30분/30분+)
+- 식당 목록: 10개씩 페이지네이션 ("더보기" 버튼) + 검색 (이름/카테고리)
 
 ## SEO
 
