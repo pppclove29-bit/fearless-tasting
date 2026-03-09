@@ -22,12 +22,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     <section class="about-section">
       <h2>어떤 서비스인가요?</h2>
       <p>
-        무모한 시식가는 <strong>방(Room) 기반 맛집 리뷰 공유 플랫폼</strong>입니다.
-        친구, 연인, 가족과 함께 프라이빗한 맛집 리스트를 만들고,
-        방문 기록과 솔직한 리뷰를 함께 쌓아갈 수 있습니다.
+        무모한 시식가는 <strong>프라이빗 그룹 맛집 리뷰 플랫폼</strong>입니다.
+        친구, 연인, 가족끼리 비공개 방을 만들어 솔직한 맛집 리뷰를 함께 쌓아갑니다.
       </p>
       <p>
-        공개 리뷰 사이트와 달리, 가까운 사람들끼리만 공유하는 <strong>"우리만의 맛집 지도"</strong>를 만드는 것이 핵심입니다.
+        공개 리뷰 플랫폼에선 광고·협찬 리뷰가 섞이지만, 여기선 <strong>가까운 사람들의 진짜 후기</strong>만 남습니다.
+        우리끼리만 믿을 수 있는 맛집 리스트 — 그게 무모한 시식가의 핵심입니다.
       </p>
     </section>
 
@@ -73,42 +73,63 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="feature-card">
           <div class="feature-icon">🏠</div>
           <h3>프라이빗 방</h3>
-          <p>초대 링크로 입장하는 비공개 맛집 리스트. 방장, 매니저, 멤버 권한 체계로 체계적으로 관리합니다.</p>
+          <p>초대 링크로 입장하는 비공개 맛집 리스트. 가까운 사람들끼리만 공유하세요.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">📝</div>
           <h3>상세 리뷰</h3>
-          <p>종합 평점 + 맛/가성비/서비스/청결/접근성 세부 평가. 또 먹고 싶은 메뉴, 다음에 시켜볼 메뉴까지 기록합니다.</p>
+          <p>종합 별점과 맛·가성비·서비스·청결·접근성 세부 평가까지 솔직하게 기록하세요.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">🗺️</div>
           <h3>지도 보기</h3>
-          <p>카카오맵 연동으로 등록된 맛집을 지도에서 한눈에. 지역별 필터로 원하는 동네만 볼 수 있습니다.</p>
+          <p>카카오맵 연동으로 등록된 맛집을 지도에서 한눈에 확인할 수 있습니다.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">📊</div>
           <h3>통계 & 분석</h3>
-          <p>멤버 행동 분석, 평점 트렌드, 카테고리 다양성, 베스트 콤비 등 재미있는 인사이트를 제공합니다.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🏆</div>
-          <h3>20개 업적</h3>
-          <p>방문 횟수, 리뷰 작성, 카테고리 탐험, 동네 개척, 재방문 달성 등 활동에 따라 자동으로 업적이 부여됩니다. <a href="/rankings">랭킹 페이지</a>에서 확인하세요.</p>
+          <p>카테고리 분포, 재방문 TOP, 멤버 활동 분석 등 다양한 인사이트를 제공합니다.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">🔗</div>
           <h3>공유 링크</h3>
-          <p>비로그인 사용자도 볼 수 있는 공유 링크. 블로그나 SNS에 내 맛집 리스트를 공유하세요.</p>
+          <p>링크 하나로 누구에게나 맛집 리스트를 공개할 수 있습니다.</p>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">📨</div>
-          <h3>초대 링크</h3>
-          <p>초대 링크 하나로 간편하게 방에 초대. 카카오톡이나 SNS로 바로 공유할 수 있습니다.</p>
+      </div>
+    </section>
+
+    <section class="about-section">
+      <h2>핵심 화면 미리보기</h2>
+      <div class="page-previews">
+        <div class="page-preview">
+          <div class="preview-header">
+            <span class="preview-icon">🏠</span>
+            <h3>내 방</h3>
+          </div>
+          <p>로그인하면 참여 중인 방 목록이 표시됩니다. 방을 만들거나 초대 링크로 입장할 수 있고, 이름순·멤버순·식당순으로 정렬하거나 검색할 수 있습니다.</p>
+          <div class="preview-tags">
+            <span>방 생성</span><span>검색 & 정렬</span><span>초대 입장</span>
+          </div>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">🌙</div>
-          <h3>다크 모드</h3>
-          <p>시스템 설정에 따라 자동 전환되는 다크 모드. 수동 전환도 가능합니다.</p>
+        <div class="page-preview">
+          <div class="preview-header">
+            <span class="preview-icon">🍽️</span>
+            <h3>방 상세</h3>
+          </div>
+          <p>방에 들어가면 등록된 식당 목록을 확인할 수 있습니다. 카카오맵 검색 또는 직접 입력으로 식당을 추가하고, 지도·카테고리·지역별로 필터링할 수 있습니다.</p>
+          <div class="preview-tags">
+            <span>식당 등록</span><span>지도 보기</span><span>카테고리 필터</span><span>찜</span>
+          </div>
+        </div>
+        <div class="page-preview">
+          <div class="preview-header">
+            <span class="preview-icon">📝</span>
+            <h3>방문 & 리뷰</h3>
+          </div>
+          <p>식당을 선택하면 방문 기록과 리뷰를 남길 수 있습니다. 종합 별점, 맛·가성비·서비스·청결·접근성 세부 평가, 메뉴 기록, 재방문 의사까지 한 번에 작성하세요.</p>
+          <div class="preview-tags">
+            <span>별점 평가</span><span>세부 평점 5항목</span><span>메뉴 기록</span><span>재방문 의사</span>
+          </div>
         </div>
       </div>
     </section>
@@ -157,7 +178,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     <section class="about-section about-cta">
       <h2>시작해보세요</h2>
       <p>카카오 계정만 있으면 바로 시작할 수 있습니다.</p>
-      <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`} class="cta-btn">카카오로 시작하기</a>
+      <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`} class="cta-btn cta-kakao">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align: -3px; margin-right: 6px;">
+          <path d="M9 1C4.58 1 1 3.8 1 7.2c0 2.2 1.47 4.13 3.68 5.22-.16.6-.59 2.17-.67 2.51-.1.42.15.41.32.3.13-.09 2.1-1.43 2.95-2.01.55.08 1.12.12 1.72.12 4.42 0 8-2.8 8-6.14S13.42 1 9 1z" fill="currentColor"/>
+        </svg>
+        카카오로 시작하기
+      </a>
     </section>
 
     <section class="about-section">
@@ -347,6 +373,60 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin: 0;
   }
 
+  /* 핵심 화면 미리보기 */
+  .page-previews {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .page-preview {
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 1.15rem;
+  }
+
+  .preview-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .preview-icon {
+    font-size: 1.2rem;
+  }
+
+  .preview-header h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin: 0;
+  }
+
+  .page-preview p {
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    line-height: 1.6;
+    margin: 0 0 0.6rem;
+  }
+
+  .preview-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .preview-tags span {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
   /* 업적 미리보기 */
   .about-achievement-desc {
     margin-bottom: 0.75rem !important;
@@ -386,7 +466,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .cta-btn {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     margin-top: 0.75rem;
     padding: 0.7rem 2rem;
     background: var(--text-heading);
@@ -401,5 +482,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .cta-btn:hover {
     opacity: 0.85;
     text-decoration: none;
+  }
+
+  .cta-kakao {
+    background: #FEE500;
+    color: #191919;
+    border-radius: 12px;
+    padding: 0.85rem 2rem;
+  }
+
+  .cta-kakao:hover {
+    background: #F5DC00;
+    opacity: 1;
   }
 </style>
