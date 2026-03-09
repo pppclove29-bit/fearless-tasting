@@ -86,6 +86,13 @@ export class AuthService {
     });
 
     if (existingAccount) {
+      // 카카오 프로필 이미지가 변경된 경우 갱신
+      if (profileImageUrl && existingAccount.user.profileImageUrl !== profileImageUrl) {
+        return this.prisma.write.user.update({
+          where: { id: existingAccount.user.id },
+          data: { profileImageUrl },
+        });
+      }
       return existingAccount.user;
     }
 

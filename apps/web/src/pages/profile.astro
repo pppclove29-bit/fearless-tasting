@@ -47,6 +47,30 @@ export const prerender = false;
       </div>
     </section>
 
+    <section class="profile-section" id="wishlist-section" hidden>
+      <h2>내가 찜한 식당</h2>
+      <div id="wishlist-list"></div>
+      <p id="wishlist-empty" class="wishlist-empty" hidden>아직 찜한 식당이 없습니다.</p>
+    </section>
+
+    <section class="profile-section">
+      <h2>화면 설정</h2>
+      <div class="theme-setting">
+        <div class="theme-setting-info">
+          <span class="theme-setting-label">테마</span>
+          <span class="theme-setting-current" id="theme-current">라이트 모드</span>
+        </div>
+        <div class="theme-switch-group" id="theme-switch-group">
+          <button type="button" class="theme-switch-btn active" data-theme="light">
+            <span class="theme-switch-icon">&#9728;&#65039;</span> 라이트
+          </button>
+          <button type="button" class="theme-switch-btn" data-theme="dark">
+            <span class="theme-switch-icon">&#127769;</span> 다크
+          </button>
+        </div>
+      </div>
+    </section>
+
     <section class="profile-section">
       <h2>계정 관리</h2>
       <div class="account-actions">
@@ -311,10 +335,94 @@ export const prerender = false;
     border-color: #dc2626;
     color: #fca5a5;
   }
+
+  .theme-setting {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .theme-setting-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .theme-setting-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-heading);
+  }
+
+  .theme-setting-current {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .theme-switch-group {
+    display: flex;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .theme-switch-btn {
+    padding: 0.5rem 0.85rem;
+    background: none;
+    border: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .theme-switch-btn:first-child {
+    border-right: 1.5px solid var(--border);
+  }
+
+  .theme-switch-btn.active {
+    background: var(--text-heading);
+    color: var(--bg);
+    font-weight: 600;
+  }
+
+  .theme-switch-icon {
+    font-size: 0.85rem;
+  }
+
+  .wishlist-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    padding: 1.5rem 0;
+  }
+
+  .wishlist-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--border-light);
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.1s;
+  }
+
+  .wishlist-item:last-child { border-bottom: none; }
+
+  .wishlist-item-info { min-width: 0; flex: 1; }
+  .wishlist-item-name { font-size: 0.9rem; font-weight: 600; color: var(--text-heading); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wishlist-item-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wishlist-item-room { font-size: 0.72rem; color: var(--text-muted); background: var(--bg-hover); padding: 0.2rem 0.5rem; border-radius: 6px; white-space: nowrap; margin-left: 0.5rem; flex-shrink: 0; }
 </style>
 
 <script>
-  import { fetchCurrentUser, fetchMyRooms, fetchRankings, updateNickname, deleteAccount, logout, clearTokens, showToast, showDangerConfirm } from '@/lib/api';
+  import { fetchCurrentUser, fetchMyRooms, fetchRankings, fetchMyWishlists, updateNickname, deleteAccount, logout, clearTokens, showToast, showDangerConfirm } from '@/lib/api';
 
   const profilePage = document.getElementById('profile-page')!;
   const profileLoading = document.getElementById('profile-loading')!;
@@ -399,6 +507,65 @@ export const prerender = false;
       }
     } catch {
       // 통계 로드 실패 시 무시
+    }
+
+    // 찜한 식당 로드
+    try {
+      const wishlists = await fetchMyWishlists();
+      const wishlistSection = document.getElementById('wishlist-section')!;
+      const wishlistList = document.getElementById('wishlist-list')!;
+      const wishlistEmpty = document.getElementById('wishlist-empty')!;
+
+      wishlistSection.hidden = false;
+
+      if (wishlists.length === 0) {
+        wishlistEmpty.hidden = false;
+      } else {
+        function escapeHtml(text: string): string {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+
+        wishlistList.innerHTML = wishlists.map((w) => `
+          <a href="/room/restaurant?roomId=${w.roomRestaurant.roomId}&id=${w.roomRestaurant.id}" class="wishlist-item">
+            <div class="wishlist-item-info">
+              <div class="wishlist-item-name">${escapeHtml(w.roomRestaurant.name)}</div>
+              <div class="wishlist-item-meta">${escapeHtml(w.roomRestaurant.category)} · ${escapeHtml(w.roomRestaurant.address)}</div>
+            </div>
+            <span class="wishlist-item-room">${escapeHtml(w.roomRestaurant.room.name)}</span>
+          </a>
+        `).join('');
+      }
+    } catch {
+      // 찜 목록 로드 실패 시 무시
+    }
+
+    // 테마 설정
+    const themeCurrent = document.getElementById('theme-current')!;
+    const themeGroup = document.getElementById('theme-switch-group')!;
+
+    function updateThemeUI() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      themeCurrent.textContent = isDark ? '다크 모드 사용 중' : '라이트 모드 사용 중';
+      for (const btn of themeGroup.querySelectorAll<HTMLButtonElement>('.theme-switch-btn')) {
+        btn.classList.toggle('active', btn.dataset.theme === (isDark ? 'dark' : 'light'));
+      }
+    }
+    updateThemeUI();
+
+    for (const btn of themeGroup.querySelectorAll<HTMLButtonElement>('.theme-switch-btn')) {
+      btn.addEventListener('click', () => {
+        const theme = btn.dataset.theme!;
+        if (theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+        }
+        updateThemeUI();
+      });
     }
 
     // 로그아웃

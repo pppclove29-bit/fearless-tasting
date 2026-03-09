@@ -639,6 +639,28 @@ export async function toggleWishlist(roomId: string, restaurantId: string): Prom
   return res.json();
 }
 
+// ─── 내 찜 목록 ───
+
+export interface MyWishlistItem {
+  id: string;
+  createdAt: string;
+  roomRestaurant: {
+    id: string;
+    name: string;
+    category: string;
+    address: string;
+    roomId: string;
+    room: { id: string; name: string };
+  };
+}
+
+/** 내가 찜한 식당 목록 */
+export async function fetchMyWishlists(): Promise<MyWishlistItem[]> {
+  const res = await apiFetch(`${API_BASE}/users/me/wishlists`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
 // ─── 공개 맛집 추천 ───
 
 export interface DiscoverRestaurant {
@@ -691,5 +713,58 @@ export async function toggleShareCode(
   });
   if (!res.ok) throw new Error('공유 코드 관리에 실패했습니다.');
   return res.json();
+}
+
+// ─── 공지사항 ───
+
+export interface Notice {
+  id: string;
+  title: string;
+  content: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 활성 공지 목록 (공개) */
+export async function fetchNotices(): Promise<Notice[]> {
+  const res = await apiFetch(`${API_BASE}/notices`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+/** 전체 공지 목록 (관리자용, 비활성 포함) */
+export async function fetchAllNotices(): Promise<Notice[]> {
+  const res = await apiFetch(`${API_BASE}/notices/all`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+/** 공지 생성 (관리자) */
+export async function createNotice(data: { title: string; content: string; enabled?: boolean }): Promise<Notice> {
+  const res = await apiFetch(`${API_BASE}/notices`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('공지 생성에 실패했습니다.');
+  return res.json();
+}
+
+/** 공지 수정 (관리자) */
+export async function updateNotice(id: string, data: { title?: string; content?: string; enabled?: boolean }): Promise<Notice> {
+  const res = await apiFetch(`${API_BASE}/notices/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('공지 수정에 실패했습니다.');
+  return res.json();
+}
+
+/** 공지 삭제 (관리자) */
+export async function deleteNotice(id: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/notices/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('공지 삭제에 실패했습니다.');
 }
 

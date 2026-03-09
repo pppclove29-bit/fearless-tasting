@@ -1,3 +1,312 @@
 ---
-return Astro.redirect('/');
+import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
+
+<BaseLayout title="내 방" description="참여 중인 방 목록을 확인하고 새 방을 만드세요">
+  <div class="rooms-page">
+    <div class="rooms-header">
+      <div>
+        <h1>내 방</h1>
+        <p class="page-desc">방을 만들어 함께 맛집 리스트를 공유하세요.</p>
+      </div>
+    </div>
+
+    <p id="loading-msg" class="status-msg">로딩 중...</p>
+    <p id="login-msg" class="status-msg" hidden>
+      로그인 후 이용할 수 있습니다.
+    </p>
+
+    <div id="rooms-content" hidden>
+      <div class="rooms-actions">
+        <form id="create-form" class="action-form">
+          <div class="input-group">
+            <input type="text" id="create-name" placeholder="방 이름을 입력하세요" required maxlength="100" />
+            <button type="submit" class="btn-primary">만들기</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="form-error" id="form-error" hidden></div>
+
+      <div class="rooms-toolbar" id="rooms-toolbar" hidden>
+        <span class="rooms-count" id="rooms-count"></span>
+        <button type="button" class="sort-trigger" id="sort-trigger">
+          <span id="sort-label">최근 참여순</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <div id="rooms-list"></div>
+      <p id="empty-msg" class="empty-state" hidden>
+        <span class="empty-icon">🏠</span>
+        <span class="empty-text">참여 중인 방이 없습니다</span>
+        <span class="empty-sub">위에서 방을 만들거나 초대 링크로 입장하세요</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- 정렬 바텀시트 -->
+  <div class="sheet-backdrop" id="sort-backdrop" hidden></div>
+  <div class="sheet" id="sort-sheet" hidden>
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">정렬</div>
+    <div class="sheet-options" id="sort-options">
+      <button type="button" class="sheet-option active" data-sort="recent">최근 참여순</button>
+      <button type="button" class="sheet-option" data-sort="name">이름순</button>
+      <button type="button" class="sheet-option" data-sort="members">멤버 많은순</button>
+      <button type="button" class="sheet-option" data-sort="restaurants">식당 많은순</button>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .rooms-page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+  }
+
+  .rooms-header h1 {
+    margin-bottom: 0.25rem;
+    font-size: 1.4rem;
+  }
+
+  .page-desc {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .status-msg {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+</style>
+
+<style is:global>
+  .rooms-actions { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
+  .action-form { flex: 1; }
+  .input-group { display: flex; gap: 0.5rem; }
+
+  .input-group input {
+    flex: 1;
+    padding: 0.65rem 0.85rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.875rem;
+    background: var(--bg-card);
+    color: var(--text);
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  .input-group input:focus { outline: none; border-color: var(--text-heading); }
+
+  .btn-primary {
+    padding: 0.65rem 1.1rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    border: none;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+
+  .rooms-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+  .rooms-count { font-size: 0.8rem; color: var(--text-muted); }
+
+  .sort-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.45rem 0.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .room-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 0.6rem;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s;
+  }
+  .room-card:hover { border-color: var(--border-mid); }
+
+  .room-info { min-width: 0; flex: 1; }
+  .room-name { font-size: 0.95rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .room-meta { font-size: 0.8rem; color: var(--text-muted); }
+  .room-right { display: flex; align-items: center; gap: 0.6rem; margin-left: 0.75rem; flex-shrink: 0; }
+
+  .room-role {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: var(--bg-hover);
+    color: var(--text-sub);
+  }
+  .room-role.owner { background: #fef3c7; color: #92400e; }
+  .room-role.manager { background: #dbeafe; color: #1d4ed8; }
+
+  .room-chevron { color: var(--text-muted); flex-shrink: 0; }
+
+  .empty-state { flex-direction: column; align-items: center; gap: 0.5rem; padding: 3rem 1rem; text-align: center; }
+  .empty-state:not([hidden]) { display: flex; }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 0.25rem; }
+  .empty-text { font-size: 0.95rem; font-weight: 600; color: var(--text-sub); }
+  .empty-sub { font-size: 0.825rem; color: var(--text-muted); }
+
+  .form-error { padding: 0.75rem 1rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #dc2626; font-size: 0.85rem; margin-bottom: 1rem; }
+  [data-theme="dark"] .form-error { background: #451a1a; border-color: #7f1d1d; color: #fca5a5; }
+
+  .sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; opacity: 0; transition: opacity 0.25s; }
+  .sheet-backdrop.visible { opacity: 1; }
+  .sheet { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-radius: 20px 20px 0 0; padding: 0.5rem 1.25rem 2rem; z-index: 201; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); max-height: 60vh; overflow-y: auto; }
+  .sheet.visible { transform: translateY(0); }
+  .sheet-handle { width: 36px; height: 4px; background: var(--border-mid); border-radius: 2px; margin: 0.5rem auto 1rem; }
+  .sheet-title { font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.75rem; }
+  .sheet-options { display: flex; flex-direction: column; gap: 0.25rem; }
+  .sheet-option { display: flex; align-items: center; width: 100%; padding: 0.75rem 0.5rem; background: none; border: none; border-radius: 8px; font-size: 0.875rem; color: var(--text-sub); cursor: pointer; font-family: inherit; }
+  .sheet-option:hover { background: var(--bg-hover); }
+  .sheet-option.active { color: var(--text-heading); font-weight: 600; }
+  .sheet-option.active::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--text-heading); border-radius: 50%; margin-right: 0.6rem; }
+
+  @media (max-width: 600px) { .rooms-actions { flex-direction: column; } }
+</style>
+
+<script>
+  import { fetchCurrentUser, fetchMyRooms, createRoom } from '@/lib/api';
+  import type { RoomListItem } from '@/lib/api';
+
+  const loadingMsg = document.getElementById('loading-msg')!;
+  const loginMsg = document.getElementById('login-msg')!;
+  const roomsContent = document.getElementById('rooms-content')!;
+  const roomsList = document.getElementById('rooms-list')!;
+  const emptyMsg = document.getElementById('empty-msg')!;
+  const formError = document.getElementById('form-error')!;
+  const createForm = document.getElementById('create-form') as HTMLFormElement;
+  const createNameInput = document.getElementById('create-name') as HTMLInputElement;
+  const roomsToolbar = document.getElementById('rooms-toolbar')!;
+  const roomsCount = document.getElementById('rooms-count')!;
+  const sortTrigger = document.getElementById('sort-trigger')!;
+  const sortLabel = document.getElementById('sort-label')!;
+  const sortBackdrop = document.getElementById('sort-backdrop')!;
+  const sortSheet = document.getElementById('sort-sheet')!;
+  const sortOptions = document.getElementById('sort-options')!;
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  const roleLabel: Record<string, string> = { owner: '방장', manager: '매니저', member: '멤버' };
+  let allRooms: RoomListItem[] = [];
+  let currentSort = 'recent';
+  const sortLabels: Record<string, string> = { recent: '최근 참여순', name: '이름순', members: '멤버 많은순', restaurants: '식당 많은순' };
+
+  function sortRooms(rooms: RoomListItem[], sortBy: string): RoomListItem[] {
+    const sorted = [...rooms];
+    switch (sortBy) {
+      case 'name': return sorted.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      case 'members': return sorted.sort((a, b) => b.memberCount - a.memberCount);
+      case 'restaurants': return sorted.sort((a, b) => b.restaurantCount - a.restaurantCount);
+      default: return sorted;
+    }
+  }
+
+  function renderRooms(rooms: RoomListItem[]) {
+    if (rooms.length === 0) {
+      roomsList.innerHTML = '';
+      roomsToolbar.hidden = true;
+      emptyMsg.hidden = false;
+      return;
+    }
+    emptyMsg.hidden = true;
+    roomsToolbar.hidden = false;
+    roomsCount.textContent = `${rooms.length}개의 방`;
+    roomsList.innerHTML = rooms.map((r) => `
+      <a href="/room?id=${r.id}" class="room-card">
+        <div class="room-info">
+          <div class="room-name">${escapeHtml(r.name)}</div>
+          <div class="room-meta">멤버 ${r.memberCount}명 · 식당 ${r.restaurantCount}개</div>
+        </div>
+        <div class="room-right">
+          <span class="room-role ${r.myRole}">${roleLabel[r.myRole] || r.myRole}</span>
+          <svg class="room-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </a>
+    `).join('');
+  }
+
+  function openSortSheet() {
+    sortBackdrop.hidden = false;
+    sortSheet.hidden = false;
+    requestAnimationFrame(() => { sortBackdrop.classList.add('visible'); sortSheet.classList.add('visible'); });
+  }
+
+  function closeSortSheet() {
+    sortBackdrop.classList.remove('visible');
+    sortSheet.classList.remove('visible');
+    setTimeout(() => { sortBackdrop.hidden = true; sortSheet.hidden = true; }, 300);
+  }
+
+  sortTrigger.addEventListener('click', openSortSheet);
+  sortBackdrop.addEventListener('click', closeSortSheet);
+
+  for (const btn of sortOptions.querySelectorAll<HTMLButtonElement>('.sheet-option')) {
+    btn.addEventListener('click', () => {
+      currentSort = btn.dataset.sort!;
+      sortLabel.textContent = sortLabels[currentSort];
+      for (const b of sortOptions.querySelectorAll('.sheet-option')) b.classList.remove('active');
+      btn.classList.add('active');
+      renderRooms(sortRooms(allRooms, currentSort));
+      closeSortSheet();
+    });
+  }
+
+  createForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError.hidden = true;
+    const name = createNameInput.value.trim();
+    if (!name) return;
+    try {
+      await createRoom(name);
+      createNameInput.value = '';
+      allRooms = await fetchMyRooms();
+      renderRooms(sortRooms(allRooms, currentSort));
+    } catch (err) {
+      formError.textContent = err instanceof Error ? err.message : '방 생성에 실패했습니다.';
+      formError.hidden = false;
+    }
+  });
+
+  (async () => {
+    const user = await fetchCurrentUser();
+    loadingMsg.hidden = true;
+    if (!user) {
+      loginMsg.hidden = false;
+      return;
+    }
+    roomsContent.hidden = false;
+    allRooms = await fetchMyRooms();
+    renderRooms(allRooms);
+  })();
+</script>

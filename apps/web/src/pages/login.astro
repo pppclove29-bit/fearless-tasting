@@ -7,12 +7,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     <h1>로그인</h1>
     <p class="login-desc">카카오 계정으로 간편하게 시작하세요.</p>
 
-    <a href=`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao` class="kakao-btn" id="kakao-btn">
-      카카오로 시작하기
-    </a>
+    <div id="login-ui" hidden>
+      <a href=`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao` class="kakao-btn">
+        카카오로 시작하기
+      </a>
+    </div>
 
     <div class="login-success" id="login-success" hidden>
-      <p>로그인 성공! 잠시 후 이동합니다.</p>
+      <p>로그인 성공! 이동 중...</p>
     </div>
   </div>
 </BaseLayout>
@@ -68,26 +70,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
 
-  // 토큰이 없으면 바로 카카오 로그인으로 리다이렉트
-  if (!accessToken || !refreshToken) {
-    location.href = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`;
-  }
-
   if (accessToken && refreshToken) {
+    // 콜백: 토큰 저장 후 즉시 리다이렉트
     saveTokens(accessToken, refreshToken);
-
-    // URL에서 토큰 파라미터 제거 (히스토리에 남지 않도록)
     history.replaceState(null, '', '/login');
+    document.getElementById('login-success')!.hidden = false;
 
-    const kakaoBtn = document.getElementById('kakao-btn')!;
-    const successMsg = document.getElementById('login-success')!;
-    kakaoBtn.hidden = true;
-    successMsg.hidden = false;
-
-    setTimeout(() => {
-      const redirect = localStorage.getItem('login_redirect');
-      localStorage.removeItem('login_redirect');
-      location.href = redirect || '/';
-    }, 1500);
+    const redirect = localStorage.getItem('login_redirect');
+    localStorage.removeItem('login_redirect');
+    location.href = redirect || '/';
+  } else {
+    // 로그인 페이지: 카카오 버튼 표시
+    document.getElementById('login-ui')!.hidden = false;
   }
 </script>

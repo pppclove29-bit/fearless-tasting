@@ -81,15 +81,12 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
           <span></span><span></span><span></span>
         </button>
         <div class="nav-links" id="nav-links">
+          <a href="/rooms" class="nav-link nav-auth-only" id="my-rooms-link" hidden>내 방</a>
           <a href="/about" class="nav-link">소개</a>
           <a href="/rankings" class="nav-link">랭킹</a>
           <a href="/discover" class="nav-link">맛집</a>
           <a href="/cs" class="nav-link">문의</a>
           <a href="/admin" class="nav-link nav-admin" id="admin-link" hidden>관리자</a>
-          <button type="button" class="theme-toggle" id="theme-toggle" aria-label="테마 전환">
-            <span id="theme-icon"></span>
-            <span id="theme-label"></span>
-          </button>
           <div class="nav-auth" id="auth-nav">
             <a href={kakaoLoginUrl} id="login-link" class="nav-link nav-login">로그인</a>
             <span id="user-info" hidden>
@@ -106,7 +103,7 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     <footer>
       <p class="footer-desc">우리만의 맛집 리스트를 만들고 공유하는 플랫폼</p>
       <p class="footer-links">
-        <a href="/about">소개</a> · <a href="/rankings">랭킹</a> · <a href="/discover">맛집</a> · <a href="/cs">문의</a> · <a href="/privacy">개인정보처리방침</a>
+        <a href="/rooms" id="footer-rooms-link" hidden>내 방</a><span id="footer-rooms-sep" hidden> · </span><a href="/about">소개</a> · <a href="/rankings">랭킹</a> · <a href="/discover">맛집</a> · <a href="/cs">문의</a> · <a href="/privacy">개인정보처리방침</a>
       </p>
       <p>&copy; 2026 무모한 시식가</p>
     </footer>
@@ -380,25 +377,6 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     color: var(--text-sub);
   }
 
-  .theme-toggle {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-sub);
-    padding: 0.35rem 0.6rem;
-    border-radius: 6px;
-    font-size: 0.82rem;
-    line-height: 1;
-    transition: background 0.15s, color 0.15s;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-  }
-
-  .theme-toggle:hover {
-    background: var(--bg-hover);
-    color: var(--text-heading);
-  }
 </style>
 
 <script>
@@ -424,6 +402,14 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     userInfo.hidden = false;
     nicknameEl.textContent = user.nickname;
 
+    // 로그인 시 "내 방" 링크 표시
+    const myRoomsLink = document.getElementById('my-rooms-link');
+    if (myRoomsLink) myRoomsLink.hidden = false;
+    const footerRoomsLink = document.getElementById('footer-rooms-link');
+    if (footerRoomsLink) footerRoomsLink.hidden = false;
+    const footerRoomsSep = document.getElementById('footer-rooms-sep');
+    if (footerRoomsSep) footerRoomsSep.hidden = false;
+
     if (user.role === 'admin') {
       const adminLink = document.getElementById('admin-link');
       if (adminLink) adminLink.hidden = false;
@@ -435,28 +421,6 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     location.href = '/';
   });
 
-  // 테마 토글
-  const themeToggle = document.getElementById('theme-toggle')!;
-  const themeIcon = document.getElementById('theme-icon')!;
-  const themeLabel = document.getElementById('theme-label')!;
-  function updateThemeIcon() {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    themeIcon.textContent = isDark ? '\u2600\uFE0F' : '\uD83C\uDF19';
-    themeLabel.textContent = isDark ? '라이트 모드' : '다크 모드';
-  }
-  updateThemeIcon();
-
-  themeToggle.addEventListener('click', () => {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    if (isDark) {
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('theme', 'light');
-    } else {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
-    }
-    updateThemeIcon();
-  });
 
   // PWA Service Worker 등록
   if ('serviceWorker' in navigator) {

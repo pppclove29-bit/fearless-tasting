@@ -44,6 +44,14 @@ export class UsersController {
     return this.usersService.getRankings();
   }
 
+  /** 내가 찜한 식당 목록 */
+  @Get('me/wishlists')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '내가 찜한 식당 목록' })
+  getMyWishlists(@CurrentUser() user: { id: string }) {
+    return this.usersService.getMyWishlists(user.id);
+  }
+
   /** 관리자 대시보드 통계 (DAU/WAU/MAU 등) */
   @Get('stats')
   @UseGuards(AdminGuard)

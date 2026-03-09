@@ -13,10 +13,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     <div id="admin-tabs" hidden>
       <div class="tab-bar">
         <button type="button" class="tab-btn active" data-tab="stats">통계</button>
+        <button type="button" class="tab-btn" data-tab="notices">공지 관리</button>
         <button type="button" class="tab-btn" data-tab="inquiries">문의 관리</button>
       </div>
 
       <div id="tab-stats" class="tab-panel"></div>
+      <div id="tab-notices" class="tab-panel" hidden></div>
       <div id="tab-inquiries" class="tab-panel" hidden></div>
     </div>
   </div>
@@ -232,6 +234,120 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     padding: 2rem;
   }
 
+  /* 공지 관리 */
+  .notice-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .notice-card.disabled {
+    opacity: 0.5;
+  }
+
+  .notice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .notice-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-heading);
+  }
+
+  .notice-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  .notice-badge.active { background: #dcfce7; color: #16a34a; }
+  .notice-badge.inactive { background: #fee2e2; color: #dc2626; }
+
+  .notice-content {
+    font-size: 0.85rem;
+    color: var(--text-sub);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin-bottom: 0.5rem;
+  }
+
+  .notice-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .notice-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .notice-actions {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .notice-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .notice-form input,
+  .notice-form textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    margin-bottom: 0.5rem;
+    background: var(--bg-input, var(--bg));
+    color: var(--text);
+  }
+
+  .notice-form textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+
+  .notice-form-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn-primary-sm {
+    padding: 0.35rem 0.75rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .btn-outline-sm {
+    padding: 0.35rem 0.75rem;
+    background: none;
+    color: var(--text-sub);
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -261,7 +377,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <script>
-  import { fetchCurrentUser, fetchInquiries } from '@/lib/api';
+  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice } from '@/lib/api';
+  import type { Notice } from '@/lib/api';
   import { formatDate } from '@repo/utils';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
@@ -270,6 +387,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   const accessDenied = document.getElementById('access-denied')!;
   const adminTabs = document.getElementById('admin-tabs')!;
   const statsPanel = document.getElementById('tab-stats')!;
+  const noticesPanel = document.getElementById('tab-notices')!;
   const inquiriesPanel = document.getElementById('tab-inquiries')!;
 
   function escapeHtml(text: string): string {
@@ -286,16 +404,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   };
 
   // 탭 전환
+  const panels: Record<string, HTMLElement> = { stats: statsPanel, notices: noticesPanel, inquiries: inquiriesPanel };
   for (const btn of document.querySelectorAll<HTMLButtonElement>('.tab-btn')) {
     btn.addEventListener('click', () => {
       for (const b of document.querySelectorAll('.tab-btn')) b.classList.remove('active');
       btn.classList.add('active');
       const tab = btn.dataset.tab!;
-      statsPanel.hidden = tab !== 'stats';
-      inquiriesPanel.hidden = tab !== 'inquiries';
-      if (tab === 'inquiries' && inquiriesPanel.innerHTML === '') {
-        loadInquiries();
-      }
+      for (const [key, panel] of Object.entries(panels)) panel.hidden = key !== tab;
+      if (tab === 'inquiries' && inquiriesPanel.innerHTML === '') loadInquiries();
+      if (tab === 'notices' && noticesPanel.innerHTML === '') loadNotices();
     });
   }
 
@@ -380,6 +497,121 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       `,
       )
       .join('');
+  }
+
+  // ─── 공지 관리 ───
+
+  function renderNoticeForm(notice?: Notice) {
+    const isEdit = !!notice;
+    return `
+      <div class="notice-form" id="notice-form">
+        <input type="text" id="nf-title" placeholder="공지 제목" maxlength="200" value="${notice ? escapeHtml(notice.title) : ''}" />
+        <textarea id="nf-content" placeholder="공지 내용">${notice ? escapeHtml(notice.content) : ''}</textarea>
+        <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.5rem;">
+          <input type="checkbox" id="nf-enabled" ${!notice || notice.enabled ? 'checked' : ''} /> 활성화
+        </label>
+        <div class="notice-form-actions">
+          <button type="button" class="btn-primary-sm" id="nf-submit">${isEdit ? '수정' : '등록'}</button>
+          <button type="button" class="btn-outline-sm" id="nf-cancel">취소</button>
+        </div>
+      </div>
+    `;
+  }
+
+  async function loadNotices() {
+    noticesPanel.innerHTML = '<p class="empty-msg">로딩 중...</p>';
+    const notices = await fetchAllNotices();
+
+    const listHtml = notices.length > 0
+      ? notices.map((n) => `
+        <div class="notice-card ${n.enabled ? '' : 'disabled'}">
+          <div class="notice-header">
+            <span class="notice-title">${escapeHtml(n.title)}</span>
+            <span class="notice-badge ${n.enabled ? 'active' : 'inactive'}">${n.enabled ? '활성' : '비활성'}</span>
+          </div>
+          <div class="notice-content">${escapeHtml(n.content)}</div>
+          <div class="notice-footer">
+            <span class="notice-date">${formatDate(n.createdAt)}</span>
+            <div class="notice-actions">
+              <button type="button" class="btn-toggle-sm toggle-notice-btn" data-id="${n.id}" data-enabled="${n.enabled}">${n.enabled ? '비활성화' : '활성화'}</button>
+              <button type="button" class="btn-outline-sm edit-notice-btn" data-id="${n.id}">수정</button>
+              <button type="button" class="btn-danger-sm delete-notice-btn" data-id="${n.id}">삭제</button>
+            </div>
+          </div>
+        </div>
+      `).join('')
+      : '<p class="empty-msg">등록된 공지가 없습니다.</p>';
+
+    noticesPanel.innerHTML = `
+      <button type="button" class="btn-primary-sm" id="new-notice-btn" style="margin-bottom:1rem;">새 공지 작성</button>
+      <div id="notice-form-area"></div>
+      <div id="notice-list">${listHtml}</div>
+    `;
+
+    // 새 공지 작성
+    document.getElementById('new-notice-btn')!.addEventListener('click', () => {
+      const area = document.getElementById('notice-form-area')!;
+      if (area.querySelector('#notice-form')) return;
+      area.innerHTML = renderNoticeForm();
+      attachNoticeFormHandlers();
+    });
+
+    // 활성/비활성 토글
+    for (const btn of noticesPanel.querySelectorAll<HTMLButtonElement>('.toggle-notice-btn')) {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id!;
+        const enabled = btn.dataset.enabled === 'true';
+        try {
+          await updateNotice(id, { enabled: !enabled });
+          await loadNotices();
+        } catch { alert('상태 변경에 실패했습니다.'); }
+      });
+    }
+
+    // 수정
+    for (const btn of noticesPanel.querySelectorAll<HTMLButtonElement>('.edit-notice-btn')) {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id!;
+        const notice = notices.find((n) => n.id === id);
+        if (!notice) return;
+        const area = document.getElementById('notice-form-area')!;
+        area.innerHTML = renderNoticeForm(notice);
+        attachNoticeFormHandlers(notice.id);
+      });
+    }
+
+    // 삭제
+    for (const btn of noticesPanel.querySelectorAll<HTMLButtonElement>('.delete-notice-btn')) {
+      btn.addEventListener('click', async () => {
+        if (!confirm('이 공지를 삭제하시겠습니까?')) return;
+        try {
+          await deleteNotice(btn.dataset.id!);
+          await loadNotices();
+        } catch { alert('삭제에 실패했습니다.'); }
+      });
+    }
+  }
+
+  function attachNoticeFormHandlers(editId?: string) {
+    document.getElementById('nf-cancel')!.addEventListener('click', () => {
+      document.getElementById('notice-form-area')!.innerHTML = '';
+    });
+
+    document.getElementById('nf-submit')!.addEventListener('click', async () => {
+      const title = (document.getElementById('nf-title') as HTMLInputElement).value.trim();
+      const content = (document.getElementById('nf-content') as HTMLTextAreaElement).value.trim();
+      const enabled = (document.getElementById('nf-enabled') as HTMLInputElement).checked;
+      if (!title || !content) { alert('제목과 내용을 입력해주세요.'); return; }
+
+      try {
+        if (editId) {
+          await updateNotice(editId, { title, content, enabled });
+        } else {
+          await createNotice({ title, content, enabled });
+        }
+        await loadNotices();
+      } catch { alert('저장에 실패했습니다.'); }
+    });
   }
 
   async function init() {

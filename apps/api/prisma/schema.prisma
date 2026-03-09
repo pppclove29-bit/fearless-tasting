@@ -292,6 +292,24 @@ model RoomWishlist {
   @@index([roomRestaurantId])
 }
 
+/// 서비스 공지사항 (관리자가 작성, 전체 사용자에게 노출)
+model Notice {
+  /// 고유 식별자
+  id        String   @id @default(cuid())
+  /// 공지 제목
+  title     String   @db.VarChar(200)
+  /// 공지 본문
+  content   String   @db.Text
+  /// 활성 여부 (비활성 시 노출 안 됨)
+  enabled   Boolean  @default(true)
+  /// 작성일
+  createdAt DateTime @default(now())
+  /// 최종 수정일
+  updatedAt DateTime @updatedAt
+
+  @@index([enabled, createdAt])
+}
+
 /// 고객 문의 (지역 추가 요청, 버그 신고, 기타 피드백)
 model Inquiry {
   /// 고유 식별자

@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { InquiriesModule } from './inquiries/inquiries.module';
 import { RoomsModule } from './rooms/rooms.module';
+import { NoticesModule } from './notices/notices.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { RoomsModule } from './rooms/rooms.module';
     UsersModule,
     InquiriesModule,
     RoomsModule,
+    NoticesModule,
   ],
   providers: [
     {
