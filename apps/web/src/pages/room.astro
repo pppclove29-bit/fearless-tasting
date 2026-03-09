@@ -566,6 +566,35 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-color: var(--text-heading);
   }
 
+  .btn-load-more {
+    display: block;
+    width: 100%;
+    padding: 0.7rem;
+    margin-top: 0.5rem;
+    background: var(--bg-hover);
+    border: 1px dashed var(--border-mid);
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-sub);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .btn-load-more:hover {
+    background: var(--bg-card);
+    border-color: var(--text-muted);
+  }
+
+  .rest-list-end {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 0.5rem 0;
+    margin: 0;
+  }
+
   .category-filter-row {
     display: flex;
     gap: 0.5rem;
@@ -2559,6 +2588,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   let activeCategory = '';
   let searchQuery = '';
   let sortOrder = 'latest'; // 'latest' | 'rating-high' | 'rating-low' | 'reviews' | 'visits' | 'name'
+  const REST_PAGE_SIZE = 10;
+  let restPage = 1;
 
   function renderRestaurantsTab() {
     const panel = document.getElementById('tab-restaurants')!;
@@ -2632,8 +2663,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     `;
 
     // 검색 + 카테고리 필터
-    const searchHtml = currentRoom.restaurants.length > 3
-      ? `<input type="text" id="rest-search" class="rest-search" placeholder="식당 이름 또는 주소 검색" value="${escapeHtml(searchQuery)}" />`
+    const searchHtml = currentRoom.restaurants.length > 2
+      ? `<input type="text" id="rest-search" class="rest-search" placeholder="식당 이름, 주소, 카테고리 검색" value="${escapeHtml(searchQuery)}" />`
       : '';
 
     const categories = [...new Set(currentRoom.restaurants.map((r) => r.category))].sort();
@@ -2655,14 +2686,30 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>`
       : '';
 
+    const listTitle = currentRoom.restaurants.length > 0
+      ? `<h3 class="section-subtitle">식당 목록 <span class="section-count">${currentRoom.restaurants.length}</span></h3>`
+      : '';
+
+    panel.innerHTML = addFormHtml + listTitle + searchHtml + filterHtml + sortHtml + '<div id="restaurant-list"></div>';
+    renderRestaurantList();
+    attachRestaurantFormHandler();
+    if (hasKakaoMap) {
+      attachPlaceSearchHandler();
+      attachManualToggle();
+    }
+    attachCategoryFilterHandlers();
+    attachSearchHandler();
+    attachSortHandler();
+  }
+
+  /** 필터/정렬/페이지네이션 적용 후 리스트 영역만 업데이트 */
+  function getFilteredSortedRestaurants(): typeof currentRoom.restaurants {
     let filtered = currentRoom.restaurants;
     if (activeCategory) filtered = filtered.filter((r) => r.category === activeCategory);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      filtered = filtered.filter((r) => r.name.toLowerCase().includes(q) || r.address.toLowerCase().includes(q));
+      filtered = filtered.filter((r) => r.name.toLowerCase().includes(q) || r.address.toLowerCase().includes(q) || r.category.toLowerCase().includes(q));
     }
-
-    // Sort
     const sorted = [...filtered];
     switch (sortOrder) {
       case 'rating-high': sorted.sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0)); break;
@@ -2670,38 +2717,47 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       case 'reviews': sorted.sort((a, b) => b._count.reviews - a._count.reviews); break;
       case 'visits': sorted.sort((a, b) => b._count.visits - a._count.visits); break;
       case 'name': sorted.sort((a, b) => a.name.localeCompare(b.name, 'ko')); break;
-      default: break; // 'latest' keeps original order (already sorted by createdAt desc from API)
+      default: break;
     }
+    return sorted;
+  }
 
-    let listHtml = '';
+  function renderRestaurantList() {
+    const listEl = document.getElementById('restaurant-list');
+    if (!listEl) return;
+
     if (currentRoom.restaurants.length === 0) {
-      listHtml = '<p class="empty-text">등록된 식당이 없습니다.</p>';
-    } else if (sorted.length === 0) {
-      listHtml = '<p class="empty-text">해당 카테고리의 식당이 없습니다.</p>';
-    } else {
-      listHtml = sorted.map((r) => renderRestaurantCard(r)).join('');
+      listEl.innerHTML = '<p class="empty-text">등록된 식당이 없습니다.</p>';
+      return;
     }
 
-    const listTitle = currentRoom.restaurants.length > 0
-      ? `<h3 class="section-subtitle">식당 목록 <span class="section-count">${currentRoom.restaurants.length}</span></h3>`
-      : '';
-
-    panel.innerHTML = addFormHtml + listTitle + searchHtml + filterHtml + sortHtml + '<div id="restaurant-list">' + listHtml + '</div>';
-    attachRestaurantFormHandler();
-    if (hasKakaoMap) {
-      attachPlaceSearchHandler();
-      attachManualToggle();
+    const sorted = getFilteredSortedRestaurants();
+    if (sorted.length === 0) {
+      listEl.innerHTML = `<p class="empty-text">${searchQuery ? '검색 결과가 없습니다.' : '해당 카테고리의 식당이 없습니다.'}</p>`;
+      return;
     }
+
+    const visible = sorted.slice(0, restPage * REST_PAGE_SIZE);
+    const hasMore = visible.length < sorted.length;
+
+    listEl.innerHTML = visible.map((r) => renderRestaurantCard(r)).join('')
+      + (hasMore
+        ? `<button type="button" class="btn-load-more" id="rest-load-more">더보기 (${visible.length}/${sorted.length})</button>`
+        : (sorted.length > REST_PAGE_SIZE ? `<p class="rest-list-end">전체 ${sorted.length}개</p>` : ''));
+
     attachRestaurantCardHandlers();
-    attachCategoryFilterHandlers();
-    attachSearchHandler();
-    attachSortHandler();
+
+    document.getElementById('rest-load-more')?.addEventListener('click', () => {
+      restPage++;
+      renderRestaurantList();
+    });
   }
 
   function attachCategoryFilterHandlers() {
     for (const btn of document.querySelectorAll<HTMLButtonElement>('.category-filter-btn')) {
       btn.addEventListener('click', () => {
         activeCategory = btn.dataset.category || '';
+        restPage = 1;
         renderRestaurantsTab();
       });
     }
@@ -2710,24 +2766,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   function attachSearchHandler() {
     const input = document.getElementById('rest-search') as HTMLInputElement | null;
     if (!input) return;
+    let debounceTimer: ReturnType<typeof setTimeout>;
     input.addEventListener('input', () => {
-      searchQuery = input.value.trim();
-      const filtered = (() => {
-        let list = currentRoom.restaurants;
-        if (activeCategory) list = list.filter((r) => r.category === activeCategory);
-        if (searchQuery) {
-          const q = searchQuery.toLowerCase();
-          list = list.filter((r) => r.name.toLowerCase().includes(q) || r.address.toLowerCase().includes(q));
-        }
-        return list;
-      })();
-      const listEl = document.getElementById('restaurant-list')!;
-      if (filtered.length === 0) {
-        listEl.innerHTML = '<p class="empty-text">검색 결과가 없습니다.</p>';
-      } else {
-        listEl.innerHTML = filtered.map((r) => renderRestaurantCard(r)).join('');
-      }
-      attachRestaurantCardHandlers();
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        searchQuery = input.value.trim();
+        restPage = 1;
+        renderRestaurantList();
+      }, 150);
     });
   }
 
@@ -2745,6 +2791,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       ];
       openRoomSortSheet(options, sortOrder, (val) => {
         sortOrder = val;
+        restPage = 1;
         renderRestaurantsTab();
       });
     });
