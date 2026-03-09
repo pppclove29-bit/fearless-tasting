@@ -225,6 +225,53 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .btn-outline-sm:hover { border-color: var(--text-muted); }
   .btn-outline-sm:active { transform: scale(0.97); }
 
+  /* 퀵 액션 그리드 */
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.75rem 0.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .quick-action-btn:hover {
+    border-color: var(--text-muted);
+    background: var(--bg-hover);
+    transform: translateY(-1px);
+  }
+
+  .quick-action-btn:active {
+    transform: scale(0.96);
+  }
+
+  .quick-action-emoji {
+    font-size: 1.6rem;
+    line-height: 1;
+  }
+
+  .quick-action-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.2;
+  }
+
   /* 탭 바 */
   .room-tab-bar {
     display: flex;
@@ -560,6 +607,184 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     background: var(--text-heading);
     color: var(--bg);
     border-color: var(--text-heading);
+  }
+
+  /* ─── 투표 ─── */
+  .poll-create-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .poll-create-form h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.75rem 0;
+    color: var(--text-heading);
+  }
+
+  .poll-title-input {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    margin-bottom: 0.5rem;
+    background: var(--bg-input);
+    color: var(--text);
+    box-sizing: border-box;
+  }
+
+  .poll-title-input:focus { outline: none; border-color: var(--text-sub); }
+
+  .poll-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .poll-option-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.825rem;
+    font-family: inherit;
+    background: var(--bg-input);
+    color: var(--text);
+    box-sizing: border-box;
+  }
+
+  .poll-option-input:focus { outline: none; border-color: var(--text-sub); }
+
+  .poll-form-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  .poll-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .poll-card.poll-closed { opacity: 0.7; }
+
+  .poll-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .poll-card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .poll-status-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  .poll-status-badge.active { background: #dcfce7; color: #166534; }
+  .poll-status-badge.closed { background: var(--bg-hover); color: var(--text-muted); }
+
+  .poll-card-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .poll-options { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.5rem; }
+
+  .poll-option-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.825rem;
+    transition: border-color 0.15s;
+  }
+
+  .poll-option-row.votable { cursor: pointer; }
+  .poll-option-row.votable:hover { border-color: var(--text-muted); }
+
+  .poll-option-row.my-vote {
+    border-color: var(--text-heading);
+    font-weight: 600;
+  }
+
+  .poll-option-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: var(--bg-hover);
+    border-radius: 8px;
+    transition: width 0.3s ease;
+    z-index: 0;
+  }
+
+  .poll-option-label { position: relative; z-index: 1; color: var(--text); }
+  .poll-option-pct { position: relative; z-index: 1; color: var(--text-muted); font-size: 0.75rem; white-space: nowrap; }
+
+  .poll-close-btn { margin-top: 0.5rem; }
+
+  /* ─── 타임라인 ─── */
+  .timeline-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .timeline-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .timeline-item:last-child { border-bottom: none; }
+
+  .timeline-emoji {
+    font-size: 1.4rem;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .timeline-body { flex: 1; min-width: 0; }
+
+  .timeline-desc {
+    font-size: 0.85rem;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .timeline-desc strong { font-weight: 600; color: var(--text-heading); }
+
+  .timeline-date {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
   }
 
   /* ─── 도움말 ─── */
@@ -1257,9 +1482,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     createRoomRestaurant,
     toggleShareCode, updateRoom, regenerateInviteCode,
     fetchRoomStats, toggleWishlist,
+    createPoll, fetchPolls, votePoll, closePoll,
+    fetchTimeline,
     showToast, showConfirm, showDangerConfirm,
   } from '@/lib/api';
-  import type { AuthUser, RoomDetailResponse, RoomRestaurantInfo, RoomStats } from '@/lib/api';
+  import type { AuthUser, RoomDetailResponse, RoomRestaurantInfo, RoomStats, Poll, TimelineItem } from '@/lib/api';
   import { getCities, getNeighborhoods } from '@/data/areas';
   import { formatRating, formatDate } from '@repo/utils';
 
@@ -1437,18 +1664,48 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         ${actionsHtml}
       </div>
 
+      <div class="quick-actions">
+        <button type="button" class="quick-action-btn" id="qa-add-restaurant">
+          <span class="quick-action-emoji">🍽️</span>
+          <span class="quick-action-label">식당 등록</span>
+        </button>
+        <button type="button" class="quick-action-btn" id="qa-quick-review">
+          <span class="quick-action-emoji">✏️</span>
+          <span class="quick-action-label">빠른 리뷰</span>
+        </button>
+        <button type="button" class="quick-action-btn" id="qa-poll">
+          <span class="quick-action-emoji">🗳️</span>
+          <span class="quick-action-label">투표</span>
+        </button>
+        <button type="button" class="quick-action-btn" id="qa-invite">
+          <span class="quick-action-emoji">🔗</span>
+          <span class="quick-action-label">초대</span>
+        </button>
+        <button type="button" class="quick-action-btn" id="qa-stats">
+          <span class="quick-action-emoji">📊</span>
+          <span class="quick-action-label">통계</span>
+        </button>
+        <button type="button" class="quick-action-btn" id="qa-help" title="사용법 안내">
+          <span class="quick-action-emoji">❓</span>
+          <span class="quick-action-label">도움말</span>
+        </button>
+      </div>
+
       <div class="room-tab-bar">
-        <button type="button" class="room-tab-btn active" data-tab="restaurants">식당 목록</button>
-        <button type="button" class="room-tab-btn" data-tab="region">지역</button>
-        ${hasKakaoMap ? '<button type="button" class="room-tab-btn" data-tab="map">지도</button>' : ''}
-        <button type="button" class="room-tab-btn" data-tab="stats">통계</button>
-        <button type="button" class="room-tab-btn" data-tab="members">멤버 (${currentRoom.members.length})</button>
-        <button type="button" class="help-btn" id="room-help-btn" title="사용법 안내">?</button>
+        <button type="button" class="room-tab-btn active" data-tab="restaurants">🍽️ 식당</button>
+        <button type="button" class="room-tab-btn" data-tab="region">📍 지역</button>
+        ${hasKakaoMap ? '<button type="button" class="room-tab-btn" data-tab="map">🗺️ 지도</button>' : ''}
+        <button type="button" class="room-tab-btn" data-tab="poll">🗳️ 투표</button>
+        <button type="button" class="room-tab-btn" data-tab="timeline">📋 활동</button>
+        <button type="button" class="room-tab-btn" data-tab="stats">📊 통계</button>
+        <button type="button" class="room-tab-btn" data-tab="members">👥 멤버 (${currentRoom.members.length})</button>
       </div>
 
       <div id="tab-restaurants" class="room-tab-panel"></div>
       <div id="tab-region" class="room-tab-panel" hidden></div>
       ${hasKakaoMap ? '<div id="tab-map" class="room-tab-panel" hidden></div>' : ''}
+      <div id="tab-poll" class="room-tab-panel" hidden></div>
+      <div id="tab-timeline" class="room-tab-panel" hidden></div>
       <div id="tab-stats" class="room-tab-panel" hidden></div>
       <div id="tab-members" class="room-tab-panel" hidden></div>
     `;
@@ -1456,9 +1713,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     content.hidden = false;
     attachHeaderHandlers();
     attachTabHandlers();
-    document.getElementById('room-help-btn')?.addEventListener('click', showHelpModal);
+    attachQuickActionHandlers();
     renderRestaurantsTab();
     renderRegionTab();
+    renderPollTab();
+    renderTimelineTab();
     renderStatsTab().catch((err) => console.error('[stats] unhandled:', err));
     renderMembersTab();
   }
@@ -1596,6 +1855,42 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     });
   }
 
+  function switchToTab(tabName: string) {
+    const btn = document.querySelector<HTMLButtonElement>(`.room-tab-btn[data-tab="${tabName}"]`);
+    if (btn) btn.click();
+  }
+
+  function attachQuickActionHandlers() {
+    document.getElementById('qa-add-restaurant')?.addEventListener('click', () => {
+      switchToTab('restaurants');
+      setTimeout(() => {
+        const nameInput = document.getElementById('add-rest-search') || document.getElementById('add-rest-name');
+        if (nameInput) { nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); (nameInput as HTMLInputElement).focus(); }
+      }, 100);
+    });
+
+    document.getElementById('qa-quick-review')?.addEventListener('click', () => {
+      switchToTab('restaurants');
+      setTimeout(() => {
+        const list = document.getElementById('restaurant-list');
+        if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    });
+
+    document.getElementById('qa-poll')?.addEventListener('click', () => switchToTab('poll'));
+    document.getElementById('qa-stats')?.addEventListener('click', () => switchToTab('stats'));
+
+    document.getElementById('qa-invite')?.addEventListener('click', () => {
+      const btn = document.getElementById('copy-link-btn');
+      if (btn) {
+        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        btn.click();
+      }
+    });
+
+    document.getElementById('qa-help')?.addEventListener('click', showHelpModal);
+  }
+
   function attachTabHandlers() {
     const panels: Record<string, HTMLElement> = {
       restaurants: document.getElementById('tab-restaurants')!,
@@ -1605,6 +1900,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     };
     const mapPanel = document.getElementById('tab-map');
     if (mapPanel) panels.map = mapPanel;
+    const pollPanel = document.getElementById('tab-poll');
+    if (pollPanel) panels.poll = pollPanel;
+    const timelinePanel = document.getElementById('tab-timeline');
+    if (timelinePanel) panels.timeline = timelinePanel;
 
     let mapRendered = false;
 
@@ -2137,6 +2436,199 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       console.error('[stats] render error:', renderErr);
       panel.innerHTML = `<p class="empty-text">통계 렌더링 중 오류가 발생했습니다: ${renderErr instanceof Error ? renderErr.message : String(renderErr)}</p>`;
     }
+  }
+
+  // ─── 식당 탭 ───
+
+  // ─── 투표 탭 ───
+
+  async function renderPollTab() {
+    const panel = document.getElementById('tab-poll');
+    if (!panel) return;
+
+    panel.innerHTML = '<p class="empty-text">투표를 불러오는 중...</p>';
+
+    let polls: Poll[] = [];
+    try {
+      polls = await fetchPolls(currentRoom.id);
+    } catch {
+      panel.innerHTML = '<p class="empty-text">투표를 불러올 수 없습니다.</p>';
+      return;
+    }
+
+    const totalVoters = (poll: Poll) => {
+      const voters = new Set<string>();
+      for (const opt of poll.options) for (const v of opt.votes) voters.add(v.userId);
+      return voters.size;
+    };
+
+    const myVote = (poll: Poll) => {
+      for (const opt of poll.options) {
+        if (opt.votes.some((v) => v.userId === currentUser.id)) return opt.id;
+      }
+      return null;
+    };
+
+    const createFormHtml = `
+      <div class="poll-create-form">
+        <h3>🗳️ 새 투표 만들기</h3>
+        <input type="text" id="poll-title" class="poll-title-input" placeholder="투표 제목 (예: 오늘 뭐 먹지?)" maxlength="200" />
+        <div id="poll-options-list" class="poll-options-list">
+          <input type="text" class="poll-option-input" placeholder="선택지 1" maxlength="200" />
+          <input type="text" class="poll-option-input" placeholder="선택지 2" maxlength="200" />
+        </div>
+        <div class="poll-form-actions">
+          <button type="button" class="btn-outline-sm" id="poll-add-option">+ 선택지 추가</button>
+          <button type="button" class="btn-primary-sm" id="poll-submit">투표 만들기</button>
+        </div>
+      </div>`;
+
+    const activePolls = polls.filter((p) => p.status === 'active');
+    const closedPolls = polls.filter((p) => p.status === 'closed');
+
+    const renderPollCard = (poll: Poll) => {
+      const total = poll.options.reduce((s, o) => s + o.votes.length, 0);
+      const myChoice = myVote(poll);
+      const isCreator = poll.createdBy.id === currentUser.id;
+
+      return `
+        <div class="poll-card ${poll.status === 'closed' ? 'poll-closed' : ''}">
+          <div class="poll-card-header">
+            <span class="poll-card-title">${escapeHtml(poll.title)}</span>
+            ${poll.status === 'closed' ? '<span class="poll-status-badge closed">마감</span>' : '<span class="poll-status-badge active">진행중</span>'}
+          </div>
+          <div class="poll-card-meta">${escapeHtml(poll.createdBy.nickname)} · ${formatDate(poll.createdAt)} · ${totalVoters(poll)}명 참여</div>
+          <div class="poll-options">
+            ${poll.options.map((opt) => {
+              const pct = total > 0 ? Math.round((opt.votes.length / total) * 100) : 0;
+              const isMyVote = myChoice === opt.id;
+              const canVote = poll.status === 'active' && !myChoice;
+              return `
+                <div class="poll-option-row ${isMyVote ? 'my-vote' : ''} ${canVote ? 'votable' : ''}"
+                     ${canVote ? `data-poll-id="${poll.id}" data-option-id="${opt.id}"` : ''}>
+                  <div class="poll-option-bar" style="width:${pct}%"></div>
+                  <span class="poll-option-label">${escapeHtml(opt.label)}${isMyVote ? ' ✓' : ''}</span>
+                  <span class="poll-option-pct">${opt.votes.length}표 (${pct}%)</span>
+                </div>`;
+            }).join('')}
+          </div>
+          ${isCreator && poll.status === 'active' ? `<button type="button" class="btn-outline-sm poll-close-btn" data-poll-id="${poll.id}">투표 마감</button>` : ''}
+        </div>`;
+    };
+
+    const activePollsHtml = activePolls.length > 0
+      ? `<h3 class="section-subtitle">진행중인 투표</h3>${activePolls.map(renderPollCard).join('')}`
+      : '';
+
+    const closedPollsHtml = closedPolls.length > 0
+      ? `<h3 class="section-subtitle">마감된 투표</h3>${closedPolls.map(renderPollCard).join('')}`
+      : '';
+
+    const emptyHtml = polls.length === 0 ? '<p class="empty-text">아직 투표가 없습니다. 첫 투표를 만들어보세요!</p>' : '';
+
+    panel.innerHTML = createFormHtml + emptyHtml + activePollsHtml + closedPollsHtml;
+
+    // 선택지 추가
+    document.getElementById('poll-add-option')?.addEventListener('click', () => {
+      const list = document.getElementById('poll-options-list')!;
+      const count = list.querySelectorAll('.poll-option-input').length;
+      if (count >= 10) { showToast('선택지는 최대 10개까지 가능합니다.'); return; }
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'poll-option-input';
+      input.placeholder = `선택지 ${count + 1}`;
+      input.maxLength = 200;
+      list.appendChild(input);
+    });
+
+    // 투표 생성
+    document.getElementById('poll-submit')?.addEventListener('click', async () => {
+      const title = (document.getElementById('poll-title') as HTMLInputElement).value.trim();
+      const optionInputs = document.querySelectorAll<HTMLInputElement>('.poll-option-input');
+      const options = Array.from(optionInputs).map((i) => i.value.trim()).filter(Boolean);
+
+      if (!title) { showToast('투표 제목을 입력해주세요.'); return; }
+      if (options.length < 2) { showToast('선택지를 2개 이상 입력해주세요.'); return; }
+
+      try {
+        await createPoll(currentRoom.id, { title, options: options.map((label) => ({ label })) });
+        showToast('투표가 생성되었습니다!', 'success');
+        renderPollTab();
+      } catch { showToast('투표 생성에 실패했습니다.'); }
+    });
+
+    // 투표 참여
+    for (const row of document.querySelectorAll<HTMLElement>('.poll-option-row.votable')) {
+      row.addEventListener('click', async () => {
+        const pollId = row.dataset.pollId!;
+        const optionId = row.dataset.optionId!;
+        try {
+          await votePoll(currentRoom.id, pollId, optionId);
+          showToast('투표 완료!', 'success');
+          renderPollTab();
+        } catch (err) { showToast(err instanceof Error ? err.message : '투표에 실패했습니다.'); }
+      });
+    }
+
+    // 투표 마감
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('.poll-close-btn')) {
+      btn.addEventListener('click', async () => {
+        if (!await showConfirm('이 투표를 마감하시겠습니까?')) return;
+        try {
+          await closePoll(currentRoom.id, btn.dataset.pollId!);
+          showToast('투표가 마감되었습니다.', 'success');
+          renderPollTab();
+        } catch { showToast('투표 마감에 실패했습니다.'); }
+      });
+    }
+  }
+
+  // ─── 활동 타임라인 탭 ───
+
+  async function renderTimelineTab() {
+    const panel = document.getElementById('tab-timeline');
+    if (!panel) return;
+
+    panel.innerHTML = '<p class="empty-text">활동 내역을 불러오는 중...</p>';
+
+    let items: TimelineItem[] = [];
+    try {
+      items = await fetchTimeline(currentRoom.id);
+    } catch {
+      panel.innerHTML = '<p class="empty-text">활동 내역을 불러올 수 없습니다.</p>';
+      return;
+    }
+
+    if (items.length === 0) {
+      panel.innerHTML = '<p class="empty-text">아직 활동 내역이 없습니다.</p>';
+      return;
+    }
+
+    const emojiMap: Record<string, string> = {
+      restaurant_added: '🍽️',
+      visit_added: '👣',
+      review_added: '⭐',
+      member_joined: '👋',
+    };
+
+    const descMap: Record<string, (data: Record<string, unknown>) => string> = {
+      restaurant_added: (d) => `<strong>${escapeHtml(String(d.userName || ''))}</strong>님이 <strong>${escapeHtml(String(d.restaurantName || ''))}</strong>을(를) 등록했습니다.`,
+      visit_added: (d) => `<strong>${escapeHtml(String(d.userName || ''))}</strong>님이 <strong>${escapeHtml(String(d.restaurantName || ''))}</strong>을(를) 방문했습니다.`,
+      review_added: (d) => `<strong>${escapeHtml(String(d.userName || ''))}</strong>님이 <strong>${escapeHtml(String(d.restaurantName || ''))}</strong>에 리뷰를 남겼습니다.${d.rating ? ` (${renderStars(Number(d.rating))})` : ''}`,
+      member_joined: (d) => `<strong>${escapeHtml(String(d.userName || ''))}</strong>님이 방에 참여했습니다.`,
+    };
+
+    const timelineHtml = items.map((item) => `
+      <div class="timeline-item">
+        <span class="timeline-emoji">${emojiMap[item.type] || '📌'}</span>
+        <div class="timeline-body">
+          <div class="timeline-desc">${(descMap[item.type] || (() => item.type))(item.data)}</div>
+          <div class="timeline-date">${formatDate(item.date)}</div>
+        </div>
+      </div>
+    `).join('');
+
+    panel.innerHTML = `<h3 class="section-subtitle">📋 최근 활동</h3><div class="timeline-list">${timelineHtml}</div>`;
   }
 
   // ─── 식당 탭 ───

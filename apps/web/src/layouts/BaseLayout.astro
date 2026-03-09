@@ -90,6 +90,10 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
           <div class="nav-auth" id="auth-nav">
             <a href={kakaoLoginUrl} id="login-link" class="nav-link nav-login">로그인</a>
             <span id="user-info" hidden>
+              <button type="button" class="notif-bell" id="notif-bell" hidden title="알림">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <span class="notif-badge" id="notif-badge" hidden></span>
+              </button>
               <a href="/profile" id="user-nickname" class="user-nickname"></a>
               <button type="button" id="logout-btn">로그아웃</button>
             </span>
@@ -248,6 +252,122 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     color: var(--text-heading);
   }
 
+  .notif-bell {
+    position: relative;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-sub);
+    padding: 0.3rem;
+    border-radius: 50%;
+    transition: background 0.15s, color 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .notif-bell:hover {
+    background: var(--bg-hover);
+    color: var(--text-heading);
+  }
+
+  .notif-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 16px;
+    height: 16px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    line-height: 1;
+  }
+
+  .notif-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 320px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px var(--shadow);
+    z-index: 200;
+    padding: 0.5rem;
+  }
+
+  .notif-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.5rem 0.25rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .notif-mark-read {
+    background: none;
+    border: none;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+
+  .notif-mark-read:hover { color: var(--text-heading); }
+
+  .notif-item {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.6rem 0.5rem;
+    border-radius: 8px;
+    transition: background 0.15s;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .notif-item:hover { background: var(--bg-hover); }
+  .notif-item.unread { background: rgba(59, 130, 246, 0.05); }
+
+  .notif-item-msg {
+    font-size: 0.8rem;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .notif-item-date {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+
+  .notif-empty {
+    text-align: center;
+    padding: 1.5rem 0.5rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 600px) {
+    .notif-dropdown {
+      width: calc(100vw - 2rem);
+      right: -1rem;
+    }
+  }
+
   #logout-btn {
     padding: 0.35rem 0.7rem;
     background: none;
@@ -380,7 +500,9 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
 </style>
 
 <script>
-  import { fetchCurrentUser, logout } from '@/lib/api';
+  import { fetchCurrentUser, logout, fetchMyNotifications, fetchUnreadNotificationCount, markNotificationsRead } from '@/lib/api';
+  import type { Notification } from '@/lib/api';
+  import { formatDate } from '@repo/utils';
 
   // 햄버거 메뉴 토글
   const hamburgerBtn = document.getElementById('hamburger-btn')!;
@@ -413,6 +535,76 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     if (user.role === 'admin') {
       const adminLink = document.getElementById('admin-link');
       if (adminLink) adminLink.hidden = false;
+    }
+
+    // 알림 벨 초기화
+    const bellBtn = document.getElementById('notif-bell');
+    const badge = document.getElementById('notif-badge');
+    if (bellBtn && badge) {
+      bellBtn.hidden = false;
+      let dropdownOpen = false;
+
+      const updateBadge = async () => {
+        const count = await fetchUnreadNotificationCount();
+        if (count > 0) {
+          badge.textContent = count > 99 ? '99+' : String(count);
+          badge.hidden = false;
+        } else {
+          badge.hidden = true;
+        }
+      };
+      updateBadge();
+
+      bellBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const existing = document.querySelector('.notif-dropdown');
+        if (existing) { existing.remove(); dropdownOpen = false; return; }
+
+        dropdownOpen = true;
+        const notifications: Notification[] = await fetchMyNotifications();
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'notif-dropdown';
+
+        if (notifications.length === 0) {
+          dropdown.innerHTML = `
+            <div class="notif-dropdown-header">알림</div>
+            <div class="notif-empty">알림이 없습니다.</div>`;
+        } else {
+          dropdown.innerHTML = `
+            <div class="notif-dropdown-header">
+              알림
+              <button type="button" class="notif-mark-read" id="notif-mark-all">모두 읽음</button>
+            </div>
+            ${notifications.slice(0, 20).map((n) => `
+              <a href="/room?id=${n.roomId}" class="notif-item ${!n.isRead ? 'unread' : ''}">
+                <div>
+                  <div class="notif-item-msg">${n.message}</div>
+                  <div class="notif-item-date">${n.room.name} · ${formatDate(n.createdAt)}</div>
+                </div>
+              </a>`).join('')}`;
+        }
+
+        bellBtn.style.position = 'relative';
+        bellBtn.appendChild(dropdown);
+
+        dropdown.querySelector('#notif-mark-all')?.addEventListener('click', async (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          await markNotificationsRead();
+          badge.hidden = true;
+          dropdown.querySelectorAll('.notif-item.unread').forEach((el) => el.classList.remove('unread'));
+        });
+
+        const closeDropdown = (ev: MouseEvent) => {
+          if (!dropdown.contains(ev.target as Node) && ev.target !== bellBtn) {
+            dropdown.remove();
+            dropdownOpen = false;
+            document.removeEventListener('click', closeDropdown);
+          }
+        };
+        setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+      });
     }
   }
 

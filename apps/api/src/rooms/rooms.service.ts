@@ -178,6 +178,12 @@ export class RoomsService {
       data: { role: 'member', roomId: room.id, userId },
     });
 
+    // 알림: 새 멤버 참여
+    const joinedUser = await this.prisma.read.user.findUnique({ where: { id: userId }, select: { nickname: true } });
+    if (joinedUser) {
+      this.createNotificationForRoom(room.id, userId, 'member_joined', `${joinedUser.nickname}님이 방에 참여했습니다.`).catch(() => {});
+    }
+
     return room;
   }
 
@@ -463,9 +469,17 @@ export class RoomsService {
     latitude?: number,
     longitude?: number,
   ) {
-    return this.prisma.write.roomRestaurant.create({
+    const restaurant = await this.prisma.write.roomRestaurant.create({
       data: { roomId, addedById, name, address, province, city, neighborhood, category, imageUrl, latitude, longitude },
     });
+
+    // 알림: 식당 등록
+    const user = await this.prisma.read.user.findUnique({ where: { id: addedById }, select: { nickname: true } });
+    if (user) {
+      this.createNotificationForRoom(roomId, addedById, 'restaurant_added', `${user.nickname}님이 "${name}" 식당을 등록했습니다.`).catch(() => {});
+    }
+
+    return restaurant;
   }
 
   /** 방 내 식당 수정 (본인 or manager+) */
@@ -550,7 +564,7 @@ export class RoomsService {
       throw new NotFoundException('식당을 찾을 수 없습니다');
     }
 
-    return this.prisma.write.roomVisit.create({
+    const visit = await this.prisma.write.roomVisit.create({
       data: {
         restaurantId,
         createdById: userId,
@@ -572,6 +586,13 @@ export class RoomsService {
         _count: { select: { reviews: true } },
       },
     });
+
+    // 알림: 방문 기록 추가
+    if (visit.createdBy) {
+      this.createNotificationForRoom(roomId, userId, 'visit_added', `${visit.createdBy.nickname}님이 "${restaurant.name}" 방문을 기록했습니다.`).catch(() => {});
+    }
+
+    return visit;
   }
 
   /** 방문 기록 수정 (생성자 or manager+) */
@@ -629,7 +650,10 @@ export class RoomsService {
     favoriteMenu?: string,
     tryNextMenu?: string,
   ) {
-    const visit = await this.prisma.read.roomVisit.findUnique({ where: { id: visitId } });
+    const visit = await this.prisma.read.roomVisit.findUnique({
+      where: { id: visitId },
+      include: { restaurant: { select: { name: true, roomId: true } } },
+    });
     if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
 
     const existing = await this.prisma.read.roomReview.findUnique({
@@ -639,13 +663,21 @@ export class RoomsService {
       throw new ConflictException('이 방문에 이미 리뷰를 작성했습니다. 기존 리뷰를 수정해 주세요.');
     }
 
-    return this.prisma.write.roomReview.create({
+    const review = await this.prisma.write.roomReview.create({
       data: {
         visitId, userId, rating, content, wouldRevisit,
         tasteRating, valueRating, serviceRating, cleanlinessRating, accessibilityRating,
         favoriteMenu, tryNextMenu,
       },
     });
+
+    // 알림: 리뷰 작성
+    const reviewer = await this.prisma.read.user.findUnique({ where: { id: userId }, select: { nickname: true } });
+    if (reviewer) {
+      this.createNotificationForRoom(visit.restaurant.roomId, userId, 'review_added', `${reviewer.nickname}님이 "${visit.restaurant.name}"에 리뷰를 남겼습니다. (${rating}점)`).catch(() => {});
+    }
+
+    return review;
   }
 
   /** 리뷰 수정 (본인만) */
@@ -726,7 +758,7 @@ export class RoomsService {
       throw new NotFoundException('식당을 찾을 수 없습니다');
     }
 
-    return this.prisma.write.$transaction(async (tx) => {
+    const result = await this.prisma.write.$transaction(async (tx) => {
       const visit = await tx.roomVisit.create({
         data: {
           restaurantId,
@@ -750,6 +782,14 @@ export class RoomsService {
 
       return { visit, review };
     });
+
+    // 알림: 빠른 리뷰 (방문 + 리뷰)
+    const reviewer = await this.prisma.read.user.findUnique({ where: { id: userId }, select: { nickname: true } });
+    if (reviewer) {
+      this.createNotificationForRoom(roomId, userId, 'review_added', `${reviewer.nickname}님이 "${restaurant.name}"에 리뷰를 남겼습니다. (${rating}점)`).catch(() => {});
+    }
+
+    return result;
   }
 
   // ─── 통계 ───
