@@ -1259,4 +1259,234 @@ export class RoomsService {
 
     return { topRated, mostRevisited, mostWishlisted };
   }
+
+  // ──────────────── 투표 ────────────────
+
+  /** 투표 생성 */
+  async createPoll(roomId: string, userId: string, title: string, options: { label: string; restaurantId?: string }[], endsAt?: string) {
+    return this.prisma.write.$transaction(async (tx) => {
+      const poll = await tx.roomPoll.create({
+        data: {
+          title,
+          roomId,
+          createdById: userId,
+          endsAt: endsAt ? new Date(endsAt) : null,
+          options: {
+            create: options.map((o) => ({
+              label: o.label,
+              restaurantId: o.restaurantId || null,
+            })),
+          },
+        },
+        include: { options: { include: { votes: true } } },
+      });
+
+      // 방 멤버에게 알림 생성 (생성자 제외)
+      const members = await tx.roomMember.findMany({ where: { roomId }, select: { userId: true } });
+      const notifications = members
+        .filter((m) => m.userId !== userId)
+        .map((m) => ({ roomId, userId: m.userId, type: 'poll_created', message: `새 투표: ${title}` }));
+      if (notifications.length > 0) {
+        await tx.roomNotification.createMany({ data: notifications });
+      }
+
+      return poll;
+    });
+  }
+
+  /** 투표 목록 조회 */
+  async getPolls(roomId: string) {
+    // 만료된 투표 자동 마감
+    await this.prisma.write.roomPoll.updateMany({
+      where: { roomId, status: 'active', endsAt: { lte: new Date() } },
+      data: { status: 'closed' },
+    });
+
+    return this.prisma.read.roomPoll.findMany({
+      where: { roomId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        createdBy: { select: { id: true, nickname: true } },
+        options: {
+          include: {
+            votes: { include: { user: { select: { id: true, nickname: true } } } },
+            restaurant: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+  }
+
+  /** 투표 참여 (선택지에 투표) */
+  async votePoll(pollId: string, optionId: string, userId: string) {
+    const poll = await this.prisma.read.roomPoll.findUnique({
+      where: { id: pollId },
+      include: { options: true },
+    });
+    if (!poll) throw new NotFoundException('투표를 찾을 수 없습니다.');
+    if (poll.status !== 'active') throw new ForbiddenException('이미 마감된 투표입니다.');
+
+    const option = poll.options.find((o) => o.id === optionId);
+    if (!option) throw new NotFoundException('선택지를 찾을 수 없습니다.');
+
+    // 이 투표에서 기존 투표 삭제 후 새로 투표 (변경 가능)
+    const allOptionIds = poll.options.map((o) => o.id);
+    await this.prisma.write.$transaction(async (tx) => {
+      await tx.roomPollVote.deleteMany({
+        where: { optionId: { in: allOptionIds }, userId },
+      });
+      await tx.roomPollVote.create({
+        data: { optionId, userId },
+      });
+    });
+
+    return { success: true };
+  }
+
+  /** 투표 마감 */
+  async closePoll(pollId: string, userId: string) {
+    const poll = await this.prisma.read.roomPoll.findUnique({ where: { id: pollId } });
+    if (!poll) throw new NotFoundException('투표를 찾을 수 없습니다.');
+    if (poll.createdById !== userId) throw new ForbiddenException('투표 생성자만 마감할 수 있습니다.');
+
+    await this.prisma.write.roomPoll.update({
+      where: { id: pollId },
+      data: { status: 'closed' },
+    });
+    return { success: true };
+  }
+
+  // ──────────────── 타임라인 ────────────────
+
+  /** 방 활동 타임라인 */
+  async getTimeline(roomId: string) {
+    const [restaurants, visits, reviews, members] = await Promise.all([
+      this.prisma.read.roomRestaurant.findMany({
+        where: { roomId },
+        select: { id: true, name: true, createdAt: true, addedBy: { select: { id: true, nickname: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      }),
+      this.prisma.read.roomVisit.findMany({
+        where: { restaurant: { roomId } },
+        select: { id: true, visitedAt: true, createdAt: true, restaurant: { select: { id: true, name: true } }, createdBy: { select: { id: true, nickname: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      }),
+      this.prisma.read.roomReview.findMany({
+        where: { visit: { restaurant: { roomId } } },
+        select: { id: true, rating: true, content: true, createdAt: true, visit: { select: { restaurant: { select: { id: true, name: true } } } }, user: { select: { id: true, nickname: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      }),
+      this.prisma.read.roomMember.findMany({
+        where: { roomId },
+        select: { id: true, joinedAt: true, user: { select: { id: true, nickname: true } } },
+        orderBy: { joinedAt: 'desc' },
+        take: 20,
+      }),
+    ]);
+
+    const timeline = [
+      ...restaurants.map((r) => ({ type: 'restaurant_added' as const, date: r.createdAt, data: { restaurantName: r.name, user: r.addedBy } })),
+      ...visits.map((v) => ({ type: 'visit_added' as const, date: v.createdAt, data: { restaurantName: v.restaurant.name, visitedAt: v.visitedAt, user: v.createdBy } })),
+      ...reviews.map((r) => ({ type: 'review_added' as const, date: r.createdAt, data: { restaurantName: r.visit.restaurant.name, rating: r.rating, content: r.content.slice(0, 50), user: r.user } })),
+      ...members.map((m) => ({ type: 'member_joined' as const, date: m.joinedAt, data: { user: m.user } })),
+    ];
+
+    timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return timeline.slice(0, 50);
+  }
+
+  // ──────────────── 알림 ────────────────
+
+  /** 내 알림 목록 */
+  async getNotifications(userId: string) {
+    return this.prisma.read.roomNotification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: { room: { select: { id: true, name: true } } },
+    });
+  }
+
+  /** 알림 읽음 처리 */
+  async markNotificationsRead(userId: string) {
+    await this.prisma.write.roomNotification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true },
+    });
+    return { success: true };
+  }
+
+  /** 안 읽은 알림 수 */
+  async getUnreadNotificationCount(userId: string) {
+    const count = await this.prisma.read.roomNotification.count({
+      where: { userId, isRead: false },
+    });
+    return { count };
+  }
+
+  /** 알림 생성 헬퍼 (방 멤버 전체에게, 본인 제외) */
+  async createNotificationForRoom(roomId: string, excludeUserId: string, type: string, message: string) {
+    const members = await this.prisma.read.roomMember.findMany({ where: { roomId }, select: { userId: true } });
+    const data = members
+      .filter((m) => m.userId !== excludeUserId)
+      .map((m) => ({ roomId, userId: m.userId, type, message }));
+    if (data.length > 0) {
+      await this.prisma.write.roomNotification.createMany({ data });
+    }
+  }
+
+  // ──────────────── 리뷰 비교 ────────────────
+
+  /** 같은 식당에 대한 멤버별 리뷰 비교 */
+  async compareReviews(restaurantId: string) {
+    const restaurant = await this.prisma.read.roomRestaurant.findUnique({
+      where: { id: restaurantId },
+      select: { id: true, name: true, roomId: true },
+    });
+    if (!restaurant) throw new NotFoundException('식당을 찾을 수 없습니다.');
+
+    const reviews = await this.prisma.read.roomReview.findMany({
+      where: { visit: { restaurantId } },
+      include: {
+        user: { select: { id: true, nickname: true } },
+        visit: { select: { visitedAt: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // 유저별로 그룹핑
+    const byUser = new Map<string, { user: { id: string; nickname: string }; reviews: typeof reviews }>();
+    for (const review of reviews) {
+      const key = review.user.id;
+      if (!byUser.has(key)) {
+        byUser.set(key, { user: review.user, reviews: [] });
+      }
+      byUser.get(key)!.reviews.push(review);
+    }
+
+    const comparisons = Array.from(byUser.values()).map((entry) => {
+      const ratings = entry.reviews.map((r) => r.rating);
+      return {
+        user: entry.user,
+        reviewCount: entry.reviews.length,
+        avgRating: calcAvgRating(ratings),
+        latestReview: entry.reviews[0] ? {
+          rating: entry.reviews[0].rating,
+          content: entry.reviews[0].content,
+          visitedAt: entry.reviews[0].visit.visitedAt,
+          tasteRating: entry.reviews[0].tasteRating,
+          valueRating: entry.reviews[0].valueRating,
+          serviceRating: entry.reviews[0].serviceRating,
+          cleanlinessRating: entry.reviews[0].cleanlinessRating,
+          accessibilityRating: entry.reviews[0].accessibilityRating,
+          wouldRevisit: entry.reviews[0].wouldRevisit,
+        } : null,
+      };
+    });
+
+    return { restaurant, comparisons };
+  }
 }

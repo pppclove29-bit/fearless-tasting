@@ -346,4 +346,33 @@ export class UsersService {
 
     return { totalUsers, dau, wau, mau, totalRooms, totalRoomRestaurants, totalRoomReviews };
   }
+
+  // ──────────────── 알림 ────────────────
+
+  /** 내 알림 목록 */
+  async getMyNotifications(userId: string) {
+    return this.prisma.read.roomNotification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: { room: { select: { id: true, name: true } } },
+    });
+  }
+
+  /** 알림 모두 읽음 처리 */
+  async markNotificationsRead(userId: string) {
+    await this.prisma.write.roomNotification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true },
+    });
+    return { success: true };
+  }
+
+  /** 안 읽은 알림 수 */
+  async getUnreadNotificationCount(userId: string) {
+    const count = await this.prisma.read.roomNotification.count({
+      where: { userId, isRead: false },
+    });
+    return { count };
+  }
 }

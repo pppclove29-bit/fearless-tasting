@@ -18,6 +18,7 @@ import { UpdateRoomDto } from './dto/update-room.dto';
 import { CreateQuickReviewDto } from './dto/create-quick-review.dto';
 import { UpdateRoomRestaurantDto } from './dto/update-room-restaurant.dto';
 import { UpdateRoomVisitDto } from './dto/update-room-visit.dto';
+import { CreatePollDto } from './dto/create-poll.dto';
 import { RoomManagerGuard } from './guards/room-manager.guard';
 
 interface RequestWithRoomMember extends Request {
@@ -434,5 +435,80 @@ export class RoomsController {
       dto.cleanlinessRating, dto.accessibilityRating,
       dto.favoriteMenu, dto.tryNextMenu,
     );
+  }
+
+  // ─── 투표 ───
+
+  /** 투표 생성 */
+  @Post(':id/polls')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '투표 생성' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  createPoll(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+    @Body() dto: CreatePollDto,
+  ) {
+    return this.roomsService.createPoll(id, user.id, dto.title, dto.options, dto.endsAt);
+  }
+
+  /** 투표 목록 조회 */
+  @Get(':id/polls')
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '투표 목록 조회' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  getPolls(@Param('id') id: string) {
+    return this.roomsService.getPolls(id);
+  }
+
+  /** 투표 참여 */
+  @Post(':id/polls/:pollId/vote')
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '투표 참여 (선택지에 투표)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  @ApiParam({ name: 'pollId', description: '투표 ID' })
+  votePoll(
+    @Param('pollId') pollId: string,
+    @CurrentUser() user: { id: string },
+    @Body() body: { optionId: string },
+  ) {
+    return this.roomsService.votePoll(pollId, body.optionId, user.id);
+  }
+
+  /** 투표 마감 */
+  @Patch(':id/polls/:pollId/close')
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '투표 마감 (생성자만)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  @ApiParam({ name: 'pollId', description: '투표 ID' })
+  closePoll(
+    @Param('pollId') pollId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.roomsService.closePoll(pollId, user.id);
+  }
+
+  // ─── 타임라인 ───
+
+  /** 방 활동 타임라인 */
+  @Get(':id/timeline')
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '방 활동 타임라인' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  getTimeline(@Param('id') id: string) {
+    return this.roomsService.getTimeline(id);
+  }
+
+  // ─── 리뷰 비교 ───
+
+  /** 식당별 멤버 리뷰 비교 */
+  @Get(':id/restaurants/:rid/compare')
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '식당별 멤버 리뷰 비교' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  @ApiParam({ name: 'rid', description: '식당 ID' })
+  compareReviews(@Param('rid') rid: string) {
+    return this.roomsService.compareReviews(rid);
   }
 }

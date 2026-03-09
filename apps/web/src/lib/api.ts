@@ -768,3 +768,142 @@ export async function deleteNotice(id: string): Promise<void> {
   if (!res.ok) throw new Error('공지 삭제에 실패했습니다.');
 }
 
+// ─── 투표 ───
+
+export interface PollOption {
+  id: string;
+  label: string;
+  restaurantId: string | null;
+  restaurant: { id: string; name: string } | null;
+  votes: { id: string; userId: string; user: { id: string; nickname: string } }[];
+}
+
+export interface Poll {
+  id: string;
+  title: string;
+  roomId: string;
+  status: 'active' | 'closed';
+  endsAt: string | null;
+  createdAt: string;
+  createdBy: { id: string; nickname: string };
+  options: PollOption[];
+}
+
+/** 투표 생성 */
+export async function createPoll(
+  roomId: string,
+  data: { title: string; options: { label: string; restaurantId?: string }[]; endsAt?: string },
+): Promise<Poll> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/polls`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('투표 생성에 실패했습니다.');
+  return res.json();
+}
+
+/** 투표 목록 조회 */
+export async function fetchPolls(roomId: string): Promise<Poll[]> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/polls`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+/** 투표 참여 */
+export async function votePoll(roomId: string, pollId: string, optionId: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/polls/${pollId}/vote`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ optionId }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.message || '투표에 실패했습니다.');
+  }
+}
+
+/** 투표 마감 */
+export async function closePoll(roomId: string, pollId: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/polls/${pollId}/close`, { method: 'PATCH' });
+  if (!res.ok) throw new Error('투표 마감에 실패했습니다.');
+}
+
+// ─── 타임라인 ───
+
+export interface TimelineItem {
+  type: 'restaurant_added' | 'visit_added' | 'review_added' | 'member_joined';
+  date: string;
+  data: Record<string, unknown>;
+}
+
+/** 방 활동 타임라인 */
+export async function fetchTimeline(roomId: string): Promise<TimelineItem[]> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/timeline`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+// ─── 알림 ───
+
+export interface Notification {
+  id: string;
+  roomId: string;
+  type: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  room: { id: string; name: string };
+}
+
+/** 내 알림 목록 */
+export async function fetchMyNotifications(): Promise<Notification[]> {
+  const res = await apiFetch(`${API_BASE}/users/me/notifications`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+/** 안 읽은 알림 수 */
+export async function fetchUnreadNotificationCount(): Promise<number> {
+  const res = await apiFetch(`${API_BASE}/users/me/notifications/unread-count`);
+  if (!res.ok) return 0;
+  const data = await res.json();
+  return data.count;
+}
+
+/** 알림 모두 읽음 처리 */
+export async function markNotificationsRead(): Promise<void> {
+  await apiFetch(`${API_BASE}/users/me/notifications/read`, { method: 'PATCH' });
+}
+
+// ─── 리뷰 비교 ───
+
+export interface ReviewComparison {
+  user: { id: string; nickname: string };
+  reviewCount: number;
+  avgRating: number | null;
+  latestReview: {
+    rating: number;
+    content: string;
+    visitedAt: string;
+    tasteRating: number | null;
+    valueRating: number | null;
+    serviceRating: number | null;
+    cleanlinessRating: number | null;
+    accessibilityRating: number | null;
+    wouldRevisit: boolean;
+  } | null;
+}
+
+export interface CompareReviewsResponse {
+  restaurant: { id: string; name: string; roomId: string };
+  comparisons: ReviewComparison[];
+}
+
+/** 식당별 멤버 리뷰 비교 */
+export async function fetchReviewComparison(roomId: string, restaurantId: string): Promise<CompareReviewsResponse> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${restaurantId}/compare`);
+  if (!res.ok) throw new Error('리뷰 비교 조회에 실패했습니다.');
+  return res.json();
+}
+

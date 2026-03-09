@@ -52,6 +52,30 @@ export class UsersController {
     return this.usersService.getMyWishlists(user.id);
   }
 
+  /** 내 알림 목록 */
+  @Get('me/notifications')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '내 알림 목록' })
+  getMyNotifications(@CurrentUser() user: { id: string }) {
+    return this.usersService.getMyNotifications(user.id);
+  }
+
+  /** 안 읽은 알림 수 */
+  @Get('me/notifications/unread-count')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '안 읽은 알림 수' })
+  getUnreadNotificationCount(@CurrentUser() user: { id: string }) {
+    return this.usersService.getUnreadNotificationCount(user.id);
+  }
+
+  /** 알림 모두 읽음 처리 */
+  @Patch('me/notifications/read')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '알림 모두 읽음 처리' })
+  markNotificationsRead(@CurrentUser() user: { id: string }) {
+    return this.usersService.markNotificationsRead(user.id);
+  }
+
   /** 관리자 대시보드 통계 (DAU/WAU/MAU 등) */
   @Get('stats')
   @UseGuards(AdminGuard)
