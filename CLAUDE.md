@@ -174,6 +174,16 @@ apps/api/src/
 - 웨이팅: 칩 버튼 (없음/5분/10분/15분/20분/30분/30분+)
 - 식당 목록: 10개씩 페이지네이션 ("더보기" 버튼) + 검색 (이름/카테고리)
 
+## PWA (Progressive Web App)
+
+- `manifest.json` — 앱 이름, 아이콘(192/512), standalone 모드, portrait 고정
+- `sw.js` — Service Worker (캐시 `fearless-tasting-v2`)
+  - API 요청: 캐시 안 함 (network only)
+  - 네비게이션(HTML): network-first, 오프라인 시 `/` fallback
+  - 정적 자산: stale-while-revalidate
+- BaseLayout에서 `<link rel="manifest">` + `navigator.serviceWorker.register('/sw.js')` 등록
+- 홈 화면 추가로 앱처럼 사용 가능 (Android/iOS)
+
 ## SEO
 
 - `@astrojs/sitemap` — 빌드 시 sitemap.xml 자동 생성 (공개 페이지만)
