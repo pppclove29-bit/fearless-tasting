@@ -148,6 +148,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     background: rgba(220, 38, 38, 0.08);
   }
 
+  .room-action-chip--right {
+    margin-left: auto;
+  }
+
   .invite-expiry {
     font-size: 0.72rem;
     color: var(--text-muted);
@@ -166,10 +170,25 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .share-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
     font-size: 0.72rem;
     color: var(--text-muted);
-    font-weight: 500;
+    font-weight: 600;
     white-space: nowrap;
+  }
+
+  .share-label svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
+
+  .share-desc {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-left: 0.25rem;
   }
 
   .share-link {
@@ -1623,13 +1642,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const svgRefresh = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
     const svgHelp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
 
+    const svgExit = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
+    const svgTrash = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    const svgGlobe = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+
     let shareHtml = '';
     if (isManagerOrAbove()) {
       if (currentRoom.shareCodeEnabled && currentRoom.shareCode) {
         const shareUrl = `${location.origin}/share?code=${currentRoom.shareCode}`;
         shareHtml = `
           <div class="share-row">
-            <span class="share-label">공유</span>
+            <span class="share-label">${svgGlobe} 외부 공유</span>
             <span class="share-link" id="share-link">${shareUrl}</span>
             <div class="share-link-actions">
               <button type="button" class="btn-share-action" id="copy-share-btn">복사</button>
@@ -1641,7 +1664,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       } else {
         shareHtml = `
           <div class="share-row">
-            <button type="button" class="room-action-chip" id="enable-share-btn">${svgShare} 공유 링크 만들기</button>
+            <button type="button" class="room-action-chip" id="enable-share-btn">${svgGlobe} 외부 공유 링크 만들기</button>
+            <span class="share-desc">비회원도 읽기 전용으로 열람 가능</span>
           </div>
         `;
       }
@@ -1660,13 +1684,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <input type="text" id="room-name-input" class="room-name-input" maxlength="100" hidden />
         </div>
         <div class="room-header-actions">
-          <button type="button" class="room-action-chip" id="copy-link-btn">${svgLink} 초대 링크 복사${expiryText}</button>
-          ${'share' in navigator ? `<button type="button" class="room-action-chip" id="share-invite-btn">${svgShare} 초대 공유</button>` : ''}
+          <button type="button" class="room-action-chip" id="copy-link-btn">${svgLink} 멤버 초대${expiryText}</button>
+          ${'share' in navigator ? `<button type="button" class="room-action-chip" id="share-invite-btn">${svgShare} 카톡/문자 초대</button>` : ''}
           ${isOwner() ? `<button type="button" class="room-action-chip" id="regen-code-btn">${svgRefresh} 초대 코드 재생성</button>` : ''}
           <button type="button" class="room-action-chip" id="help-btn">${svgHelp} 도움말</button>
           ${isOwner()
-            ? '<button type="button" class="room-action-chip room-action-chip--danger" id="delete-room-btn">방 삭제</button>'
-            : '<button type="button" class="room-action-chip room-action-chip--danger" id="leave-room-btn">방 나가기</button>'}
+            ? `<button type="button" class="room-action-chip room-action-chip--danger room-action-chip--right" id="delete-room-btn">${svgTrash} 방 삭제</button>`
+            : `<button type="button" class="room-action-chip room-action-chip--danger room-action-chip--right" id="leave-room-btn">${svgExit} 방 나가기</button>`}
         </div>
         ${shareHtml}
       </div>
