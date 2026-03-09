@@ -100,84 +100,83 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-color: var(--text-sub);
   }
 
-  .invite-row {
+  .room-header-actions {
     display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    margin-bottom: 0.75rem;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
     flex-wrap: wrap;
   }
 
-  .invite-label {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    white-space: nowrap;
-    width: 100%;
-    margin-bottom: -0.15rem;
-  }
-
-  .btn-copy {
-    padding: 0.3rem 0.6rem;
-    background: var(--bg-card);
-    color: var(--text-sub);
+  .room-action-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.7rem;
+    background: var(--bg-hover);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.75rem;
+    border-radius: 10px;
+    font-size: 0.78rem;
     font-weight: 500;
+    color: var(--text-sub);
     cursor: pointer;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, background 0.15s;
     font-family: inherit;
+    white-space: nowrap;
   }
 
-  .btn-copy:hover { border-color: var(--text-muted); }
-
-  .btn-regen {
-    padding: 0.3rem 0.6rem;
-    background: var(--text-heading);
-    color: var(--bg);
-    border: none;
-    border-radius: 8px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.15s;
-    font-family: inherit;
+  .room-action-chip:hover {
+    border-color: var(--text-muted);
+    background: var(--bg-card);
   }
 
-  .btn-regen:hover { opacity: 0.85; }
+  .room-action-chip:active { transform: scale(0.97); }
+
+  .room-action-chip svg {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+  }
+
+  .room-action-chip--danger {
+    color: #dc2626;
+    border-color: rgba(220, 38, 38, 0.2);
+    background: rgba(220, 38, 38, 0.04);
+  }
+
+  .room-action-chip--danger:hover {
+    border-color: rgba(220, 38, 38, 0.4);
+    background: rgba(220, 38, 38, 0.08);
+  }
 
   .invite-expiry {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--text-muted);
+    margin-left: 0.25rem;
   }
 
   .share-row {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    background: var(--bg-hover);
+    border-radius: 8px;
     flex-wrap: wrap;
   }
 
   .share-label {
-    font-size: 0.8rem;
-    color: var(--text-sub);
+    font-size: 0.72rem;
+    color: var(--text-muted);
     font-weight: 500;
     white-space: nowrap;
-    width: 100%;
-    margin-bottom: -0.15rem;
   }
 
   .share-link {
     font-family: monospace;
-    font-size: 0.75rem;
-    background: var(--bg-hover);
-    padding: 0.3rem 0.55rem;
-    border-radius: 6px;
+    font-size: 0.72rem;
     color: var(--text-sub);
     word-break: break-all;
-    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -185,13 +184,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     min-width: 0;
   }
 
-  .room-actions-bar {
+  .share-link-actions {
     display: flex;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--border-light);
+    gap: 0.3rem;
+    margin-left: auto;
   }
+
+  .btn-share-action {
+    padding: 0.2rem 0.5rem;
+    background: var(--bg-card);
+    color: var(--text-sub);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    font-family: inherit;
+  }
+
+  .btn-share-action:hover { border-color: var(--text-muted); }
 
   .btn-danger-sm {
     padding: 0.4rem 0.75rem;
@@ -224,53 +236,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .btn-outline-sm:hover { border-color: var(--text-muted); }
   .btn-outline-sm:active { transform: scale(0.97); }
-
-  /* 퀵 액션 그리드 */
-  .quick-actions {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
-    gap: 0.5rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .quick-action-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.75rem 0.25rem;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    cursor: pointer;
-    transition: all 0.15s;
-    font-family: inherit;
-    text-decoration: none;
-    color: inherit;
-  }
-
-  .quick-action-btn:hover {
-    border-color: var(--text-muted);
-    background: var(--bg-hover);
-    transform: translateY(-1px);
-  }
-
-  .quick-action-btn:active {
-    transform: scale(0.96);
-  }
-
-  .quick-action-emoji {
-    font-size: 1.6rem;
-    line-height: 1;
-  }
-
-  .quick-action-label {
-    font-size: 0.68rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-align: center;
-    line-height: 1.2;
-  }
 
   /* 탭 바 */
   .room-tab-bar {
@@ -863,6 +828,41 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .help-step-text strong { color: var(--text-heading); }
 
+  .help-section {
+    margin-bottom: 1rem;
+  }
+
+  .help-section-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.5rem;
+  }
+
+  .help-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+  }
+
+  .help-grid-item {
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    line-height: 1.4;
+    padding: 0.4rem 0.5rem;
+    background: var(--bg);
+    border-radius: 6px;
+  }
+
+  .help-grid-item strong {
+    display: block;
+    color: var(--text-heading);
+    font-size: 0.75rem;
+    margin-bottom: 0.1rem;
+  }
+
   .help-tip {
     background: var(--bg);
     border: 1px solid var(--border);
@@ -1352,6 +1352,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.75rem;
   }
 
+  .review-sort-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5rem;
+  }
+
   /* 정렬 트리거 버튼 */
   .sort-trigger-btn {
     display: inline-flex;
@@ -1612,16 +1618,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   function renderPage() {
     myRole = getMyRole();
 
-    let actionsHtml = '';
-    if (isOwner()) {
-      actionsHtml = `<div class="room-actions-bar">
-        <button type="button" class="btn-danger-sm" id="delete-room-btn">방 삭제</button>
-      </div>`;
-    } else {
-      actionsHtml = `<div class="room-actions-bar">
-        <button type="button" class="btn-outline-sm" id="leave-room-btn">방 나가기</button>
-      </div>`;
-    }
+    const svgLink = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+    const svgShare = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
+    const svgRefresh = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
+    const svgHelp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
 
     let shareHtml = '';
     if (isManagerOrAbove()) {
@@ -1629,21 +1629,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const shareUrl = `${location.origin}/share?code=${currentRoom.shareCode}`;
         shareHtml = `
           <div class="share-row">
-            <span class="share-label">공유 링크</span>
+            <span class="share-label">공유</span>
             <span class="share-link" id="share-link">${shareUrl}</span>
-            <button type="button" class="btn-copy" id="copy-share-btn">복사</button>
-            <button type="button" class="btn-outline-sm" id="disable-share-btn">비활성화</button>
-            <button type="button" class="btn-outline-sm" id="regen-share-btn">재생성</button>
+            <div class="share-link-actions">
+              <button type="button" class="btn-share-action" id="copy-share-btn">복사</button>
+              <button type="button" class="btn-share-action" id="disable-share-btn">끄기</button>
+              <button type="button" class="btn-share-action" id="regen-share-btn">재생성</button>
+            </div>
           </div>
         `;
       } else {
         shareHtml = `
           <div class="share-row">
-            <button type="button" class="btn-outline-sm" id="enable-share-btn">공유 링크 만들기</button>
+            <button type="button" class="room-action-chip" id="enable-share-btn">${svgShare} 공유 링크 만들기</button>
           </div>
         `;
       }
     }
+
+    const expiryText = currentRoom.inviteCodeExpiresAt
+      ? (new Date(currentRoom.inviteCodeExpiresAt) < new Date() ? ' (만료됨)' : '')
+      : '';
 
     content.innerHTML = `
       <a href="/" class="back-link">&larr; 내 방 목록</a>
@@ -1653,38 +1659,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${isOwner() ? '<button type="button" class="btn-edit-name" id="edit-name-btn" title="방 이름 변경">✎</button>' : ''}
           <input type="text" id="room-name-input" class="room-name-input" maxlength="100" hidden />
         </div>
-        <div class="invite-row">
-          <span class="invite-label">초대 링크</span>
-          <button type="button" class="btn-copy" id="copy-link-btn">링크 복사</button>
-          ${'share' in navigator ? '<button type="button" class="btn-copy" id="share-invite-btn">공유</button>' : ''}
-          ${isOwner() ? '<button type="button" class="btn-regen" id="regen-code-btn">재생성</button>' : ''}
-          ${currentRoom.inviteCodeExpiresAt ? `<span class="invite-expiry" id="invite-expiry">${new Date(currentRoom.inviteCodeExpiresAt) < new Date() ? '(만료됨)' : '(~' + formatDate(currentRoom.inviteCodeExpiresAt) + ')'}</span>` : ''}
+        <div class="room-header-actions">
+          <button type="button" class="room-action-chip" id="copy-link-btn">${svgLink} 초대 링크 복사${expiryText}</button>
+          ${'share' in navigator ? `<button type="button" class="room-action-chip" id="share-invite-btn">${svgShare} 초대 공유</button>` : ''}
+          ${isOwner() ? `<button type="button" class="room-action-chip" id="regen-code-btn">${svgRefresh} 초대 코드 재생성</button>` : ''}
+          <button type="button" class="room-action-chip" id="help-btn">${svgHelp} 도움말</button>
+          ${isOwner()
+            ? '<button type="button" class="room-action-chip room-action-chip--danger" id="delete-room-btn">방 삭제</button>'
+            : '<button type="button" class="room-action-chip room-action-chip--danger" id="leave-room-btn">방 나가기</button>'}
         </div>
         ${shareHtml}
-        ${actionsHtml}
-      </div>
-
-      <div class="quick-actions">
-        <button type="button" class="quick-action-btn" id="qa-add-restaurant">
-          <span class="quick-action-emoji">🍽️</span>
-          <span class="quick-action-label">식당 등록</span>
-        </button>
-        <button type="button" class="quick-action-btn" id="qa-poll">
-          <span class="quick-action-emoji">🗳️</span>
-          <span class="quick-action-label">투표</span>
-        </button>
-        <button type="button" class="quick-action-btn" id="qa-invite">
-          <span class="quick-action-emoji">🔗</span>
-          <span class="quick-action-label">초대</span>
-        </button>
-        <button type="button" class="quick-action-btn" id="qa-stats">
-          <span class="quick-action-emoji">📊</span>
-          <span class="quick-action-label">통계</span>
-        </button>
-        <button type="button" class="quick-action-btn" id="qa-help" title="사용법 안내">
-          <span class="quick-action-emoji">❓</span>
-          <span class="quick-action-label">도움말</span>
-        </button>
       </div>
 
       <div class="room-tab-bar">
@@ -1709,7 +1693,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     content.hidden = false;
     attachHeaderHandlers();
     attachTabHandlers();
-    attachQuickActionHandlers();
     renderRestaurantsTab();
     renderRegionTab();
     renderPollTab();
@@ -1770,9 +1753,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     document.getElementById('copy-link-btn')?.addEventListener('click', () => {
       navigator.clipboard.writeText(getInviteLink());
       const btn = document.getElementById('copy-link-btn')!;
+      const original = btn.innerHTML;
       btn.textContent = '복사됨!';
-      setTimeout(() => { btn.textContent = '링크 복사'; }, 1500);
+      setTimeout(() => { btn.innerHTML = original; }, 1500);
     });
+
+    document.getElementById('help-btn')?.addEventListener('click', showHelpModal);
 
     document.getElementById('share-invite-btn')?.addEventListener('click', () => {
       navigator.share({
@@ -1788,8 +1774,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const result = await regenerateInviteCode(currentRoom.id);
         currentRoom.inviteCode = result.inviteCode;
         currentRoom.inviteCodeExpiresAt = result.inviteCodeExpiresAt;
-        const expiryEl = document.getElementById('invite-expiry');
-        if (expiryEl) expiryEl.textContent = '(~' + formatDate(result.inviteCodeExpiresAt) + ')';
         showToast('초대 링크가 재생성되었습니다.', 'success');
       } catch {
         showToast('초대 링크 재생성에 실패했습니다.');
@@ -1856,29 +1840,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     if (btn) btn.click();
   }
 
-  function attachQuickActionHandlers() {
-    document.getElementById('qa-add-restaurant')?.addEventListener('click', () => {
-      switchToTab('restaurants');
-      setTimeout(() => {
-        const nameInput = document.getElementById('add-rest-search') || document.getElementById('add-rest-name');
-        if (nameInput) { nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); (nameInput as HTMLInputElement).focus(); }
-      }, 100);
-    });
-
-    document.getElementById('qa-poll')?.addEventListener('click', () => switchToTab('poll'));
-    document.getElementById('qa-stats')?.addEventListener('click', () => switchToTab('stats'));
-
-    document.getElementById('qa-invite')?.addEventListener('click', () => {
-      const btn = document.getElementById('copy-link-btn');
-      if (btn) {
-        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        btn.click();
-      }
-    });
-
-    document.getElementById('qa-help')?.addEventListener('click', showHelpModal);
-  }
-
   function attachTabHandlers() {
     const panels: Record<string, HTMLElement> = {
       restaurants: document.getElementById('tab-restaurants')!,
@@ -1916,26 +1877,35 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     overlay.className = 'help-overlay';
     overlay.innerHTML = `
       <div class="help-modal">
-        <h3>사용법 안내</h3>
-        <div class="help-step">
-          <span class="help-step-num">1</span>
-          <div class="help-step-text"><strong>식당 등록</strong> — 식당 목록 탭 하단의 등록 폼에서 카카오 검색 또는 직접 입력으로 식당을 추가하세요.</div>
+        <h3>이용 가이드</h3>
+        <div class="help-section">
+          <div class="help-section-title">기본 흐름</div>
+          <div class="help-step">
+            <span class="help-step-num">1</span>
+            <div class="help-step-text"><strong>식당 등록</strong> — 식당 탭 하단에서 카카오 검색 또는 직접 입력으로 추가</div>
+          </div>
+          <div class="help-step">
+            <span class="help-step-num">2</span>
+            <div class="help-step-text"><strong>식당 카드 클릭</strong> — 상세 페이지에서 방문 기록과 리뷰를 관리</div>
+          </div>
+          <div class="help-step">
+            <span class="help-step-num">3</span>
+            <div class="help-step-text"><strong>방문 추가 &rarr; 리뷰 작성</strong> — 날짜 선택 후 방문 등록, 방문당 1인 1리뷰</div>
+          </div>
         </div>
-        <div class="help-step">
-          <span class="help-step-num">2</span>
-          <div class="help-step-text"><strong>식당 클릭</strong> — 등록된 식당 카드를 클릭하면 상세 화면이 열립니다.</div>
-        </div>
-        <div class="help-step">
-          <span class="help-step-num">3</span>
-          <div class="help-step-text"><strong>방문 기록 추가</strong> — 식당 상세에서 방문 날짜를 선택하고 "방문 기록 추가"를 눌러주세요.</div>
-        </div>
-        <div class="help-step">
-          <span class="help-step-num">4</span>
-          <div class="help-step-text"><strong>리뷰 작성</strong> — 방문 기록 안의 "리뷰 작성" 버튼을 눌러 별점과 리뷰를 남기세요. 방문당 1인 1리뷰입니다.</div>
+        <div class="help-section">
+          <div class="help-section-title">탭 안내</div>
+          <div class="help-grid">
+            <div class="help-grid-item"><strong>식당</strong> 등록된 식당 목록, 검색/정렬</div>
+            <div class="help-grid-item"><strong>지역</strong> 시/도별 식당 분류</div>
+            <div class="help-grid-item"><strong>투표</strong> 멤버와 함께 메뉴/장소 투표</div>
+            <div class="help-grid-item"><strong>활동</strong> 방 내 최근 활동 타임라인</div>
+            <div class="help-grid-item"><strong>통계</strong> 방문/리뷰/평점 분석</div>
+            <div class="help-grid-item"><strong>멤버</strong> 멤버 목록, 역할 관리</div>
+          </div>
         </div>
         <div class="help-tip">
-          <strong>TIP</strong> 지역 탭에서 시/도별로 식당을 볼 수 있고, 통계 탭에서 방문/리뷰 현황을 확인할 수 있어요.
-          공유 링크를 만들면 비회원도 열람할 수 있습니다.
+          <strong>TIP</strong> 초대 링크로 친구를 초대하고, 공유 링크를 만들면 비회원도 읽기 전용으로 열람할 수 있어요.
         </div>
         <button type="button" class="help-close-btn">확인</button>
       </div>
