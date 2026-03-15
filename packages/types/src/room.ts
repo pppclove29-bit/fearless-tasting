@@ -42,6 +42,7 @@ export interface RoomRestaurant {
   addedById: string | null;
   createdAt: string;
   avgRating: number | null;
+  wishlistCount: number;
   _count: { visits: number; reviews: number };
 }
 

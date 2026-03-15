@@ -120,13 +120,26 @@ export class RoomsService {
 
     if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
 
+    const restaurantIds = room.restaurants.map((r) => r.id);
+
     const wishlistedSet = new Set<string>();
     if (userId) {
       const wishlists = await this.prisma.read.roomWishlist.findMany({
-        where: { userId, roomRestaurantId: { in: room.restaurants.map((r) => r.id) } },
+        where: { userId, roomRestaurantId: { in: restaurantIds } },
         select: { roomRestaurantId: true },
       });
       for (const w of wishlists) wishlistedSet.add(w.roomRestaurantId);
+    }
+
+    // 방 전체 찜 수 집계
+    const wishlistCounts = await this.prisma.read.roomWishlist.groupBy({
+      by: ['roomRestaurantId'],
+      where: { roomRestaurantId: { in: restaurantIds } },
+      _count: true,
+    });
+    const wishCountMap = new Map<string, number>();
+    for (const wc of wishlistCounts) {
+      wishCountMap.set(wc.roomRestaurantId, wc._count);
     }
 
     return {
@@ -137,6 +150,7 @@ export class RoomsService {
           ...rest,
           avgRating: calcAvgRating(allRatings),
           wishlisted: wishlistedSet.has(rest.id),
+          wishlistCount: wishCountMap.get(rest.id) ?? 0,
           _count: { ...rest._count, reviews: allRatings.length },
         };
       }),

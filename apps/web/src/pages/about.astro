@@ -28,7 +28,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </p>
       <p>
         공개 리뷰 플랫폼에선 광고·협찬 리뷰가 섞이지만, 여기선 <strong>가까운 사람들의 진짜 후기</strong>만 남습니다.
-        우리끼리만 믿을 수 있는 맛집 리스트 — 그게 무모한 시식가의 핵심입니다.
+        우리끼리만 믿을 수 있는 맛집 리스트! 무모한 시식가의 핵심입니다.
       </p>
     </section>
 
@@ -54,7 +54,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="step-content">
             <h3>맛집 등록 & 리뷰</h3>
             <p>카카오맵 연동으로 식당을 검색해서 등록하고, 방문할 때마다 솔직한 리뷰를 남깁니다.
-              별점만으로도 리뷰가 가능하고, 맛·가성비 세부 평가도 선택할 수 있습니다.</p>
+              별점만으로도 리뷰가 가능하고, 맛·가성비 등 세부 평가도 선택할 수 있습니다.</p>
           </div>
         </div>
         <div class="about-step">
@@ -62,7 +62,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="step-content">
             <h3>통계 & 업적 & 공유</h3>
             <p>방 통계에서 멤버 행동 분석, 재방문 TOP, 카테고리 분포 등 다양한 인사이트를 확인하세요.
-              활동에 따라 업적을 획득하고, 공유 링크로 맛집 리스트를 공개할 수 있습니다.</p>
+              활동에 따라 업적을 획득하고, 공유 링크로 맛집 리스트를 공개할 수 있습니다.블로그나 지인들에게 공유해보세요!</p>
           </div>
         </div>
       </div>
@@ -74,7 +74,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="feature-card">
           <div class="feature-icon">🏠</div>
           <h3>프라이빗 방</h3>
-          <p>초대 링크로 입장하는 비공개 맛집 리스트. 가까운 사람들끼리만 공유하세요.</p>
+          <p> 맛집 리스트를 가까운 사람들과 공유하세요.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">📝</div>
@@ -244,12 +244,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-bottom: 0;
   }
 
-  .about-section a {
+  .about-section a:not(.cta-btn) {
     color: #3b82f6;
     text-decoration: none;
   }
 
-  .about-section a:hover {
+  .about-section a:not(.cta-btn):hover {
     text-decoration: underline;
   }
 

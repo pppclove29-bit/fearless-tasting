@@ -419,6 +419,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .btn-wishlist:hover { color: #e74c6f; }
   .btn-wishlist.active { color: #e74c6f; }
 
+  .wishlist-count {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    min-width: 0;
+  }
+
+  .btn-wishlist.active .wishlist-count { color: #e74c6f; }
+
   .room-rest-rating {
     font-size: 0.8rem;
     color: #e6a817;
@@ -1851,7 +1860,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="room-rest-name-row">
           <div class="room-rest-name">${closedBadge}${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(Math.round(r.avgRating))} ${r.avgRating}</span>` : ''}</div>
           <button type="button" class="btn-wishlist ${r.wishlisted ? 'active' : ''}" data-rid="${r.id}" title="찜">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="${r.wishlisted ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="${r.wishlisted ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            ${r.wishlistCount > 0 ? `<span class="wishlist-count">${r.wishlistCount}</span>` : ''}
           </button>
         </div>
         <div class="room-rest-meta">${escapeHtml(r.address)} · ${escapeHtml(r.category)}</div>
@@ -3741,10 +3751,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         try {
           const { wishlisted } = await toggleWishlist(currentRoom.id, rid);
           const rest = currentRoom.restaurants.find((r) => r.id === rid);
-          if (rest) rest.wishlisted = wishlisted;
+          if (rest) {
+            rest.wishlisted = wishlisted;
+            rest.wishlistCount = (rest.wishlistCount ?? 0) + (wishlisted ? 1 : -1);
+          }
           btn.classList.toggle('active', wishlisted);
           const svg = btn.querySelector('svg path');
           if (svg) svg.setAttribute('fill', wishlisted ? 'currentColor' : 'none');
+          // 찜 수 업데이트
+          let countEl = btn.querySelector('.wishlist-count');
+          const count = rest?.wishlistCount ?? 0;
+          if (count > 0) {
+            if (!countEl) {
+              countEl = document.createElement('span');
+              countEl.className = 'wishlist-count';
+              btn.appendChild(countEl);
+            }
+            countEl.textContent = String(count);
+          } else if (countEl) {
+            countEl.remove();
+          }
           btn.style.transform = 'scale(1.3)';
           setTimeout(() => { btn.style.transform = ''; }, 200);
         } catch {
