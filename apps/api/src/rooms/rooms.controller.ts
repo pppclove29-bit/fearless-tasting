@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
@@ -214,13 +214,27 @@ export class RoomsController {
 
   // ─── 방 내 식당 ───
 
-  /** 방 내 식당 목록 */
+  /** 방 내 식당 목록 (페이지네이션) */
   @Get(':id/restaurants')
   @UseGuards(RoomMemberGuard)
-  @ApiOperation({ summary: '방 내 식당 목록' })
+  @ApiOperation({ summary: '방 내 식당 목록 (페이지네이션)' })
   @ApiParam({ name: 'id', description: '방 ID' })
-  findRestaurants(@Param('id') id: string) {
-    return this.roomsService.findRestaurants(id);
+  findRestaurants(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+    @Query('sort') sort?: string,
+  ) {
+    return this.roomsService.findRestaurants(id, user.id, {
+      page: page ? parseInt(page, 10) : undefined,
+      pageSize: pageSize ? parseInt(pageSize, 10) : undefined,
+      search,
+      category,
+      sort,
+    });
   }
 
   /** 방 내 식당 등록 */

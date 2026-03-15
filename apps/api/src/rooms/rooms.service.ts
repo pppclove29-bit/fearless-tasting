@@ -465,15 +465,96 @@ export class RoomsService {
   // ─── 방 내 식당 ───
 
   /** 방 내 식당 목록 */
-  async findRestaurants(roomId: string) {
-    return this.prisma.read.roomRestaurant.findMany({
-      where: { roomId },
-      include: {
-        addedBy: { select: { id: true, nickname: true } },
-        _count: { select: { visits: true } },
-      },
-      orderBy: { createdAt: 'desc' },
+  async findRestaurants(
+    roomId: string,
+    userId: string | undefined,
+    options: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      category?: string;
+      sort?: string;
+    } = {},
+  ) {
+    const page = Math.max(1, options.page ?? 1);
+    const pageSize = Math.min(50, Math.max(1, options.pageSize ?? 10));
+    const skip = (page - 1) * pageSize;
+
+    const where: Record<string, unknown> = { roomId };
+    if (options.search) {
+      where.OR = [
+        { name: { contains: options.search } },
+        { address: { contains: options.search } },
+        { category: { contains: options.search } },
+      ];
+    }
+    if (options.category) {
+      where.category = options.category;
+    }
+
+    let orderBy: Record<string, string> = { createdAt: 'desc' };
+    switch (options.sort) {
+      case 'name': orderBy = { name: 'asc' }; break;
+      case 'oldest': orderBy = { createdAt: 'asc' }; break;
+    }
+
+    const [restaurants, total] = await Promise.all([
+      this.prisma.read.roomRestaurant.findMany({
+        where,
+        include: {
+          addedBy: { select: { id: true, nickname: true } },
+          visits: { include: { reviews: { select: { rating: true } } } },
+          _count: { select: { visits: true } },
+        },
+        orderBy,
+        skip,
+        take: pageSize,
+      }),
+      this.prisma.read.roomRestaurant.count({ where }),
+    ]);
+
+    const restaurantIds = restaurants.map((r) => r.id);
+
+    const wishlistedSet = new Set<string>();
+    if (userId) {
+      const wishlists = await this.prisma.read.roomWishlist.findMany({
+        where: { userId, roomRestaurantId: { in: restaurantIds } },
+        select: { roomRestaurantId: true },
+      });
+      for (const w of wishlists) wishlistedSet.add(w.roomRestaurantId);
+    }
+
+    const wishlistCounts = await this.prisma.read.roomWishlist.groupBy({
+      by: ['roomRestaurantId'],
+      where: { roomRestaurantId: { in: restaurantIds } },
+      _count: true,
     });
+    const wishCountMap = new Map<string, number>();
+    for (const wc of wishlistCounts) {
+      wishCountMap.set(wc.roomRestaurantId, wc._count);
+    }
+
+    const data = restaurants.map(({ visits, ...rest }) => {
+      const allRatings = visits.flatMap((v) => v.reviews.map((r) => r.rating));
+      return {
+        ...rest,
+        avgRating: calcAvgRating(allRatings),
+        wishlisted: wishlistedSet.has(rest.id),
+        wishlistCount: wishCountMap.get(rest.id) ?? 0,
+        _count: { ...rest._count, reviews: allRatings.length },
+      };
+    });
+
+    // 평점/리뷰수/방문수/위시리스트 정렬은 메모리 정렬 (DB로 할 수 없음)
+    switch (options.sort) {
+      case 'rating-high': data.sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0)); break;
+      case 'rating-low': data.sort((a, b) => (a.avgRating ?? 0) - (b.avgRating ?? 0)); break;
+      case 'reviews': data.sort((a, b) => b._count.reviews - a._count.reviews); break;
+      case 'visits': data.sort((a, b) => b._count.visits - a._count.visits); break;
+      case 'wishlist': data.sort((a, b) => (b.wishlistCount ?? 0) - (a.wishlistCount ?? 0)); break;
+    }
+
+    return { data, total, page, pageSize };
   }
 
   /** 방 내 식당 등록 */

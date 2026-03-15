@@ -445,6 +445,29 @@ export async function createRoomRestaurant(
   return res.json();
 }
 
+/** 방 내 식당 목록 (페이지네이션) */
+export interface PaginatedRestaurants {
+  data: RoomRestaurantInfo[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export async function fetchRoomRestaurants(
+  roomId: string,
+  params: { page?: number; pageSize?: number; search?: string; category?: string; sort?: string } = {},
+): Promise<PaginatedRestaurants> {
+  const qs = new URLSearchParams();
+  if (params.page) qs.set('page', String(params.page));
+  if (params.pageSize) qs.set('pageSize', String(params.pageSize));
+  if (params.search) qs.set('search', params.search);
+  if (params.category) qs.set('category', params.category);
+  if (params.sort) qs.set('sort', params.sort);
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants?${qs}`);
+  if (!res.ok) throw new Error('식당 목록 조회에 실패했습니다.');
+  return res.json();
+}
+
 /** 방 내 식당 상세 (리뷰 포함) */
 export async function fetchRoomRestaurant(roomId: string, rid: string): Promise<RoomRestaurantDetailResponse> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}`);
