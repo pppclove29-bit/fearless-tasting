@@ -1421,6 +1421,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .address-result-item {
+    display: flex;
+    gap: 0.5rem;
     padding: 0.5rem 0.65rem;
     font-size: 0.8rem;
     cursor: pointer;
@@ -1429,6 +1431,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .address-result-item:hover {
     background: var(--bg-hover);
+  }
+
+  .address-result-info {
+    flex: 1;
+    min-width: 0;
   }
 
   .address-result-name {
@@ -1440,6 +1447,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .address-result-addr {
     color: var(--text-muted);
     font-size: 0.75rem;
+  }
+
+  .address-result-map {
+    width: 80px;
+    height: 60px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: none;
+    border: 1px solid var(--border-light);
+  }
+
+  .address-result-item:hover .address-result-map {
+    display: block;
+  }
+
+  .address-result-map img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .review-sort-row {
@@ -3087,12 +3114,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               resultsDiv.hidden = true;
               return;
             }
-            resultsDiv.innerHTML = data.slice(0, 8).map((place, i) => `
+            const kakaoMapKey = document.querySelector<HTMLMetaElement>('meta[name="kakao-app-key"]')?.content || '';
+            resultsDiv.innerHTML = data.slice(0, 8).map((place, i) => {
+              const staticMapUrl = kakaoMapKey
+                ? `https://dapi.kakao.com/v2/maps/staticmap?appkey=${kakaoMapKey}&center=${place.x},${place.y}&level=3&width=160&height=120&format=png&marker=pins/default|${place.y},${place.x}`
+                : '';
+              return `
               <div class="address-result-item" data-idx="${i}">
-                <div class="address-result-name">${escapeHtml(place.place_name)}</div>
-                <div class="address-result-addr">${escapeHtml(place.address_name)}</div>
-              </div>
-            `).join('');
+                <div class="address-result-info">
+                  <div class="address-result-name">${escapeHtml(place.place_name)}</div>
+                  <div class="address-result-addr">${escapeHtml(place.address_name)}</div>
+                </div>
+                ${staticMapUrl ? `<div class="address-result-map"><img src="${staticMapUrl}" alt="${escapeHtml(place.place_name)} 위치" loading="lazy" /></div>` : ''}
+              </div>`;
+            }).join('');
             resultsDiv.hidden = false;
 
             for (const item of resultsDiv.querySelectorAll<HTMLElement>('.address-result-item')) {

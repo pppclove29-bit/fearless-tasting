@@ -359,6 +359,32 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-heading);
   }
 
+  .visit-date-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .visit-date-row input[type="date"] {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  .date-unknown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    color: var(--text-sub);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .date-unknown-toggle input {
+    margin: 0;
+  }
+
   .visit-form input[type="date"],
   .visit-form input[type="text"] {
     width: 100%;
@@ -873,7 +899,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const visitFormHtml = `
         <div class="visit-form">
           <h4>방문 기록 추가</h4>
-          <input type="date" id="visit-date" value="${new Date().toISOString().slice(0, 10)}" />
+          <div class="visit-date-row">
+            <input type="date" id="visit-date" value="${new Date().toISOString().slice(0, 10)}" />
+            <label class="date-unknown-toggle"><input type="checkbox" id="visit-date-unknown" /> 날짜 모름</label>
+          </div>
           <input type="text" id="visit-memo" placeholder="메모 (선택)" maxlength="500" />
           <div class="wait-chips" id="visit-waittime-chips">
             <span class="wait-chips-label">웨이팅</span>
@@ -986,11 +1015,25 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         });
       }
 
+      // 날짜 모름 체크박스 핸들러
+      const dateUnknownCb = document.getElementById('visit-date-unknown') as HTMLInputElement;
+      const dateInput = document.getElementById('visit-date') as HTMLInputElement;
+      dateUnknownCb?.addEventListener('change', () => {
+        dateInput.disabled = dateUnknownCb.checked;
+        if (dateUnknownCb.checked) {
+          dateInput.style.opacity = '0.4';
+        } else {
+          dateInput.style.opacity = '1';
+        }
+      });
+
       // 방문 기록 추가
       const visitBtn = document.getElementById('submit-visit-btn') as HTMLButtonElement;
       visitBtn.addEventListener('click', () => withLoading(visitBtn, async () => {
-        const visitedAt = (document.getElementById('visit-date') as HTMLInputElement).value;
-        const memo = (document.getElementById('visit-memo') as HTMLInputElement).value.trim();
+        const isDateUnknown = dateUnknownCb?.checked || false;
+        const visitedAt = isDateUnknown ? new Date().toISOString().slice(0, 10) : dateInput.value;
+        const memoRaw = (document.getElementById('visit-memo') as HTMLInputElement).value.trim();
+        const memo = isDateUnknown ? (memoRaw ? `(날짜 미상) ${memoRaw}` : '(날짜 미상)') : memoRaw;
         const waitTime = selectedWaitTime || undefined;
         if (!visitedAt) { showToast('방문 날짜를 선택해주세요.', 'info'); return; }
 
