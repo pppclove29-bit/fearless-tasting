@@ -3298,7 +3298,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               resultsDiv.hidden = true;
               return;
             }
-            resultsDiv.innerHTML = data.slice(0, 8).map((place, i) => `
+            resultsDiv.innerHTML = data.slice(0, 15).map((place, i) => `
               <div class="address-result-item" data-idx="${i}" data-x="${place.x}" data-y="${place.y}">
                 <div class="address-result-info">
                   <div class="address-result-name">${escapeHtml(place.place_name)}</div>
