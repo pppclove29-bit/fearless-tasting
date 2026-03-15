@@ -955,14 +955,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const canDeleteReview = isReviewOwner || isManagerOrAbove();
     let actionsHtml = '';
     if (isReviewOwner || canDeleteReview) {
-      actionsHtml = '<div class="room-review-actions">';
+      const menuItems: string[] = [];
       if (isReviewOwner) {
-        actionsHtml += `<button type="button" class="edit-rev-btn" data-rev-id="${rev.id}" data-rating="${rev.rating}" data-content="${escapeHtml(rev.content)}" data-revisit="${rev.wouldRevisit !== false}" data-taste="${rev.tasteRating ?? ''}" data-value="${rev.valueRating ?? ''}" data-service="${rev.serviceRating ?? ''}" data-cleanliness="${rev.cleanlinessRating ?? ''}" data-accessibility="${rev.accessibilityRating ?? ''}" data-fav-menu="${escapeHtml(rev.favoriteMenu ?? '')}" data-try-menu="${escapeHtml(rev.tryNextMenu ?? '')}">수정</button>`;
+        menuItems.push(`<button type="button" class="edit-rev-btn" data-rev-id="${rev.id}" data-rating="${rev.rating}" data-content="${escapeHtml(rev.content)}" data-revisit="${rev.wouldRevisit !== false}" data-taste="${rev.tasteRating ?? ''}" data-value="${rev.valueRating ?? ''}" data-service="${rev.serviceRating ?? ''}" data-cleanliness="${rev.cleanlinessRating ?? ''}" data-accessibility="${rev.accessibilityRating ?? ''}" data-fav-menu="${escapeHtml(rev.favoriteMenu ?? '')}" data-try-menu="${escapeHtml(rev.tryNextMenu ?? '')}">수정</button>`);
       }
       if (canDeleteReview) {
-        actionsHtml += `<span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" class="danger delete-rev-btn" data-rev-id="${rev.id}">삭제</button></div></span>`;
+        menuItems.push(`<button type="button" class="danger delete-rev-btn" data-rev-id="${rev.id}">삭제</button>`);
       }
-      actionsHtml += '</div>';
+      actionsHtml = `<div class="room-review-actions"><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden>${menuItems.join('')}</div></span></div>`;
     }
 
     const isEdited = rev.updatedAt && rev.updatedAt !== rev.createdAt;
@@ -1051,7 +1051,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${visit.waitTime ? `<span class="wait-badge">웨이팅: ${escapeHtml(visit.waitTime)}</span>` : ''}
           ${participantsHtml ? `<span class="visit-participants">함께: ${participantsHtml}</span>` : ''}
           <span class="visit-creator">기록: ${escapeHtml(visit.createdBy?.nickname ?? '(탈퇴한 사용자)')}</span>
-          ${canDeleteVisit ? `<span class="visit-actions"><button type="button" class="btn-outline-sm edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}" data-visit-wait="${escapeHtml(visit.waitTime || '')}">수정</button><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" class="danger delete-visit-btn" data-visit-id="${visit.id}">삭제</button></div></span></span>` : ''}
+          ${canDeleteVisit ? `<span class="visit-actions"><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" class="edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}" data-visit-wait="${escapeHtml(visit.waitTime || '')}">수정</button><button type="button" class="danger delete-visit-btn" data-visit-id="${visit.id}">삭제</button></div></span></span>` : ''}
         </div>
         ${displayMemo ? `<div class="visit-memo">${escapeHtml(displayMemo)}</div>` : ''}
         <div class="visit-reviews">
@@ -1088,11 +1088,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         : null;
 
       const canEditRest = detail.addedById === currentUser.id || isManagerOrAbove();
-      let editRestBtn = '';
-      let deleteRestBtn = '';
+      let restMenuHtml = '';
       if (canEditRest) {
-        editRestBtn = `<button type="button" class="btn-outline-sm" id="edit-rest-btn">수정</button>`;
-        deleteRestBtn = `<span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" class="danger" id="delete-rest-btn">식당 삭제</button></div></span>`;
+        restMenuHtml = `<span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" id="edit-rest-btn">수정</button><button type="button" class="danger" id="delete-rest-btn">식당 삭제</button></div></span>`;
       }
 
       const visitFormHtml = `
@@ -1140,7 +1138,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <span class="category-badge">${escapeHtml(detail.category)}</span>
             ${avgRating !== null ? `<span>${renderStars(Math.round(avgRating))} ${avgRating}</span>` : ''}
             <span>등록: ${escapeHtml(detail.addedBy?.nickname ?? '(탈퇴한 사용자)')}</span>
-            <span class="detail-actions">${editRestBtn}${deleteRestBtn}</span>
+            <span class="detail-actions">${restMenuHtml}</span>
           </div>
           <div class="visits-heading-row">
             <h3 class="visits-heading">방문 기록 (${detail.visits.length})</h3>
