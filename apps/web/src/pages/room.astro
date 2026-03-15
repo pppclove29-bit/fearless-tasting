@@ -1263,17 +1263,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .stat-bar-track {
     flex: 1;
-    height: 8px;
+    height: 14px;
     background: var(--bg-hover);
-    border-radius: 4px;
+    border-radius: 7px;
     overflow: hidden;
   }
 
   .stat-bar-fill {
     height: 100%;
-    background: var(--text-heading);
-    border-radius: 4px;
+    background: #6366f1;
+    border-radius: 7px;
     transition: width 0.3s;
+    min-width: 4px;
   }
 
   .stat-bar-count {
@@ -1340,16 +1341,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .radar-chart { display: flex; justify-content: center; margin: 0.5rem 0; }
   .radar-chart svg { max-width: 240px; }
 
-  .day-bars { display: flex; align-items: flex-end; gap: 0.25rem; height: 80px; margin: 0.5rem 0; }
+  .day-bars { display: flex; align-items: flex-end; gap: 0.25rem; height: 100px; margin: 0.5rem 0; padding-top: 1.2rem; }
   .day-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
-  .day-bar { width: 100%; border-radius: 3px 3px 0 0; background: var(--text-heading); min-height: 2px; transition: height 0.3s; }
-  .day-bar-label { font-size: 0.65rem; color: var(--text-muted); }
-  .day-bar-count { font-size: 0.6rem; color: var(--text-sub); font-weight: 600; }
+  .day-bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; transition: height 0.3s; }
+  .day-bar-label { font-size: 0.7rem; color: var(--text-muted); }
+  .day-bar-count { font-size: 0.65rem; color: var(--text-sub); font-weight: 600; }
 
-  .month-chart { display: flex; align-items: flex-end; gap: 2px; height: 80px; margin: 0.5rem 0; overflow-x: auto; }
-  .month-bar-col { min-width: 28px; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
-  .month-bar { width: 100%; border-radius: 3px 3px 0 0; background: var(--text-heading); min-height: 2px; }
-  .month-bar-label { font-size: 0.55rem; color: var(--text-muted); white-space: nowrap; }
+  .month-chart { display: flex; align-items: flex-end; gap: 3px; height: 110px; margin: 0.5rem 0; padding-top: 1.2rem; overflow-x: auto; }
+  .month-bar-col { min-width: 36px; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+  .month-bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; }
+  .month-bar-label { font-size: 0.6rem; color: var(--text-muted); white-space: nowrap; }
 
   .menu-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
   .menu-tag { padding: 0.25rem 0.65rem; border-radius: 14px; font-size: 0.75rem; background: var(--bg-hover); color: var(--text-sub); border: 1px solid var(--border); }
@@ -2266,14 +2267,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   // ─── 통계 탭 ───
 
+  const barColors = ['#6366f1','#8b5cf6','#a78bfa','#c084fc','#d8b4fe','#e9d5ff','#f3e8ff','#818cf8','#93c5fd','#7dd3fc'];
+
   function renderBarChart(entries: [string, number][]): string {
     if (entries.length === 0) return '';
-    const max = Math.max(...entries.map(([, c]) => c));
-    return entries.map(([label, count]) => {
+    // 개수 내림차순 정렬
+    const sorted = [...entries].sort((a, b) => b[1] - a[1]);
+    const max = Math.max(...sorted.map(([, c]) => c));
+    return sorted.map(([label, count], i) => {
       const pct = Math.round((count / max) * 100);
+      const color = barColors[i % barColors.length];
       return `<div class="stat-bar-row">
         <span class="stat-bar-label">${escapeHtml(label)}</span>
-        <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
+        <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:${color}"></div></div>
         <span class="stat-bar-count">${count}</span>
       </div>`;
     }).join('');
@@ -2462,7 +2468,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${dayOfWeekVisits.map((count, i) => `
             <div class="day-bar-col">
               <div class="day-bar-count">${count || ''}</div>
-              <div class="day-bar" style="height:${Math.max(count / maxDay * 60, 2)}px;${i === 0 || i === 6 ? 'background:#dc2626;opacity:0.7;' : ''}"></div>
+              <div class="day-bar" style="height:${Math.max(count / maxDay * 70, 2)}px;background:${i === 0 || i === 6 ? '#f87171' : '#6366f1'};"></div>
               <div class="day-bar-label">${dayLabels[i]}</div>
             </div>`).join('')}
         </div>
@@ -2476,8 +2482,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="month-chart">
           ${monthlyVisits.map((m) => `
             <div class="month-bar-col">
-              <div style="font-size:0.6rem;color:#555;">${m.count}</div>
-              <div class="month-bar" style="height:${Math.max(m.count / maxMonth * 60, 2)}px"></div>
+              <div style="font-size:0.65rem;color:var(--text-sub);font-weight:600;">${m.count}</div>
+              <div class="month-bar" style="height:${Math.max(m.count / maxMonth * 70, 2)}px;background:#8b5cf6;"></div>
               <div class="month-bar-label">${m.month.slice(2)}</div>
             </div>`).join('')}
         </div>
@@ -2488,20 +2494,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <div class="stat-section">
         <h3 class="stat-section-title">웨이팅 분포</h3>
         ${renderBarChart(waitTimeStats.map((w) => [w.waitTime, w.count]))}
-      </div>` : '';
-
-    // ── 인기 메뉴 ──
-    const menuHtml = (topFavoriteMenus.length > 0 || topTryNextMenus.length > 0) ? `
-      <div class="stat-section">
-        <h3 class="stat-section-title">인기 메뉴</h3>
-        ${topFavoriteMenus.length > 0 ? `
-          <div style="font-size:0.78rem;color:#888;margin-bottom:0.3rem;">또 먹고 싶은 메뉴</div>
-          <div class="menu-tags">${topFavoriteMenus.map((m) => `<span class="menu-tag">${escapeHtml(m.menu)}<span class="menu-tag-count">×${m.count}</span></span>`).join('')}</div>
-        ` : ''}
-        ${topTryNextMenus.length > 0 ? `
-          <div style="font-size:0.78rem;color:#888;margin:0.6rem 0 0.3rem;">다음에 시켜볼 메뉴</div>
-          <div class="menu-tags">${topTryNextMenus.map((m) => `<span class="menu-tag">${escapeHtml(m.menu)}<span class="menu-tag-count">×${m.count}</span></span>`).join('')}</div>
-        ` : ''}
       </div>` : '';
 
     // ── 리뷰 안 쓴 방문 ──
@@ -2642,7 +2634,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       ${dayHtml}
       ${monthHtml}
       ${waitHtml}
-      ${menuHtml}
     `;
 
     } catch (renderErr) {
