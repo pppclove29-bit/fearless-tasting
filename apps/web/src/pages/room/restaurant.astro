@@ -383,6 +383,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-heading);
   }
 
+  .visit-date.date-unknown {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
   .visit-participants {
     color: var(--text-sub);
   }
@@ -961,16 +966,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     const reviewsHtml = visit.reviews.map(renderReviewCard).join('');
 
+    const isDateUnknown = visit.memo?.startsWith('(날짜 미상)') ?? false;
+    const displayDate = isDateUnknown ? '날짜 미상' : formatDate(visit.visitedAt);
+    const displayMemo = isDateUnknown ? (visit.memo?.replace('(날짜 미상) ', '').replace('(날짜 미상)', '') || '') : (visit.memo || '');
+
     return `
       <div class="visit-card" data-visit-id="${visit.id}">
         <div class="visit-header">
-          <span class="visit-date">${formatDate(visit.visitedAt)}</span>
+          <span class="visit-date${isDateUnknown ? ' date-unknown' : ''}">${displayDate}</span>
           ${visit.waitTime ? `<span class="wait-badge">웨이팅: ${escapeHtml(visit.waitTime)}</span>` : ''}
           ${participantsHtml ? `<span class="visit-participants">함께: ${participantsHtml}</span>` : ''}
           <span class="visit-creator">기록: ${escapeHtml(visit.createdBy?.nickname ?? '(탈퇴한 사용자)')}</span>
           ${canDeleteVisit ? `<span class="visit-actions"><button type="button" class="btn-outline-sm edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}">수정</button><button type="button" class="btn-danger-sm delete-visit-btn" data-visit-id="${visit.id}">삭제</button></span>` : ''}
         </div>
-        ${visit.memo ? `<div class="visit-memo">${escapeHtml(visit.memo)}</div>` : ''}
+        ${displayMemo ? `<div class="visit-memo">${escapeHtml(displayMemo)}</div>` : ''}
         <div class="visit-reviews">
           ${reviewsHtml || '<p class="empty-text">아직 리뷰가 없습니다.</p>'}
         </div>
