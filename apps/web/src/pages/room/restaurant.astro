@@ -156,6 +156,24 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-bottom: 0.75rem;
   }
 
+  .review-form-section {
+    margin-bottom: 0.65rem;
+  }
+
+  .review-form-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-sub);
+    margin-bottom: 0.35rem;
+  }
+
+  .optional-hint {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+  }
+
   .review-form select,
   .review-form textarea {
     width: 100%;
@@ -768,15 +786,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       ? ''
       : `<button type="button" class="btn-outline-sm toggle-review-form-btn" data-visit-id="${visit.id}">리뷰 작성</button>
          <div class="review-form" id="${reviewFormId}" style="display:none;">
-           ${starRatingHtml('new-review-rating', 3)}
-           <textarea class="new-review-content" placeholder="한줄 리뷰 (선택)"></textarea>
-           <div class="review-form-extras">
-             <label class="revisit-toggle"><input type="checkbox" class="new-review-revisit" checked /> 재방문 의사</label>
+           <div class="review-form-section">
+             <span class="review-form-label">종합 평점</span>
+             ${starRatingHtml('new-review-rating', 3)}
+           </div>
+           <div class="review-form-section">
+             <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
              <div class="detail-rating-inline">
                ${detailStarHtml('맛', 'new-review-taste', 0)}
                ${detailStarHtml('가성비', 'new-review-value', 0)}
              </div>
-             <input type="text" class="new-review-fav-menu" placeholder="추천 메뉴 (선택)" maxlength="200" />
+           </div>
+           <textarea class="new-review-content" placeholder="한줄 리뷰 (선택)"></textarea>
+           <div class="review-form-extras">
+             <label class="revisit-toggle"><input type="checkbox" class="new-review-revisit" checked /> 재방문 의사</label>
+             <input type="text" class="new-review-fav-menu" placeholder="또 먹고 싶은 메뉴 (선택)" maxlength="200" />
            </div>
            <button type="button" class="btn-primary-sm submit-visit-review-btn" data-visit-id="${visit.id}">리뷰 작성</button>
          </div>`;
@@ -839,6 +863,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <input type="text" id="visit-memo" placeholder="메모 (선택)" maxlength="500" />
           <div class="wait-chips" id="visit-waittime-chips">
             <span class="wait-chips-label">웨이팅</span>
+            <button type="button" class="wait-chip" data-wait="없음">없음</button>
             <button type="button" class="wait-chip" data-wait="~10분">~10분</button>
             <button type="button" class="wait-chip" data-wait="~30분">~30분</button>
             <button type="button" class="wait-chip" data-wait="~1시간">~1시간</button>
@@ -1072,15 +1097,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         card.insertAdjacentHTML('beforeend', `
           <div class="review-form">
-            ${starRatingHtml('edit-rating', Number(origRating))}
-            <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
-            <div class="review-form-extras">
-              <label class="revisit-toggle"><input type="checkbox" class="edit-revisit" ${origRevisit ? 'checked' : ''} /> 재방문 의사</label>
+            <div class="review-form-section">
+              <span class="review-form-label">종합 평점</span>
+              ${starRatingHtml('edit-rating', Number(origRating))}
+            </div>
+            <div class="review-form-section">
+              <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
               <div class="detail-rating-inline">
                 ${detailStarHtml('맛', 'edit-taste', btn.dataset.taste || '')}
                 ${detailStarHtml('가성비', 'edit-value', btn.dataset.value || '')}
               </div>
-              <input type="text" class="edit-fav-menu" placeholder="추천 메뉴 (선택)" maxlength="200" value="${escapeHtml(btn.dataset.favMenu || '')}" />
+            </div>
+            <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
+            <div class="review-form-extras">
+              <label class="revisit-toggle"><input type="checkbox" class="edit-revisit" ${origRevisit ? 'checked' : ''} /> 재방문 의사</label>
+              <input type="text" class="edit-fav-menu" placeholder="또 먹고 싶은 메뉴 (선택)" maxlength="200" value="${escapeHtml(btn.dataset.favMenu || '')}" />
             </div>
             <div style="display:flex;gap:0.5rem;">
               <button type="button" class="btn-primary-sm save-edit-btn">저장</button>
