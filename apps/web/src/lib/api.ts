@@ -502,7 +502,7 @@ export async function deleteRoomVisit(roomId: string, visitId: string): Promise<
 export async function updateRoomVisit(
   roomId: string,
   visitId: string,
-  data: { visitedAt?: string; memo?: string },
+  data: { visitedAt?: string; memo?: string; waitTime?: string },
 ): Promise<void> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/visits/${visitId}`, {
     method: 'PATCH',

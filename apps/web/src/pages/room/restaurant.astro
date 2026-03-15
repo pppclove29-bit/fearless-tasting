@@ -1051,7 +1051,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${visit.waitTime ? `<span class="wait-badge">웨이팅: ${escapeHtml(visit.waitTime)}</span>` : ''}
           ${participantsHtml ? `<span class="visit-participants">함께: ${participantsHtml}</span>` : ''}
           <span class="visit-creator">기록: ${escapeHtml(visit.createdBy?.nickname ?? '(탈퇴한 사용자)')}</span>
-          ${canDeleteVisit ? `<span class="visit-actions"><button type="button" class="btn-outline-sm edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}">수정</button><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" class="danger delete-visit-btn" data-visit-id="${visit.id}">삭제</button></div></span></span>` : ''}
+          ${canDeleteVisit ? `<span class="visit-actions"><button type="button" class="btn-outline-sm edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}" data-visit-wait="${escapeHtml(visit.waitTime || '')}">수정</button><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" class="danger delete-visit-btn" data-visit-id="${visit.id}">삭제</button></div></span></span>` : ''}
         </div>
         ${displayMemo ? `<div class="visit-memo">${escapeHtml(displayMemo)}</div>` : ''}
         <div class="visit-reviews">
@@ -1324,8 +1324,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const visitId = btn.dataset.visitId!;
         const currentDate = btn.dataset.visitDate || '';
         const currentMemo = btn.dataset.visitMemo || '';
+        const currentWait = btn.dataset.visitWait || '';
 
         const isDateUnknown = currentMemo.startsWith('(날짜 미상)');
+        const waitOptions = ['없음', '~10분', '~30분', '~1시간', '1시간+'];
         const visitHeader = visitCard.querySelector('.visit-header')!;
         // 기존 편집 폼이 있으면 제거
         visitCard.querySelector('.visit-edit-form')?.remove();
@@ -1343,6 +1345,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 <label class="visit-edit-label">메모</label>
                 <input type="text" class="visit-edit-memo" value="${escapeHtml(isDateUnknown ? currentMemo.replace('(날짜 미상) ', '').replace('(날짜 미상)', '') : currentMemo)}" placeholder="메모 (선택)" maxlength="500" />
               </div>
+              <div class="visit-edit-field">
+                <label class="visit-edit-label">웨이팅</label>
+                <div class="wait-chips visit-edit-wait-chips">
+                  ${waitOptions.map((w) => `<button type="button" class="wait-chip${currentWait === w ? ' active' : ''}" data-wait="${w}">${w}</button>`).join('')}
+                </div>
+              </div>
             </div>
             <div class="visit-edit-actions">
               <button type="button" class="btn-outline-sm cancel-visit-edit-btn">취소</button>
@@ -1350,6 +1358,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             </div>
           </div>
         `);
+
+        // 웨이팅 칩 토글
+        let editWaitTime = currentWait;
+        for (const chip of visitCard.querySelectorAll<HTMLButtonElement>('.visit-edit-wait-chips .wait-chip')) {
+          chip.addEventListener('click', () => {
+            const val = chip.dataset.wait || '';
+            if (editWaitTime === val) {
+              editWaitTime = '';
+              chip.classList.remove('active');
+            } else {
+              editWaitTime = val;
+              for (const c of visitCard.querySelectorAll('.visit-edit-wait-chips .wait-chip')) c.classList.remove('active');
+              chip.classList.add('active');
+            }
+          });
+        }
 
         // 날짜 모름 토글
         const editDateCb = visitCard.querySelector<HTMLInputElement>('.visit-edit-date-unknown')!;
@@ -1372,7 +1396,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           if (!newDate) { showToast('날짜를 입력해주세요.', 'info'); return; }
 
           try {
-            await updateRoomVisit(currentRoom.id, visitId, { visitedAt: newDate, memo: newMemo || undefined });
+            await updateRoomVisit(currentRoom.id, visitId, { visitedAt: newDate, memo: newMemo || undefined, waitTime: editWaitTime || undefined });
             currentRoom = await fetchRoom(currentRoom.id);
             await loadRestaurantDetail();
             showToast('방문 기록이 수정되었습니다.', 'success');
