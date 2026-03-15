@@ -266,6 +266,8 @@ export class RoomsController {
       name: dto.name,
       category: dto.category,
       address: dto.address,
+      latitude: dto.latitude,
+      longitude: dto.longitude,
       isClosed: dto.isClosed,
     });
   }

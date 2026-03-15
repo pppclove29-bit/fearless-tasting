@@ -405,6 +405,57 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-top: 0.4rem;
   }
 
+  .visit-edit-form {
+    background: var(--bg);
+    border: 1px solid var(--border-mid);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+  }
+
+  .visit-edit-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .visit-edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .visit-edit-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .visit-edit-form input[type="date"],
+  .visit-edit-form input[type="text"] {
+    padding: 0.45rem 0.5rem;
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: var(--bg-card);
+    color: var(--text);
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .visit-edit-form .visit-date-row input[type="date"] {
+    flex: 1;
+    width: auto;
+  }
+
+  .visit-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.4rem;
+  }
+
   .visits-heading {
     font-size: 0.95rem;
     margin: 1rem 0 0.5rem;
@@ -1051,7 +1102,32 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           if (!newName || !newCategory) { showToast('이름과 카테고리를 입력해주세요.', 'info'); return; }
 
           try {
-            await updateRoomRestaurant(currentRoom.id, restaurantId, { name: newName, category: newCategory, isClosed: newIsClosed, ...(newAddress && { address: newAddress }) });
+            const updateData: Parameters<typeof updateRoomRestaurant>[2] = { name: newName, category: newCategory, isClosed: newIsClosed, ...(newAddress && { address: newAddress }) };
+
+            // 주소가 변경되면 카카오 지오코딩으로 좌표 갱신
+            if (newAddress && newAddress !== detail.address && 'kakao' in window) {
+              try {
+                const coords = await new Promise<{ lat: number; lng: number } | null>((resolve) => {
+                  const maps = (window as Record<string, unknown>).kakao as { maps: { load: (cb: () => void) => void; services: { Geocoder: new () => { addressSearch: (addr: string, cb: (result: { y: string; x: string }[], status: string) => void) => void }; Status: { OK: string } } } };
+                  maps.maps.load(() => {
+                    const geocoder = new maps.maps.services.Geocoder();
+                    geocoder.addressSearch(newAddress, (result, status) => {
+                      if (status === maps.maps.services.Status.OK && result.length > 0) {
+                        resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
+                      } else {
+                        resolve(null);
+                      }
+                    });
+                  });
+                });
+                if (coords) {
+                  updateData.latitude = coords.lat;
+                  updateData.longitude = coords.lng;
+                }
+              } catch { /* 지오코딩 실패 시 좌표 없이 주소만 업데이트 */ }
+            }
+
+            await updateRoomRestaurant(currentRoom.id, restaurantId, updateData);
             currentRoom = await fetchRoom(currentRoom.id);
             await loadRestaurantDetail();
             showToast('식당 정보가 수정되었습니다.', 'success');
@@ -1132,16 +1208,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const currentMemo = btn.dataset.visitMemo || '';
 
         const isDateUnknown = currentMemo.startsWith('(날짜 미상)');
-        btn.insertAdjacentHTML('afterend', `
-          <div class="visit-edit-form" style="margin-top:0.5rem;background:var(--bg);border-radius:6px;padding:0.5rem;">
-            <div class="visit-date-row" style="margin-bottom:0.4rem;">
-              <input type="date" class="visit-edit-date" value="${currentDate}" style="flex:1;padding:0.4rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;font-family:inherit;background:var(--bg-card);color:var(--text);${isDateUnknown ? 'opacity:0.4;' : ''}" ${isDateUnknown ? 'disabled' : ''} />
-              <label class="date-unknown-toggle"><input type="checkbox" class="visit-edit-date-unknown" ${isDateUnknown ? 'checked' : ''} /> 날짜 모름</label>
+        const visitHeader = visitCard.querySelector('.visit-header')!;
+        // 기존 편집 폼이 있으면 제거
+        visitCard.querySelector('.visit-edit-form')?.remove();
+        visitHeader.insertAdjacentHTML('afterend', `
+          <div class="visit-edit-form">
+            <div class="visit-edit-row">
+              <div class="visit-edit-field">
+                <label class="visit-edit-label">날짜</label>
+                <div class="visit-date-row">
+                  <input type="date" class="visit-edit-date" value="${currentDate}" ${isDateUnknown ? 'disabled style="opacity:0.4;"' : ''} />
+                  <label class="date-unknown-toggle"><input type="checkbox" class="visit-edit-date-unknown" ${isDateUnknown ? 'checked' : ''} /> 날짜 모름</label>
+                </div>
+              </div>
+              <div class="visit-edit-field">
+                <label class="visit-edit-label">메모</label>
+                <input type="text" class="visit-edit-memo" value="${escapeHtml(isDateUnknown ? currentMemo.replace('(날짜 미상) ', '').replace('(날짜 미상)', '') : currentMemo)}" placeholder="메모 (선택)" maxlength="500" />
+              </div>
             </div>
-            <input type="text" class="visit-edit-memo" value="${escapeHtml(isDateUnknown ? currentMemo.replace('(날짜 미상) ', '').replace('(날짜 미상)', '') : currentMemo)}" placeholder="메모 (선택)" maxlength="500" style="width:100%;padding:0.4rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;font-family:inherit;margin-bottom:0.4rem;background:var(--bg-card);color:var(--text);" />
-            <div style="display:flex;gap:0.4rem;">
-              <button type="button" class="btn-primary-sm save-visit-edit-btn">저장</button>
+            <div class="visit-edit-actions">
               <button type="button" class="btn-outline-sm cancel-visit-edit-btn">취소</button>
+              <button type="button" class="btn-primary-sm save-visit-edit-btn">저장</button>
             </div>
           </div>
         `);

@@ -509,7 +509,7 @@ export class RoomsService {
     restaurantId: string,
     userId: string,
     memberRole: 'owner' | 'manager' | 'member',
-    data: { name?: string; category?: string; address?: string; isClosed?: boolean },
+    data: { name?: string; category?: string; address?: string; latitude?: number; longitude?: number; isClosed?: boolean },
   ) {
     const restaurant = await this.prisma.read.roomRestaurant.findUnique({ where: { id: restaurantId } });
     if (!restaurant || restaurant.roomId !== roomId) {
@@ -531,6 +531,8 @@ export class RoomsService {
       updateData.city = parts[1] || '';
       updateData.neighborhood = parts[2] || '';
     }
+    if (data.latitude !== undefined) updateData.latitude = data.latitude;
+    if (data.longitude !== undefined) updateData.longitude = data.longitude;
     if (data.isClosed !== undefined) updateData.isClosed = data.isClosed;
 
     return this.prisma.write.roomRestaurant.update({

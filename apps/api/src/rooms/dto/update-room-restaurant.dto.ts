@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateRoomRestaurantDto {
@@ -19,6 +19,16 @@ export class UpdateRoomRestaurantDto {
   @IsString()
   @MaxLength(500)
   address?: string;
+
+  @ApiPropertyOptional({ description: '위도' })
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @ApiPropertyOptional({ description: '경도' })
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
 
   @ApiPropertyOptional({ description: '폐점 여부' })
   @IsOptional()
