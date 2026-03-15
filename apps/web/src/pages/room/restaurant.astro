@@ -461,18 +461,32 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     gap: 0.4rem;
   }
 
+  .visits-heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 1.25rem 0 0.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+  }
+
   .visits-heading {
     font-size: 0.95rem;
-    margin: 1rem 0 0.5rem;
+    margin: 0;
     color: var(--text-heading);
   }
 
   /* 방문/리뷰 폼 */
   .visit-form {
     background: var(--bg-hover);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1rem;
-    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .visit-form[hidden] {
+    display: none !important;
   }
 
   .visit-form h4 {
@@ -1022,7 +1036,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       }
 
       const visitFormHtml = `
-        <div class="visit-form">
+        <div class="visit-form" id="visit-form" hidden>
           <h4>방문 기록 추가</h4>
           <div class="visit-date-row">
             <input type="date" id="visit-date" value="${new Date().toISOString().slice(0, 10)}" />
@@ -1068,9 +1082,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <span>등록: ${escapeHtml(detail.addedBy?.nickname ?? '(탈퇴한 사용자)')}</span>
             <span class="detail-actions">${editRestBtn}${deleteRestBtn}</span>
           </div>
+          <div class="visits-heading-row">
+            <h3 class="visits-heading">방문 기록 (${detail.visits.length})</h3>
+            <button type="button" class="btn-primary-sm" id="toggle-visit-form-btn">+ 방문 추가</button>
+          </div>
           ${visitFormHtml}
           ${helpHintHtml}
-          <h3 class="visits-heading">방문 기록 (${detail.visits.length})</h3>
           <div id="visits-list">${visitsHtml}</div>
         </div>
       `;
@@ -1152,6 +1169,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           showToast('식당이 삭제되었습니다.', 'success');
           location.href = `/room?id=${currentRoom.id}`;
         } catch { showToast('삭제에 실패했습니다.'); }
+      });
+
+      // 방문 추가 폼 토글
+      const visitForm = document.getElementById('visit-form')!;
+      const toggleVisitBtn = document.getElementById('toggle-visit-form-btn')!;
+      // 방문이 없으면 폼 자동 열기
+      if (detail.visits.length === 0) {
+        visitForm.hidden = false;
+        toggleVisitBtn.textContent = '접기';
+      }
+      toggleVisitBtn.addEventListener('click', () => {
+        const isHidden = visitForm.hidden;
+        visitForm.hidden = !isHidden;
+        toggleVisitBtn.textContent = isHidden ? '접기' : '+ 방문 추가';
       });
 
       // 웨이팅 칩 핸들러
