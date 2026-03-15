@@ -105,6 +105,48 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-heading);
   }
 
+  .closed-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-left: auto;
+  }
+
+  .closed-toggle-label input { display: none; }
+
+  .closed-toggle-track {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background: var(--border-mid);
+    border-radius: 100px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .closed-toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+
+  .closed-toggle-label input:checked + .closed-toggle-track {
+    background: #dc2626;
+  }
+
+  .closed-toggle-label input:checked + .closed-toggle-track::after {
+    transform: translateX(16px);
+  }
+
   .closed-badge {
     display: inline-block;
     background: #dc2626;
@@ -989,12 +1031,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <div class="form-row" style="margin-bottom:0.5rem;">
               <input type="text" id="edit-rest-category" value="${escapeHtml(detail.category)}" placeholder="카테고리" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
             </div>
-            <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--text-sub);margin-bottom:0.5rem;cursor:pointer;">
-              <input type="checkbox" id="edit-rest-closed" ${detail.isClosed ? 'checked' : ''} /> 폐점
-            </label>
-            <div style="display:flex;gap:0.5rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
               <button type="button" class="btn-primary-sm" id="save-rest-edit">저장</button>
               <button type="button" class="btn-outline-sm" id="cancel-rest-edit">취소</button>
+              <label class="closed-toggle-label"><input type="checkbox" id="edit-rest-closed" ${detail.isClosed ? 'checked' : ''} /><span class="closed-toggle-track"></span>폐점</label>
             </div>
           </div>
         `);
