@@ -89,6 +89,66 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .btn-primary-sm:hover { opacity: 0.85; }
   .btn-primary-sm:active { transform: scale(0.97); }
 
+  /* 더보기 메뉴 */
+  .more-menu-wrap {
+    position: relative;
+  }
+
+  .more-menu-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.15rem 0.45rem;
+    color: var(--text-muted);
+    line-height: 1;
+    font-family: inherit;
+  }
+
+  .more-menu-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+  }
+
+  .more-menu-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    background: var(--bg-card);
+    border: 1px solid var(--border-mid);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    min-width: 100px;
+    z-index: 100;
+    overflow: hidden;
+  }
+
+  .more-menu-dropdown[hidden] {
+    display: none !important;
+  }
+
+  .more-menu-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: none;
+    background: none;
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text);
+  }
+
+  .more-menu-dropdown button:hover {
+    background: var(--bg-hover);
+  }
+
+  .more-menu-dropdown button.danger {
+    color: #dc2626;
+  }
+
   /* 식당 상세 */
   .room-rest-detail {
     background: var(--bg-card);
@@ -900,7 +960,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         actionsHtml += `<button type="button" class="edit-rev-btn" data-rev-id="${rev.id}" data-rating="${rev.rating}" data-content="${escapeHtml(rev.content)}" data-revisit="${rev.wouldRevisit !== false}" data-taste="${rev.tasteRating ?? ''}" data-value="${rev.valueRating ?? ''}" data-service="${rev.serviceRating ?? ''}" data-cleanliness="${rev.cleanlinessRating ?? ''}" data-accessibility="${rev.accessibilityRating ?? ''}" data-fav-menu="${escapeHtml(rev.favoriteMenu ?? '')}" data-try-menu="${escapeHtml(rev.tryNextMenu ?? '')}">수정</button>`;
       }
       if (canDeleteReview) {
-        actionsHtml += `<button type="button" class="danger delete-rev-btn" data-rev-id="${rev.id}">삭제</button>`;
+        actionsHtml += `<span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" class="danger delete-rev-btn" data-rev-id="${rev.id}">삭제</button></div></span>`;
       }
       actionsHtml += '</div>';
     }
@@ -991,7 +1051,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${visit.waitTime ? `<span class="wait-badge">웨이팅: ${escapeHtml(visit.waitTime)}</span>` : ''}
           ${participantsHtml ? `<span class="visit-participants">함께: ${participantsHtml}</span>` : ''}
           <span class="visit-creator">기록: ${escapeHtml(visit.createdBy?.nickname ?? '(탈퇴한 사용자)')}</span>
-          ${canDeleteVisit ? `<span class="visit-actions"><button type="button" class="btn-outline-sm edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}">수정</button><button type="button" class="btn-danger-sm delete-visit-btn" data-visit-id="${visit.id}">삭제</button></span>` : ''}
+          ${canDeleteVisit ? `<span class="visit-actions"><button type="button" class="btn-outline-sm edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}">수정</button><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" class="danger delete-visit-btn" data-visit-id="${visit.id}">삭제</button></div></span></span>` : ''}
         </div>
         ${displayMemo ? `<div class="visit-memo">${escapeHtml(displayMemo)}</div>` : ''}
         <div class="visit-reviews">
@@ -1032,7 +1092,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       let deleteRestBtn = '';
       if (canEditRest) {
         editRestBtn = `<button type="button" class="btn-outline-sm" id="edit-rest-btn">수정</button>`;
-        deleteRestBtn = `<button type="button" class="btn-danger-sm" id="delete-rest-btn">식당 삭제</button>`;
+        deleteRestBtn = `<span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" class="danger" id="delete-rest-btn">식당 삭제</button></div></span>`;
       }
 
       const visitFormHtml = `
@@ -1183,6 +1243,24 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const isHidden = visitForm.hidden;
         visitForm.hidden = !isHidden;
         toggleVisitBtn.textContent = isHidden ? '접기' : '+ 방문 추가';
+      });
+
+      // 더보기(⋯) 메뉴 토글
+      for (const menuBtn of area.querySelectorAll<HTMLButtonElement>('.more-menu-btn')) {
+        menuBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const dropdown = menuBtn.nextElementSibling as HTMLElement;
+          // 다른 열린 메뉴 닫기
+          for (const d of area.querySelectorAll('.more-menu-dropdown')) {
+            if (d !== dropdown) (d as HTMLElement).hidden = true;
+          }
+          dropdown.hidden = !dropdown.hidden;
+        });
+      }
+      document.addEventListener('click', () => {
+        for (const d of area.querySelectorAll('.more-menu-dropdown')) {
+          (d as HTMLElement).hidden = true;
+        }
       });
 
       // 웨이팅 칩 핸들러
