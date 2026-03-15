@@ -3,7 +3,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 export const prerender = false;
 ---
 
-<BaseLayout title="맛집 추천" description="무모한 시식가 유저들이 선택한 인기 맛집, 고평점 맛집, 재방문 맛집을 확인하세요.">
+<BaseLayout title="맛집 추천" description="실제 유저들이 선택한 인기 맛집 추천 — 고평점 맛집, 재방문율 높은 맛집, 관심 많은 맛집 랭킹을 확인하세요.">
   <slot name="head">
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",

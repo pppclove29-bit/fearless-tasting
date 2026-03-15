@@ -2,14 +2,15 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="소개" description="무모한 시식가 - 우리만의 맛집 리스트를 만들고 공유하는 플랫폼. 초대 링크로 친구를 초대하고, 함께 맛집을 기록하세요.">
+<BaseLayout title="소개" description="무모한 시식가 - 프라이빗 맛집 리뷰 공유 플랫폼. 커플, 가족, 친구끼리 비공개 맛집 리스트를 만들고 솔직한 음식 리뷰를 공유하세요.">
   <slot name="head">
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "AboutPage",
       "name": "무모한 시식가 소개",
-      "description": "방 기반 맛집 리뷰 공유 플랫폼",
+      "description": "프라이빗 맛집 리뷰 공유 플랫폼 — 친구, 연인, 가족끼리 비공개 맛집 리스트를 만들고 솔직한 리뷰를 기록하세요",
       "url": (Astro.site ?? Astro.url.origin) + "/about",
+      "keywords": "프라이빗 맛집 리뷰, 맛집 공유 사이트, 커플 맛집 기록, 맛집 리스트 관리",
     })} />
   </slot>
 
