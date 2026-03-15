@@ -2960,19 +2960,32 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   function attachRestaurantFormHandler() {
     const btn = document.getElementById('add-rest-submit') as HTMLButtonElement | null;
     btn?.addEventListener('click', () => withLoading(btn, async () => {
-      const name = (document.getElementById('add-rest-name') as HTMLInputElement).value.trim();
-      const address = (document.getElementById('add-rest-address') as HTMLInputElement).value.trim();
-      const category = (document.getElementById('add-rest-category') as HTMLInputElement).value.trim();
+      // 카카오/직접 입력 모드 판별: manual-form-area가 hidden이 아니면 직접 입력 모드
+      const manualArea = document.getElementById('manual-form-area');
+      const isManual = manualArea ? !manualArea.hidden : true;
+      const formArea = isManual ? manualArea : document.getElementById('kakao-form-area');
 
-      if (!name || !address || !category) {
-        showToast('식당 이름, 주소, 카테고리를 입력해 주세요.', 'info');
+      const nameEl = formArea?.querySelector<HTMLInputElement>('[id="add-rest-name"]') ?? document.getElementById('add-rest-name') as HTMLInputElement;
+      const addressEl = formArea?.querySelector<HTMLInputElement>('[id="add-rest-address"]') ?? document.getElementById('add-rest-address') as HTMLInputElement;
+      const categoryEl = formArea?.querySelector<HTMLInputElement>('[id="add-rest-category"]') ?? document.getElementById('add-rest-category') as HTMLInputElement;
+
+      const name = nameEl.value.trim();
+      const address = addressEl.value.trim();
+      const category = categoryEl.value.trim();
+
+      const missing: string[] = [];
+      if (!name) missing.push('식당 이름');
+      if (!address) missing.push('주소');
+      if (!category) missing.push('카테고리');
+      if (missing.length > 0) {
+        showToast(`${missing.join(', ')}을(를) 입력해 주세요.`, 'info');
         return;
       }
 
       // hidden 필드에 값이 있으면 사용 (카카오), 없으면 주소에서 파싱 (수동)
-      const provinceEl = document.getElementById('add-rest-province') as HTMLInputElement;
-      const cityEl = document.getElementById('add-rest-city') as HTMLInputElement;
-      const neighborhoodEl = document.getElementById('add-rest-neighborhood') as HTMLInputElement;
+      const provinceEl = (formArea?.querySelector<HTMLInputElement>('[id="add-rest-province"]') ?? document.getElementById('add-rest-province')) as HTMLInputElement;
+      const cityEl = (formArea?.querySelector<HTMLInputElement>('[id="add-rest-city"]') ?? document.getElementById('add-rest-city')) as HTMLInputElement;
+      const neighborhoodEl = (formArea?.querySelector<HTMLInputElement>('[id="add-rest-neighborhood"]') ?? document.getElementById('add-rest-neighborhood')) as HTMLInputElement;
 
       let province = provinceEl.value.trim();
       let city = cityEl.value.trim();
@@ -2992,8 +3005,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         return;
       }
 
-      const latEl = document.getElementById('add-rest-lat') as HTMLInputElement | null;
-      const lngEl = document.getElementById('add-rest-lng') as HTMLInputElement | null;
+      const latEl = (formArea?.querySelector<HTMLInputElement>('[id="add-rest-lat"]') ?? document.getElementById('add-rest-lat')) as HTMLInputElement | null;
+      const lngEl = (formArea?.querySelector<HTMLInputElement>('[id="add-rest-lng"]') ?? document.getElementById('add-rest-lng')) as HTMLInputElement | null;
       const latitude = latEl?.value ? Number(latEl.value) : undefined;
       const longitude = lngEl?.value ? Number(lngEl.value) : undefined;
       await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category, latitude, longitude } as Parameters<typeof createRoomRestaurant>[1]);
