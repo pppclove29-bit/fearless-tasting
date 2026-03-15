@@ -2888,6 +2888,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             ${toggleBtnHtml}
             ${kakaoFormHtml}
             ${manualFormHtml}
+            <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--text-sub);margin-top:0.5rem;cursor:pointer;">
+              <input type="checkbox" id="add-rest-closed" /> 폐점
+            </label>
             <div class="add-rest-actions">
               <button type="button" class="btn-primary-sm" id="add-rest-submit">등록</button>
             </div>
@@ -3189,7 +3192,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         } catch { /* 좌표 변환 실패해도 등록은 진행 */ }
       }
 
-      await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category, latitude, longitude } as Parameters<typeof createRoomRestaurant>[1]);
+      const isClosed = (document.getElementById('add-rest-closed') as HTMLInputElement)?.checked || false;
+      await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category, latitude, longitude, isClosed } as Parameters<typeof createRoomRestaurant>[1]);
       currentRoom = await fetchRoom(currentRoom.id);
       restPage = 1;
       renderRestaurantsTab();
