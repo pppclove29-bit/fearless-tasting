@@ -1078,7 +1078,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       // 식당 수정
       document.getElementById('edit-rest-btn')?.addEventListener('click', () => {
         const metaEl = area.querySelector('.detail-meta')!;
-        if (metaEl.querySelector('.edit-rest-form')) return;
+        if (area.querySelector('.edit-rest-form')) return;
 
         metaEl.insertAdjacentHTML('afterend', `
           <div class="edit-rest-form" style="background:var(--bg-hover);border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
