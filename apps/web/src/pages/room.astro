@@ -2912,8 +2912,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   function attachCategoryChipHandlers() {
-    const catInput = document.getElementById('add-rest-category') as HTMLInputElement | null;
-    const customInput = document.getElementById('add-rest-category-custom') as HTMLInputElement | null;
+    const manualArea = document.getElementById('manual-form-area');
+    const catInput = (manualArea?.querySelector<HTMLInputElement>('[id="add-rest-category"]') ?? document.getElementById('add-rest-category')) as HTMLInputElement | null;
+    const customInput = (manualArea?.querySelector<HTMLInputElement>('[id="add-rest-category-custom"]') ?? document.getElementById('add-rest-category-custom')) as HTMLInputElement | null;
     if (!catInput) return;
 
     for (const chip of document.querySelectorAll<HTMLButtonElement>('.cat-chip')) {
