@@ -795,6 +795,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
              <div class="detail-rating-inline">
                ${detailStarHtml('맛', 'new-review-taste', 0)}
                ${detailStarHtml('가성비', 'new-review-value', 0)}
+               ${detailStarHtml('서비스', 'new-review-service', 0)}
+               ${detailStarHtml('청결', 'new-review-cleanliness', 0)}
+               ${detailStarHtml('접근성', 'new-review-accessibility', 0)}
              </div>
            </div>
            <textarea class="new-review-content" placeholder="한줄 리뷰 (선택)"></textarea>
@@ -831,6 +834,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     return {
       tasteRating: getOptionalStarValue(container, `${prefix}-taste`),
       valueRating: getOptionalStarValue(container, `${prefix}-value`),
+      serviceRating: getOptionalStarValue(container, `${prefix}-service`),
+      cleanlinessRating: getOptionalStarValue(container, `${prefix}-cleanliness`),
+      accessibilityRating: getOptionalStarValue(container, `${prefix}-accessibility`),
       favoriteMenu: optStr(`.${prefix}-fav-menu`),
     };
   }
@@ -1106,6 +1112,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <div class="detail-rating-inline">
                 ${detailStarHtml('맛', 'edit-taste', btn.dataset.taste || '')}
                 ${detailStarHtml('가성비', 'edit-value', btn.dataset.value || '')}
+                ${detailStarHtml('서비스', 'edit-service', btn.dataset.service || '')}
+                ${detailStarHtml('청결', 'edit-cleanliness', btn.dataset.cleanliness || '')}
+                ${detailStarHtml('접근성', 'edit-accessibility', btn.dataset.accessibility || '')}
               </div>
             </div>
             <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
