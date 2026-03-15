@@ -3008,8 +3008,31 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       const latEl = (formArea?.querySelector<HTMLInputElement>('[id="add-rest-lat"]') ?? document.getElementById('add-rest-lat')) as HTMLInputElement | null;
       const lngEl = (formArea?.querySelector<HTMLInputElement>('[id="add-rest-lng"]') ?? document.getElementById('add-rest-lng')) as HTMLInputElement | null;
-      const latitude = latEl?.value ? Number(latEl.value) : undefined;
-      const longitude = lngEl?.value ? Number(lngEl.value) : undefined;
+      let latitude = latEl?.value ? Number(latEl.value) : undefined;
+      let longitude = lngEl?.value ? Number(lngEl.value) : undefined;
+
+      // 직접 입력 모드에서 좌표가 없으면 카카오 Geocoder로 주소 → 좌표 변환
+      if (!latitude && !longitude && isManual && hasKakaoMap) {
+        try {
+          await loadKakaoMaps();
+          const coords = await new Promise<{ lat: number; lng: number } | null>((resolve) => {
+            const maps = (window as Record<string, unknown>).kakao as Record<string, unknown>;
+            const geocoder = new ((maps.maps as Record<string, unknown>).services as Record<string, new () => Record<string, unknown>>).Geocoder();
+            (geocoder as Record<string, Function>).addressSearch(address, (result: Array<{ y: string; x: string }>, status: string) => {
+              if (status === 'OK' && result.length > 0) {
+                resolve({ lat: Number(result[0].y), lng: Number(result[0].x) });
+              } else {
+                resolve(null);
+              }
+            });
+          });
+          if (coords) {
+            latitude = coords.lat;
+            longitude = coords.lng;
+          }
+        } catch { /* 좌표 변환 실패해도 등록은 진행 */ }
+      }
+
       await createRoomRestaurant(currentRoom.id, { name, address, province, city, neighborhood, category, latitude, longitude } as Parameters<typeof createRoomRestaurant>[1]);
       currentRoom = await fetchRoom(currentRoom.id);
       restPage = 1;
