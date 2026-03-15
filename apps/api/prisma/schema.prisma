@@ -156,6 +156,8 @@ model RoomRestaurant {
   latitude     Float?
   /// 경도 (카카오맵 좌표)
   longitude    Float?
+  /// 폐점 여부
+  isClosed     Boolean     @default(false)
   /// 소속 방
   room         Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
   /// 방 ID (FK)

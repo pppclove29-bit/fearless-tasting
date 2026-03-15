@@ -265,6 +265,8 @@ export class RoomsController {
     return this.roomsService.updateRestaurant(id, rid, user.id, req.roomMember.role, {
       name: dto.name,
       category: dto.category,
+      address: dto.address,
+      isClosed: dto.isClosed,
     });
   }
 

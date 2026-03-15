@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateRoomRestaurantDto {
@@ -13,4 +13,15 @@ export class UpdateRoomRestaurantDto {
   @IsString()
   @MaxLength(100)
   category?: string;
+
+  @ApiPropertyOptional({ description: '주소' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  address?: string;
+
+  @ApiPropertyOptional({ description: '폐점 여부' })
+  @IsOptional()
+  @IsBoolean()
+  isClosed?: boolean;
 }

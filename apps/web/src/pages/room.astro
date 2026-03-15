@@ -375,6 +375,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .room-restaurant-card:hover { border-color: var(--border-mid); }
   .room-restaurant-card:active { transform: scale(0.99); }
 
+  .room-restaurant-card.is-closed {
+    opacity: 0.6;
+  }
+
+  .closed-badge {
+    display: inline-block;
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    vertical-align: middle;
+  }
+
   .room-rest-name-row {
     display: flex;
     align-items: flex-start;
@@ -445,13 +460,99 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
   }
 
+  /* 식당 등록 슬라이드 패널 */
+  .add-rest-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+
+  .add-rest-drawer-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .add-rest-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(400px, 90vw);
+    height: 100%;
+    background: var(--bg);
+    z-index: 1000;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .add-rest-drawer.open {
+    transform: translateX(0);
+  }
+
+  .add-rest-drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .add-rest-drawer-header h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-heading);
+  }
+
+  .add-rest-drawer-close {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.2rem;
+    line-height: 1;
+  }
+
+  .add-rest-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+  }
+
+  .add-rest-fab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    border: none;
+    border-radius: 100px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+    margin-bottom: 1rem;
+  }
+
+  .add-rest-fab:hover { opacity: 0.85; }
+
   /* 식당 등록 폼 */
   .add-restaurant-form {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.25rem;
-    margin-bottom: 1rem;
+    background: none;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin-bottom: 0;
   }
 
   .auto-filled-info {
@@ -465,6 +566,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-radius: 8px;
     margin-bottom: 0.5rem;
     border: 1px solid var(--border);
+    line-height: 1.4;
+  }
+
+  .manual-form-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 0 0 0.5rem 0;
     line-height: 1.4;
   }
 
@@ -1450,8 +1558,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .address-result-map {
-    width: 80px;
-    height: 60px;
+    width: 100px;
+    height: 75px;
     border-radius: 6px;
     overflow: hidden;
     flex-shrink: 0;
@@ -1461,12 +1569,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .address-result-item:hover .address-result-map {
     display: block;
-  }
-
-  .address-result-map img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
   }
 
   .review-sort-row {
@@ -1700,10 +1802,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   roomSortBackdrop.addEventListener('click', closeRoomSortSheet);
 
   function renderRestaurantCard(r: RoomRestaurantInfo): string {
+    const closedBadge = r.isClosed ? '<span class="closed-badge">폐점</span> ' : '';
     return `
-      <div class="room-restaurant-card" data-rid="${r.id}">
+      <div class="room-restaurant-card${r.isClosed ? ' is-closed' : ''}" data-rid="${r.id}">
         <div class="room-rest-name-row">
-          <div class="room-rest-name">${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(Math.round(r.avgRating))} ${r.avgRating}</span>` : ''}</div>
+          <div class="room-rest-name">${closedBadge}${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(Math.round(r.avgRating))} ${r.avgRating}</span>` : ''}</div>
           <button type="button" class="btn-wishlist ${r.wishlisted ? 'active' : ''}" data-rid="${r.id}" title="찜">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="${r.wishlisted ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           </button>
@@ -2729,6 +2832,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     const manualFormHtml = `
       <div id="manual-form-area" ${hasKakaoMap ? 'hidden' : ''}>
+        <p class="manual-form-hint">정확한 도로명/지번 주소를 입력하면 지도에 표시됩니다. 주소가 부정확하면 지도에 나타나지 않을 수 있습니다.</p>
         <div class="form-row full">
           <input type="text" id="add-rest-name" placeholder="식당 이름" required />
         </div>
@@ -2772,13 +2876,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       : '';
 
     const addFormHtml = `
-      <div class="add-restaurant-form">
-        <h3>식당 등록</h3>
-        ${toggleBtnHtml}
-        ${kakaoFormHtml}
-        ${manualFormHtml}
-        <div class="add-rest-actions">
-          <button type="button" class="btn-primary-sm" id="add-rest-submit">등록</button>
+      <button type="button" class="add-rest-fab" id="open-add-rest-drawer">+ 식당 등록</button>
+      <div class="add-rest-drawer-overlay" id="add-rest-overlay"></div>
+      <div class="add-rest-drawer" id="add-rest-drawer">
+        <div class="add-rest-drawer-header">
+          <h3>식당 등록</h3>
+          <button type="button" class="add-rest-drawer-close" id="close-add-rest-drawer">&times;</button>
+        </div>
+        <div class="add-rest-drawer-body">
+          <div class="add-restaurant-form">
+            ${toggleBtnHtml}
+            ${kakaoFormHtml}
+            ${manualFormHtml}
+            <div class="add-rest-actions">
+              <button type="button" class="btn-primary-sm" id="add-rest-submit">등록</button>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -2819,6 +2932,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       attachPlaceSearchHandler();
       attachManualToggle();
     }
+    attachDrawerHandlers();
     attachCategoryFilterHandlers();
     attachSearchHandler();
     attachSortHandler();
@@ -2917,6 +3031,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         renderRestaurantsTab();
       });
     });
+  }
+
+  function attachDrawerHandlers() {
+    const openBtn = document.getElementById('open-add-rest-drawer');
+    const closeBtn = document.getElementById('close-add-rest-drawer');
+    const overlay = document.getElementById('add-rest-overlay');
+    const drawer = document.getElementById('add-rest-drawer');
+    if (!openBtn || !drawer) return;
+
+    const open = () => { drawer.classList.add('open'); overlay?.classList.add('open'); document.body.style.overflow = 'hidden'; };
+    const close = () => { drawer.classList.remove('open'); overlay?.classList.remove('open'); document.body.style.overflow = ''; };
+
+    openBtn.addEventListener('click', open);
+    closeBtn?.addEventListener('click', close);
+    overlay?.addEventListener('click', close);
   }
 
   function attachManualToggle() {
@@ -3114,23 +3243,36 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               resultsDiv.hidden = true;
               return;
             }
-            const kakaoMapKey = document.querySelector<HTMLMetaElement>('meta[name="kakao-app-key"]')?.content || '';
-            resultsDiv.innerHTML = data.slice(0, 8).map((place, i) => {
-              const staticMapUrl = kakaoMapKey
-                ? `https://dapi.kakao.com/v2/maps/staticmap?appkey=${kakaoMapKey}&center=${place.x},${place.y}&level=3&width=160&height=120&format=png&marker=pins/default|${place.y},${place.x}`
-                : '';
-              return `
-              <div class="address-result-item" data-idx="${i}">
+            resultsDiv.innerHTML = data.slice(0, 8).map((place, i) => `
+              <div class="address-result-item" data-idx="${i}" data-x="${place.x}" data-y="${place.y}">
                 <div class="address-result-info">
                   <div class="address-result-name">${escapeHtml(place.place_name)}</div>
                   <div class="address-result-addr">${escapeHtml(place.address_name)}</div>
                 </div>
-                ${staticMapUrl ? `<div class="address-result-map"><img src="${staticMapUrl}" alt="${escapeHtml(place.place_name)} 위치" loading="lazy" /></div>` : ''}
-              </div>`;
-            }).join('');
+                <div class="address-result-map" data-map-id="map-${i}"></div>
+              </div>`).join('');
             resultsDiv.hidden = false;
 
+            // 호버 시 SDK StaticMap 생성
             for (const item of resultsDiv.querySelectorAll<HTMLElement>('.address-result-item')) {
+              let mapCreated = false;
+              item.addEventListener('mouseenter', () => {
+                if (mapCreated) return;
+                mapCreated = true;
+                const mapDiv = item.querySelector<HTMLElement>('.address-result-map');
+                if (!mapDiv) return;
+                const x = parseFloat(item.dataset.x || '0');
+                const y = parseFloat(item.dataset.y || '0');
+                const LatLng = maps.LatLng as new (lat: number, lng: number) => unknown;
+                const center = new LatLng(y, x);
+                const StaticMap = maps.StaticMap as new (container: HTMLElement, options: Record<string, unknown>) => unknown;
+                const Marker = (maps as Record<string, Record<string, unknown>>).Marker as Record<string, unknown>;
+                new StaticMap(mapDiv, {
+                  center,
+                  level: 3,
+                  marker: { position: center, text: '' },
+                });
+              });
               item.addEventListener('click', () => {
                 const idx = Number(item.dataset.idx);
                 const place = data[idx];

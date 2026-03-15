@@ -37,6 +37,7 @@ export interface RoomRestaurant {
   imageUrl?: string;
   latitude?: number | null;
   longitude?: number | null;
+  isClosed: boolean;
   roomId: string;
   addedById: string | null;
   createdAt: string;

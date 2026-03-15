@@ -105,6 +105,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-heading);
   }
 
+  .closed-badge {
+    display: inline-block;
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    vertical-align: middle;
+  }
+
   .room-rest-detail .detail-address {
     font-size: 0.85rem;
     color: var(--text-sub);
@@ -119,6 +130,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.8rem;
     color: var(--text-muted);
     flex-wrap: wrap;
+  }
+
+  .detail-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 0.35rem;
   }
 
   .room-rest-detail .detail-meta .category-badge {
@@ -242,6 +259,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .room-review-actions {
+    display: flex;
+    gap: 0.35rem;
+    margin-left: auto;
+  }
+
+  .visit-actions {
+    margin-left: auto;
     display: flex;
     gap: 0.35rem;
   }
@@ -851,8 +875,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${visit.waitTime ? `<span class="wait-badge">웨이팅: ${escapeHtml(visit.waitTime)}</span>` : ''}
           ${participantsHtml ? `<span class="visit-participants">함께: ${participantsHtml}</span>` : ''}
           <span class="visit-creator">기록: ${escapeHtml(visit.createdBy?.nickname ?? '(탈퇴한 사용자)')}</span>
-          ${canDeleteVisit ? `<button type="button" class="btn-outline-sm edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}">방문 수정</button>` : ''}
-          ${canDeleteVisit ? `<button type="button" class="btn-danger-sm delete-visit-btn" data-visit-id="${visit.id}">방문 삭제</button>` : ''}
+          ${canDeleteVisit ? `<span class="visit-actions"><button type="button" class="btn-outline-sm edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}">수정</button><button type="button" class="btn-danger-sm delete-visit-btn" data-visit-id="${visit.id}">삭제</button></span>` : ''}
         </div>
         ${visit.memo ? `<div class="visit-memo">${escapeHtml(visit.memo)}</div>` : ''}
         <div class="visit-reviews">
@@ -935,14 +958,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       area.innerHTML = `
         <div class="room-rest-detail">
-          <h2>${escapeHtml(detail.name)}</h2>
+          <h2>${detail.isClosed ? '<span class="closed-badge">폐점</span> ' : ''}${escapeHtml(detail.name)}</h2>
           <div class="detail-address">${escapeHtml(detail.address)}</div>
           <div class="detail-meta">
             <span class="category-badge">${escapeHtml(detail.category)}</span>
             ${avgRating !== null ? `<span>${renderStars(Math.round(avgRating))} ${avgRating}</span>` : ''}
             <span>등록: ${escapeHtml(detail.addedBy?.nickname ?? '(탈퇴한 사용자)')}</span>
-            ${editRestBtn}
-            ${deleteRestBtn}
+            <span class="detail-actions">${editRestBtn}${deleteRestBtn}</span>
           </div>
           ${visitFormHtml}
           ${helpHintHtml}
@@ -962,8 +984,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <input type="text" id="edit-rest-name" value="${escapeHtml(detail.name)}" placeholder="식당 이름" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
             </div>
             <div class="form-row" style="margin-bottom:0.5rem;">
+              <input type="text" id="edit-rest-address" value="${escapeHtml(detail.address)}" placeholder="주소" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
+            </div>
+            <div class="form-row" style="margin-bottom:0.5rem;">
               <input type="text" id="edit-rest-category" value="${escapeHtml(detail.category)}" placeholder="카테고리" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
             </div>
+            <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--text-sub);margin-bottom:0.5rem;cursor:pointer;">
+              <input type="checkbox" id="edit-rest-closed" ${detail.isClosed ? 'checked' : ''} /> 폐점
+            </label>
             <div style="display:flex;gap:0.5rem;">
               <button type="button" class="btn-primary-sm" id="save-rest-edit">저장</button>
               <button type="button" class="btn-outline-sm" id="cancel-rest-edit">취소</button>
@@ -977,11 +1005,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         document.getElementById('save-rest-edit')!.addEventListener('click', async () => {
           const newName = (document.getElementById('edit-rest-name') as HTMLInputElement).value.trim();
+          const newAddress = (document.getElementById('edit-rest-address') as HTMLInputElement).value.trim();
           const newCategory = (document.getElementById('edit-rest-category') as HTMLInputElement).value.trim();
+          const newIsClosed = (document.getElementById('edit-rest-closed') as HTMLInputElement).checked;
           if (!newName || !newCategory) { showToast('이름과 카테고리를 입력해주세요.', 'info'); return; }
 
           try {
-            await updateRoomRestaurant(currentRoom.id, restaurantId, { name: newName, category: newCategory });
+            await updateRoomRestaurant(currentRoom.id, restaurantId, { name: newName, category: newCategory, isClosed: newIsClosed, ...(newAddress && { address: newAddress }) });
             currentRoom = await fetchRoom(currentRoom.id);
             await loadRestaurantDetail();
             showToast('식당 정보가 수정되었습니다.', 'success');
@@ -1061,10 +1091,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const currentDate = btn.dataset.visitDate || '';
         const currentMemo = btn.dataset.visitMemo || '';
 
+        const isDateUnknown = currentMemo.startsWith('(날짜 미상)');
         btn.insertAdjacentHTML('afterend', `
           <div class="visit-edit-form" style="margin-top:0.5rem;background:var(--bg);border-radius:6px;padding:0.5rem;">
-            <input type="date" class="visit-edit-date" value="${currentDate}" style="width:100%;padding:0.4rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;font-family:inherit;margin-bottom:0.4rem;background:var(--bg-card);color:var(--text);" />
-            <input type="text" class="visit-edit-memo" value="${currentMemo}" placeholder="메모 (선택)" maxlength="500" style="width:100%;padding:0.4rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;font-family:inherit;margin-bottom:0.4rem;background:var(--bg-card);color:var(--text);" />
+            <div class="visit-date-row" style="margin-bottom:0.4rem;">
+              <input type="date" class="visit-edit-date" value="${currentDate}" style="flex:1;padding:0.4rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;font-family:inherit;background:var(--bg-card);color:var(--text);${isDateUnknown ? 'opacity:0.4;' : ''}" ${isDateUnknown ? 'disabled' : ''} />
+              <label class="date-unknown-toggle"><input type="checkbox" class="visit-edit-date-unknown" ${isDateUnknown ? 'checked' : ''} /> 날짜 모름</label>
+            </div>
+            <input type="text" class="visit-edit-memo" value="${escapeHtml(isDateUnknown ? currentMemo.replace('(날짜 미상) ', '').replace('(날짜 미상)', '') : currentMemo)}" placeholder="메모 (선택)" maxlength="500" style="width:100%;padding:0.4rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;font-family:inherit;margin-bottom:0.4rem;background:var(--bg-card);color:var(--text);" />
             <div style="display:flex;gap:0.4rem;">
               <button type="button" class="btn-primary-sm save-visit-edit-btn">저장</button>
               <button type="button" class="btn-outline-sm cancel-visit-edit-btn">취소</button>
@@ -1072,13 +1106,24 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </div>
         `);
 
+        // 날짜 모름 토글
+        const editDateCb = visitCard.querySelector<HTMLInputElement>('.visit-edit-date-unknown')!;
+        const editDateInput = visitCard.querySelector<HTMLInputElement>('.visit-edit-date')!;
+        editDateCb.addEventListener('change', () => {
+          editDateInput.disabled = editDateCb.checked;
+          editDateInput.style.opacity = editDateCb.checked ? '0.4' : '1';
+        });
+
         visitCard.querySelector('.cancel-visit-edit-btn')!.addEventListener('click', () => {
           visitCard.querySelector('.visit-edit-form')?.remove();
         });
 
         visitCard.querySelector('.save-visit-edit-btn')!.addEventListener('click', async () => {
-          const newDate = visitCard.querySelector<HTMLInputElement>('.visit-edit-date')!.value;
-          const newMemo = visitCard.querySelector<HTMLInputElement>('.visit-edit-memo')!.value.trim();
+          const editIsUnknown = visitCard.querySelector<HTMLInputElement>('.visit-edit-date-unknown')!.checked;
+          const rawDate = visitCard.querySelector<HTMLInputElement>('.visit-edit-date')!.value;
+          const rawMemo = visitCard.querySelector<HTMLInputElement>('.visit-edit-memo')!.value.trim();
+          const newDate = editIsUnknown ? new Date().toISOString().slice(0, 10) : rawDate;
+          const newMemo = editIsUnknown ? (rawMemo ? `(날짜 미상) ${rawMemo}` : '(날짜 미상)') : rawMemo;
           if (!newDate) { showToast('날짜를 입력해주세요.', 'info'); return; }
 
           try {

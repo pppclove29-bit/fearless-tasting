@@ -462,7 +462,7 @@ export async function deleteRoomRestaurant(roomId: string, rid: string): Promise
 export async function updateRoomRestaurant(
   roomId: string,
   rid: string,
-  data: { name?: string; category?: string },
+  data: { name?: string; category?: string; address?: string; isClosed?: boolean },
 ): Promise<void> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}`, {
     method: 'PATCH',

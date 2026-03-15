@@ -495,7 +495,7 @@ export class RoomsService {
     restaurantId: string,
     userId: string,
     memberRole: 'owner' | 'manager' | 'member',
-    data: { name?: string; category?: string },
+    data: { name?: string; category?: string; address?: string; isClosed?: boolean },
   ) {
     const restaurant = await this.prisma.read.roomRestaurant.findUnique({ where: { id: restaurantId } });
     if (!restaurant || restaurant.roomId !== roomId) {
@@ -506,12 +506,22 @@ export class RoomsService {
       throw new ForbiddenException('본인이 등록한 식당이거나 매니저 이상만 수정할 수 있습니다');
     }
 
+    const updateData: Record<string, unknown> = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.category !== undefined) updateData.category = data.category;
+    if (data.address !== undefined) {
+      updateData.address = data.address;
+      // 주소에서 시/도, 시/군/구, 읍/면/동 파싱
+      const parts = data.address.split(' ');
+      updateData.province = parts[0] || '';
+      updateData.city = parts[1] || '';
+      updateData.neighborhood = parts[2] || '';
+    }
+    if (data.isClosed !== undefined) updateData.isClosed = data.isClosed;
+
     return this.prisma.write.roomRestaurant.update({
       where: { id: restaurantId },
-      data: {
-        ...(data.name !== undefined && { name: data.name }),
-        ...(data.category !== undefined && { category: data.category }),
-      },
+      data: updateData,
     });
   }
 
