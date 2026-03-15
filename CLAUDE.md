@@ -54,7 +54,7 @@ apps/api/src/
 | Account              | OAuth 계정 (카카오)              | User                                     |
 | Room                 | 공유 방 (inviteCode + shareCode) | RoomMember, RoomRestaurant, RoomKick     |
 | RoomMember           | 방 멤버십 (owner/manager/member) | Room, User                               |
-| RoomRestaurant       | 방 내 식당                       | Room, User, RoomVisit                    |
+| RoomRestaurant       | 방 내 식당 (폐점 여부 포함)      | Room, User, RoomVisit                    |
 | RoomVisit            | 방문 기록 (visitedAt, memo, waitTime) | RoomRestaurant, User, RoomVisitParticipant, RoomReview |
 | RoomVisitParticipant | 방문 참여자 태그                 | RoomVisit, User                          |
 | RoomReview           | 방문별 리뷰 (세부 평점, 메뉴)    | RoomVisit, User                          |
@@ -152,8 +152,9 @@ apps/api/src/
 
 ## 식당/방문 수정
 
-- `PATCH /rooms/:id/restaurants/:rid` — 식당 이름, 카테고리 수정 (본인 또는 매니저+)
+- `PATCH /rooms/:id/restaurants/:rid` — 식당 이름, 주소, 카테고리, 폐점 여부 수정 (본인 또는 매니저+)
 - `PATCH /rooms/:id/visits/:visitId` — 방문 날짜, 메모, 웨이팅 수정 (생성자 또는 매니저+)
+- 방문 수정 시 "날짜 모름" 옵션 지원 (메모에 `(날짜 미상)` 접두사)
 
 ## 방 통계
 
@@ -165,14 +166,22 @@ apps/api/src/
 - TOP/BOTTOM 평점 식당, 재방문률 TOP 식당
 - 미리뷰 방문 알림
 
-## 리뷰 입력 간소화
+## 리뷰 입력
 
 - 리뷰 본문(content): 선택 입력 (별점만으로 리뷰 가능)
-- 세부 평점: 맛(tasteRating), 가성비(valueRating) 2항목만 UI 노출 (서비스/청결/접근성은 API에만 존재)
-- 또 먹고 싶은 메뉴(favoriteMenu)만 UI 노출 (다음에 시켜볼 메뉴는 API에만 존재)
+- 세부 평점 5항목: 맛(tasteRating), 가성비(valueRating), 서비스(serviceRating), 청결(cleanlinessRating), 접근성(accessibilityRating) — 모두 선택 입력
+- 또 먹고 싶은 메뉴(favoriteMenu) 입력 (선택)
 - 카테고리: 칩 셀렉터 (13종 프리셋 + "기타" 커스텀 입력)
 - 웨이팅: 칩 버튼 (없음/5분/10분/15분/20분/30분/30분+)
-- 식당 목록: 10개씩 페이지네이션 ("더보기" 버튼) + 검색 (이름/카테고리)
+- 식당 목록: 10개씩 페이지네이션 ("더보기" 버튼) + 검색 (이름/주소/카테고리)
+
+## 식당 등록 UI
+
+- 우측 슬라이드 드로어 패널 (식당 목록과 분리)
+- 카카오 검색 모드: 장소 검색 → 자동 입력 (호버 시 SDK StaticMap 미니지도 미리보기)
+- 직접 입력 모드: 이름/주소/카테고리 수동 입력 (주소 → Geocoder 좌표 변환)
+- 폐점 여부 체크박스 (등록/수정 시 모두 가능)
+- 폐점 식당은 카드에 빨간 "폐점" 뱃지 + 반투명 처리
 
 ## PWA (Progressive Web App)
 
@@ -189,8 +198,10 @@ apps/api/src/
 - `@astrojs/sitemap` — 빌드 시 sitemap.xml 자동 생성 (공개 페이지만)
 - `robots.txt` — sitemap 참조, /share Allow, /admin·/login·/room Disallow
 - Open Graph + Twitter Card 메타 태그 (BaseLayout.astro)
-- JSON-LD 구조화 데이터 (WebSite)
+- JSON-LD 구조화 데이터 (WebSite + FAQPage)
+- meta keywords (무모한시식가, 프라이빗 맛집 리뷰 등)
 - `SITE_URL` 환경변수로 sitemap 도메인 설정
+- Cloudflare Pages `_headers` 파일로 sitemap/robots.txt 캐시 설정
 
 ## DB 마이그레이션
 
