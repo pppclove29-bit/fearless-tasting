@@ -334,7 +334,8 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
   .notif-dropdown {
     position: absolute;
     top: 100%;
-    right: 0;
+    right: auto;
+    left: 0;
     width: 320px;
     max-height: 400px;
     overflow-y: auto;
@@ -415,7 +416,9 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
   @media (max-width: 600px) {
     .notif-dropdown {
       width: calc(100vw - 2rem);
-      right: -1rem;
+      right: auto;
+      left: 50%;
+      transform: translateX(-50%);
     }
   }
 
