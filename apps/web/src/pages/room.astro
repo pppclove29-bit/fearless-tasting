@@ -407,26 +407,36 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .btn-wishlist {
-    background: none;
-    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: 16px;
     cursor: pointer;
-    padding: 0.15rem;
-    color: var(--border-mid);
-    transition: color 0.15s, transform 0.2s;
+    padding: 0.25rem 0.6rem;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+    transition: all 0.2s;
     flex-shrink: 0;
+    white-space: nowrap;
   }
 
-  .btn-wishlist:hover { color: #e74c6f; }
-  .btn-wishlist.active { color: #e74c6f; }
+  .btn-wishlist:hover { background: #fef2f2; border-color: #fca5a5; color: #e11d48; }
+  .btn-wishlist.active { background: #fef2f2; border-color: #fca5a5; color: #e11d48; }
+
+  :global(.dark) .btn-wishlist:hover { background: rgba(225, 29, 72, 0.12); border-color: rgba(225, 29, 72, 0.3); }
+  :global(.dark) .btn-wishlist.active { background: rgba(225, 29, 72, 0.12); border-color: rgba(225, 29, 72, 0.3); }
 
   .wishlist-count {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 600;
     color: var(--text-muted);
     min-width: 0;
   }
 
-  .btn-wishlist.active .wishlist-count { color: #e74c6f; }
+  .btn-wishlist.active .wishlist-count { color: #e11d48; }
 
   .room-rest-rating {
     font-size: 0.8rem;
@@ -1861,8 +1871,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="room-rest-name-row">
           <div class="room-rest-name">${closedBadge}${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(Math.round(r.avgRating))} ${r.avgRating}</span>` : ''}</div>
           <button type="button" class="btn-wishlist ${r.wishlisted ? 'active' : ''}" data-rid="${r.id}" title="가보고 싶어요">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="${r.wishlisted ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            ${r.wishlistCount > 0 ? `<span class="wishlist-count">${r.wishlistCount}</span>` : ''}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="${r.wishlisted ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span class="wishlist-label">${r.wishlisted ? '가보고 싶은' : '가보고 싶은'}</span>${r.wishlistCount > 0 ? `<span class="wishlist-count">${r.wishlistCount}</span>` : ''}
           </button>
         </div>
         <div class="room-rest-meta">${escapeHtml(r.address)} · ${escapeHtml(r.category)}</div>
