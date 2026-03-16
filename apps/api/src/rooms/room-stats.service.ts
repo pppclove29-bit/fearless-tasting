@@ -141,7 +141,7 @@ export class RoomStatsService {
     // ─── 지역별 통계 ───
     const regionMap = new Map<string, { count: number; ratings: number[] }>();
     for (const r of room.restaurants) {
-      const key = r.neighborhood || r.city;
+      const key = r.city || r.neighborhood;
       const ratings = r.visits.flatMap((v) => v.reviews.map((rev) => rev.rating));
       const entry = regionMap.get(key);
       if (entry) { entry.count++; entry.ratings.push(...ratings); }
