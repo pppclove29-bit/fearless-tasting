@@ -132,7 +132,10 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 <span class="notif-badge" id="notif-badge" hidden></span>
               </button>
-              <a href="/profile" id="user-nickname" class="user-nickname"></a>
+              <a href="/profile" class="user-profile-link">
+                <img id="user-avatar" class="user-avatar" src="" alt="" hidden />
+                <span id="user-nickname" class="user-nickname"></span>
+              </a>
               <button type="button" id="logout-btn">로그아웃</button>
             </span>
           </div>
@@ -289,16 +292,29 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     font-size: 0.8rem;
   }
 
+  .user-profile-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .user-profile-link:hover { opacity: 0.8; }
+
+  .user-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border);
+  }
+
   .user-nickname {
     color: var(--text-sub);
     font-weight: 500;
-    text-decoration: none;
-    border-bottom: 1px dashed transparent;
-    transition: border-color 0.15s, color 0.15s;
   }
 
-  .user-nickname:hover {
-    border-bottom-color: var(--text-muted);
+  .user-profile-link:hover .user-nickname {
     color: var(--text-heading);
   }
 
@@ -632,12 +648,20 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
   const loginLink = document.getElementById('login-link')!;
   const userInfo = document.getElementById('user-info')!;
   const nicknameEl = document.getElementById('user-nickname')!;
+  const avatarEl = document.getElementById('user-avatar') as HTMLImageElement;
   const logoutBtn = document.getElementById('logout-btn')!;
 
   function applyUserUI(user: AuthUser) {
     loginLink.hidden = true;
     userInfo.hidden = false;
     nicknameEl.textContent = user.nickname;
+    if (user.profileImageUrl) {
+      avatarEl.src = user.profileImageUrl;
+      avatarEl.alt = user.nickname;
+      avatarEl.hidden = false;
+    } else {
+      avatarEl.hidden = true;
+    }
 
     const myRoomsLink = document.getElementById('my-rooms-link');
     if (myRoomsLink) myRoomsLink.hidden = false;
