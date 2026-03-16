@@ -2555,17 +2555,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         ${renderRadarChart(detailRatingAvg)}
       </div>`;
 
-    // ── 요일별 방문 ──
-    const dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
-    const maxDay = Math.max(...dayOfWeekVisits, 1);
-    const dayHtml = dayOfWeekVisits.some((c) => c > 0) ? `
+    // ── 요일별 방문 (월~일 순서) ──
+    const dayOrder = [1, 2, 3, 4, 5, 6, 0]; // 월화수목금토일
+    const dayLabels = ['월', '화', '수', '목', '금', '토', '일'];
+    const reorderedDays = dayOrder.map((i) => dayOfWeekVisits[i]);
+    const maxDay = Math.max(...reorderedDays, 1);
+    const dayHtml = reorderedDays.some((c) => c > 0) ? `
       <div class="stat-section">
         <h3 class="stat-section-title">요일별 방문</h3>
         <div class="day-bars">
-          ${dayOfWeekVisits.map((count, i) => `
+          ${reorderedDays.map((count, i) => `
             <div class="day-bar-col">
               <div class="day-bar-count">${count || ''}</div>
-              <div class="day-bar" style="height:${Math.max(count / maxDay * 70, 2)}px;background:${i === 0 || i === 6 ? '#f87171' : '#6366f1'};"></div>
+              <div class="day-bar" style="height:${Math.max(count / maxDay * 70, 2)}px;background:${i >= 5 ? '#f87171' : '#6366f1'};"></div>
               <div class="day-bar-label">${dayLabels[i]}</div>
             </div>`).join('')}
         </div>
