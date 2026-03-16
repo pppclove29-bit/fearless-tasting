@@ -1939,7 +1939,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     return `
       <div class="room-restaurant-card${r.isClosed ? ' is-closed' : ''}" data-rid="${r.id}">
         <div class="room-rest-name-row">
-          <div class="room-rest-name">${closedBadge}${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(Math.round(r.avgRating))} ${r.avgRating}</span>` : ''}</div>
+          <div class="room-rest-name">${closedBadge}${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(r.avgRating)} ${r.avgRating}</span>` : ''}</div>
         </div>
         <div class="room-rest-meta">${escapeHtml(r.address)} · ${escapeHtml(r.category)}</div>
         <div class="room-rest-footer">
@@ -2490,7 +2490,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="stat-bar-row">
             <span class="stat-bar-label" style="min-width:20px;font-weight:600;">${i + 1}</span>
             <span style="flex:1;font-size:0.82rem;">${escapeHtml(r.name)}</span>
-            <span style="font-size:0.82rem;font-weight:600;white-space:nowrap;">${r.avgRating} ${renderStars(Math.round(r.avgRating!))}</span>
+            <span style="font-size:0.82rem;font-weight:600;white-space:nowrap;">${r.avgRating} ${renderStars(r.avgRating!)}</span>
           </div>`).join('')}
       </div>` : '';
 
@@ -3612,7 +3612,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         if (sorted.length > 0) {
           html += '<div class="region-restaurant-list">';
           for (const r of sorted) {
-            const ratingStr = r.avgRating !== null ? `${renderStars(Math.round(r.avgRating))} ${r.avgRating}` : '';
+            const ratingStr = r.avgRating !== null ? `${renderStars(r.avgRating)} ${r.avgRating}` : '';
             const reviewCount = r._count.reviews;
             html += `
               <div class="region-rest-card" data-rid="${r.id}">

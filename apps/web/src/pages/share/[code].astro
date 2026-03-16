@@ -416,7 +416,7 @@ function escapeHtml(text: string): string {
           <div class="detail-address">${escapeHtml(detail.address)}</div>
           <div class="detail-meta">
             <span class="category-badge">${escapeHtml(detail.category)}</span>
-            ${avgRating !== null ? `<span>${renderStars(Math.round(avgRating))} ${avgRating}</span>` : ''}
+            ${avgRating !== null ? `<span>${renderStars(avgRating)} ${avgRating}</span>` : ''}
           </div>
           <div id="visits-list">${visitsHtml}</div>
         </div>

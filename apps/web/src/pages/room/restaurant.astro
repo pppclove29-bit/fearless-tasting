@@ -1096,25 +1096,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         restMenuHtml = `<span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" id="edit-rest-btn">수정</button><button type="button" class="danger" id="delete-rest-btn">식당 삭제</button></div></span>`;
       }
 
-      const visitFormHtml = `
-        <div class="visit-form" id="visit-form" hidden>
-          <h4>방문 기록 추가</h4>
-          <div class="visit-date-row">
-            <input type="date" id="visit-date" value="${new Date().toISOString().slice(0, 10)}" />
-            <label class="date-unknown-toggle"><input type="checkbox" id="visit-date-unknown" /> 날짜 모름</label>
-          </div>
-          <input type="text" id="visit-memo" placeholder="메모 (선택)" maxlength="500" />
-          <div class="wait-chips" id="visit-waittime-chips">
-            <span class="wait-chips-label">웨이팅</span>
-            <button type="button" class="wait-chip" data-wait="없음">없음</button>
-            <button type="button" class="wait-chip" data-wait="~10분">~10분</button>
-            <button type="button" class="wait-chip" data-wait="~30분">~30분</button>
-            <button type="button" class="wait-chip" data-wait="~1시간">~1시간</button>
-            <button type="button" class="wait-chip" data-wait="1시간+">1시간+</button>
-          </div>
-          <button type="button" class="btn-primary-sm" id="submit-visit-btn">방문 기록 추가</button>
-        </div>
-      `;
 
       const sortedVisits = [...detail.visits].sort((a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime());
 
@@ -1139,7 +1120,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="detail-address">${escapeHtml(detail.address)}</div>
           <div class="detail-meta">
             <span class="category-badge">${escapeHtml(detail.category)}</span>
-            ${avgRating !== null ? `<span>${renderStars(Math.round(avgRating))} ${avgRating}</span>` : ''}
+            ${avgRating !== null ? `<span>${renderStars(avgRating)} ${avgRating}</span>` : ''}
             <span>등록: ${escapeHtml(detail.addedBy?.nickname ?? '(탈퇴한 사용자)')}</span>
             <span class="detail-actions">${restMenuHtml}</span>
           </div>
@@ -1147,7 +1128,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <h3 class="visits-heading">방문 기록 (${detail.visits.length})</h3>
             <a href="/room/add?roomId=${currentRoom.id}&restaurantId=${restaurantId}&name=${encodeURIComponent(detail.name)}" class="btn-primary-sm" style="text-decoration:none;">+ 방문 추가</a>
           </div>
-          ${visitFormHtml}
           ${helpHintHtml}
           <div id="visits-list">${visitsHtml}</div>
         </div>
@@ -1232,20 +1212,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         } catch { showToast('삭제에 실패했습니다.'); }
       });
 
-      // 방문 추가 폼 토글
-      const visitForm = document.getElementById('visit-form')!;
-      const toggleVisitBtn = document.getElementById('toggle-visit-form-btn')!;
-      // 방문이 없으면 폼 자동 열기
-      if (detail.visits.length === 0) {
-        visitForm.hidden = false;
-        toggleVisitBtn.textContent = '접기';
-      }
-      toggleVisitBtn.addEventListener('click', () => {
-        const isHidden = visitForm.hidden;
-        visitForm.hidden = !isHidden;
-        toggleVisitBtn.textContent = isHidden ? '접기' : '+ 방문 추가';
-      });
-
       // 더보기(⋯) 메뉴 토글
       for (const menuBtn of area.querySelectorAll<HTMLButtonElement>('.more-menu-btn')) {
         menuBtn.addEventListener('click', (e) => {
@@ -1263,50 +1229,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           (d as HTMLElement).hidden = true;
         }
       });
-
-      // 웨이팅 칩 핸들러
-      let selectedWaitTime = '';
-      for (const chip of document.querySelectorAll<HTMLButtonElement>('.wait-chip')) {
-        chip.addEventListener('click', () => {
-          const val = chip.dataset.wait || '';
-          if (selectedWaitTime === val) {
-            selectedWaitTime = '';
-            chip.classList.remove('active');
-          } else {
-            document.querySelectorAll('.wait-chip').forEach((c) => c.classList.remove('active'));
-            selectedWaitTime = val;
-            chip.classList.add('active');
-          }
-        });
-      }
-
-      // 날짜 모름 체크박스 핸들러
-      const dateUnknownCb = document.getElementById('visit-date-unknown') as HTMLInputElement;
-      const dateInput = document.getElementById('visit-date') as HTMLInputElement;
-      dateUnknownCb?.addEventListener('change', () => {
-        dateInput.disabled = dateUnknownCb.checked;
-        if (dateUnknownCb.checked) {
-          dateInput.style.opacity = '0.4';
-        } else {
-          dateInput.style.opacity = '1';
-        }
-      });
-
-      // 방문 기록 추가
-      const visitBtn = document.getElementById('submit-visit-btn') as HTMLButtonElement;
-      visitBtn.addEventListener('click', () => withLoading(visitBtn, async () => {
-        const isDateUnknown = dateUnknownCb?.checked || false;
-        const visitedAt = isDateUnknown ? new Date().toISOString().slice(0, 10) : dateInput.value;
-        const memoRaw = (document.getElementById('visit-memo') as HTMLInputElement).value.trim();
-        const memo = isDateUnknown ? (memoRaw ? `(날짜 미상) ${memoRaw}` : '(날짜 미상)') : memoRaw;
-        const waitTime = selectedWaitTime || undefined;
-        if (!visitedAt) { showToast('방문 날짜를 선택해주세요.', 'info'); return; }
-
-        await createRoomVisit(currentRoom.id, restaurantId, { visitedAt, memo: memo || undefined, waitTime });
-        currentRoom = await fetchRoom(currentRoom.id);
-        await loadRestaurantDetail();
-        showToast('방문 기록이 추가되었습니다.', 'success');
-      }).catch((err) => showToast(err instanceof Error ? err.message : '방문 기록 추가에 실패했습니다.')));
 
       attachVisitAndReviewHandlers();
       attachStarRatingHandlers(area);
