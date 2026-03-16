@@ -1,18 +1,27 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import AdSlot from '@/components/AdSlot.astro';
 ---
 
-<BaseLayout title="소개" description="무모한 시식가 - 프라이빗 맛집 리뷰 공유 플랫폼. 커플, 가족, 친구끼리 비공개 맛집 리스트를 만들고 솔직한 음식 리뷰를 공유하세요.">
-  <slot name="head">
+<BaseLayout title="서비스 소개 — 프라이빗 맛집 리뷰란?" description="광고 없는 솔직한 맛집 리뷰 플랫폼. 비공개 방에서 친구·연인·가족과 맛집을 기록하고, 방문 통계·취향 분석까지 무료로 이용하세요.">
+  <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "AboutPage",
       "name": "무모한 시식가 소개",
       "description": "프라이빗 맛집 리뷰 공유 플랫폼 — 친구, 연인, 가족끼리 비공개 맛집 리스트를 만들고 솔직한 리뷰를 기록하세요",
-      "url": (Astro.site ?? Astro.url.origin) + "/about",
+      "url": (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '') + "/about",
       "keywords": "프라이빗 맛집 리뷰, 맛집 공유 사이트, 커플 맛집 기록, 맛집 리스트 관리",
     })} />
-  </slot>
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "홈", "item": (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '') },
+        { "@type": "ListItem", "position": 2, "name": "서비스 소개", "item": (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '') + "/about" },
+      ]
+    })} />
+  </Fragment>
 
   <div class="about-page">
     <section class="about-hero">
@@ -98,6 +107,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
       </div>
     </section>
+
+    <AdSlot slot="about-mid" position="middle" format="horizontal" />
 
     <section class="about-section">
       <h2>핵심 화면 미리보기</h2>

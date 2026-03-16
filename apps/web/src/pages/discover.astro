@@ -1,18 +1,27 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import AdSlot from '@/components/AdSlot.astro';
 export const prerender = false;
 ---
 
-<BaseLayout title="맛집 추천" description="실제 유저들이 선택한 인기 맛집 추천 — 고평점 맛집, 재방문율 높은 맛집, 관심 많은 맛집 랭킹을 확인하세요.">
-  <slot name="head">
+<BaseLayout title="맛집 추천 — 실제 방문 데이터 기반 인기 맛집" description="광고 없이 실제 유저 방문 데이터로 선정한 맛집 추천. 고평점 맛집, 재방문율 높은 맛집, 관심 많은 맛집 랭킹을 확인하세요.">
+  <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "CollectionPage",
       "name": "맛집 추천 - 무모한 시식가",
       "description": "유저들이 선택한 인기 맛집, 고평점 맛집, 재방문 맛집 리스트",
-      "url": (Astro.site ?? Astro.url.origin) + "/discover",
+      "url": (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '') + "/discover",
     })} />
-  </slot>
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "홈", "item": (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '') },
+        { "@type": "ListItem", "position": 2, "name": "맛집 추천", "item": (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '') + "/discover" },
+      ]
+    })} />
+  </Fragment>
 
   <div class="discover-page">
     <section class="discover-hero">
@@ -29,6 +38,8 @@ export const prerender = false;
     <div id="discover-content">
       <div class="discover-loading">불러오는 중...</div>
     </div>
+
+    <AdSlot slot="discover-bottom" position="bottom" format="horizontal" />
 
     <section class="discover-seo">
       <h2>실제 방문 기반 맛집 추천</h2>

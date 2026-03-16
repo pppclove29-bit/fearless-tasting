@@ -22,9 +22,12 @@ try {
   error = '서버에 연결할 수 없습니다.';
 }
 
-const title = room ? `${room.name}` : '공유된 맛집 리스트';
+const title = room ? `${room.name} 맛집 리스트` : '공유된 맛집 리스트';
+const topCategories = room
+  ? [...new Set(room.restaurants.map(r => r.category).filter(Boolean))].slice(0, 3).join(', ')
+  : '';
 const description = room
-  ? `${room.name} - ${room.restaurants.length}곳의 맛집 리스트`
+  ? `${room.name}의 맛집 ${room.restaurants.length}곳${topCategories ? ` (${topCategories} 등)` : ''} — 실제 방문 리뷰와 평점을 확인하세요.`
   : '공유된 맛집 리스트를 확인하세요';
 
 function escapeHtml(text: string): string {
@@ -32,15 +35,20 @@ function escapeHtml(text: string): string {
 }
 ---
 
-<BaseLayout title={title} description={description}>
-  <slot name="head">
+<BaseLayout
+  title={title}
+  description={description}
+  ogImageAlt={room ? `${room.name} 맛집 리스트 — ${room.restaurants.length}곳` : '공유된 맛집 리스트'}
+  noindex={!room}
+>
+  <Fragment slot="head">
     {room && (
       <script type="application/ld+json" set:html={JSON.stringify({
         "@context": "https://schema.org",
         "@type": "ItemList",
         "name": room.name,
         "description": `${room.name} - ${room.restaurants.length}곳의 맛집 리스트`,
-        "url": (Astro.site ?? Astro.url.origin) + `/share/${code}`,
+        "url": (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '') + `/share/${code}`,
         "numberOfItems": room.restaurants.length,
         "itemListElement": room.restaurants.map((r, i) => ({
           "@type": "ListItem",
@@ -54,7 +62,7 @@ function escapeHtml(text: string): string {
         })),
       })} />
     )}
-  </slot>
+  </Fragment>
   <div id="share-page">
     {error && <p class="status-msg error">{error}</p>}
 

@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RoomMemberGuard } from './guards/room-member.guard';
 import { RoomsService } from './rooms.service';
+import { RoomStatsService } from './room-stats.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { CreateRoomRestaurantDto } from './dto/create-room-restaurant.dto';
@@ -27,7 +28,10 @@ interface RequestWithRoomMember extends Request {
 @ApiTags('방')
 @Controller('rooms')
 export class RoomsController {
-  constructor(private readonly roomsService: RoomsService) {}
+  constructor(
+    private readonly roomsService: RoomsService,
+    private readonly roomStatsService: RoomStatsService,
+  ) {}
 
   // ─── 방 관리 ───
 
@@ -63,7 +67,7 @@ export class RoomsController {
   @Get('platform-stats')
   @ApiOperation({ summary: '플랫폼 공개 통계 (비로그인 가능)' })
   getPlatformStats() {
-    return this.roomsService.getPlatformStats();
+    return this.roomStatsService.getPlatformStats();
   }
 
   /** 공개 맛집 추천 (로그인 불필요) */
@@ -101,7 +105,7 @@ export class RoomsController {
   @ApiOperation({ summary: '방 통계 조회' })
   @ApiParam({ name: 'id', description: '방 ID' })
   getRoomStats(@Param('id') id: string, @CurrentUser() user: { id: string }) {
-    return this.roomsService.getRoomStats(id, user.id);
+    return this.roomStatsService.getRoomStats(id, user.id);
   }
 
   /** 방 상세 */

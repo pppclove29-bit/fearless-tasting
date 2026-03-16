@@ -6,7 +6,7 @@
 
 - `apps/web/` - Astro 프론트엔드 (포트 4321)
 - `apps/api/` - NestJS 백엔드 API (포트 4000, Prisma ORM, MySQL)
-- `packages/types/` - 공유 타입 (`User`, `Room`, `RoomMember`, `RoomRestaurant`, `RoomVisit`, `RoomReview`, `SharedRoom*` 등)
+- `packages/types/` - 공유 타입 (`User`, `AuthUser`, `Room`, `RoomMember`, `RoomRestaurant`, `RoomVisit`, `RoomReview`, `RoomStats`, `PlatformStats`, `SharedRoom*`, `Inquiry`, `Notice`, `Poll`, `TimelineItem`, `AppNotification`, `RankingUser`, `DiscoverResponse` 등)
 - `packages/utils/` - 공유 유틸 (`formatRating`, `formatDate`)
 - `packages/typescript-config/` - 공유 tsconfig (base, astro, nestjs)
 - `packages/eslint-config/` - 공유 ESLint flat config (base, astro, nestjs)
@@ -32,6 +32,8 @@
 - N+1 쿼리 금지, 트랜잭션 필요 시 `this.prisma.write.$transaction()`
 - DB 조회 결과 null 체크 필수
 - 삭제 시 cascade 관계 확인 (Prisma `onDelete: Cascade`)
+- 정수 검증은 `@IsInt()` 사용 (`@IsNumber()` 금지 — 소수점 허용 방지)
+- API 에러 처리: `throwIfNotOk(res, fallback)` 헬퍼 사용 (api.ts)
 
 ## API 모듈 구조
 
@@ -40,10 +42,33 @@ apps/api/src/
 ├── auth/           # 카카오 OAuth, JWT 인증, Guards (JwtAuth, Admin)
 ├── rooms/          # 방 기능 (초대 코드, 공유 링크, 멤버/식당/리뷰 관리)
 │   ├── guards/     # RoomMemberGuard, RoomManagerGuard
-│   └── dto/        # 방 관련 DTO (CreateRoom, JoinRoom, ToggleShareCode 등)
+│   ├── dto/        # 방 관련 DTO (CreateRoom, JoinRoom, ToggleShareCode 등)
+│   ├── rooms.service.ts       # 방/식당/리뷰/방문 CRUD
+│   └── room-stats.service.ts  # 방 통계 (getRoomStats, analyzeMemberBehaviors 등)
 ├── users/          # 유저 조회, 닉네임 수정, 찜 목록
 ├── inquiries/      # 문의 CRUD
 └── prisma/         # PrismaService (Reader/Writer 분리)
+```
+
+## 공유 타입 패키지 (`packages/types/`)
+
+프론트엔드와 백엔드에서 공통으로 사용하는 타입 정의. `apps/web/src/lib/api.ts`에서 `@repo/types`로 import하여 사용.
+
+```
+packages/types/src/
+├── index.ts        # 전체 re-export
+├── user.ts         # User, AuthUser
+├── room.ts         # Room, RoomRestaurant, RoomVisit, RoomReview, RoomListItem,
+│                   #   RoomDetailResponse, PaginatedRestaurants, ReviewData,
+│                   #   MyWishlistItem, ReviewComparison, CompareReviewsResponse 등
+├── stats.ts        # RoomStats, PlatformStats
+├── ranking.ts      # RankingUser, RankingsResponse
+├── discover.ts     # DiscoverRestaurant, DiscoverResponse
+├── inquiry.ts      # Inquiry
+├── notice.ts       # Notice
+├── poll.ts         # PollOption, Poll
+├── notification.ts # AppNotification (DOM Notification과 이름 충돌 방지)
+└── timeline.ts     # TimelineItem
 ```
 
 ## DB 모델
@@ -71,7 +96,7 @@ apps/api/src/
 | member (멤버)      |    X    |          X          |     X     |        X         |       X        |          X          |  O   |       O        |  O   |
 | viewer (공유 링크) |    X    |          X          |     X     |        X         |       X        |          X          |  X   |       X        |  O   |
 
-> viewer는 DB에 저장되지 않는 비로그인 읽기 전용 접근자. 공유 코드(`shareCode`)로 `/share?code=xxx` 페이지를 통해 열람.
+> viewer는 DB에 저장되지 않는 비로그인 읽기 전용 접근자. 공유 코드(`shareCode`)로 `/share/:code` 페이지를 통해 열람.
 
 ## 초대 코드 보안
 
@@ -103,7 +128,7 @@ apps/api/src/
 
 ### 공유 링크 프론트엔드
 
-- `/share?code=xxx` — 비로그인 공유 전용 페이지 (`share.astro`)
+- `/share/:code` — 비로그인 공유 전용 페이지 (동적 OG 메타 포함)
 - 방 상세(`room.astro`)에서 owner/manager에게 공유 링크 관리 UI 표시
 
 ## Rate Limit (어뷰저 정책)
@@ -128,7 +153,7 @@ apps/api/src/
 | `/`               | 홈 — 랜딩 페이지 + 로그인 시 내 방 대시보드         |
 | `/rooms`          | 내 방 — 방 목록, 검색, 정렬, 방 생성                |
 | `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 찜, 멤버 관리, 공유 링크, 검색/페이지네이션 |
-| `/share?code=xxx` | 공유 열람 — 비로그인, 읽기 전용 (식당/리뷰 열람)    |
+| `/share/:code`    | 공유 열람 — 비로그인, 읽기 전용 (식당/리뷰 열람, 동적 OG) |
 | `/join?code=xxx`  | 초대 링크 자동 입장 (미로그인 시 로그인 후 리다이렉트) |
 | `/login`          | 카카오 로그인                                       |
 | `/discover`       | 맛집 추천 — 고평점/재방문/관심 맛집 공개 랭킹       |
@@ -137,6 +162,14 @@ apps/api/src/
 | `/cs`             | 문의 등록                                           |
 | `/profile`        | 프로필 — 닉네임 수정, 업적, 활동 통계, 찜 목록, 화면 설정 (테마) |
 | `/admin`          | 관리자 — 문의 관리                                  |
+| `/privacy`        | 개인정보처리방침                                    |
+
+## 프론트엔드 컴포넌트
+
+```
+apps/web/src/components/
+└── AdSlot.astro   # 재사용 가능한 광고 슬롯 (환경변수 기반 활성화)
+```
 
 ## 방 인원 제한
 
@@ -159,16 +192,18 @@ apps/api/src/
 ## 방 통계
 
 - `GET /rooms/:id/stats` — 방 종합 통계 (RoomMemberGuard)
+- 통계 로직은 `room-stats.service.ts`에 분리
 - 요약 (식당·방문·리뷰 수, 평균 평점), 멤버별 활동 분석
 - 카테고리·지역 분포, 요일·월별 방문 패턴
 - 세부 평점 레이더 차트 (맛/가성비)
 - 대기시간 분포, 인기 메뉴 (또 먹고 싶은)
 - TOP/BOTTOM 평점 식당, 재방문률 TOP 식당
 - 미리뷰 방문 알림
+- 멤버별 행동 분석 (탐험가율, 카테고리 편향, 평점 성향, 리뷰 성실도, 요일 선호)
 
 ## 리뷰 입력
 
-- 리뷰 본문(content): 선택 입력 (별점만으로 리뷰 가능)
+- 리뷰 본문(content): 선택 입력 (별점만으로 리뷰 가능, 최대 2000자)
 - 세부 평점 5항목: 맛(tasteRating), 가성비(valueRating), 서비스(serviceRating), 청결(cleanlinessRating), 접근성(accessibilityRating) — 모두 선택 입력
 - 또 먹고 싶은 메뉴(favoriteMenu) 입력 (선택)
 - 카테고리: 칩 셀렉터 (13종 프리셋 + "기타" 커스텀 입력)
@@ -195,13 +230,36 @@ apps/api/src/
 
 ## SEO
 
-- `@astrojs/sitemap` — 빌드 시 sitemap.xml 자동 생성 (공개 페이지만)
-- `robots.txt` — sitemap 참조, /share Allow, /admin·/login·/room Disallow
-- Open Graph + Twitter Card 메타 태그 (BaseLayout.astro)
-- JSON-LD 구조화 데이터 (WebSite + FAQPage)
-- meta keywords (무모한시식가, 프라이빗 맛집 리뷰 등)
+- `@astrojs/sitemap` — 빌드 시 sitemap.xml 자동 생성 (공개 페이지만, changefreq/priority 설정)
+- `robots.txt` — 크롤러별 세분화 (Googlebot/Bingbot 별도 규칙, AI 크롤러 차단)
+- `robots` 메타 태그: `max-snippet:-1, max-image-preview:large` (리치 스니펫 허용)
+- Open Graph + Twitter Card 메타 태그 (`og:image:alt`, `twitter:image:alt` 포함)
+- JSON-LD 구조화 데이터:
+  - BaseLayout: `WebSite` (publisher 포함) + `SoftwareApplication`
+  - 홈: `FAQPage` (8개 Q&A) + `BreadcrumbList`
+  - 소개: `AboutPage` + `BreadcrumbList`
+  - 랭킹/맛집 추천: `CollectionPage` + `BreadcrumbList`
+  - 문의: `ContactPage` + `BreadcrumbList`
+  - 공유 페이지: `ItemList` (FoodEstablishment 목록)
+- BaseLayout Props: `title`, `description`, `ogImage`, `ogImageAlt`, `noindex`
+- 페이지별 CTR 최적화 타이틀/설명 (키워드 전면 배치, CTA 포함)
 - `SITE_URL` 환경변수로 sitemap 도메인 설정
 - Cloudflare Pages `_headers` 파일로 sitemap/robots.txt 캐시 설정
+
+## 광고 인프라
+
+광고 시스템 초석 (Google AdSense 준비). `PUBLIC_AD_CLIENT` 환경변수 미설정 시 완전 비활성.
+
+- `AdSlot.astro` — 재사용 가능한 광고 컨테이너 컴포넌트
+  - Props: `slot`(슬롯ID), `format`(auto/fluid/rectangle/horizontal/vertical), `position`(top/middle/bottom/sidebar), `width/height`(고정크기)
+  - 개발 환경: placeholder 박스 표시 (슬롯 ID/포맷 확인용)
+  - 프로덕션: `PUBLIC_AD_CLIENT` 설정 시 AdSense `<ins>` 태그 렌더링
+- `ads.ts` — 광고 스크립트 지연 로더
+  - IntersectionObserver로 뷰포트 200px 전에 미리 로드
+  - AdSense 스크립트 1회만 로드 (중복 방지)
+  - 광고 차단 시 조용히 실패 (앱 동작 영향 없음)
+- 배치 위치: 홈(FAQ↔통계 사이), 맛집추천(콘텐츠↔SEO 사이), 랭킹(콘텐츠↔SEO 사이), 소개(중간)
+- 광고 미배치 영역: 로그인, 방 상세, 프로필, 관리자, 공유 페이지
 
 ## DB 마이그레이션
 
@@ -224,6 +282,7 @@ apps/api/src/
 
 - `PUBLIC_API_URL` — API 서버 주소
 - `PUBLIC_KAKAO_MAP_KEY` — 카카오맵 JavaScript 키 (빈 값이면 지도 숨김)
+- `PUBLIC_AD_CLIENT` — Google AdSense 클라이언트 ID (빈 값이면 광고 비활성)
 - `SITE_URL` — 사이트 도메인 (sitemap 생성용, 예: `https://fearless-tasting.pages.dev`)
 
 ## 프론트엔드 인증 흐름
@@ -236,6 +295,12 @@ apps/api/src/
 - **fetchCurrentUser 캐싱**: 같은 페이지 내 중복 호출 방지 (BaseLayout + 페이지 스크립트)
 - **로그아웃**: 즉시 localStorage/쿠키 삭제, 서버 DB 무효화는 fire-and-forget
 - Access Token 만료: 15분, Refresh Token 만료: 7일
+
+## 프론트엔드 유틸리티
+
+- `api.ts` — API 통신 래퍼, 타입은 `@repo/types`에서 import 후 re-export
+- `toast.ts` — 토스트 알림 + 확인/위험 확인 모달 (`showConfirmModal` 내부 통합)
+- `ads.ts` — 광고 스크립트 지연 로더 (IntersectionObserver)
 
 ## 명령어
 

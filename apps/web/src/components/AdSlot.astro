@@ -1,0 +1,130 @@
+---
+/**
+ * 재사용 가능한 광고 슬롯 컴포넌트.
+ *
+ * 사용법:
+ *   <AdSlot slot="banner" />
+ *   <AdSlot slot="in-feed" format="fluid" />
+ *   <AdSlot slot="sidebar" width="300" height="250" />
+ *
+ * 환경변수 PUBLIC_AD_CLIENT가 비어있으면 아무것도 렌더링하지 않음.
+ * 개발 환경에서는 placeholder 박스를 표시.
+ */
+
+export type AdFormat = 'auto' | 'fluid' | 'rectangle' | 'horizontal' | 'vertical';
+
+interface Props {
+  /** 광고 슬롯 식별자 (Google AdSense data-ad-slot 등) */
+  slot: string;
+  /** 광고 포맷 */
+  format?: AdFormat;
+  /** 고정 크기 사용 시 너비 */
+  width?: number;
+  /** 고정 크기 사용 시 높이 */
+  height?: number;
+  /** 추가 CSS 클래스 */
+  class?: string;
+  /** 페이지 내 위치 (analytics 추적용) */
+  position?: 'top' | 'middle' | 'bottom' | 'sidebar';
+}
+
+const {
+  slot,
+  format = 'auto',
+  width,
+  height,
+  class: className = '',
+  position = 'middle',
+} = Astro.props;
+
+const adClient = import.meta.env.PUBLIC_AD_CLIENT || '';
+const isDev = import.meta.env.DEV;
+const isEnabled = !!adClient;
+
+// 고정 크기 스타일
+const fixedStyle = width && height
+  ? `width:${width}px;height:${height}px;`
+  : '';
+---
+
+{(isEnabled || isDev) && (
+  <div
+    class={`ad-container ad-${position} ${className}`.trim()}
+    data-ad-slot={slot}
+    data-ad-format={format}
+    data-ad-position={position}
+  >
+    <div class="ad-label">광고</div>
+    {isEnabled ? (
+      <ins
+        class="adsbygoogle"
+        style={fixedStyle || 'display:block;'}
+        data-ad-client={adClient}
+        data-ad-slot={slot}
+        data-ad-format={format === 'auto' ? 'auto' : format}
+        data-full-width-responsive={format === 'auto' ? 'true' : undefined}
+      />
+    ) : isDev ? (
+      <div class="ad-placeholder" style={fixedStyle || undefined}>
+        <span>AD SLOT: {slot}</span>
+        <span class="ad-placeholder-info">{format} / {position}</span>
+      </div>
+    ) : null}
+  </div>
+)}
+
+<style>
+  .ad-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 1.5rem auto;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .ad-container.ad-top { margin-top: 0.75rem; }
+  .ad-container.ad-bottom { margin-bottom: 0.75rem; }
+
+  .ad-label {
+    font-size: 0.65rem;
+    color: var(--text-muted, #999);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+    text-align: center;
+  }
+
+  .ad-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    min-height: 90px;
+    width: 100%;
+    max-width: 728px;
+    border: 2px dashed var(--border, #e8e8e8);
+    border-radius: 8px;
+    background: var(--bg-card, #fff);
+    color: var(--text-muted, #999);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .ad-placeholder-info {
+    font-size: 0.7rem;
+    font-weight: 400;
+    opacity: 0.6;
+  }
+
+  /* 반응형: 모바일에서 좌우 여백 축소 */
+  @media (max-width: 600px) {
+    .ad-container {
+      margin: 1rem auto;
+    }
+    .ad-placeholder {
+      min-height: 60px;
+      max-width: 100%;
+    }
+  }
+</style>

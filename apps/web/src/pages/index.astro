@@ -1,49 +1,66 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import AdSlot from '@/components/AdSlot.astro';
 ---
 
-<BaseLayout title="홈" description="프라이빗 맛집 리뷰 공유 플랫폼 — 친구, 연인, 가족끼리 비공개 맛집 리스트를 만들고 솔직한 리뷰를 기록하세요. 커플 맛집 기록, 그룹 맛집 공유에 최적화.">
-  <script slot="head" type="application/ld+json" set:html={JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "한 방에 몇 명까지 참여할 수 있나요?",
-        "acceptedAnswer": { "@type": "Answer", "text": "현재 한 방에 최대 4명까지 참여할 수 있습니다." }
-      },
-      {
-        "@type": "Question",
-        "name": "초대 링크는 어떻게 공유하나요?",
-        "acceptedAnswer": { "@type": "Answer", "text": "방을 만들면 초대 링크가 자동으로 생성됩니다. 링크를 복사해서 상대방에게 보내주세요. 링크는 24시간 유효합니다." }
-      },
-      {
-        "@type": "Question",
-        "name": "공유 링크는 누구나 볼 수 있나요?",
-        "acceptedAnswer": { "@type": "Answer", "text": "네, 공유 링크를 통해 비회원도 맛집 리스트를 열람할 수 있습니다. 단, 수정이나 리뷰 작성은 방 멤버만 가능합니다." }
-      },
-      {
-        "@type": "Question",
-        "name": "무모한 시식가는 무료인가요?",
-        "acceptedAnswer": { "@type": "Answer", "text": "네, 무모한 시식가의 모든 기능은 무료로 이용할 수 있습니다. 카카오 계정으로 간편하게 가입하세요." }
-      },
-      {
-        "@type": "Question",
-        "name": "맛집 리뷰에 어떤 정보를 남길 수 있나요?",
-        "acceptedAnswer": { "@type": "Answer", "text": "종합 별점(1~5점)만으로도 리뷰를 남길 수 있고, 맛·가성비 세부 평점, 한줄평, 재방문 의사, 또 먹고 싶은 메뉴를 선택적으로 추가할 수 있습니다." }
-      },
-      {
-        "@type": "Question",
-        "name": "프라이빗 맛집 리뷰란 무엇인가요?",
-        "acceptedAnswer": { "@type": "Answer", "text": "프라이빗 맛집 리뷰는 친구, 연인, 가족 등 가까운 사람들끼리만 비공개로 공유하는 맛집 리뷰입니다. 광고나 협찬 없이 신뢰할 수 있는 솔직한 후기를 기록할 수 있습니다." }
-      },
-      {
-        "@type": "Question",
-        "name": "커플 맛집 기록은 어떻게 하나요?",
-        "acceptedAnswer": { "@type": "Answer", "text": "방을 만들고 연인을 초대하세요. 함께 다녀온 맛집을 등록하고 각자 리뷰를 남기면, 커플만의 맛집 리스트가 완성됩니다. 카카오맵 연동으로 식당을 쉽게 검색할 수 있습니다." }
-      }
-    ]
-  })} />
+<BaseLayout
+  title="프라이빗 맛집 리뷰 공유 플랫폼"
+  description="친구, 연인, 가족끼리 비공개 맛집 리스트를 만들고 솔직한 리뷰를 기록하세요. 광고 없는 진짜 후기, 카카오맵 연동, 맛집 통계까지 — 무료로 지금 바로 시작하세요."
+  ogImageAlt="무모한 시식가 — 프라이빗 맛집 리뷰 공유 플랫폼 메인 페이지"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "무모한 시식가는 무료인가요?",
+          "acceptedAnswer": { "@type": "Answer", "text": "네, 무모한 시식가의 모든 기능은 완전 무료입니다. 카카오 계정으로 3초 만에 가입하고 바로 사용할 수 있습니다." }
+        },
+        {
+          "@type": "Question",
+          "name": "프라이빗 맛집 리뷰란 무엇인가요?",
+          "acceptedAnswer": { "@type": "Answer", "text": "프라이빗 맛집 리뷰는 친구, 연인, 가족 등 가까운 사람들끼리만 비공개로 공유하는 맛집 리뷰입니다. 광고나 협찬 없이 신뢰할 수 있는 솔직한 후기를 기록할 수 있습니다." }
+        },
+        {
+          "@type": "Question",
+          "name": "한 방에 몇 명까지 참여할 수 있나요?",
+          "acceptedAnswer": { "@type": "Answer", "text": "현재 한 방에 최대 4명까지 참여할 수 있습니다. 한 사람이 최대 30개 방에 참여할 수 있어 다양한 그룹과 함께 사용 가능합니다." }
+        },
+        {
+          "@type": "Question",
+          "name": "초대 링크는 어떻게 공유하나요?",
+          "acceptedAnswer": { "@type": "Answer", "text": "방을 만들면 초대 링크가 자동으로 생성됩니다. 링크를 복사해서 카카오톡이나 메시지로 보내주세요. 링크는 24시간 유효합니다." }
+        },
+        {
+          "@type": "Question",
+          "name": "공유 링크는 누구나 볼 수 있나요?",
+          "acceptedAnswer": { "@type": "Answer", "text": "네, 공유 링크를 통해 비회원도 맛집 리스트를 열람할 수 있습니다. 블로그나 SNS에 공유하면 누구나 읽기 전용으로 볼 수 있습니다." }
+        },
+        {
+          "@type": "Question",
+          "name": "맛집 리뷰에 어떤 정보를 남길 수 있나요?",
+          "acceptedAnswer": { "@type": "Answer", "text": "종합 별점(1~5점)만으로도 리뷰를 남길 수 있고, 맛·가성비·서비스·청결·접근성 세부 평점, 한줄평, 재방문 의사, 또 먹고 싶은 메뉴를 선택적으로 추가할 수 있습니다." }
+        },
+        {
+          "@type": "Question",
+          "name": "커플 맛집 기록은 어떻게 하나요?",
+          "acceptedAnswer": { "@type": "Answer", "text": "방을 만들고 연인을 초대하세요. 함께 다녀온 맛집을 등록하고 각자 리뷰를 남기면, 커플만의 맛집 리스트가 완성됩니다. 카카오맵 연동으로 식당을 쉽게 검색할 수 있습니다." }
+        },
+        {
+          "@type": "Question",
+          "name": "다른 맛집 앱과 뭐가 다른가요?",
+          "acceptedAnswer": { "@type": "Answer", "text": "무모한 시식가는 광고·협찬 리뷰가 없는 프라이빗 플랫폼입니다. 가까운 사람들끼리 비공개 방에서 솔직한 리뷰를 공유하고, 방문 통계, 멤버별 취향 분석, 리뷰 비교 등 다양한 인사이트를 제공합니다." }
+        }
+      ]
+    })} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [{ "@type": "ListItem", "position": 1, "name": "홈", "item": (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '') }]
+    })} />
+  </Fragment>
 
   <!-- 공지사항 배너 -->
   <div id="notice-banner"></div>
@@ -240,6 +257,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </details>
       </div>
     </section>
+
+    <AdSlot slot="home-mid" position="middle" format="horizontal" />
 
     <section class="platform-stats" id="platform-stats" hidden>
       <h2 class="section-title">지금까지의 기록</h2>

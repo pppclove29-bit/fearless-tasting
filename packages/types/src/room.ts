@@ -155,3 +155,103 @@ export interface SharedRoomDetail {
   name: string;
   restaurants: SharedRoomRestaurant[];
 }
+
+// ─── API 응답 타입 ───
+
+export interface RoomListItem extends Room {
+  myRole: string;
+  memberCount: number;
+  restaurantCount: number;
+}
+
+export interface RoomMemberInfo {
+  id: string;
+  role: string;
+  userId: string;
+  joinedAt: string;
+  user: { id: string; nickname: string; profileImageUrl: string | null };
+}
+
+export interface RoomRestaurantInfo extends RoomRestaurant {
+  addedBy: { id: string; nickname: string } | null;
+  avgRating: number | null;
+  wishlisted: boolean;
+}
+
+export interface RoomDetailResponse extends Room {
+  members: RoomMemberInfo[];
+  restaurants: RoomRestaurantInfo[];
+}
+
+export interface RoomRestaurantDetailResponse {
+  id: string;
+  name: string;
+  address: string;
+  province: string;
+  city: string;
+  neighborhood: string;
+  category: string;
+  imageUrl?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  roomId: string;
+  addedById: string | null;
+  createdAt: string;
+  addedBy: { id: string; nickname: string } | null;
+  visits: RoomVisitWithDetails[];
+}
+
+export interface PaginatedRestaurants {
+  data: RoomRestaurantInfo[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface ReviewData {
+  rating: number;
+  content: string;
+  wouldRevisit?: boolean;
+  tasteRating?: number | null;
+  valueRating?: number | null;
+  serviceRating?: number | null;
+  cleanlinessRating?: number | null;
+  accessibilityRating?: number | null;
+  favoriteMenu?: string | null;
+  tryNextMenu?: string | null;
+}
+
+export interface MyWishlistItem {
+  id: string;
+  createdAt: string;
+  roomRestaurant: {
+    id: string;
+    name: string;
+    category: string;
+    address: string;
+    roomId: string;
+    room: { id: string; name: string };
+  };
+}
+
+export interface ReviewComparison {
+  user: { id: string; nickname: string };
+  reviewCount: number;
+  avgRating: number | null;
+  latestReview: {
+    rating: number;
+    content: string;
+    visitedAt: string;
+    tasteRating: number | null;
+    valueRating: number | null;
+    serviceRating: number | null;
+    cleanlinessRating: number | null;
+    accessibilityRating: number | null;
+    wouldRevisit: boolean;
+  } | null;
+}
+
+export interface CompareReviewsResponse {
+  restaurant: { id: string; name: string; roomId: string };
+  comparisons: ReviewComparison[];
+}

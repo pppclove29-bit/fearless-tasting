@@ -1,18 +1,27 @@
 ---
 export const prerender = false;
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import AdSlot from '@/components/AdSlot.astro';
 ---
 
-<BaseLayout title="맛집 리뷰 랭킹" description="맛집 리뷰어 랭킹 — 리뷰 수, 방문 수, 평균 평점, 재방문율 등 다양한 기준으로 맛집 활동 순위를 확인하세요.">
-  <slot name="head">
+<BaseLayout title="맛집 리뷰어 랭킹 — 누가 가장 많이 먹었을까?" description="리뷰 수·방문 수·평균 평점·재방문율 기준 맛집 리뷰어 순위를 확인하세요. 20개 업적 달성에 도전하고 나의 맛집 활동을 비교해보세요.">
+  <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      "name": "맛집 리뷰 랭킹 - 무모한 시식가",
+      "name": "맛집 리뷰어 랭킹 - 무모한 시식가",
       "description": "유저들의 맛집 리뷰 활동 기반 랭킹과 업적",
-      "url": (Astro.site ?? Astro.url.origin) + "/rankings",
+      "url": (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '') + "/rankings",
     })} />
-  </slot>
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "홈", "item": (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '') },
+        { "@type": "ListItem", "position": 2, "name": "맛집 리뷰어 랭킹", "item": (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '') + "/rankings" },
+      ]
+    })} />
+  </Fragment>
   <div id="rankings-page">
     <div class="rankings-header">
       <h1>맛집 리뷰 랭킹</h1>
@@ -22,6 +31,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     <div id="rankings-loading" class="loading-msg">로딩 중...</div>
     <div id="rankings-error" class="error-msg" hidden></div>
     <div id="rankings-content" hidden></div>
+
+    <AdSlot slot="rankings-bottom" position="bottom" format="horizontal" />
 
     <section class="rankings-seo">
       <h2>유저 활동 기반 랭킹</h2>

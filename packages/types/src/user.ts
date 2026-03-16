@@ -6,3 +6,11 @@ export interface User {
   role: string;
   createdAt: string;
 }
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  nickname: string;
+  role: string;
+  profileImageUrl: string | null;
+}
