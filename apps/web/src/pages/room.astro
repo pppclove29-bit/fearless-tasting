@@ -2389,10 +2389,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const angleStep = (2 * Math.PI) / n;
     const offset = -Math.PI / 2;
 
+    const isDark = document.documentElement.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(255,255,255,0.15)' : '#e8e8e8';
+    const labelColor = isDark ? 'rgba(255,255,255,0.6)' : '#666';
+    const polyStroke = isDark ? '#818cf8' : '#6366f1';
+    const polyFill = isDark ? 'rgba(129,140,248,0.2)' : 'rgba(99,102,241,0.12)';
+    const dotColor = isDark ? '#a5b4fc' : '#6366f1';
+
     // 그리드 원
     const gridCircles = [1, 2, 3, 4, 5].map((lv) => {
       const gr = (lv / 5) * r;
-      return `<circle cx="${cx}" cy="${cy}" r="${gr}" fill="none" stroke="#e8e8e8" stroke-width="0.5"/>`;
+      return `<circle cx="${cx}" cy="${cy}" r="${gr}" fill="none" stroke="${gridColor}" stroke-width="0.5"/>`;
     }).join('');
 
     // 축선 + 라벨
@@ -2402,8 +2409,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const y2 = cy + r * Math.sin(angle);
       const lx = cx + (r + 16) * Math.cos(angle);
       const ly = cy + (r + 16) * Math.sin(angle);
-      return `<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#e8e8e8" stroke-width="0.5"/>
-        <text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#666">${labels[k]}</text>`;
+      return `<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="${gridColor}" stroke-width="0.5"/>
+        <text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="${labelColor}">${labels[k]}</text>`;
     }).join('');
 
     // 데이터 폴리곤
@@ -2417,13 +2424,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const dots = vals.map((v, i) => {
       const angle = offset + i * angleStep;
       const dr = (v / 5) * r;
-      return `<circle cx="${cx + dr * Math.cos(angle)}" cy="${cy + dr * Math.sin(angle)}" r="3" fill="#111"/>`;
+      return `<circle cx="${cx + dr * Math.cos(angle)}" cy="${cy + dr * Math.sin(angle)}" r="3" fill="${dotColor}"/>`;
     }).join('');
 
     return `<div class="radar-chart">
       <svg viewBox="0 0 240 240" width="240" height="240">
         ${gridCircles}${axes}
-        <polygon points="${points}" fill="rgba(17,17,17,0.1)" stroke="#111" stroke-width="1.5"/>
+        <polygon points="${points}" fill="${polyFill}" stroke="${polyStroke}" stroke-width="1.5"/>
         ${dots}
       </svg>
     </div>`;
