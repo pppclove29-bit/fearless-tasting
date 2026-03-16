@@ -1073,9 +1073,9 @@ export class RoomsService {
     ]);
 
     const timeline = [
-      ...restaurants.map((r) => ({ type: 'restaurant_added' as const, date: r.createdAt, data: { restaurantName: r.name, user: r.addedBy } })),
-      ...visits.map((v) => ({ type: 'visit_added' as const, date: v.createdAt, data: { restaurantName: v.restaurant.name, visitedAt: v.visitedAt, user: v.createdBy } })),
-      ...reviews.map((r) => ({ type: 'review_added' as const, date: r.createdAt, data: { restaurantName: r.visit.restaurant.name, rating: r.rating, content: r.content?.slice(0, 50) ?? '', user: r.user } })),
+      ...restaurants.map((r) => ({ type: 'restaurant_added' as const, date: r.createdAt, data: { restaurantId: r.id, restaurantName: r.name, user: r.addedBy } })),
+      ...visits.map((v) => ({ type: 'visit_added' as const, date: v.createdAt, data: { restaurantId: v.restaurant.id, restaurantName: v.restaurant.name, visitedAt: v.visitedAt, user: v.createdBy } })),
+      ...reviews.map((r) => ({ type: 'review_added' as const, date: r.createdAt, data: { restaurantId: r.visit.restaurant.id, restaurantName: r.visit.restaurant.name, rating: r.rating, content: r.content?.slice(0, 50) ?? '', user: r.user } })),
       ...members.map((m) => ({ type: 'member_joined' as const, date: m.joinedAt, data: { user: m.user } })),
     ];
 

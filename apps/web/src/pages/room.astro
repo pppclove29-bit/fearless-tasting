@@ -1095,6 +1095,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .timeline-item:last-child { border-bottom: none; }
 
+  a.timeline-link {
+    text-decoration: none;
+    color: inherit;
+    border-radius: 8px;
+    transition: background 0.15s;
+    cursor: pointer;
+    margin: 0 -0.5rem;
+    padding: 0.75rem 0.5rem;
+  }
+  a.timeline-link:hover { background: var(--bg-hover); }
+
   .timeline-emoji {
     font-size: 1.4rem;
     line-height: 1;
@@ -2907,17 +2918,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       member_joined: (d) => `<strong>${escapeHtml(getUserName(d))}</strong>님이 방에 참여했습니다.`,
     };
 
-    const timelineHtml = items.map((item) => `
-      <div class="timeline-item">
+    const timelineHtml = items.map((item) => {
+      const rid = item.data.restaurantId as string | undefined;
+      const tag = rid ? 'a' : 'div';
+      const href = rid ? ` href="/room/restaurant?roomId=${currentRoom.id}&id=${rid}"` : '';
+      return `
+      <${tag}${href} class="timeline-item${rid ? ' timeline-link' : ''}">
         <span class="timeline-emoji">${emojiMap[item.type] || '📌'}</span>
         <div class="timeline-body">
           <div class="timeline-desc">${(descMap[item.type] || (() => item.type))(item.data)}</div>
           <div class="timeline-date">${formatDate(item.date)}</div>
         </div>
-      </div>
-    `).join('');
+      </${tag}>`;
+    }).join('');
 
-    panel.innerHTML = `<h3 class="section-subtitle">📋 최근 활동</h3><div class="timeline-list">${timelineHtml}</div>`;
+    panel.innerHTML = `<h3 class="section-subtitle">최근 활동</h3><div class="timeline-list">${timelineHtml}</div>`;
   }
 
   // ─── 식당 탭 ───
