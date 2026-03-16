@@ -165,6 +165,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     flex-wrap: wrap;
   }
 
+  .invite-desc {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-top: 0.3rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
   .invite-btn {
     display: inline-flex;
     align-items: center;
@@ -1989,8 +1998,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <button type="button" class="invite-btn invite-btn--member" id="invite-member-btn">${svgLink} 방 초대${expiryText}</button>
           ${isManagerOrAbove() ? `<button type="button" class="invite-btn invite-btn--public ${isShareActive ? 'active' : ''}" id="invite-public-btn">${svgGlobe} 공개 초대${isShareActive ? ' · ON' : ''}</button>` : ''}
         </div>
+        <div class="invite-desc">
+          <span>방 초대: 링크를 복사해서 친구에게 보내세요</span>
+          ${isManagerOrAbove() ? '<span>공개 초대: 비회원도 읽기 전용으로 열람 가능</span>' : ''}
+        </div>
         <div class="room-header-actions">
-          <button type="button" class="room-action-chip" id="help-btn">${svgHelp} 도움말</button>
           ${isOwner()
             ? `<button type="button" class="room-action-chip room-action-chip--danger room-action-chip--right" id="delete-room-btn">${svgTrash} 방 삭제</button>`
             : `<button type="button" class="room-action-chip room-action-chip--danger room-action-chip--right" id="leave-room-btn">${svgExit} 방 나가기</button>`}
