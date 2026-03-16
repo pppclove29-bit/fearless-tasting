@@ -9,7 +9,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     <div id="add-content" hidden></div>
   </div>
 
-<style>
+<style is:global>
   #add-page {
     max-width: 480px;
     margin: 0 auto;
@@ -246,6 +246,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .check-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--text-sub); }
   .check-row input[type="checkbox"] { accent-color: #6366f1; }
 
+  /* 재방문 의사 */
+  .revisit-btns { display: flex; gap: 0.4rem; }
+  .revisit-btn {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text-sub);
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .revisit-btn:hover { border-color: var(--border-mid); }
+  .revisit-btn.active[data-val="yes"] { background: #6366f1; color: #fff; border-color: #6366f1; }
+  .revisit-btn.active[data-val="no"] { background: var(--bg-hover); color: var(--text-muted); border-color: var(--border-mid); }
+
   /* 버튼 */
   .step-actions { display: flex; gap: 0.5rem; margin-top: 1.5rem; }
 
@@ -372,6 +392,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     let selectedCategory = '';
     let selectedWait = '';
     let mainRating = 0;
+    let wouldRevisit: boolean | null = null;
     const detailRatings: Record<string, number> = {};
 
     content.innerHTML = `
@@ -461,14 +482,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
 
         <div class="form-group">
-          <label class="form-label">또 먹고 싶은 메뉴 (선택)</label>
-          <input type="text" class="form-input" id="review-fav-menu" placeholder="메뉴 이름" maxlength="200" />
-        </div>
-
-        <div class="form-group">
-          <label class="check-row">
-            <input type="checkbox" id="review-revisit" checked /> 재방문 의사 있음
-          </label>
+          <label class="form-label">재방문 의사</label>
+          <div class="revisit-btns" id="revisit-btns">
+            <button type="button" class="revisit-btn" data-val="yes">또 가고 싶어요</button>
+            <button type="button" class="revisit-btn" data-val="no">글쎄요</button>
+          </div>
         </div>
 
         <hr class="form-divider" />
@@ -731,12 +749,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       }
     }
 
+    // 재방문 의사 버튼
+    for (const btn of content.querySelectorAll<HTMLButtonElement>('.revisit-btn')) {
+      btn.addEventListener('click', () => {
+        const val = btn.dataset.val!;
+        content.querySelectorAll('.revisit-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        wouldRevisit = val === 'yes';
+      });
+    }
+
     document.getElementById('btn-step2-back')!.addEventListener('click', () => goToStep(1));
 
     // ── 제출 ──
     const submitBtn = document.getElementById('btn-submit') as HTMLButtonElement;
     submitBtn.addEventListener('click', async () => {
       if (mainRating === 0) { showToast('총점을 선택해 주세요.', 'info'); return; }
+      if (wouldRevisit === null) { showToast('재방문 의사를 선택해 주세요.', 'info'); return; }
 
       submitBtn.disabled = true;
       submitBtn.textContent = '처리 중...';
@@ -804,19 +833,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         // 3) 리뷰
         const reviewContent = (document.getElementById('review-content') as HTMLTextAreaElement).value.trim();
-        const favMenu = (document.getElementById('review-fav-menu') as HTMLInputElement).value.trim();
-        const wouldRevisit = (document.getElementById('review-revisit') as HTMLInputElement).checked;
 
         await createRoomReview(roomId!, visit.id, {
           rating: mainRating,
           content: reviewContent,
-          wouldRevisit,
+          wouldRevisit: wouldRevisit === true,
           tasteRating: detailRatings.taste || null,
           valueRating: detailRatings.value || null,
           serviceRating: detailRatings.service || null,
           cleanlinessRating: detailRatings.cleanliness || null,
           accessibilityRating: detailRatings.accessibility || null,
-          favoriteMenu: favMenu || null,
+          favoriteMenu: null,
         });
 
         goToStep(3);
