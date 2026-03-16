@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { InquiriesModule } from './inquiries/inquiries.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { NoticesModule } from './notices/notices.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { NoticesModule } from './notices/notices.module';
     InquiriesModule,
     RoomsModule,
     NoticesModule,
+    HealthModule,
   ],
   providers: [
     {
