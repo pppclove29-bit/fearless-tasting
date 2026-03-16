@@ -348,12 +348,12 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
   }
 
   .notif-dropdown {
-    position: absolute;
-    top: 100%;
-    right: auto;
-    left: 0;
-    width: 320px;
-    max-height: 400px;
+    position: fixed;
+    top: 56px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(380px, calc(100vw - 1.5rem));
+    max-height: min(70vh, 450px);
     overflow-y: auto;
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -410,16 +410,38 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     margin-top: 0.35rem;
   }
 
+  .notif-item-body { flex: 1; min-width: 0; }
+
   .notif-item-msg {
     font-size: 0.8rem;
     color: var(--text);
     line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .notif-item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.25rem;
+  }
+
+  .notif-item-room {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    background: var(--bg-hover);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 50%;
   }
 
   .notif-item-date {
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     color: var(--text-muted);
-    margin-top: 0.15rem;
+    white-space: nowrap;
   }
 
   .notif-empty {
@@ -429,14 +451,6 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     color: var(--text-muted);
   }
 
-  @media (max-width: 600px) {
-    .notif-dropdown {
-      width: calc(100vw - 2rem);
-      right: auto;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-  }
 
   #logout-btn {
     padding: 0.35rem 0.7rem;
@@ -731,15 +745,17 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
             </div>
             ${notifications.slice(0, 20).map((n) => `
               <a href="/room?id=${n.roomId}" class="notif-item ${!n.isRead ? 'unread' : ''}">
-                <div>
+                <div class="notif-item-body">
                   <div class="notif-item-msg">${n.message}</div>
-                  <div class="notif-item-date">${n.room.name} · ${formatDate(n.createdAt)}</div>
+                  <div class="notif-item-footer">
+                    <span class="notif-item-room">${n.room.name}</span>
+                    <span class="notif-item-date">${formatDate(n.createdAt)}</span>
+                  </div>
                 </div>
               </a>`).join('')}`;
         }
 
-        bellBtn.style.position = 'relative';
-        bellBtn.appendChild(dropdown);
+        document.body.appendChild(dropdown);
 
         dropdown.querySelector('#notif-mark-all')?.addEventListener('click', async (ev) => {
           ev.preventDefault();
