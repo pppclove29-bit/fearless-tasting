@@ -1,0 +1,833 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="식당 등록 · 리뷰" description="식당 등록부터 리뷰까지 한 번에">
+  <div id="add-page">
+    <p id="loading-msg" class="status-msg">로딩 중...</p>
+    <p id="error-msg" class="status-msg error" hidden></p>
+    <div id="add-content" hidden></div>
+  </div>
+
+<style>
+  #add-page {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+
+  .status-msg { text-align: center; padding: 2rem 0; color: var(--text-muted); font-size: 0.9rem; }
+  .status-msg.error { color: #dc2626; }
+
+  .add-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-bottom: 1rem;
+  }
+  .add-back-link:hover { color: var(--text); }
+
+  /* 스텝 인디케이터 */
+  .step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  .step-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border: 2px solid var(--border);
+    color: var(--text-muted);
+    background: var(--bg);
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+  .step-dot.active { border-color: #6366f1; color: #fff; background: #6366f1; }
+  .step-dot.done { border-color: #22c55e; color: #fff; background: #22c55e; }
+
+  .step-line {
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .step-line.done { background: #22c55e; }
+
+  .step-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding: 0 1rem;
+  }
+  .step-labels span { flex: 1; text-align: center; font-size: 0.68rem; color: var(--text-muted); }
+  .step-labels span.active { color: #6366f1; font-weight: 600; }
+  .step-labels span.done { color: #22c55e; }
+
+  /* 스텝 컨텐츠 */
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+
+  .step-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 0.4rem;
+  }
+
+  .step-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: 1.2rem;
+  }
+
+  /* 공통 폼 */
+  .form-group { margin-bottom: 1rem; }
+
+  .form-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-sub);
+    margin-bottom: 0.35rem;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+    transition: border-color 0.15s;
+  }
+  .form-input:focus { border-color: #6366f1; outline: none; }
+  .form-input::placeholder { color: var(--text-muted); }
+
+  .form-textarea {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 70px;
+    resize: vertical;
+  }
+  .form-textarea:focus { border-color: #6366f1; outline: none; }
+
+  /* 구분선 */
+  .form-divider {
+    border: none;
+    border-top: 1px solid var(--border-light);
+    margin: 1.2rem 0;
+  }
+
+  .form-section-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin-bottom: 0.8rem;
+  }
+
+  /* 카카오 검색 */
+  .search-wrap { position: relative; }
+
+  .search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border-mid);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    z-index: 50;
+  }
+
+  .search-result-item {
+    padding: 0.6rem 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-light);
+    transition: background 0.1s;
+  }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: var(--bg-hover); }
+
+  .search-result-name { font-size: 0.85rem; font-weight: 600; color: var(--text-heading); }
+  .search-result-addr { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.1rem; }
+  .search-result-cat { font-size: 0.65rem; color: var(--text-muted); margin-top: 0.1rem; }
+
+  /* 선택된 식당 카드 */
+  .selected-place {
+    padding: 0.75rem;
+    background: var(--bg-hover);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin-top: 0.5rem;
+  }
+  .selected-place-name { font-size: 0.9rem; font-weight: 600; color: var(--text-heading); }
+  .selected-place-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem; }
+  .selected-place-clear {
+    font-size: 0.72rem;
+    color: #6366f1;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    margin-top: 0.3rem;
+    font-family: inherit;
+  }
+
+  /* 칩 공통 */
+  .cat-chips, .wait-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+  .cat-chip, .wait-chip {
+    padding: 0.3rem 0.65rem;
+    border-radius: 14px;
+    font-size: 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-sub);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .cat-chip:hover, .wait-chip:hover { border-color: var(--border-mid); }
+  .cat-chip.active, .wait-chip.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+
+  /* 별점 */
+  .star-rating { display: inline-flex; gap: 0.2rem; }
+
+  .star-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1.5rem;
+    color: var(--border);
+    transition: color 0.1s;
+    line-height: 1;
+  }
+  .star-btn.active { color: #f59e0b; }
+  .star-btn:hover { color: #f59e0b; }
+
+  .detail-rating-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .detail-rating-label { font-size: 0.78rem; color: var(--text-sub); min-width: 50px; }
+  .detail-stars { display: inline-flex; gap: 0.1rem; }
+  .detail-star {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1.1rem;
+    color: var(--border);
+    line-height: 1;
+  }
+  .detail-star.active { color: #f59e0b; }
+
+  /* 체크박스 */
+  .check-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--text-sub); }
+  .check-row input[type="checkbox"] { accent-color: #6366f1; }
+
+  /* 버튼 */
+  .step-actions { display: flex; gap: 0.5rem; margin-top: 1.5rem; }
+
+  .btn-next {
+    flex: 1;
+    padding: 0.65rem 1rem;
+    background: #6366f1;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-next:hover { background: #4f46e5; }
+  .btn-next:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-back {
+    padding: 0.65rem 1rem;
+    background: none;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* 완료 */
+  .done-screen { text-align: center; padding: 2rem 0; }
+  .done-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+  .done-title { font-size: 1.2rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.3rem; }
+  .done-desc { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+  .done-actions { display: flex; flex-direction: column; gap: 0.5rem; max-width: 240px; margin: 0 auto; }
+  .done-actions a, .done-actions button {
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .done-btn-primary { background: #6366f1; color: #fff; border: none; }
+  .done-btn-secondary { background: var(--bg-hover); color: var(--text-sub); border: 1px solid var(--border); }
+
+  .manual-hint { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+
+  .mode-toggle { display: flex; gap: 0.3rem; margin-bottom: 1rem; }
+  .mode-toggle-btn {
+    flex: 1;
+    padding: 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .mode-toggle-btn.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+
+  [hidden] { display: none !important; }
+</style>
+
+<script>
+  import {
+    fetchCurrentUser, fetchRoom,
+    createRoomRestaurant, createRoomVisit, createRoomReview,
+    showToast,
+  } from '@/lib/api';
+  import type { AuthUser, RoomDetailResponse } from '@/lib/api';
+
+  const loadingMsg = document.getElementById('loading-msg')!;
+  const errorMsg = document.getElementById('error-msg')!;
+  const content = document.getElementById('add-content')!;
+
+  const params = new URLSearchParams(location.search);
+  const roomId = params.get('roomId');
+
+  if (!roomId) {
+    loadingMsg.hidden = true;
+    errorMsg.textContent = '잘못된 접근입니다.';
+    errorMsg.hidden = false;
+  } else {
+    init();
+  }
+
+  async function init() {
+    try {
+      const [user, room] = await Promise.all([
+        fetchCurrentUser(),
+        fetchRoom(roomId!),
+      ]);
+      if (!user) { location.href = '/login'; return; }
+      loadingMsg.hidden = true;
+      content.hidden = false;
+      renderWizard(user, room);
+    } catch {
+      loadingMsg.hidden = true;
+      errorMsg.textContent = '페이지를 불러올 수 없습니다.';
+      errorMsg.hidden = false;
+    }
+  }
+
+  function escapeHtml(s: string) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function renderWizard(_user: AuthUser, room: RoomDetailResponse) {
+    const hasKakaoMap = typeof window !== 'undefined' && 'kakao' in window;
+    const categories = ['한식','중식','일식','양식','카페','분식','치킨','피자','고기','해산물','술집','베이커리','기타'];
+    const waitOptions = ['없음','~10분','~30분','~1시간','1시간+'];
+    const today = new Date().toISOString().split('T')[0];
+
+    let currentStep = 1;
+    let placeData: Record<string, string> = {};
+    let selectedCategory = '';
+    let selectedWait = '';
+    let mainRating = 0;
+    const detailRatings: Record<string, number> = {};
+
+    content.innerHTML = `
+      <a href="/room?id=${roomId}" class="add-back-link">&larr; ${escapeHtml(room.name)}</a>
+
+      <div class="step-indicator">
+        <div class="step-dot active" data-step="1">1</div>
+        <div class="step-line"></div>
+        <div class="step-dot" data-step="2">2</div>
+      </div>
+      <div class="step-labels">
+        <span class="active">식당</span>
+        <span>리뷰</span>
+      </div>
+
+      <!-- 스텝 1: 식당 -->
+      <div class="step-panel active" id="step-1">
+        <div class="step-title">어디에 다녀왔나요?</div>
+        <div class="step-desc">식당을 검색하거나 직접 입력하세요</div>
+
+        ${hasKakaoMap ? `
+          <div class="mode-toggle">
+            <button type="button" class="mode-toggle-btn active" data-mode="kakao">카카오 검색</button>
+            <button type="button" class="mode-toggle-btn" data-mode="manual">직접 입력</button>
+          </div>
+        ` : ''}
+
+        <div id="kakao-area" ${!hasKakaoMap ? 'hidden' : ''}>
+          <div class="form-group search-wrap">
+            <input type="text" class="form-input" id="place-search" placeholder="식당 이름으로 검색" autocomplete="off" />
+            <div class="search-results" id="search-results" hidden></div>
+          </div>
+          <div id="selected-place" hidden></div>
+        </div>
+
+        <div id="manual-area" ${hasKakaoMap ? 'hidden' : ''}>
+          <p class="manual-hint">도로명/지번 주소를 정확히 입력하면 지도에 표시됩니다.</p>
+          <div class="form-group">
+            <input type="text" class="form-input" id="manual-name" placeholder="식당 이름" />
+          </div>
+          <div class="form-group">
+            <input type="text" class="form-input" id="manual-address" placeholder="주소 (예: 서울특별시 강남구 역삼동 123)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">카테고리</label>
+            <div class="cat-chips" id="manual-cat-chips">
+              ${categories.map((c) => `<button type="button" class="cat-chip" data-cat="${c}">${c}</button>`).join('')}
+            </div>
+            <input type="text" class="form-input" id="manual-cat-custom" placeholder="직접 입력" hidden style="margin-top:0.4rem" />
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button type="button" class="btn-next" id="btn-step1-next" disabled>다음: 리뷰 작성</button>
+        </div>
+      </div>
+
+      <!-- 스텝 2: 리뷰 (방문 정보 포함) -->
+      <div class="step-panel" id="step-2">
+        <div class="step-title">어땠나요?</div>
+        <div class="step-desc">별점과 방문 정보를 남겨주세요</div>
+
+        <div class="form-group">
+          <label class="form-label">총점</label>
+          <div class="star-rating" id="main-stars">
+            ${[1,2,3,4,5].map((n) => `<button type="button" class="star-btn" data-star="${n}">★</button>`).join('')}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">한줄평 (선택)</label>
+          <textarea class="form-textarea" id="review-content" placeholder="이 식당의 한마디" maxlength="500"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">세부 평점 (선택)</label>
+          <div id="detail-ratings">
+            ${[['taste','맛'],['value','가성비'],['service','서비스'],['cleanliness','청결'],['accessibility','접근성']].map(([key, label]) => `
+              <div class="detail-rating-row">
+                <span class="detail-rating-label">${label}</span>
+                <div class="detail-stars" data-key="${key}">
+                  ${[1,2,3,4,5].map((n) => `<button type="button" class="detail-star" data-star="${n}">★</button>`).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">또 먹고 싶은 메뉴 (선택)</label>
+          <input type="text" class="form-input" id="review-fav-menu" placeholder="메뉴 이름" maxlength="200" />
+        </div>
+
+        <div class="form-group">
+          <label class="check-row">
+            <input type="checkbox" id="review-revisit" checked /> 재방문 의사 있음
+          </label>
+        </div>
+
+        <hr class="form-divider" />
+        <div class="form-section-title">방문 정보</div>
+
+        <div class="form-group">
+          <label class="form-label">방문일</label>
+          <input type="date" class="form-input" id="visit-date" value="${today}" max="${today}" />
+          <label class="check-row" style="margin-top:0.4rem">
+            <input type="checkbox" id="visit-date-unknown" /> 날짜 모름
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">웨이팅</label>
+          <div class="wait-chips" id="wait-chips">
+            ${waitOptions.map((w) => `<button type="button" class="wait-chip" data-wait="${w}">${w}</button>`).join('')}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">메모 (선택)</label>
+          <textarea class="form-textarea" id="visit-memo" placeholder="함께 간 사람, 특이사항 등" maxlength="500"></textarea>
+        </div>
+
+        <div class="step-actions">
+          <button type="button" class="btn-back" id="btn-step2-back">이전</button>
+          <button type="button" class="btn-next" id="btn-submit">등록 완료</button>
+        </div>
+      </div>
+
+      <!-- 완료 -->
+      <div class="step-panel" id="step-done">
+        <div class="done-screen">
+          <div class="done-icon">🎉</div>
+          <div class="done-title">등록 완료!</div>
+          <div class="done-desc">식당, 방문, 리뷰가 모두 저장되었습니다.</div>
+          <div class="done-actions">
+            <a href="/room?id=${roomId}" class="done-btn-primary">방으로 돌아가기</a>
+            <button type="button" class="done-btn-secondary" id="btn-add-more">하나 더 등록하기</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // ── 스텝 네비게이션 ──
+    function goToStep(step: number) {
+      currentStep = step;
+      document.getElementById('step-1')!.classList.toggle('active', step === 1);
+      document.getElementById('step-2')!.classList.toggle('active', step === 2);
+      document.getElementById('step-done')!.classList.toggle('active', step === 3);
+
+      const dots = content.querySelectorAll<HTMLElement>('.step-dot');
+      const lines = content.querySelectorAll<HTMLElement>('.step-line');
+      const labels = content.querySelectorAll<HTMLElement>('.step-labels span');
+
+      dots.forEach((dot, i) => {
+        const s = i + 1;
+        dot.classList.remove('active', 'done');
+        if (s < step) dot.classList.add('done');
+        else if (s === step && step <= 2) dot.classList.add('active');
+        else if (step === 3) dot.classList.add('done');
+        dot.textContent = s < step || step === 3 ? '✓' : String(s);
+      });
+      lines.forEach((line) => { line.classList.toggle('done', step >= 2); });
+      labels.forEach((label, i) => {
+        const s = i + 1;
+        label.classList.remove('active', 'done');
+        if (s < step || step === 3) label.classList.add('done');
+        else if (s === step) label.classList.add('active');
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ── 스텝 1: 식당 검색 ──
+    const nextBtn1 = document.getElementById('btn-step1-next') as HTMLButtonElement;
+
+    function updateStep1Btn() {
+      const hasPlace = !!placeData.name;
+      const hasManual = !!(document.getElementById('manual-name') as HTMLInputElement)?.value.trim()
+        && !!(document.getElementById('manual-address') as HTMLInputElement)?.value.trim()
+        && !!selectedCategory;
+      const kakaoArea = document.getElementById('kakao-area');
+      const isKakao = kakaoArea && !kakaoArea.hidden;
+      nextBtn1.disabled = isKakao ? !hasPlace : !hasManual;
+    }
+
+    // 모드 토글
+    for (const btn of content.querySelectorAll<HTMLButtonElement>('.mode-toggle-btn')) {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode!;
+        content.querySelectorAll('.mode-toggle-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('kakao-area')!.hidden = mode === 'manual';
+        document.getElementById('manual-area')!.hidden = mode === 'kakao';
+        updateStep1Btn();
+      });
+    }
+
+    // 카카오 검색
+    if (hasKakaoMap) {
+      const searchInput = document.getElementById('place-search') as HTMLInputElement;
+      const resultsDiv = document.getElementById('search-results')!;
+      let timer: ReturnType<typeof setTimeout>;
+      let kakaoLoaded = false;
+
+      function loadMaps(): Promise<void> {
+        if (kakaoLoaded) return Promise.resolve();
+        return new Promise((resolve) => {
+          const k = (window as Record<string, unknown>).kakao as Record<string, unknown>;
+          const m = k.maps as Record<string, unknown>;
+          (m.load as (cb: () => void) => void)(() => { kakaoLoaded = true; resolve(); });
+        });
+      }
+
+      searchInput.addEventListener('input', () => {
+        clearTimeout(timer);
+        const kw = searchInput.value.trim();
+        if (kw.length < 2) { resultsDiv.hidden = true; return; }
+        timer = setTimeout(async () => {
+          await loadMaps();
+          const k = (window as Record<string, unknown>).kakao as Record<string, unknown>;
+          const m = k.maps as Record<string, unknown>;
+          const svc = m.services as Record<string, new () => Record<string, unknown>>;
+          const places = new svc.Places();
+          (places.keywordSearch as Function)(kw, (data: Array<Record<string, string>>, status: string) => {
+            const OK = ((m.services as Record<string, Record<string, string>>).Status as Record<string, string>).OK;
+            if (status !== OK || !data.length) { resultsDiv.hidden = true; return; }
+            resultsDiv.innerHTML = data.slice(0, 10).map((p, i) => {
+              const catParts = (p.category_name || '').split(' > ');
+              const cat = catParts[catParts.length - 1] || '';
+              return `<div class="search-result-item" data-idx="${i}">
+                <div class="search-result-name">${escapeHtml(p.place_name)}</div>
+                <div class="search-result-addr">${escapeHtml(p.address_name)}</div>
+                ${cat ? `<div class="search-result-cat">${escapeHtml(cat)}</div>` : ''}
+              </div>`;
+            }).join('');
+            resultsDiv.hidden = false;
+
+            for (const item of resultsDiv.querySelectorAll<HTMLElement>('.search-result-item')) {
+              item.addEventListener('click', () => {
+                const idx = Number(item.dataset.idx);
+                const p = data[idx];
+                const catParts = (p.category_name || '').split(' > ');
+                const lastCat = catParts[catParts.length - 1] || '';
+                placeData = {
+                  name: p.place_name,
+                  address: p.address_name,
+                  lat: p.y,
+                  lng: p.x,
+                  category: (lastCat && lastCat !== '음식점') ? lastCat : '음식점',
+                };
+                const parts = p.address_name.split(' ').filter(Boolean);
+                const pMap: Record<string, string> = {
+                  '서울': '서울특별시', '부산': '부산광역시', '대구': '대구광역시',
+                  '인천': '인천광역시', '광주': '광주광역시', '대전': '대전광역시',
+                  '울산': '울산광역시', '세종': '세종특별자치시', '경기': '경기도',
+                  '강원': '강원특별자치도', '충북': '충청북도', '충남': '충청남도',
+                  '전북': '전북특별자치도', '전남': '전라남도', '경북': '경상북도',
+                  '경남': '경상남도', '제주': '제주특별자치도',
+                };
+                placeData.province = pMap[parts[0]] || parts[0] || '';
+                placeData.city = parts[1] || '';
+                placeData.neighborhood = parts[2] || '';
+
+                const selectedDiv = document.getElementById('selected-place')!;
+                selectedDiv.innerHTML = `
+                  <div class="selected-place">
+                    <div class="selected-place-name">${escapeHtml(placeData.name)}</div>
+                    <div class="selected-place-meta">${escapeHtml(placeData.address)} · ${escapeHtml(placeData.category)}</div>
+                    <button type="button" class="selected-place-clear" id="clear-place">다시 검색</button>
+                  </div>`;
+                selectedDiv.hidden = false;
+                resultsDiv.hidden = true;
+                searchInput.value = '';
+                searchInput.hidden = true;
+                updateStep1Btn();
+
+                document.getElementById('clear-place')!.addEventListener('click', () => {
+                  placeData = {};
+                  selectedDiv.hidden = true;
+                  searchInput.hidden = false;
+                  searchInput.focus();
+                  updateStep1Btn();
+                });
+              });
+            }
+          }, { category_group_code: 'FD6' });
+        }, 300);
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!(e.target as HTMLElement).closest('.search-wrap')) resultsDiv.hidden = true;
+      });
+    }
+
+    // 직접 입력 카테고리
+    for (const chip of content.querySelectorAll<HTMLButtonElement>('#manual-cat-chips .cat-chip')) {
+      chip.addEventListener('click', () => {
+        content.querySelectorAll('#manual-cat-chips .cat-chip').forEach((c) => c.classList.remove('active'));
+        chip.classList.add('active');
+        const val = chip.dataset.cat!;
+        const customInput = document.getElementById('manual-cat-custom') as HTMLInputElement;
+        if (val === '기타') {
+          customInput.hidden = false;
+          customInput.focus();
+          selectedCategory = customInput.value.trim();
+        } else {
+          customInput.hidden = true;
+          customInput.value = '';
+          selectedCategory = val;
+        }
+        updateStep1Btn();
+      });
+    }
+    (document.getElementById('manual-cat-custom') as HTMLInputElement)?.addEventListener('input', (e) => {
+      selectedCategory = (e.target as HTMLInputElement).value.trim();
+      updateStep1Btn();
+    });
+    document.getElementById('manual-name')?.addEventListener('input', updateStep1Btn);
+    document.getElementById('manual-address')?.addEventListener('input', updateStep1Btn);
+
+    nextBtn1.addEventListener('click', () => goToStep(2));
+
+    // ── 스텝 2: 리뷰 + 방문 ──
+    const dateUnknown = document.getElementById('visit-date-unknown') as HTMLInputElement;
+    const dateInput = document.getElementById('visit-date') as HTMLInputElement;
+    dateUnknown.addEventListener('change', () => { dateInput.disabled = dateUnknown.checked; });
+
+    for (const chip of content.querySelectorAll<HTMLButtonElement>('#wait-chips .wait-chip')) {
+      chip.addEventListener('click', () => {
+        const wasActive = chip.classList.contains('active');
+        content.querySelectorAll('#wait-chips .wait-chip').forEach((c) => c.classList.remove('active'));
+        if (!wasActive) { chip.classList.add('active'); selectedWait = chip.dataset.wait!; }
+        else selectedWait = '';
+      });
+    }
+
+    // 별점
+    for (const btn of content.querySelectorAll<HTMLButtonElement>('#main-stars .star-btn')) {
+      btn.addEventListener('click', () => {
+        mainRating = Number(btn.dataset.star);
+        content.querySelectorAll('#main-stars .star-btn').forEach((b, i) => {
+          b.classList.toggle('active', i < mainRating);
+        });
+      });
+    }
+
+    for (const row of content.querySelectorAll<HTMLElement>('.detail-stars')) {
+      const key = row.dataset.key!;
+      for (const btn of row.querySelectorAll<HTMLButtonElement>('.detail-star')) {
+        btn.addEventListener('click', () => {
+          const val = Number(btn.dataset.star);
+          detailRatings[key] = detailRatings[key] === val ? 0 : val;
+          row.querySelectorAll('.detail-star').forEach((b, i) => {
+            b.classList.toggle('active', i < (detailRatings[key] || 0));
+          });
+        });
+      }
+    }
+
+    document.getElementById('btn-step2-back')!.addEventListener('click', () => goToStep(1));
+
+    // ── 제출 ──
+    const submitBtn = document.getElementById('btn-submit') as HTMLButtonElement;
+    submitBtn.addEventListener('click', async () => {
+      if (mainRating === 0) { showToast('총점을 선택해 주세요.', 'info'); return; }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '처리 중...';
+
+      try {
+        // 1) 식당 등록
+        const kakaoArea = document.getElementById('kakao-area');
+        const isKakao = kakaoArea && !kakaoArea.hidden;
+
+        let restName: string, restAddress: string, restCategory: string;
+        let province: string, city: string, neighborhood: string;
+        let lat: number | undefined, lng: number | undefined;
+
+        if (isKakao && placeData.name) {
+          restName = placeData.name;
+          restAddress = placeData.address;
+          restCategory = placeData.category;
+          province = placeData.province;
+          city = placeData.city;
+          neighborhood = placeData.neighborhood;
+          lat = Number(placeData.lat) || undefined;
+          lng = Number(placeData.lng) || undefined;
+        } else {
+          restName = (document.getElementById('manual-name') as HTMLInputElement).value.trim();
+          restAddress = (document.getElementById('manual-address') as HTMLInputElement).value.trim();
+          restCategory = selectedCategory;
+          const parts = restAddress.split(' ').filter(Boolean);
+          const pMap: Record<string, string> = {
+            '서울': '서울특별시', '부산': '부산광역시', '대구': '대구광역시',
+            '인천': '인천광역시', '광주': '광주광역시', '대전': '대전광역시',
+            '울산': '울산광역시', '세종': '세종특별자치시', '경기': '경기도',
+            '강원': '강원특별자치도', '충북': '충청북도', '충남': '충청남도',
+            '전북': '전북특별자치도', '전남': '전라남도', '경북': '경상북도',
+            '경남': '경상남도', '제주': '제주특별자치도',
+          };
+          province = pMap[parts[0]] || parts[0] || '';
+          city = parts[1] || '';
+          neighborhood = parts[2] || '';
+        }
+
+        if (!province || !city) {
+          showToast('주소를 정확히 입력해 주세요.', 'info');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '등록 완료';
+          return;
+        }
+
+        const restaurant = await createRoomRestaurant(roomId!, {
+          name: restName, address: restAddress, category: restCategory,
+          province, city, neighborhood,
+          latitude: lat, longitude: lng,
+          isClosed: false,
+        } as Parameters<typeof createRoomRestaurant>[1]);
+
+        // 2) 방문 기록
+        const visitDate = dateUnknown.checked ? today : dateInput.value;
+        let memo = (document.getElementById('visit-memo') as HTMLTextAreaElement).value.trim();
+        if (dateUnknown.checked) memo = memo ? `(날짜 미상) ${memo}` : '(날짜 미상)';
+
+        const visit = await createRoomVisit(roomId!, restaurant.id, {
+          visitedAt: visitDate,
+          memo: memo || undefined,
+          waitTime: selectedWait || undefined,
+        });
+
+        // 3) 리뷰
+        const reviewContent = (document.getElementById('review-content') as HTMLTextAreaElement).value.trim();
+        const favMenu = (document.getElementById('review-fav-menu') as HTMLInputElement).value.trim();
+        const wouldRevisit = (document.getElementById('review-revisit') as HTMLInputElement).checked;
+
+        await createRoomReview(roomId!, visit.id, {
+          rating: mainRating,
+          content: reviewContent,
+          wouldRevisit,
+          tasteRating: detailRatings.taste || null,
+          valueRating: detailRatings.value || null,
+          serviceRating: detailRatings.service || null,
+          cleanlinessRating: detailRatings.cleanliness || null,
+          accessibilityRating: detailRatings.accessibility || null,
+          favoriteMenu: favMenu || null,
+        });
+
+        goToStep(3);
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : '등록에 실패했습니다.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '등록 완료';
+      }
+    });
+
+    document.getElementById('btn-add-more')?.addEventListener('click', () => { location.reload(); });
+  }
+</script>
+</BaseLayout>

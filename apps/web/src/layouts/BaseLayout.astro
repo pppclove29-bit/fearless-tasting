@@ -157,7 +157,7 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     <footer>
       <p class="footer-desc">우리만의 맛집 리스트를 만들고 공유하는 플랫폼</p>
       <p class="footer-links">
-        <a href="/rooms" id="footer-rooms-link" hidden>내 방</a><span id="footer-rooms-sep" hidden> · </span><a href="/about">소개</a> · <a href="/rankings">랭킹</a> · <a href="/discover">맛집</a> · <a href="/cs">문의</a> · <a href="/privacy">개인정보처리방침</a>
+        <a href="/about">소개</a> · <a href="/rooms" id="footer-rooms-link" hidden>내 방</a><span id="footer-rooms-sep" hidden> · </span><a href="/rankings">랭킹</a> · <a href="/discover">맛집</a> · <a href="/cs">문의</a> · <a href="/privacy">개인정보처리방침</a>
       </p>
       <p>&copy; 2026 무모한 시식가</p>
     </footer>
@@ -382,7 +382,16 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
   }
 
   .notif-item:hover { background: var(--bg-hover); }
-  .notif-item.unread { background: rgba(59, 130, 246, 0.05); }
+  .notif-item.unread { background: rgba(59, 130, 246, 0.05); position: relative; }
+  .notif-item.unread::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ef4444;
+    flex-shrink: 0;
+    margin-top: 0.35rem;
+  }
 
   .notif-item-msg {
     font-size: 0.8rem;
