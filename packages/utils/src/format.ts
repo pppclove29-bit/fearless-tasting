@@ -1,6 +1,15 @@
 export function formatRating(rating: number, max = 5): string {
-  const clamped = Math.max(0, Math.min(max, Math.round(rating)));
-  return '\u2605'.repeat(clamped) + '\u2606'.repeat(max - clamped);
+  const clamped = Math.max(0, Math.min(max, rating));
+  const full = Math.floor(clamped);
+  const hasHalf = clamped - full >= 0.25 && clamped - full < 0.75;
+  const fullRound = clamped - full >= 0.75 ? full + 1 : full;
+  const empty = max - fullRound - (hasHalf ? 1 : 0);
+
+  const starFull = '<svg style="display:inline-block;vertical-align:middle" width="14" height="14" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#f59e0b" stroke="none"/></svg>';
+  const starHalf = '<svg style="display:inline-block;vertical-align:middle" width="14" height="14" viewBox="0 0 24 24"><defs><linearGradient id="half"><stop offset="50%" stop-color="#f59e0b"/><stop offset="50%" stop-color="#d1d5db"/></linearGradient></defs><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#half)" stroke="none"/></svg>';
+  const starEmpty = '<svg style="display:inline-block;vertical-align:middle" width="14" height="14" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#d1d5db" stroke="none"/></svg>';
+
+  return starFull.repeat(fullRound) + (hasHalf ? starHalf : '') + starEmpty.repeat(Math.max(0, empty));
 }
 
 export function formatDate(dateStr: string): string {
