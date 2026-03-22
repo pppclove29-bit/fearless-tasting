@@ -118,8 +118,8 @@ import AdSlot from '@/components/AdSlot.astro';
     </div>
   </div>
 
-  <!-- 랜딩 (비로그인 시 표시) -->
-  <div id="landing" hidden>
+  <!-- 랜딩 (기본 표시, 로그인 시 숨김) -->
+  <div id="landing">
     <section class="hero">
       <p class="hero-badge">프라이빗 맛집 리뷰 공유 플랫폼</p>
       <h1 class="hero-title">우리만의<br/>맛집 리스트</h1>
@@ -306,8 +306,8 @@ import AdSlot from '@/components/AdSlot.astro';
     </section>
   </div>
 
-  <!-- 로딩 -->
-  <p id="loading-msg" class="status-msg">로딩 중...</p>
+  <!-- 로딩 (로그인 체크 중) -->
+  <p id="loading-msg" class="status-msg" hidden></p>
 </BaseLayout>
 
 <style>
@@ -1291,10 +1291,8 @@ import AdSlot from '@/components/AdSlot.astro';
     `).join('');
   }
 
-  loadingMsg.hidden = true;
-  landing.hidden = false;
-
   if (user) {
+    landing.hidden = true;
     dashboard.hidden = false;
     for (const cta of document.querySelectorAll<HTMLElement>('.login-only-cta')) {
       cta.hidden = true;
