@@ -141,8 +141,8 @@ export class UsersService {
       const revisitedRests = Array.from(restaurantVisitMap.values()).filter((c) => c >= 2).length;
       const revisitRate = totalVisitedRests > 0 ? Math.round(revisitedRests / totalVisitedRests * 100) : null;
 
-      // 리뷰 성실도
-      const reviewDiligence = visitCount > 0 ? Math.round(reviewCount / visitCount * 100) : null;
+      // 리뷰 성실도 (최대 100%)
+      const reviewDiligence = visitCount > 0 ? Math.min(100, Math.round(reviewCount / visitCount * 100)) : null;
 
       // 카테고리 다양성
       const uniqueCategories = new Set(user.roomRestaurants.map((r) => r.category)).size;

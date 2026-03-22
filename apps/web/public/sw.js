@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fearless-tasting-v2';
+const CACHE_NAME = 'fearless-tasting-v3';
 const PRECACHE_URLS = [
   '/',
   '/favicon.svg',
@@ -30,6 +30,20 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() => caches.match('/'))
+    );
+    return;
+  }
+
+  // favicon, manifest, icons: network-first (변경 시 즉시 반영)
+  if (request.url.includes('favicon') || request.url.includes('manifest') || request.url.includes('/icons/')) {
+    event.respondWith(
+      fetch(request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      }).catch(() => caches.match(request))
     );
     return;
   }

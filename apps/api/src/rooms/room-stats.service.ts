@@ -338,8 +338,9 @@ export class RoomStatsService {
         ? { generousOn: generous.label, generousAvg: generous.avg, strictOn: strict.label, strictAvg: strict.avg }
         : null;
 
-      // 리뷰 성실도
-      const reviewDiligence = memberVisitCount > 0 ? Math.round(data.reviews.length / memberVisitCount * 100) : null;
+      // 리뷰 성실도 (내 리뷰 수 / 방 전체 방문 수, 최대 100%)
+      const totalVisitCount = allVisits.length;
+      const reviewDiligence = totalVisitCount > 0 ? Math.min(100, Math.round(data.reviews.length / totalVisitCount * 100)) : null;
 
       // 주말파 vs 평일파
       const dayPreference = (weekdayCount + weekendCount) > 0

@@ -1994,6 +1994,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   function isOwner(): boolean { return myRole === 'owner'; }
   function isManagerOrAbove(): boolean { return myRole === 'owner' || myRole === 'manager'; }
 
+  // ─── 공유 버튼 업데이트 (전체 렌더링 없이) ───
+
+  function updateShareButton() {
+    const btn = document.getElementById('invite-public-btn');
+    if (!btn) return;
+    const svgGlobe = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+    const isActive = currentRoom.shareCodeEnabled && currentRoom.shareCode;
+    btn.innerHTML = `${svgGlobe} 공개 초대${isActive ? ' · ON' : ''}`;
+    btn.classList.toggle('active', !!isActive);
+  }
+
   // ─── 렌더링 ───
 
   function renderPage() {
@@ -2010,9 +2021,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     const isShareActive = currentRoom.shareCodeEnabled && currentRoom.shareCode;
 
-    const expiryText = currentRoom.inviteCodeExpiresAt
-      ? (new Date(currentRoom.inviteCodeExpiresAt) < new Date() ? ' (만료됨)' : '')
-      : '';
+    const expiryText = '';
 
     content.innerHTML = `
       <a href="/" class="back-link">&larr; 내 방 목록</a>
@@ -2196,7 +2205,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               const result = await toggleShareCode(currentRoom.id, 'disable');
               currentRoom.shareCode = result.shareCode;
               currentRoom.shareCodeEnabled = result.shareCodeEnabled;
-              renderPage();
+              updateShareButton();
             } catch { showToast('비활성화에 실패했습니다.'); }
           });
 
@@ -2208,7 +2217,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               const result = await toggleShareCode(currentRoom.id, 'regenerate');
               currentRoom.shareCode = result.shareCode;
               currentRoom.shareCodeEnabled = result.shareCodeEnabled;
-              renderPage();
+              updateShareButton();
+              showToast('공유 링크가 재생성되었습니다.', 'success');
             } catch { showToast('재생성에 실패했습니다.'); }
           });
 
@@ -2222,7 +2232,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             const result = await toggleShareCode(currentRoom.id, 'enable');
             currentRoom.shareCode = result.shareCode;
             currentRoom.shareCodeEnabled = result.shareCodeEnabled;
-            renderPage();
+            updateShareButton();
             showToast('공개 초대가 활성화되었습니다!', 'success');
           } catch { showToast('공개 링크 생성에 실패했습니다.'); }
         }

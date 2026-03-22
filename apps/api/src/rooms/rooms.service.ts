@@ -11,7 +11,6 @@ function calcAvgRating(ratings: number[]): number | null {
 const MAX_ROOM_MEMBERS = 4;
 const MAX_ROOMS_PER_USER = 30;
 const CODE_GEN_MAX_RETRIES = 10;
-const INVITE_CODE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24시간
 
 
 @Injectable()
@@ -46,7 +45,6 @@ export class RoomsService {
         data: {
           name,
           inviteCode,
-          inviteCodeExpiresAt: new Date(Date.now() + INVITE_CODE_EXPIRY_MS),
           ownerId,
         },
       });
@@ -151,10 +149,6 @@ export class RoomsService {
     const room = await this.prisma.read.room.findUnique({ where: { inviteCode } });
     if (!room) throw new NotFoundException('유효하지 않은 초대 코드입니다');
 
-    if (room.inviteCodeExpiresAt && room.inviteCodeExpiresAt < new Date()) {
-      throw new ForbiddenException('초대 코드가 만료되었습니다. 방장에게 새 코드를 요청하세요.');
-    }
-
     const kicked = await this.prisma.read.roomKick.findUnique({
       where: { roomId_userId: { roomId: room.id, userId } },
     });
@@ -211,11 +205,8 @@ export class RoomsService {
     const newCode = await this.generateInviteCode();
     return this.prisma.write.room.update({
       where: { id: roomId },
-      data: {
-        inviteCode: newCode,
-        inviteCodeExpiresAt: new Date(Date.now() + INVITE_CODE_EXPIRY_MS),
-      },
-      select: { inviteCode: true, inviteCodeExpiresAt: true },
+      data: { inviteCode: newCode },
+      select: { inviteCode: true },
     });
   }
 

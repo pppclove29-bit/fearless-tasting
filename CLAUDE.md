@@ -14,7 +14,7 @@
 ## 기술 스택
 
 - **모노레포**: Turborepo + pnpm
-- **프론트엔드**: Astro 5, TypeScript, 카카오맵 SDK, @astrojs/sitemap
+- **프론트엔드**: Astro 5, TypeScript, 카카오맵 SDK, @astrojs/sitemap, View Transitions
 - **백엔드**: NestJS 11, Prisma, TypeScript
 - **DB**: MySQL 8.0 (Reader/Writer 분리)
 - **컨테이너**: Docker, docker-compose
@@ -101,10 +101,9 @@ packages/types/src/
 ## 초대 코드 보안
 
 - `crypto.randomBytes(4).toString('hex')` → 8자 hex 코드
-- 생성 시 만료 시간 24시간 설정 (`inviteCodeExpiresAt`)
-- 만료 후 입장 시도 → 403 거부
+- 만료 없음 (무기한 유효)
 - 강퇴당한 유저 재입장 → `RoomKick` 테이블 확인 → 403 거부
-- 방장이 초대 코드 재생성 가능 (새 코드 + 만료 시간 갱신)
+- 방장이 초대 코드 재생성 가능 (새 코드 발급, 기존 코드 무효화)
 
 ## 공유 링크 (비로그인 열람)
 
@@ -160,7 +159,7 @@ packages/types/src/
 | `/rankings`       | 유저 랭킹 — 리뷰 수/평균 평점/방문 수 기준          |
 | `/about`          | 서비스 소개 — 기능, 업적, 사용 흐름                 |
 | `/cs`             | 문의 등록                                           |
-| `/profile`        | 프로필 — 닉네임 수정, 업적, 활동 통계, 찜 목록, 화면 설정 (테마) |
+| `/profile`        | 프로필 — 닉네임 수정, 화면 설정 (테마), 계정 관리 |
 | `/admin`          | 관리자 — 문의 관리                                  |
 | `/privacy`        | 개인정보처리방침                                    |
 
@@ -221,9 +220,10 @@ apps/web/src/components/
 ## PWA (Progressive Web App)
 
 - `manifest.json` — 앱 이름, 아이콘(192/512), standalone 모드, portrait 고정
-- `sw.js` — Service Worker (캐시 `fearless-tasting-v2`)
+- `sw.js` — Service Worker (캐시 `fearless-tasting-v3`)
   - API 요청: 캐시 안 함 (network only)
   - 네비게이션(HTML): network-first, 오프라인 시 `/` fallback
+  - favicon/manifest/icons: network-first (변경 시 즉시 반영)
   - 정적 자산: stale-while-revalidate
 - BaseLayout에서 `<link rel="manifest">` + `navigator.serviceWorker.register('/sw.js')` 등록
 - 홈 화면 추가로 앱처럼 사용 가능 (Android/iOS)

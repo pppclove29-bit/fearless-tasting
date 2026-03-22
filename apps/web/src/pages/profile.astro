@@ -220,33 +220,6 @@ export const prerender = false;
     color: var(--text-heading);
   }
 
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-  }
-
-  .stat-item {
-    text-align: center;
-    padding: 1rem 0.75rem;
-    background: var(--bg-hover);
-    border-radius: 12px;
-  }
-
-  .stat-value {
-    display: block;
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--text-heading);
-  }
-
-  .stat-label {
-    display: block;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    margin-top: 0.2rem;
-  }
-
   .account-actions {
     display: flex;
     flex-direction: column;
@@ -368,68 +341,6 @@ export const prerender = false;
     font-size: 0.85rem;
   }
 
-  .wishlist-empty {
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    padding: 2rem 0;
-  }
-
-  .wishlist-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-
-  .wishlist-card {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    text-decoration: none;
-    color: inherit;
-    transition: border-color 0.15s, box-shadow 0.15s;
-  }
-  .wishlist-card:hover { border-color: var(--border-mid); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-
-  .wishlist-card-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: var(--bg-hover);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    flex-shrink: 0;
-  }
-
-  .wishlist-card-info { min-width: 0; flex: 1; }
-  .wishlist-card-name { font-size: 0.85rem; font-weight: 600; color: var(--text-heading); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .wishlist-card-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .wishlist-card-room { font-size: 0.68rem; color: var(--text-muted); background: var(--bg-hover); padding: 0.15rem 0.45rem; border-radius: 6px; white-space: nowrap; flex-shrink: 0; }
-
-  .wishlist-pagination {
-    display: flex;
-    justify-content: center;
-    gap: 0.3rem;
-    margin-top: 0.75rem;
-  }
-  .wishlist-page-btn {
-    padding: 0.3rem 0.6rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 0.75rem;
-    background: var(--bg);
-    color: var(--text-sub);
-    cursor: pointer;
-    font-family: inherit;
-  }
-  .wishlist-page-btn.active { background: #6366f1; color: #fff; border-color: #6366f1; }
-  .wishlist-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>
 
 <script>
