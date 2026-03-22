@@ -263,15 +263,31 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     color: var(--text-heading);
   }
 
+  .nav-link.nav-active {
+    color: var(--text-heading);
+    font-weight: 600;
+    background: var(--bg-hover);
+  }
+
   .nav-login {
     color: #fff;
-    background: var(--text-heading);
+    background: #111;
     margin-left: 0.5rem;
   }
 
   .nav-login:hover {
-    background: var(--text-sub);
+    background: #333;
     color: #fff;
+  }
+
+  [data-theme="dark"] .nav-login {
+    color: #111;
+    background: #f4f4f5;
+  }
+
+  [data-theme="dark"] .nav-login:hover {
+    background: #d4d4d8;
+    color: #111;
   }
 
   .nav-admin {
@@ -649,6 +665,15 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
   import { fetchCurrentUser, getCachedUser, logout, fetchMyNotifications, fetchUnreadNotificationCount, markNotificationsRead } from '@/lib/api';
   import type { AuthUser, Notification } from '@/lib/api';
   import { formatDate } from '@repo/utils';
+
+  // 현재 탭 활성 표시
+  const currentPath = location.pathname.replace(/\/$/, '') || '/';
+  for (const link of document.querySelectorAll<HTMLAnchorElement>('.nav-link')) {
+    const href = link.getAttribute('href')?.replace(/\/$/, '') || '/';
+    if (href === currentPath || (href !== '/' && currentPath.startsWith(href))) {
+      link.classList.add('nav-active');
+    }
+  }
 
   // 햄버거 메뉴 토글
   const hamburgerBtn = document.getElementById('hamburger-btn')!;

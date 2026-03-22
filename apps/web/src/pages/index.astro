@@ -1263,51 +1263,44 @@ import AdSlot from '@/components/AdSlot.astro';
   });
 
 
-  // 플랫폼 통계 로드
-  (async () => {
-    try {
-      const stats = await fetchPlatformStats();
-      const fmt = (n: number) => n.toLocaleString('ko-KR');
-      document.getElementById('stat-rooms')!.textContent = fmt(stats.roomCount);
-      document.getElementById('stat-users')!.textContent = fmt(stats.userCount);
-      document.getElementById('stat-restaurants')!.textContent = fmt(stats.restaurantCount);
-      document.getElementById('stat-reviews')!.textContent = fmt(stats.reviewCount);
-      document.getElementById('platform-stats')!.hidden = false;
-    } catch { /* 통계 로드 실패 시 섹션 숨김 유지 */ }
-  })();
+  // 유저/통계/공지 병렬 로드
+  const [user, statsResult, noticesResult] = await Promise.all([
+    fetchCurrentUser(),
+    fetchPlatformStats().catch(() => null),
+    fetchNotices().catch(() => null),
+  ]);
 
-  // 공지 배너 로드
-  (async () => {
-    try {
-      const notices = await fetchNotices();
-      const banner = document.getElementById('notice-banner')!;
-      if (notices.length > 0) {
-        banner.innerHTML = notices.map((n) => `
-          <div class="notice-banner-item">
-            <div class="notice-banner-title">${escapeHtml(n.title)}</div>
-            <div class="notice-banner-content">${escapeHtml(n.content)}</div>
-          </div>
-        `).join('');
-      }
-    } catch { /* 공지 로드 실패 무시 */ }
-  })();
+  // 플랫폼 통계 렌더링
+  if (statsResult) {
+    const fmt = (n: number) => n.toLocaleString('ko-KR');
+    document.getElementById('stat-rooms')!.textContent = fmt(statsResult.roomCount);
+    document.getElementById('stat-users')!.textContent = fmt(statsResult.userCount);
+    document.getElementById('stat-restaurants')!.textContent = fmt(statsResult.restaurantCount);
+    document.getElementById('stat-reviews')!.textContent = fmt(statsResult.reviewCount);
+    document.getElementById('platform-stats')!.hidden = false;
+  }
 
-  (async () => {
-    const user = await fetchCurrentUser();
-    loadingMsg.hidden = true;
+  // 공지 배너 렌더링
+  if (noticesResult && noticesResult.length > 0) {
+    const banner = document.getElementById('notice-banner')!;
+    banner.innerHTML = noticesResult.map((n) => `
+      <div class="notice-banner-item">
+        <div class="notice-banner-title">${escapeHtml(n.title)}</div>
+        <div class="notice-banner-content">${escapeHtml(n.content)}</div>
+      </div>
+    `).join('');
+  }
 
-    // 랜딩은 항상 표시
-    landing.hidden = false;
+  loadingMsg.hidden = true;
+  landing.hidden = false;
 
-    if (user) {
-      // 로그인 시 대시보드 표시 + 로그인 CTA 숨김
-      dashboard.hidden = false;
-      for (const cta of document.querySelectorAll<HTMLElement>('.login-only-cta')) {
-        cta.hidden = true;
-      }
-      allRooms = await fetchMyRooms();
-      homeSearchWrap.hidden = allRooms.length === 0;
-      applyAndRenderHome();
+  if (user) {
+    dashboard.hidden = false;
+    for (const cta of document.querySelectorAll<HTMLElement>('.login-only-cta')) {
+      cta.hidden = true;
     }
-  })();
+    allRooms = await fetchMyRooms();
+    homeSearchWrap.hidden = allRooms.length === 0;
+    applyAndRenderHome();
+  }
 </script>

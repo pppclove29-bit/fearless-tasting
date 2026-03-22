@@ -870,18 +870,36 @@ export class RoomsService {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-    // 1) 최근 고평점 식당 — 최근 90일 내 리뷰 기준
-    const recentReviews = await this.prisma.read.roomReview.findMany({
-      where: { createdAt: { gte: ninetyDaysAgo } },
-      select: {
-        rating: true,
-        visit: {
-          select: {
-            restaurant: { select: { name: true, address: true, category: true } },
+    // 3개 쿼리 병렬 실행
+    const [recentReviews, restaurants, wishlisted] = await Promise.all([
+      // 1) 최근 고평점 식당 — 최근 90일 내 리뷰 기준
+      this.prisma.read.roomReview.findMany({
+        where: { createdAt: { gte: ninetyDaysAgo } },
+        select: {
+          rating: true,
+          visit: {
+            select: {
+              restaurant: { select: { name: true, address: true, category: true } },
+            },
           },
         },
-      },
-    });
+      }),
+      // 2) 재방문 많은 식당 — 방문 2회 이상
+      this.prisma.read.roomRestaurant.findMany({
+        select: {
+          name: true,
+          address: true,
+          category: true,
+          _count: { select: { visits: true } },
+        },
+      }),
+      // 3) 위시리스트 인기 식당
+      this.prisma.read.roomWishlist.findMany({
+        select: {
+          roomRestaurant: { select: { name: true, address: true, category: true } },
+        },
+      }),
+    ]);
 
     const ratedMap = new Map<string, { name: string; address: string; category: string; totalRating: number; count: number }>();
     for (const r of recentReviews) {
@@ -899,16 +917,6 @@ export class RoomsService {
       .sort((a, b) => b.avgRating - a.avgRating || b.reviewCount - a.reviewCount)
       .slice(0, 10);
 
-    // 2) 재방문 많은 식당 — 방문 2회 이상
-    const restaurants = await this.prisma.read.roomRestaurant.findMany({
-      select: {
-        name: true,
-        address: true,
-        category: true,
-        _count: { select: { visits: true } },
-      },
-    });
-
     const revisitMap = new Map<string, { name: string; address: string; category: string; visitCount: number }>();
     for (const r of restaurants) {
       const key = `${r.name}||${r.address}`;
@@ -921,13 +929,6 @@ export class RoomsService {
       .filter((e) => e.visitCount >= 2)
       .sort((a, b) => b.visitCount - a.visitCount)
       .slice(0, 10);
-
-    // 3) 위시리스트 인기 식당
-    const wishlisted = await this.prisma.read.roomWishlist.findMany({
-      select: {
-        roomRestaurant: { select: { name: true, address: true, category: true } },
-      },
-    });
 
     const wishMap = new Map<string, { name: string; address: string; category: string; wishlistCount: number }>();
     for (const w of wishlisted) {
