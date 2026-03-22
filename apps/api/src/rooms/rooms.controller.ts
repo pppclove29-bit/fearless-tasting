@@ -263,8 +263,13 @@ export class RoomsController {
   @ApiOperation({ summary: '방 내 식당 상세 (리뷰 포함)' })
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'rid', description: '식당 ID' })
-  findRestaurantDetail(@Param('id') id: string, @Param('rid') rid: string) {
-    return this.roomsService.findRestaurantDetail(id, rid);
+  async findRestaurantDetail(
+    @Param('id') id: string,
+    @Param('rid') rid: string,
+    @Req() req: RequestWithRoomMember,
+  ) {
+    const detail = await this.roomsService.findRestaurantDetail(id, rid);
+    return { ...detail, myRole: req.roomMember.role };
   }
 
   /** 방 내 식당 수정 */
