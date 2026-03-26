@@ -109,10 +109,16 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     <ViewTransitions />
     <title>{fullTitle}</title>
     <script is:inline>
-      (function() {
+      (function applyTheme() {
         const t = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        else document.documentElement.removeAttribute('data-theme');
       })();
+      document.addEventListener('astro:after-swap', function() {
+        const t = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        else document.documentElement.removeAttribute('data-theme');
+      });
     </script>
   </head>
   <body>
@@ -666,156 +672,179 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
 </style>
 
 <script>
-  import { fetchCurrentUser, getCachedUser, logout, fetchMyNotifications, fetchUnreadNotificationCount, markNotificationsRead } from '@/lib/api';
+  import { fetchCurrentUser, getCachedUser, logout, resetUserCache, fetchMyNotifications, fetchUnreadNotificationCount, markNotificationsRead } from '@/lib/api';
   import type { AuthUser, Notification } from '@/lib/api';
   import { formatDate } from '@repo/utils';
 
-  // 현재 탭 활성 표시
-  const currentPath = location.pathname.replace(/\/$/, '') || '/';
-  for (const link of document.querySelectorAll<HTMLAnchorElement>('.nav-link')) {
-    const href = link.getAttribute('href')?.replace(/\/$/, '') || '/';
-    if (href === currentPath || (href !== '/' && currentPath.startsWith(href))) {
-      link.classList.add('nav-active');
-    }
-  }
-
-  // 햄버거 메뉴 토글
-  const hamburgerBtn = document.getElementById('hamburger-btn')!;
-  const navLinks = document.getElementById('nav-links')!;
-
-  hamburgerBtn.addEventListener('click', () => {
-    hamburgerBtn.classList.toggle('active');
-    navLinks.classList.toggle('open');
+  // View Transitions 전환 시 유저 캐시 리셋
+  document.addEventListener('astro:before-swap', () => {
+    resetUserCache();
   });
 
-  const loginLink = document.getElementById('login-link')!;
-  const userInfo = document.getElementById('user-info')!;
-  const nicknameEl = document.getElementById('user-nickname')!;
-  const avatarEl = document.getElementById('user-avatar') as HTMLImageElement;
-  const logoutBtn = document.getElementById('logout-btn')!;
-
-  function applyUserUI(user: AuthUser) {
-    loginLink.hidden = true;
-    userInfo.hidden = false;
-    nicknameEl.textContent = user.nickname;
-    if (user.profileImageUrl) {
-      avatarEl.src = user.profileImageUrl;
-      avatarEl.alt = user.nickname;
-      avatarEl.hidden = false;
-    } else {
-      avatarEl.hidden = true;
+  function initPage() {
+    // 현재 탭 활성 표시
+    const currentPath = location.pathname.replace(/\/$/, '') || '/';
+    for (const link of document.querySelectorAll<HTMLAnchorElement>('.nav-link')) {
+      link.classList.remove('nav-active');
+      const href = link.getAttribute('href')?.replace(/\/$/, '') || '/';
+      if (href === currentPath || (href !== '/' && currentPath.startsWith(href))) {
+        link.classList.add('nav-active');
+      }
     }
 
-    const myRoomsLink = document.getElementById('my-rooms-link');
-    if (myRoomsLink) myRoomsLink.hidden = false;
-    const footerRoomsLink = document.getElementById('footer-rooms-link');
-    if (footerRoomsLink) footerRoomsLink.hidden = false;
-    const footerRoomsSep = document.getElementById('footer-rooms-sep');
-    if (footerRoomsSep) footerRoomsSep.hidden = false;
+    // 햄버거 메뉴 토글
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const navLinks = document.getElementById('nav-links');
 
-    if (user.role === 'admin') {
-      const adminLink = document.getElementById('admin-link');
-      if (adminLink) adminLink.hidden = false;
-    }
-  }
+    if (hamburgerBtn && navLinks) {
+      // 페이지 전환 시 메뉴 닫기
+      hamburgerBtn.classList.remove('active');
+      navLinks.classList.remove('open');
 
-  function resetUserUI() {
-    loginLink.hidden = false;
-    userInfo.hidden = true;
-    nicknameEl.textContent = '';
-  }
-
-  // 캐시된 유저로 즉시 헤더 렌더링 (깜빡임 방지)
-  const cachedUser = getCachedUser();
-  if (cachedUser) applyUserUI(cachedUser);
-
-  // 백그라운드에서 실제 유저 검증
-  const user = await fetchCurrentUser();
-  if (user) {
-    applyUserUI(user);
-
-    // 알림 벨 초기화
-    const bellBtn = document.getElementById('notif-bell');
-    const badge = document.getElementById('notif-badge');
-    if (bellBtn && badge) {
-      bellBtn.hidden = false;
-      let dropdownOpen = false;
-
-      const updateBadge = async () => {
-        try {
-          const count = await fetchUnreadNotificationCount();
-          badge.hidden = !count || count <= 0;
-        } catch {
-          badge.hidden = true;
-        }
-      };
-      updateBadge();
-
-      bellBtn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const existing = document.querySelector('.notif-dropdown');
-        if (existing) { existing.remove(); dropdownOpen = false; return; }
-
-        dropdownOpen = true;
-        const notifications: Notification[] = await fetchMyNotifications();
-
-        const dropdown = document.createElement('div');
-        dropdown.className = 'notif-dropdown';
-
-        if (notifications.length === 0) {
-          dropdown.innerHTML = `
-            <div class="notif-dropdown-header">알림</div>
-            <div class="notif-empty">알림이 없습니다.</div>`;
-        } else {
-          dropdown.innerHTML = `
-            <div class="notif-dropdown-header">
-              알림
-              <button type="button" class="notif-mark-read" id="notif-mark-all">모두 읽음</button>
-            </div>
-            ${notifications.slice(0, 20).map((n) => `
-              <a href="/room?id=${n.roomId}" class="notif-item ${!n.isRead ? 'unread' : ''}">
-                <div class="notif-item-body">
-                  <div class="notif-item-msg">${n.message}</div>
-                  <div class="notif-item-footer">
-                    <span class="notif-item-room">${n.room.name}</span>
-                    <span class="notif-item-date">${formatDate(n.createdAt)}</span>
-                  </div>
-                </div>
-              </a>`).join('')}`;
-        }
-
-        document.body.appendChild(dropdown);
-
-        dropdown.querySelector('#notif-mark-all')?.addEventListener('click', async (ev) => {
-          ev.preventDefault();
-          ev.stopPropagation();
-          await markNotificationsRead();
-          badge.hidden = true;
-          dropdown.querySelectorAll('.notif-item.unread').forEach((el) => el.classList.remove('unread'));
-        });
-
-        const closeDropdown = (ev: MouseEvent) => {
-          if (!dropdown.contains(ev.target as Node) && ev.target !== bellBtn) {
-            dropdown.remove();
-            dropdownOpen = false;
-            document.removeEventListener('click', closeDropdown);
-          }
-        };
-        setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+      hamburgerBtn.addEventListener('click', () => {
+        hamburgerBtn.classList.toggle('active');
+        navLinks.classList.toggle('open');
       });
     }
-  } else if (cachedUser) {
-    // 캐시는 있었지만 실제 인증 실패 (토큰 만료 등) → UI 원복
-    resetUserUI();
+
+    const loginLink = document.getElementById('login-link') as HTMLElement | null;
+    const userInfo = document.getElementById('user-info') as HTMLElement | null;
+    const nicknameEl = document.getElementById('user-nickname') as HTMLElement | null;
+    const avatarEl = document.getElementById('user-avatar') as HTMLImageElement | null;
+    const logoutBtn = document.getElementById('logout-btn') as HTMLElement | null;
+
+    function applyUserUI(user: AuthUser) {
+      if (loginLink) loginLink.hidden = true;
+      if (userInfo) userInfo.hidden = false;
+      if (nicknameEl) nicknameEl.textContent = user.nickname;
+      if (avatarEl) {
+        if (user.profileImageUrl) {
+          avatarEl.src = user.profileImageUrl;
+          avatarEl.alt = user.nickname;
+          avatarEl.hidden = false;
+        } else {
+          avatarEl.hidden = true;
+        }
+      }
+
+      const myRoomsLink = document.getElementById('my-rooms-link');
+      if (myRoomsLink) myRoomsLink.hidden = false;
+      const footerRoomsLink = document.getElementById('footer-rooms-link');
+      if (footerRoomsLink) footerRoomsLink.hidden = false;
+      const footerRoomsSep = document.getElementById('footer-rooms-sep');
+      if (footerRoomsSep) footerRoomsSep.hidden = false;
+
+      if (user.role === 'admin') {
+        const adminLink = document.getElementById('admin-link');
+        if (adminLink) adminLink.hidden = false;
+      }
+    }
+
+    function resetUserUI() {
+      if (loginLink) loginLink.hidden = false;
+      if (userInfo) userInfo.hidden = true;
+      if (nicknameEl) nicknameEl.textContent = '';
+    }
+
+    // 캐시된 유저로 즉시 헤더 렌더링 (깜빡임 방지)
+    const cachedUser = getCachedUser();
+    if (cachedUser) applyUserUI(cachedUser);
+
+    // 백그라운드에서 실제 유저 검증
+    fetchCurrentUser().then((user) => {
+      if (user) {
+        applyUserUI(user);
+
+        // 알림 벨 초기화
+        const bellBtn = document.getElementById('notif-bell');
+        const badge = document.getElementById('notif-badge');
+        if (bellBtn && badge) {
+          bellBtn.hidden = false;
+          let dropdownOpen = false;
+
+          const updateBadge = async () => {
+            try {
+              const count = await fetchUnreadNotificationCount();
+              badge.hidden = !count || count <= 0;
+            } catch {
+              badge.hidden = true;
+            }
+          };
+          updateBadge();
+
+          bellBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const existing = document.querySelector('.notif-dropdown');
+            if (existing) { existing.remove(); dropdownOpen = false; return; }
+
+            dropdownOpen = true;
+            const notifications: Notification[] = await fetchMyNotifications();
+
+            const dropdown = document.createElement('div');
+            dropdown.className = 'notif-dropdown';
+
+            if (notifications.length === 0) {
+              dropdown.innerHTML = `
+                <div class="notif-dropdown-header">알림</div>
+                <div class="notif-empty">알림이 없습니다.</div>`;
+            } else {
+              dropdown.innerHTML = `
+                <div class="notif-dropdown-header">
+                  알림
+                  <button type="button" class="notif-mark-read" id="notif-mark-all">모두 읽음</button>
+                </div>
+                ${notifications.slice(0, 20).map((n) => `
+                  <a href="/room?id=${n.roomId}" class="notif-item ${!n.isRead ? 'unread' : ''}">
+                    <div class="notif-item-body">
+                      <div class="notif-item-msg">${n.message}</div>
+                      <div class="notif-item-footer">
+                        <span class="notif-item-room">${n.room.name}</span>
+                        <span class="notif-item-date">${formatDate(n.createdAt)}</span>
+                      </div>
+                    </div>
+                  </a>`).join('')}`;
+            }
+
+            document.body.appendChild(dropdown);
+
+            dropdown.querySelector('#notif-mark-all')?.addEventListener('click', async (ev) => {
+              ev.preventDefault();
+              ev.stopPropagation();
+              await markNotificationsRead();
+              badge.hidden = true;
+              dropdown.querySelectorAll('.notif-item.unread').forEach((el) => el.classList.remove('unread'));
+            });
+
+            const closeDropdown = (ev: MouseEvent) => {
+              if (!dropdown.contains(ev.target as Node) && ev.target !== bellBtn) {
+                dropdown.remove();
+                dropdownOpen = false;
+                document.removeEventListener('click', closeDropdown);
+              }
+            };
+            setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+          });
+        }
+      } else if (cachedUser) {
+        // 캐시는 있었지만 실제 인증 실패 (토큰 만료 등) → UI 원복
+        resetUserUI();
+      }
+    });
+
+    logoutBtn?.addEventListener('click', () => {
+      logout();
+      location.href = '/';
+    });
+
+    // 알림 드롭다운 정리 (페이지 전환 시)
+    document.querySelector('.notif-dropdown')?.remove();
   }
 
-  logoutBtn.addEventListener('click', () => {
-    logout();
-    location.href = '/';
-  });
+  // 최초 로드 + View Transitions 이후 매번 실행
+  initPage();
+  document.addEventListener('astro:page-load', initPage);
 
-
-  // PWA Service Worker 등록
+  // PWA Service Worker 등록 (1회만)
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }

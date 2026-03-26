@@ -222,12 +222,12 @@ function cacheUser(user: AuthUser | null) {
   } catch { /* sessionStorage 사용 불가 환경 무시 */ }
 }
 
-export function fetchCurrentUser(): Promise<AuthUser | null> {
+export function fetchCurrentUser(forceRefresh = false): Promise<AuthUser | null> {
   if (!getAccessToken() && !getRefreshToken()) {
     cacheUser(null);
     return Promise.resolve(null);
   }
-  if (currentUserCache) return currentUserCache;
+  if (currentUserCache && !forceRefresh) return currentUserCache;
 
   currentUserCache = (async () => {
     try {
@@ -246,6 +246,11 @@ export function fetchCurrentUser(): Promise<AuthUser | null> {
   })();
 
   return currentUserCache;
+}
+
+/** View Transitions 페이지 전환 시 유저 캐시 초기화 */
+export function resetUserCache() {
+  currentUserCache = null;
 }
 
 /** 토큰 갱신 */
