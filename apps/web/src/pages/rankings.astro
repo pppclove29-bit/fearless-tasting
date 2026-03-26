@@ -355,12 +355,6 @@ import AdSlot from '@/components/AdSlot.astro';
   import { fetchCurrentUser, fetchRankings, showToast } from '@/lib/api';
   import type { RankingUser } from '@/lib/api';
 
-  const loadingEl = document.getElementById('rankings-loading')!;
-  const errorEl = document.getElementById('rankings-error')!;
-  const contentEl = document.getElementById('rankings-content')!;
-
-  const currentUser = await fetchCurrentUser();
-
   // 모든 업적 정의 (잠금 표시용)
   const ALL_ACHIEVEMENTS = [
     { id: 'first-visit', name: '첫 발자국', icon: '👣', description: '첫 방문 달성' },
@@ -415,122 +409,137 @@ import AdSlot from '@/components/AdSlot.astro';
     return `<span class="rank-number">${rank}</span>`;
   }
 
-  try {
-    const data = await fetchRankings();
-    loadingEl.hidden = true;
-    contentEl.hidden = false;
+  async function initRankingsPage() {
+    const loadingEl = document.getElementById('rankings-loading');
+    const errorEl = document.getElementById('rankings-error');
+    const contentEl = document.getElementById('rankings-content');
+    if (!loadingEl || !errorEl || !contentEl) return;
 
-    const me = currentUser ? data.rankings.find((u) => u.userId === currentUser.id) : null;
+    const currentUser = await fetchCurrentUser();
 
-    // 내 프로필 카드 (로그인 시에만)
-    const myUnlocked = me ? me.achievements.map((a) => a.id) : [];
-    const myProfileHtml = me ? `
-      <div class="my-profile-card">
-        ${me.profileImageUrl
-          ? `<img src="${escapeHtml(me.profileImageUrl)}" class="my-profile-avatar" alt="${escapeHtml(me.nickname)} 프로필" />`
-          : '<div class="my-profile-avatar"></div>'}
-        <div class="my-profile-info">
-          <div class="my-profile-name">${escapeHtml(me.nickname)}</div>
-          <div class="my-profile-stats">
-            <span>방문 <strong>${me.visitCount}</strong></span>
-            <span>리뷰 <strong>${me.reviewCount}</strong></span>
-            <span>식당 <strong>${me.restaurantCount}</strong></span>
-            <span>평균 <strong>${me.avgRating ?? '-'}</strong></span>
+    try {
+      const data = await fetchRankings();
+      loadingEl.hidden = true;
+      contentEl.hidden = false;
+
+      const me = currentUser ? data.rankings.find((u) => u.userId === currentUser.id) : null;
+
+      // 내 프로필 카드 (로그인 시에만)
+      const myUnlocked = me ? me.achievements.map((a) => a.id) : [];
+      const myProfileHtml = me ? `
+        <div class="my-profile-card">
+          ${me.profileImageUrl
+            ? `<img src="${escapeHtml(me.profileImageUrl)}" class="my-profile-avatar" alt="${escapeHtml(me.nickname)} 프로필" />`
+            : '<div class="my-profile-avatar"></div>'}
+          <div class="my-profile-info">
+            <div class="my-profile-name">${escapeHtml(me.nickname)}</div>
+            <div class="my-profile-stats">
+              <span>방문 <strong>${me.visitCount}</strong></span>
+              <span>리뷰 <strong>${me.reviewCount}</strong></span>
+              <span>식당 <strong>${me.restaurantCount}</strong></span>
+              <span>평균 <strong>${me.avgRating ?? '-'}</strong></span>
+            </div>
+          </div>
+          <div class="my-achievement-count">🏅 ${me.achievements.length} / ${ALL_ACHIEVEMENTS.length}</div>
+        </div>
+      ` : '';
+
+      // 내 업적 카드 (로그인 시에만)
+      const achievementsHtml = currentUser ? `
+        <div class="achievements-section">
+          <h2>내 업적</h2>
+          <div class="achievement-grid">
+            ${ALL_ACHIEVEMENTS.map((a) => {
+              const unlocked = myUnlocked.includes(a.id);
+              return `
+                <div class="achievement-card ${unlocked ? '' : 'locked'}">
+                  <div class="achievement-icon">${a.icon}</div>
+                  <div class="achievement-name">${a.name}</div>
+                  <div class="achievement-desc">${a.description}</div>
+                </div>`;
+            }).join('')}
           </div>
         </div>
-        <div class="my-achievement-count">🏅 ${me.achievements.length} / ${ALL_ACHIEVEMENTS.length}</div>
-      </div>
-    ` : '';
+      ` : '';
 
-    // 내 업적 카드 (로그인 시에만)
-    const achievementsHtml = currentUser ? `
-      <div class="achievements-section">
-        <h2>내 업적</h2>
-        <div class="achievement-grid">
-          ${ALL_ACHIEVEMENTS.map((a) => {
-            const unlocked = myUnlocked.includes(a.id);
-            return `
-              <div class="achievement-card ${unlocked ? '' : 'locked'}">
-                <div class="achievement-icon">${a.icon}</div>
-                <div class="achievement-name">${a.name}</div>
-                <div class="achievement-desc">${a.description}</div>
-              </div>`;
-          }).join('')}
+      // 랭킹 카테고리 탭
+      const tabsHtml = `
+        <div class="ranking-tabs">
+          ${RANKING_CATEGORIES.map((cat, i) =>
+            `<button type="button" class="ranking-tab-btn ${i === 0 ? 'active' : ''}" data-cat="${cat.key}">${cat.label}</button>`
+          ).join('')}
         </div>
-      </div>
-    ` : '';
+      `;
 
-    // 랭킹 카테고리 탭
-    const tabsHtml = `
-      <div class="ranking-tabs">
-        ${RANKING_CATEGORIES.map((cat, i) =>
-          `<button type="button" class="ranking-tab-btn ${i === 0 ? 'active' : ''}" data-cat="${cat.key}">${cat.label}</button>`
-        ).join('')}
-      </div>
-    `;
+      // 랭킹 테이블 생성 함수
+      function buildRankingTable(catKey: string): string {
+        const cat = RANKING_CATEGORIES.find((c) => c.key === catKey);
+        if (!cat) return '';
+        const sorted = [...data.rankings]
+          .filter((u) => cat.getValue(u) !== null && (cat.getValue(u) ?? 0) > 0)
+          .sort((a, b) => (cat.getValue(b) ?? 0) - (cat.getValue(a) ?? 0));
 
-    // 랭킹 테이블 생성 함수
-    function buildRankingTable(catKey: string): string {
-      const cat = RANKING_CATEGORIES.find((c) => c.key === catKey)!;
-      const sorted = [...data.rankings]
-        .filter((u) => cat.getValue(u) !== null && cat.getValue(u)! > 0)
-        .sort((a, b) => cat.getValue(b)! - cat.getValue(a)!);
+        if (sorted.length === 0) {
+          return '<p style="text-align:center;padding:2rem;color:#999;font-size:0.85rem;">아직 데이터가 없습니다.</p>';
+        }
 
-      if (sorted.length === 0) {
-        return '<p style="text-align:center;padding:2rem;color:#999;font-size:0.85rem;">아직 데이터가 없습니다.</p>';
+        return `
+          <table class="ranking-table">
+            <thead>
+              <tr>
+                <th style="width:50px;">순위</th>
+                <th>유저</th>
+                <th class="num">${cat.label}</th>
+                <th class="num">업적</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sorted.map((u, i) => `
+                <tr class="${currentUser && u.userId === currentUser.id ? 'is-me' : ''}">
+                  <td>${getMedal(i + 1)}</td>
+                  <td>
+                    <div class="rank-user">
+                      ${u.profileImageUrl
+                        ? `<img src="${escapeHtml(u.profileImageUrl)}" class="rank-avatar" alt="${escapeHtml(u.nickname)} 프로필" />`
+                        : '<div class="rank-avatar"></div>'}
+                      <span class="rank-nickname">${escapeHtml(u.nickname)}</span>
+                    </div>
+                  </td>
+                  <td class="num" style="font-weight:600;">${cat.format(cat.getValue(u) ?? 0)}</td>
+                  <td class="num">${u.achievements.length}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
       }
 
-      return `
-        <table class="ranking-table">
-          <thead>
-            <tr>
-              <th style="width:50px;">순위</th>
-              <th>유저</th>
-              <th class="num">${cat.label}</th>
-              <th class="num">업적</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${sorted.map((u, i) => `
-              <tr class="${currentUser && u.userId === currentUser.id ? 'is-me' : ''}">
-                <td>${getMedal(i + 1)}</td>
-                <td>
-                  <div class="rank-user">
-                    ${u.profileImageUrl
-                      ? `<img src="${escapeHtml(u.profileImageUrl)}" class="rank-avatar" alt="${escapeHtml(u.nickname)} 프로필" />`
-                      : '<div class="rank-avatar"></div>'}
-                    <span class="rank-nickname">${escapeHtml(u.nickname)}</span>
-                  </div>
-                </td>
-                <td class="num" style="font-weight:600;">${cat.format(cat.getValue(u)!)}</td>
-                <td class="num">${u.achievements.length}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+      contentEl.innerHTML = `
+        ${myProfileHtml}
+        ${achievementsHtml}
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.75rem;">전체 랭킹</h2>
+        ${tabsHtml}
+        <div id="ranking-table-area">${buildRankingTable('review')}</div>
       `;
-    }
 
-    contentEl.innerHTML = `
-      ${myProfileHtml}
-      ${achievementsHtml}
-      <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.75rem;">전체 랭킹</h2>
-      ${tabsHtml}
-      <div id="ranking-table-area">${buildRankingTable('review')}</div>
-    `;
-
-    // 탭 전환
-    const tableArea = document.getElementById('ranking-table-area')!;
-    for (const btn of contentEl.querySelectorAll<HTMLElement>('.ranking-tab-btn')) {
-      btn.addEventListener('click', () => {
-        contentEl.querySelector('.ranking-tab-btn.active')?.classList.remove('active');
-        btn.classList.add('active');
-        tableArea.innerHTML = buildRankingTable(btn.dataset.cat!);
-      });
+      // 탭 전환
+      const tableArea = document.getElementById('ranking-table-area');
+      if (tableArea) {
+        for (const btn of contentEl.querySelectorAll<HTMLElement>('.ranking-tab-btn')) {
+          btn.addEventListener('click', () => {
+            contentEl.querySelector('.ranking-tab-btn.active')?.classList.remove('active');
+            btn.classList.add('active');
+            tableArea.innerHTML = buildRankingTable(btn.dataset.cat ?? 'review');
+          });
+        }
+      }
+    } catch (err) {
+      loadingEl.hidden = true;
+      errorEl.hidden = false;
+      errorEl.textContent = err instanceof Error ? err.message : '랭킹을 불러올 수 없습니다.';
     }
-  } catch (err) {
-    loadingEl.hidden = true;
-    errorEl.hidden = false;
-    errorEl.textContent = err instanceof Error ? err.message : '랭킹을 불러올 수 없습니다.';
   }
+
+  initRankingsPage();
+  document.addEventListener('astro:page-load', initRankingsPage);
 </script>

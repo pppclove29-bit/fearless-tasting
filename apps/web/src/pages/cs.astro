@@ -157,33 +157,40 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 <script>
   import { createInquiry } from '@/lib/api';
 
-  const form = document.getElementById('inquiry-form') as HTMLFormElement;
-  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-  const resultMsg = document.getElementById('result-msg') as HTMLParagraphElement;
+  function initCsPage() {
+    const form = document.getElementById('inquiry-form') as HTMLFormElement | null;
+    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement | null;
+    const resultMsg = document.getElementById('result-msg') as HTMLParagraphElement | null;
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    submitBtn.disabled = true;
-    resultMsg.hidden = true;
+    if (!form || !submitBtn || !resultMsg) return;
 
-    const formData = new FormData(form);
-    const category = formData.get('category') as string;
-    const email = formData.get('email') as string;
-    const subject = formData.get('subject') as string;
-    const content = formData.get('content') as string;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      resultMsg.hidden = true;
 
-    try {
-      await createInquiry({ category, email, subject, content });
-      resultMsg.textContent = '문의가 등록되었습니다. 감사합니다!';
-      resultMsg.className = 'result-msg success';
-      resultMsg.hidden = false;
-      form.reset();
-    } catch {
-      resultMsg.textContent = '문의 등록에 실패했습니다. 잠시 후 다시 시도해 주세요.';
-      resultMsg.className = 'result-msg error';
-      resultMsg.hidden = false;
-    } finally {
-      submitBtn.disabled = false;
-    }
-  });
+      const formData = new FormData(form);
+      const category = formData.get('category') as string;
+      const email = formData.get('email') as string;
+      const subject = formData.get('subject') as string;
+      const content = formData.get('content') as string;
+
+      try {
+        await createInquiry({ category, email, subject, content });
+        resultMsg.textContent = '문의가 등록되었습니다. 감사합니다!';
+        resultMsg.className = 'result-msg success';
+        resultMsg.hidden = false;
+        form.reset();
+      } catch {
+        resultMsg.textContent = '문의 등록에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+        resultMsg.className = 'result-msg error';
+        resultMsg.hidden = false;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  }
+
+  initCsPage();
+  document.addEventListener('astro:page-load', initCsPage);
 </script>

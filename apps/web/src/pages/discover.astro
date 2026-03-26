@@ -234,65 +234,72 @@ export const prerender = false;
   import { fetchDiscover } from '@/lib/api';
   import type { DiscoverResponse } from '@/lib/api';
 
-  const contentEl = document.getElementById('discover-content')!;
-  const tabs = document.querySelectorAll<HTMLButtonElement>('.discover-tab');
-  let data: DiscoverResponse | null = null;
-  let currentTab = 'topRated';
+  async function initDiscoverPage() {
+    const contentEl = document.getElementById('discover-content');
+    if (!contentEl) return;
 
-  function renderList(tab: string) {
-    if (!data) return;
+    const tabs = document.querySelectorAll<HTMLButtonElement>('.discover-tab');
+    let data: DiscoverResponse | null = null;
+    let currentTab = 'topRated';
 
-    type ListItem = { name: string; address: string; category: string };
-    let items: ListItem[] = [];
-    let statFn: (item: ListItem, idx: number) => string = () => '';
+    function renderList(tab: string) {
+      if (!data) return;
 
-    if (tab === 'topRated') {
-      items = data.topRated;
-      statFn = (item) => {
-        const r = item as (typeof data)['topRated'][0];
-        return `<div class="discover-stat"><span class="discover-stat-value">${r.avgRating}</span><span class="discover-stat-label">평점 (${r.reviewCount}개)</span></div>`;
-      };
-    } else if (tab === 'mostRevisited') {
-      items = data.mostRevisited;
-      statFn = (item) => {
-        const r = item as (typeof data)['mostRevisited'][0];
-        return `<div class="discover-stat"><span class="discover-stat-value">${r.visitCount}회</span><span class="discover-stat-label">방문</span></div>`;
-      };
-    } else {
-      items = data.mostWishlisted;
-      statFn = (item) => {
-        const r = item as (typeof data)['mostWishlisted'][0];
-        return `<div class="discover-stat"><span class="discover-stat-value">${r.wishlistCount}</span><span class="discover-stat-label">좋아요</span></div>`;
-      };
+      type ListItem = { name: string; address: string; category: string };
+      let items: ListItem[] = [];
+      let statFn: (item: ListItem, idx: number) => string = () => '';
+
+      if (tab === 'topRated') {
+        items = data.topRated;
+        statFn = (item) => {
+          const r = item as (typeof data)['topRated'][0];
+          return `<div class="discover-stat"><span class="discover-stat-value">${r.avgRating}</span><span class="discover-stat-label">평점 (${r.reviewCount}개)</span></div>`;
+        };
+      } else if (tab === 'mostRevisited') {
+        items = data.mostRevisited;
+        statFn = (item) => {
+          const r = item as (typeof data)['mostRevisited'][0];
+          return `<div class="discover-stat"><span class="discover-stat-value">${r.visitCount}회</span><span class="discover-stat-label">방문</span></div>`;
+        };
+      } else {
+        items = data.mostWishlisted;
+        statFn = (item) => {
+          const r = item as (typeof data)['mostWishlisted'][0];
+          return `<div class="discover-stat"><span class="discover-stat-value">${r.wishlistCount}</span><span class="discover-stat-label">좋아요</span></div>`;
+        };
+      }
+
+      if (items.length === 0) {
+        contentEl.innerHTML = '<div class="discover-empty">아직 데이터가 충분하지 않습니다.</div>';
+        return;
+      }
+
+      const medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49'];
+      contentEl.innerHTML = `<div class="discover-list">${items.map((item, i) => {
+        const rank = i < 3 ? `<span class="discover-rank rank-medal">${medals[i]}</span>` : `<span class="discover-rank">${i + 1}</span>`;
+        const topClass = i === 0 ? ' top-1' : i === 1 ? ' top-2' : i === 2 ? ' top-3' : '';
+        const shortAddr = item.address.replace(/^(\S+[시도])\s+(\S+[시군구]).*$/, '$1 $2').replace(/^(\S+)\s*$/, '$1');
+        return `<div class="discover-card${topClass}">${rank}<div class="discover-info"><div class="discover-name">${item.name}</div><div class="discover-meta">${shortAddr} · ${item.category}</div></div>${statFn(item, i)}</div>`;
+      }).join('')}</div>`;
     }
 
-    if (items.length === 0) {
-      contentEl.innerHTML = '<div class="discover-empty">아직 데이터가 충분하지 않습니다.</div>';
-      return;
-    }
-
-    const medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49'];
-    contentEl.innerHTML = `<div class="discover-list">${items.map((item, i) => {
-      const rank = i < 3 ? `<span class="discover-rank rank-medal">${medals[i]}</span>` : `<span class="discover-rank">${i + 1}</span>`;
-      const topClass = i === 0 ? ' top-1' : i === 1 ? ' top-2' : i === 2 ? ' top-3' : '';
-      const shortAddr = item.address.replace(/^(\S+[시도])\s+(\S+[시군구]).*$/, '$1 $2').replace(/^(\S+)\s*$/, '$1');
-      return `<div class="discover-card${topClass}">${rank}<div class="discover-info"><div class="discover-name">${item.name}</div><div class="discover-meta">${shortAddr} · ${item.category}</div></div>${statFn(item, i)}</div>`;
-    }).join('')}</div>`;
-  }
-
-  tabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      tabs.forEach((t) => t.classList.remove('active'));
-      tab.classList.add('active');
-      currentTab = tab.dataset.tab!;
-      renderList(currentTab);
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentTab = tab.dataset.tab ?? 'topRated';
+        renderList(currentTab);
+      });
     });
-  });
 
-  try {
-    data = await fetchDiscover();
-    renderList(currentTab);
-  } catch {
-    contentEl.innerHTML = '<div class="discover-empty">맛집 추천을 불러올 수 없습니다.</div>';
+    try {
+      data = await fetchDiscover();
+      renderList(currentTab);
+    } catch {
+      contentEl.innerHTML = '<div class="discover-empty">맛집 추천을 불러올 수 없습니다.</div>';
+    }
   }
+
+  initDiscoverPage();
+  document.addEventListener('astro:page-load', initDiscoverPage);
 </script>

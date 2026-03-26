@@ -346,20 +346,25 @@ export const prerender = false;
 <script>
   import { fetchCurrentUser, updateNickname, deleteAccount, logout, clearTokens, showToast, showDangerConfirm } from '@/lib/api';
 
-  const profilePage = document.getElementById('profile-page')!;
-  const profileLoading = document.getElementById('profile-loading')!;
+  async function initProfilePage() {
+    const profilePage = document.getElementById('profile-page');
+    const profileLoading = document.getElementById('profile-loading');
+    if (!profilePage || !profileLoading) return;
 
-  const user = await fetchCurrentUser();
-  if (!user) {
-    location.href = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`;
-  } else {
+    const user = await fetchCurrentUser();
+    if (!user) {
+      location.href = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`;
+      return;
+    }
+
     profileLoading.hidden = true;
     profilePage.hidden = false;
 
     // 프로필 정보 표시
-    const avatarEl = document.getElementById('profile-avatar')!;
-    const nameEl = document.getElementById('profile-name')!;
-    const emailEl = document.getElementById('profile-email')!;
+    const avatarEl = document.getElementById('profile-avatar');
+    const nameEl = document.getElementById('profile-name');
+    const emailEl = document.getElementById('profile-email');
+    if (!avatarEl || !nameEl || !emailEl) return;
 
     if (user.profileImageUrl) {
       avatarEl.innerHTML = `<img src="${user.profileImageUrl}" alt="프로필" />`;
@@ -370,11 +375,12 @@ export const prerender = false;
     emailEl.textContent = user.email;
 
     // 닉네임 수정
-    const editBtn = document.getElementById('edit-name-btn')!;
-    const editArea = document.getElementById('nickname-edit')!;
-    const nicknameInput = document.getElementById('nickname-input') as HTMLInputElement;
-    const saveBtn = document.getElementById('nickname-save')!;
-    const cancelBtn = document.getElementById('nickname-cancel')!;
+    const editBtn = document.getElementById('edit-name-btn');
+    const editArea = document.getElementById('nickname-edit');
+    const nicknameInput = document.getElementById('nickname-input') as HTMLInputElement | null;
+    const saveBtn = document.getElementById('nickname-save');
+    const cancelBtn = document.getElementById('nickname-cancel');
+    if (!editBtn || !editArea || !nicknameInput || !saveBtn || !cancelBtn) return;
 
     editBtn.addEventListener('click', () => {
       nicknameInput.value = nameEl.textContent || '';
@@ -388,6 +394,7 @@ export const prerender = false;
     });
 
     async function saveNickname() {
+      if (!nicknameInput || !nameEl || !editArea) return;
       const newName = nicknameInput.value.trim();
       if (!newName || newName === nameEl.textContent) {
         editArea.hidden = true;
@@ -396,7 +403,7 @@ export const prerender = false;
       try {
         const updated = await updateNickname(newName);
         nameEl.textContent = updated.nickname;
-        if (!user.profileImageUrl) {
+        if (!user.profileImageUrl && avatarEl) {
           avatarEl.textContent = updated.nickname.charAt(0);
         }
         editArea.hidden = true;
@@ -409,14 +416,16 @@ export const prerender = false;
     saveBtn.addEventListener('click', saveNickname);
     nicknameInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); saveNickname(); }
-      if (e.key === 'Escape') { editArea.hidden = true; }
+      if (e.key === 'Escape' && editArea) { editArea.hidden = true; }
     });
 
     // 테마 설정
-    const themeCurrent = document.getElementById('theme-current')!;
-    const themeGroup = document.getElementById('theme-switch-group')!;
+    const themeCurrent = document.getElementById('theme-current');
+    const themeGroup = document.getElementById('theme-switch-group');
+    if (!themeCurrent || !themeGroup) return;
 
     function updateThemeUI() {
+      if (!themeCurrent || !themeGroup) return;
       const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
       themeCurrent.textContent = isDark ? '다크 모드 사용 중' : '라이트 모드 사용 중';
       for (const btn of themeGroup.querySelectorAll<HTMLButtonElement>('.theme-switch-btn')) {
@@ -427,7 +436,7 @@ export const prerender = false;
 
     for (const btn of themeGroup.querySelectorAll<HTMLButtonElement>('.theme-switch-btn')) {
       btn.addEventListener('click', () => {
-        const theme = btn.dataset.theme!;
+        const theme = btn.dataset.theme;
         if (theme === 'dark') {
           document.documentElement.setAttribute('data-theme', 'dark');
           localStorage.setItem('theme', 'dark');
@@ -440,26 +449,35 @@ export const prerender = false;
     }
 
     // 로그아웃
-    document.getElementById('profile-logout')!.addEventListener('click', () => {
-      logout();
-      location.href = '/';
-    });
+    const logoutBtn = document.getElementById('profile-logout');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        logout();
+        location.href = '/';
+      });
+    }
 
     // 회원 탈퇴
-    document.getElementById('delete-account-btn')!.addEventListener('click', async () => {
-      const confirmed = await showDangerConfirm(
-        '정말 탈퇴하시겠습니까?\n\n계정, 리뷰, 참여 중인 방 등 모든 개인 데이터가 즉시 삭제되며 복구할 수 없습니다.',
-        '탈퇴',
-      );
-      if (!confirmed) return;
+    const deleteBtn = document.getElementById('delete-account-btn');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', async () => {
+        const confirmed = await showDangerConfirm(
+          '정말 탈퇴하시겠습니까?\n\n계정, 리뷰, 참여 중인 방 등 모든 개인 데이터가 즉시 삭제되며 복구할 수 없습니다.',
+          '탈퇴',
+        );
+        if (!confirmed) return;
 
-      try {
-        await deleteAccount();
-        clearTokens();
-        location.href = '/';
-      } catch (err) {
-        showToast(err instanceof Error ? err.message : '탈퇴에 실패했습니다.');
-      }
-    });
+        try {
+          await deleteAccount();
+          clearTokens();
+          location.href = '/';
+        } catch (err) {
+          showToast(err instanceof Error ? err.message : '탈퇴에 실패했습니다.');
+        }
+      });
+    }
   }
+
+  initProfilePage();
+  document.addEventListener('astro:page-load', initProfilePage);
 </script>

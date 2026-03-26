@@ -66,21 +66,30 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 <script>
   import { saveTokens } from '@/lib/api';
 
-  const params = new URLSearchParams(location.search);
-  const accessToken = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
+  function initLoginPage() {
+    const loginSuccessEl = document.getElementById('login-success');
+    const loginUiEl = document.getElementById('login-ui');
+    if (!loginSuccessEl || !loginUiEl) return;
 
-  if (accessToken && refreshToken) {
-    // 콜백: 토큰 저장 후 즉시 리다이렉트
-    saveTokens(accessToken, refreshToken);
-    history.replaceState(null, '', '/login');
-    document.getElementById('login-success')!.hidden = false;
+    const params = new URLSearchParams(location.search);
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
 
-    const redirect = localStorage.getItem('login_redirect');
-    localStorage.removeItem('login_redirect');
-    location.href = redirect || '/';
-  } else {
-    // 로그인 페이지: 카카오 버튼 표시
-    document.getElementById('login-ui')!.hidden = false;
+    if (accessToken && refreshToken) {
+      // 콜백: 토큰 저장 후 즉시 리다이렉트
+      saveTokens(accessToken, refreshToken);
+      history.replaceState(null, '', '/login');
+      loginSuccessEl.hidden = false;
+
+      const redirect = localStorage.getItem('login_redirect');
+      localStorage.removeItem('login_redirect');
+      location.href = redirect || '/';
+    } else {
+      // 로그인 페이지: 카카오 버튼 표시
+      loginUiEl.hidden = false;
+    }
   }
+
+  initLoginPage();
+  document.addEventListener('astro:page-load', initLoginPage);
 </script>
