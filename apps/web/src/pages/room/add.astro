@@ -353,22 +353,25 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   } from '@/lib/api';
   import type { AuthUser, RoomDetailResponse } from '@/lib/api';
 
-  const loadingMsg = document.getElementById('loading-msg')!;
-  const errorMsg = document.getElementById('error-msg')!;
-  const content = document.getElementById('add-content')!;
+  function initAddPage() {
+    const loadingMsg = document.getElementById('loading-msg');
+    const errorMsg = document.getElementById('error-msg');
+    const content = document.getElementById('add-content');
+    if (!loadingMsg || !errorMsg || !content) return;
 
-  const params = new URLSearchParams(location.search);
-  const roomId = params.get('roomId');
-  const existingRestId = params.get('restaurantId');
-  const existingRestName = params.get('name');
+    const params = new URLSearchParams(location.search);
+    const roomId = params.get('roomId');
+    const existingRestId = params.get('restaurantId');
+    const existingRestName = params.get('name');
 
-  if (!roomId) {
-    loadingMsg.hidden = true;
-    errorMsg.textContent = '잘못된 접근입니다.';
-    errorMsg.hidden = false;
-  } else {
+    if (!roomId) {
+      loadingMsg.hidden = true;
+      errorMsg.textContent = '잘못된 접근입니다.';
+      errorMsg.hidden = false;
+      return;
+    }
+
     init();
-  }
 
   async function init() {
     try {
@@ -895,5 +898,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     document.getElementById('btn-add-more')?.addEventListener('click', () => { location.reload(); });
   }
+  }
+
+  initAddPage();
+  document.addEventListener('astro:page-load', initAddPage);
 </script>
 </BaseLayout>

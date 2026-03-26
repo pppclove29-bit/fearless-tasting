@@ -1107,198 +1107,214 @@ import AdSlot from '@/components/AdSlot.astro';
   import { fetchCurrentUser, fetchMyRooms, createRoom, fetchPlatformStats, fetchNotices } from '@/lib/api';
   import type { RoomListItem } from '@/lib/api';
 
-  const landing = document.getElementById('landing')!;
-  const dashboard = document.getElementById('dashboard')!;
-  const loadingMsg = document.getElementById('loading-msg')!;
-  const roomsList = document.getElementById('rooms-list')!;
-  const emptyMsg = document.getElementById('empty-msg')!;
-  const formError = document.getElementById('form-error')!;
-  const createForm = document.getElementById('create-form') as HTMLFormElement;
-  const createNameInput = document.getElementById('create-name') as HTMLInputElement;
+  async function initHomePage() {
+    const landing = document.getElementById('landing');
+    const dashboard = document.getElementById('dashboard');
+    const roomsList = document.getElementById('rooms-list');
+    if (!landing || !dashboard || !roomsList) return;
 
-  function escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
+    const loadingMsg = document.getElementById('loading-msg');
+    const emptyMsg = document.getElementById('empty-msg');
+    const formError = document.getElementById('form-error');
+    const createForm = document.getElementById('create-form') as HTMLFormElement | null;
+    const createNameInput = document.getElementById('create-name') as HTMLInputElement | null;
+    const roomsToolbar = document.getElementById('rooms-toolbar');
+    const roomsCount = document.getElementById('rooms-count');
+    const sortTrigger = document.getElementById('sort-trigger');
+    const sortLabel = document.getElementById('sort-label');
+    const sortBackdrop = document.getElementById('sort-backdrop');
+    const sortSheet = document.getElementById('sort-sheet');
+    const sortOptions = document.getElementById('sort-options');
+    const homeSearchWrap = document.getElementById('home-search-wrap');
+    const homeSearchInput = document.getElementById('home-search') as HTMLInputElement | null;
 
-  const roleLabel: Record<string, string> = {
-    owner: '방장',
-    manager: '매니저',
-    member: '멤버',
-  };
-
-  const roomsToolbar = document.getElementById('rooms-toolbar')!;
-  const roomsCount = document.getElementById('rooms-count')!;
-  const sortTrigger = document.getElementById('sort-trigger')!;
-  const sortLabel = document.getElementById('sort-label')!;
-  const sortBackdrop = document.getElementById('sort-backdrop')!;
-  const sortSheet = document.getElementById('sort-sheet')!;
-  const sortOptions = document.getElementById('sort-options')!;
-
-  let allRooms: RoomListItem[] = [];
-  let currentSort = 'recent';
-  let homeSearchQuery = '';
-
-  const homeSearchWrap = document.getElementById('home-search-wrap')!;
-  const homeSearchInput = document.getElementById('home-search') as HTMLInputElement;
-
-  function filterHomeRooms(rooms: RoomListItem[]): RoomListItem[] {
-    if (!homeSearchQuery) return rooms;
-    const q = homeSearchQuery.toLowerCase();
-    return rooms.filter((r) => r.name.toLowerCase().includes(q));
-  }
-
-  function applyAndRenderHome() {
-    renderRooms(filterHomeRooms(sortRooms(allRooms, currentSort)));
-  }
-
-  homeSearchInput.addEventListener('input', () => {
-    homeSearchQuery = homeSearchInput.value.trim();
-    applyAndRenderHome();
-  });
-
-  const sortLabels: Record<string, string> = {
-    recent: '최근 참여순',
-    name: '이름순',
-    members: '멤버 많은순',
-    restaurants: '식당 많은순',
-  };
-
-  function sortRooms(rooms: RoomListItem[], sortBy: string): RoomListItem[] {
-    const sorted = [...rooms];
-    switch (sortBy) {
-      case 'name': return sorted.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-      case 'members': return sorted.sort((a, b) => b.memberCount - a.memberCount);
-      case 'restaurants': return sorted.sort((a, b) => b.restaurantCount - a.restaurantCount);
-      default: return sorted;
-    }
-  }
-
-  function renderRooms(rooms: RoomListItem[]) {
-    if (rooms.length === 0) {
-      roomsList.innerHTML = '';
-      roomsToolbar.hidden = true;
-      emptyMsg.hidden = false;
-      return;
+    function escapeHtml(text: string): string {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
-    emptyMsg.hidden = true;
-    roomsToolbar.hidden = false;
-    roomsCount.textContent = `${rooms.length}개의 방`;
-    roomsList.innerHTML = rooms
-      .map(
-        (r) => `
-        <a href="/room?id=${r.id}" class="room-card">
-          <div class="room-info">
-            <div class="room-name">${escapeHtml(r.name)}</div>
-            <div class="room-meta">멤버 ${r.memberCount}명 · 식당 ${r.restaurantCount}개</div>
-          </div>
-          <div class="room-right">
-            <span class="room-role ${r.myRole}">${roleLabel[r.myRole] || r.myRole}</span>
-            <svg class="room-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-        </a>
-      `,
-      )
-      .join('');
-  }
+    const roleLabel: Record<string, string> = {
+      owner: '방장',
+      manager: '매니저',
+      member: '멤버',
+    };
 
-  // 바텀시트 정렬
-  function openSortSheet() {
-    sortBackdrop.hidden = false;
-    sortSheet.hidden = false;
-    requestAnimationFrame(() => {
-      sortBackdrop.classList.add('visible');
-      sortSheet.classList.add('visible');
-    });
-  }
+    let allRooms: RoomListItem[] = [];
+    let currentSort = 'recent';
+    let homeSearchQuery = '';
 
-  function closeSortSheet() {
-    sortBackdrop.classList.remove('visible');
-    sortSheet.classList.remove('visible');
-    setTimeout(() => {
-      sortBackdrop.hidden = true;
-      sortSheet.hidden = true;
-    }, 300);
-  }
+    function filterHomeRooms(rooms: RoomListItem[]): RoomListItem[] {
+      if (!homeSearchQuery) return rooms;
+      const q = homeSearchQuery.toLowerCase();
+      return rooms.filter((r) => r.name.toLowerCase().includes(q));
+    }
 
-  sortTrigger.addEventListener('click', openSortSheet);
-  sortBackdrop.addEventListener('click', closeSortSheet);
+    function applyAndRenderHome() {
+      renderRooms(filterHomeRooms(sortRooms(allRooms, currentSort)));
+    }
 
-  for (const btn of sortOptions.querySelectorAll<HTMLButtonElement>('.sheet-option')) {
-    btn.addEventListener('click', () => {
-      const value = btn.dataset.sort!;
-      currentSort = value;
-      sortLabel.textContent = sortLabels[value];
-
-      for (const b of sortOptions.querySelectorAll('.sheet-option')) b.classList.remove('active');
-      btn.classList.add('active');
-
+    homeSearchInput?.addEventListener('input', () => {
+      homeSearchQuery = homeSearchInput.value.trim();
       applyAndRenderHome();
-      closeSortSheet();
     });
-  }
 
-  function showError(msg: string) {
-    formError.textContent = msg;
-    formError.hidden = false;
-  }
+    const sortLabels: Record<string, string> = {
+      recent: '최근 참여순',
+      name: '이름순',
+      members: '멤버 많은순',
+      restaurants: '식당 많은순',
+    };
 
-  createForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    formError.hidden = true;
-    const name = createNameInput.value.trim();
-    if (!name) return;
+    function sortRooms(rooms: RoomListItem[], sortBy: string): RoomListItem[] {
+      const sorted = [...rooms];
+      switch (sortBy) {
+        case 'name': return sorted.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+        case 'members': return sorted.sort((a, b) => b.memberCount - a.memberCount);
+        case 'restaurants': return sorted.sort((a, b) => b.restaurantCount - a.restaurantCount);
+        default: return sorted;
+      }
+    }
 
-    try {
-      await createRoom(name);
-      createNameInput.value = '';
+    function renderRooms(rooms: RoomListItem[]) {
+      if (rooms.length === 0) {
+        roomsList.innerHTML = '';
+        if (roomsToolbar) roomsToolbar.hidden = true;
+        if (emptyMsg) emptyMsg.hidden = false;
+        return;
+      }
+
+      if (emptyMsg) emptyMsg.hidden = true;
+      if (roomsToolbar) roomsToolbar.hidden = false;
+      if (roomsCount) roomsCount.textContent = `${rooms.length}개의 방`;
+      roomsList.innerHTML = rooms
+        .map(
+          (r) => `
+          <a href="/room?id=${r.id}" class="room-card">
+            <div class="room-info">
+              <div class="room-name">${escapeHtml(r.name)}</div>
+              <div class="room-meta">멤버 ${r.memberCount}명 · 식당 ${r.restaurantCount}개</div>
+            </div>
+            <div class="room-right">
+              <span class="room-role ${r.myRole}">${roleLabel[r.myRole] || r.myRole}</span>
+              <svg class="room-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </a>
+        `,
+        )
+        .join('');
+    }
+
+    // 바텀시트 정렬
+    function openSortSheet() {
+      if (sortBackdrop) { sortBackdrop.hidden = false; }
+      if (sortSheet) { sortSheet.hidden = false; }
+      requestAnimationFrame(() => {
+        sortBackdrop?.classList.add('visible');
+        sortSheet?.classList.add('visible');
+      });
+    }
+
+    function closeSortSheet() {
+      sortBackdrop?.classList.remove('visible');
+      sortSheet?.classList.remove('visible');
+      setTimeout(() => {
+        if (sortBackdrop) sortBackdrop.hidden = true;
+        if (sortSheet) sortSheet.hidden = true;
+      }, 300);
+    }
+
+    sortTrigger?.addEventListener('click', openSortSheet);
+    sortBackdrop?.addEventListener('click', closeSortSheet);
+
+    if (sortOptions) {
+      for (const btn of sortOptions.querySelectorAll<HTMLButtonElement>('.sheet-option')) {
+        btn.addEventListener('click', () => {
+          const value = btn.dataset.sort;
+          if (!value) return;
+          currentSort = value;
+          if (sortLabel) sortLabel.textContent = sortLabels[value];
+
+          for (const b of sortOptions.querySelectorAll('.sheet-option')) b.classList.remove('active');
+          btn.classList.add('active');
+
+          applyAndRenderHome();
+          closeSortSheet();
+        });
+      }
+    }
+
+    function showError(msg: string) {
+      if (formError) {
+        formError.textContent = msg;
+        formError.hidden = false;
+      }
+    }
+
+    createForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (formError) formError.hidden = true;
+      const name = createNameInput?.value.trim();
+      if (!name) return;
+
+      try {
+        await createRoom(name);
+        if (createNameInput) createNameInput.value = '';
+        allRooms = await fetchMyRooms();
+        if (homeSearchWrap) homeSearchWrap.hidden = allRooms.length === 0;
+        applyAndRenderHome();
+      } catch (err) {
+        showError(err instanceof Error ? err.message : '방 생성에 실패했습니다.');
+      }
+    });
+
+    // 유저/통계/공지 병렬 로드
+    const [user, statsResult, noticesResult] = await Promise.all([
+      fetchCurrentUser(),
+      fetchPlatformStats().catch(() => null),
+      fetchNotices().catch(() => null),
+    ]);
+
+    // 플랫폼 통계 렌더링
+    if (statsResult) {
+      const fmt = (n: number) => n.toLocaleString('ko-KR');
+      const statRooms = document.getElementById('stat-rooms');
+      const statUsers = document.getElementById('stat-users');
+      const statRestaurants = document.getElementById('stat-restaurants');
+      const statReviews = document.getElementById('stat-reviews');
+      const platformStats = document.getElementById('platform-stats');
+      if (statRooms) statRooms.textContent = fmt(statsResult.roomCount);
+      if (statUsers) statUsers.textContent = fmt(statsResult.userCount);
+      if (statRestaurants) statRestaurants.textContent = fmt(statsResult.restaurantCount);
+      if (statReviews) statReviews.textContent = fmt(statsResult.reviewCount);
+      if (platformStats) platformStats.hidden = false;
+    }
+
+    // 공지 배너 렌더링
+    if (noticesResult && noticesResult.length > 0) {
+      const banner = document.getElementById('notice-banner');
+      if (banner) {
+        banner.innerHTML = noticesResult.map((n) => `
+          <div class="notice-banner-item">
+            <div class="notice-banner-title">${escapeHtml(n.title)}</div>
+            <div class="notice-banner-content">${escapeHtml(n.content)}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    if (user) {
+      landing.hidden = true;
+      dashboard.hidden = false;
+      for (const cta of document.querySelectorAll<HTMLElement>('.login-only-cta')) {
+        cta.hidden = true;
+      }
       allRooms = await fetchMyRooms();
-      homeSearchWrap.hidden = allRooms.length === 0;
+      if (homeSearchWrap) homeSearchWrap.hidden = allRooms.length === 0;
       applyAndRenderHome();
-    } catch (err) {
-      showError(err instanceof Error ? err.message : '방 생성에 실패했습니다.');
     }
-  });
-
-
-  // 유저/통계/공지 병렬 로드
-  const [user, statsResult, noticesResult] = await Promise.all([
-    fetchCurrentUser(),
-    fetchPlatformStats().catch(() => null),
-    fetchNotices().catch(() => null),
-  ]);
-
-  // 플랫폼 통계 렌더링
-  if (statsResult) {
-    const fmt = (n: number) => n.toLocaleString('ko-KR');
-    document.getElementById('stat-rooms')!.textContent = fmt(statsResult.roomCount);
-    document.getElementById('stat-users')!.textContent = fmt(statsResult.userCount);
-    document.getElementById('stat-restaurants')!.textContent = fmt(statsResult.restaurantCount);
-    document.getElementById('stat-reviews')!.textContent = fmt(statsResult.reviewCount);
-    document.getElementById('platform-stats')!.hidden = false;
   }
 
-  // 공지 배너 렌더링
-  if (noticesResult && noticesResult.length > 0) {
-    const banner = document.getElementById('notice-banner')!;
-    banner.innerHTML = noticesResult.map((n) => `
-      <div class="notice-banner-item">
-        <div class="notice-banner-title">${escapeHtml(n.title)}</div>
-        <div class="notice-banner-content">${escapeHtml(n.content)}</div>
-      </div>
-    `).join('');
-  }
-
-  if (user) {
-    landing.hidden = true;
-    dashboard.hidden = false;
-    for (const cta of document.querySelectorAll<HTMLElement>('.login-only-cta')) {
-      cta.hidden = true;
-    }
-    allRooms = await fetchMyRooms();
-    homeSearchWrap.hidden = allRooms.length === 0;
-    applyAndRenderHome();
-  }
+  initHomePage();
+  document.addEventListener('astro:page-load', initHomePage);
 </script>

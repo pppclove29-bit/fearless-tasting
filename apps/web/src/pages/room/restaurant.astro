@@ -871,619 +871,633 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import type { RoomReviewWithUser, RoomVisitWithDetails } from '@repo/types';
   import { formatRating, formatDate } from '@repo/utils';
 
-  const loadingMsg = document.getElementById('loading-msg')!;
-  const errorMsg = document.getElementById('error-msg')!;
-  const restaurantContent = document.getElementById('restaurant-content')!;
-  const backLink = document.getElementById('back-link') as HTMLAnchorElement;
-  const area = document.getElementById('restaurant-detail-area')!;
+  function initRestaurantPage() {
+    const loadingMsg = document.getElementById('loading-msg');
+    const errorMsg = document.getElementById('error-msg');
+    const restaurantContent = document.getElementById('restaurant-content');
+    const backLink = document.getElementById('back-link') as HTMLAnchorElement | null;
+    const area = document.getElementById('restaurant-detail-area');
 
-  let currentRoom: RoomDetailResponse;
-  let currentUser: AuthUser;
-  let myRole: string;
-  let restaurantId: string;
+    if (!loadingMsg || !errorMsg || !restaurantContent || !backLink || !area) return;
 
-  function escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
+    let currentRoom: RoomDetailResponse;
+    let currentUser: AuthUser;
+    let myRole: string;
+    let restaurantId: string;
 
-  async function withLoading(btn: HTMLButtonElement, fn: () => Promise<void>) {
-    if (btn.disabled) return;
-    const original = btn.textContent!;
-    btn.disabled = true;
-    btn.textContent = '처리 중...';
-    try { await fn(); }
-    finally { btn.disabled = false; btn.textContent = original; }
-  }
-
-  const renderStars = formatRating;
-
-  /** 클릭 가능한 별점 UI 생성 */
-  function starRatingHtml(name: string, value: number, max = 5, size: 'default' | 'sm' = 'default'): string {
-    const stars = Array.from({ length: max }, (_, i) =>
-      `<span class="star ${i < value ? 'active' : ''}" data-value="${i + 1}">★</span>`
-    ).join('');
-    const sizeClass = size === 'sm' ? ' star-sm' : '';
-    return `<span class="star-rating${sizeClass}" data-name="${name}" data-value="${value}">${stars}<span class="star-label">${value || ''}</span></span>`;
-  }
-
-  /** 세부 평점 한 항목 */
-  function detailStarHtml(label: string, name: string, value: number | string): string {
-    const v = typeof value === 'string' ? (value ? parseInt(value, 10) : 0) : (value || 0);
-    return `<div class="detail-rating-item"><span class="detail-label">${label}</span>${starRatingHtml(name, v, 5, 'sm')}</div>`;
-  }
-
-  /** 컨테이너 내 별점 클릭 이벤트 바인딩 */
-  function attachStarRatingHandlers(container: HTMLElement) {
-    for (const ratingEl of container.querySelectorAll<HTMLElement>('.star-rating')) {
-      for (const star of ratingEl.querySelectorAll<HTMLElement>('.star')) {
-        star.addEventListener('click', () => {
-          const val = parseInt(star.dataset.value!, 10);
-          const current = parseInt(ratingEl.dataset.value || '0', 10);
-          // 같은 별 다시 클릭하면 해제 (세부 평점만)
-          const newVal = (current === val && ratingEl.classList.contains('star-sm')) ? 0 : val;
-          ratingEl.dataset.value = String(newVal);
-          const stars = ratingEl.querySelectorAll('.star');
-          stars.forEach((s, i) => s.classList.toggle('active', i < newVal));
-          const label = ratingEl.querySelector('.star-label');
-          if (label) label.textContent = newVal ? String(newVal) : '';
-        });
-      }
-    }
-  }
-
-  /** star-rating 요소에서 값 읽기 */
-  function getStarValue(container: HTMLElement, name: string): number {
-    const el = container.querySelector<HTMLElement>(`.star-rating[data-name="${name}"]`);
-    return el ? parseInt(el.dataset.value || '0', 10) : 0;
-  }
-
-  function getOptionalStarValue(container: HTMLElement, name: string): number | undefined {
-    const v = getStarValue(container, name);
-    return v > 0 ? v : undefined;
-  }
-
-  function getMyRole(): string {
-    const me = currentRoom.members.find((m) => m.userId === currentUser.id);
-    return me?.role || 'member';
-  }
-
-  function isManagerOrAbove(): boolean { return myRole === 'owner' || myRole === 'manager'; }
-
-  // ─── 렌더링 ───
-
-  function renderReviewCard(rev: RoomReviewWithUser): string {
-    const isReviewOwner = rev.userId === currentUser.id;
-    const canDeleteReview = isReviewOwner || isManagerOrAbove();
-    let actionsHtml = '';
-    if (isReviewOwner || canDeleteReview) {
-      const menuItems: string[] = [];
-      if (isReviewOwner) {
-        menuItems.push(`<button type="button" class="edit-rev-btn" data-rev-id="${rev.id}" data-rating="${rev.rating}" data-content="${escapeHtml(rev.content)}" data-revisit="${rev.wouldRevisit !== false}" data-taste="${rev.tasteRating ?? ''}" data-value="${rev.valueRating ?? ''}" data-service="${rev.serviceRating ?? ''}" data-cleanliness="${rev.cleanlinessRating ?? ''}" data-accessibility="${rev.accessibilityRating ?? ''}" data-fav-menu="${escapeHtml(rev.favoriteMenu ?? '')}" data-try-menu="${escapeHtml(rev.tryNextMenu ?? '')}">수정</button>`);
-      }
-      if (canDeleteReview) {
-        menuItems.push(`<button type="button" class="danger delete-rev-btn" data-rev-id="${rev.id}">삭제</button>`);
-      }
-      actionsHtml = `<div class="room-review-actions"><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden>${menuItems.join('')}</div></span></div>`;
+    function escapeHtml(text: string): string {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
-    const isEdited = rev.updatedAt && rev.updatedAt !== rev.createdAt;
-    const editedBadge = isEdited ? ' <span class="edited-badge">수정됨</span>' : '';
-    const revisitBadge = rev.wouldRevisit === false
-      ? '<span class="revisit-badge no">재방문 X</span>'
-      : '<span class="revisit-badge yes">재방문 O</span>';
-
-    const detailRatings = [
-      rev.tasteRating != null ? `맛 ${rev.tasteRating}` : null,
-      rev.valueRating != null ? `가성비 ${rev.valueRating}` : null,
-      rev.serviceRating != null ? `서비스 ${rev.serviceRating}` : null,
-      rev.cleanlinessRating != null ? `청결 ${rev.cleanlinessRating}` : null,
-      rev.accessibilityRating != null ? `접근성 ${rev.accessibilityRating}` : null,
-    ].filter(Boolean);
-    const detailLine = detailRatings.length > 0 ? `<div class="review-detail-ratings">${detailRatings.join(' · ')}</div>` : '';
-
-    const menuLine = [
-      rev.favoriteMenu ? `또 먹고 싶은 메뉴: ${escapeHtml(rev.favoriteMenu)}` : null,
-      rev.tryNextMenu ? `다음에 시켜볼 메뉴: ${escapeHtml(rev.tryNextMenu)}` : null,
-    ].filter(Boolean);
-    const menuHtml = menuLine.length > 0 ? `<div class="review-menu-info">${menuLine.join(' | ')}</div>` : '';
-
-    return `
-      <div class="room-review-card" data-rev-id="${rev.id}">
-        <div class="room-review-header">
-          <span class="room-review-author">${escapeHtml(rev.user.nickname)} ${revisitBadge}</span>
-          <span class="room-review-rating">${renderStars(rev.rating)} ${rev.rating}</span>
-        </div>
-        ${detailLine}
-        ${rev.content ? `<div class="room-review-content">${escapeHtml(rev.content)}</div>` : ''}
-        ${menuHtml}
-        <div class="room-review-footer">
-          <span>${formatDate(rev.createdAt)}${editedBadge}</span>
-          ${actionsHtml}
-        </div>
-      </div>
-    `;
-  }
-
-  function renderVisitCard(visit: RoomVisitWithDetails): string {
-    const canDeleteVisit = visit.createdById === currentUser.id || isManagerOrAbove();
-    const participantsHtml = visit.participants && visit.participants.length > 0
-      ? visit.participants.map((p) => escapeHtml(p.user.nickname)).join(', ')
-      : '';
-
-    const myReviewExists = visit.reviews.some((r) => r.userId === currentUser.id);
-    const reviewFormId = `review-form-${visit.id}`;
-
-    const reviewFormHtml = myReviewExists
-      ? ''
-      : `<button type="button" class="btn-outline-sm toggle-review-form-btn" data-visit-id="${visit.id}">리뷰 작성</button>
-         <div class="review-form" id="${reviewFormId}" style="display:none;">
-           <div class="review-form-section">
-             <span class="review-form-label">종합 평점</span>
-             ${starRatingHtml('new-review-rating', 3)}
-           </div>
-           <div class="review-form-section">
-             <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
-             <div class="detail-rating-inline">
-               ${detailStarHtml('맛', 'new-review-taste', 0)}
-               ${detailStarHtml('가성비', 'new-review-value', 0)}
-               ${detailStarHtml('서비스', 'new-review-service', 0)}
-               ${detailStarHtml('청결', 'new-review-cleanliness', 0)}
-               ${detailStarHtml('접근성', 'new-review-accessibility', 0)}
-             </div>
-           </div>
-           <textarea class="new-review-content" placeholder="한줄 리뷰 (선택)"></textarea>
-           <div class="review-form-extras">
-             <label class="revisit-toggle"><input type="checkbox" class="new-review-revisit" checked /> 재방문 의사</label>
-             <input type="text" class="new-review-fav-menu" placeholder="또 먹고 싶은 메뉴 (선택)" maxlength="200" />
-           </div>
-           <button type="button" class="btn-primary-sm submit-visit-review-btn" data-visit-id="${visit.id}">리뷰 작성</button>
-         </div>`;
-
-    const reviewsHtml = visit.reviews.map(renderReviewCard).join('');
-
-    const isDateUnknown = visit.memo?.startsWith('(날짜 미상)') ?? false;
-    const displayDate = isDateUnknown ? '날짜 미상' : formatDate(visit.visitedAt);
-    const displayMemo = isDateUnknown ? (visit.memo?.replace('(날짜 미상) ', '').replace('(날짜 미상)', '') || '') : (visit.memo || '');
-
-    return `
-      <div class="visit-card" data-visit-id="${visit.id}">
-        <div class="visit-header">
-          <span class="visit-date${isDateUnknown ? ' date-unknown' : ''}">${displayDate}</span>
-          ${visit.waitTime ? `<span class="wait-badge">웨이팅: ${escapeHtml(visit.waitTime)}</span>` : ''}
-          ${participantsHtml ? `<span class="visit-participants">함께: ${participantsHtml}</span>` : ''}
-          <span class="visit-creator">기록: ${escapeHtml(visit.createdBy?.nickname ?? '(탈퇴한 사용자)')}</span>
-          ${canDeleteVisit ? `<span class="visit-actions"><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" class="edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}" data-visit-wait="${escapeHtml(visit.waitTime || '')}">수정</button><button type="button" class="danger delete-visit-btn" data-visit-id="${visit.id}">삭제</button></div></span></span>` : ''}
-        </div>
-        ${displayMemo ? `<div class="visit-memo">${escapeHtml(displayMemo)}</div>` : ''}
-        <div class="visit-reviews">
-          ${reviewsHtml || '<p class="empty-text">아직 리뷰가 없습니다.</p>'}
-        </div>
-        ${reviewFormHtml}
-      </div>
-    `;
-  }
-
-  function collectDetailFields(container: HTMLElement, prefix: string): Partial<ReviewData> {
-    const optStr = (sel: string) => { const v = container.querySelector<HTMLInputElement>(sel)?.value.trim(); return v || undefined; };
-    return {
-      tasteRating: getOptionalStarValue(container, `${prefix}-taste`),
-      valueRating: getOptionalStarValue(container, `${prefix}-value`),
-      serviceRating: getOptionalStarValue(container, `${prefix}-service`),
-      cleanlinessRating: getOptionalStarValue(container, `${prefix}-cleanliness`),
-      accessibilityRating: getOptionalStarValue(container, `${prefix}-accessibility`),
-      favoriteMenu: optStr(`.${prefix}-fav-menu`),
-    };
-  }
-
-  // ─── 식당 상세 로드 ───
-
-  async function loadRestaurantDetail() {
-    area.innerHTML = '<p class="empty-text">로딩 중...</p>';
-    const detail = await fetchRoomRestaurant(currentRoom.id, restaurantId);
-    renderRestaurantDetail(detail);
-  }
-
-  function renderRestaurantDetail(detail: Awaited<ReturnType<typeof fetchRoomRestaurant>>) {
-    try {
-      const allReviews = detail.visits.flatMap((v) => v.reviews);
-
-      const avgRating = allReviews.length > 0
-        ? Math.round(allReviews.reduce((a, r) => a + r.rating, 0) / allReviews.length * 10) / 10
-        : null;
-
-      const canEditRest = detail.addedById === currentUser.id || isManagerOrAbove();
-      let restMenuHtml = '';
-      if (canEditRest) {
-        restMenuHtml = `<span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" id="edit-rest-btn">수정</button><button type="button" class="danger" id="delete-rest-btn">식당 삭제</button></div></span>`;
-      }
-
-
-      const sortedVisits = [...detail.visits].sort((a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime());
-
-
-      const helpHintHtml = sortedVisits.length === 0
-        ? `<div class="inline-help-hint">
-            <span class="inline-help-icon">?</span>
-            <div>
-              <strong>처음이신가요?</strong>
-              <p>위의 "방문 기록 추가"에서 날짜를 선택하고 등록하세요. 방문을 추가하면 리뷰를 작성할 수 있습니다.</p>
-            </div>
-          </div>`
-        : '';
-
-      const visitsHtml = sortedVisits.length > 0
-        ? sortedVisits.map(renderVisitCard).join('')
-        : '<p class="empty-text">아직 방문 기록이 없습니다.</p>';
-
-      area.innerHTML = `
-        <div class="room-rest-detail">
-          <h2>${detail.isClosed ? '<span class="closed-badge">폐점</span> ' : ''}${escapeHtml(detail.name)}</h2>
-          <div class="detail-address">${escapeHtml(detail.address)}</div>
-          <div class="detail-meta">
-            <span class="category-badge">${escapeHtml(detail.category)}</span>
-            ${avgRating !== null ? `<span>${renderStars(avgRating)} ${avgRating}</span>` : ''}
-            <span>등록: ${escapeHtml(detail.addedBy?.nickname ?? '(탈퇴한 사용자)')}</span>
-            <span class="detail-actions">${restMenuHtml}</span>
-          </div>
-          <div class="visits-heading-row">
-            <h3 class="visits-heading">방문 기록 (${detail.visits.length})</h3>
-            <a href="/room/add?roomId=${currentRoom.id}&restaurantId=${restaurantId}&name=${encodeURIComponent(detail.name)}" class="btn-primary-sm" style="text-decoration:none;">+ 방문 추가</a>
-          </div>
-          ${helpHintHtml}
-          <div id="visits-list">${visitsHtml}</div>
-        </div>
-      `;
-
-      // 식당 수정
-      document.getElementById('edit-rest-btn')?.addEventListener('click', () => {
-        const metaEl = area.querySelector('.detail-meta')!;
-        if (area.querySelector('.edit-rest-form')) return;
-
-        metaEl.insertAdjacentHTML('afterend', `
-          <div class="edit-rest-form" style="background:var(--bg-hover);border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
-            <div class="form-row full" style="margin-bottom:0.5rem;">
-              <input type="text" id="edit-rest-name" value="${escapeHtml(detail.name)}" placeholder="식당 이름" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
-            </div>
-            <div class="form-row" style="margin-bottom:0.5rem;">
-              <input type="text" id="edit-rest-address" value="${escapeHtml(detail.address)}" placeholder="주소" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
-            </div>
-            <div class="form-row" style="margin-bottom:0.5rem;">
-              <input type="text" id="edit-rest-category" value="${escapeHtml(detail.category)}" placeholder="카테고리" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
-            </div>
-            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
-              <button type="button" class="btn-primary-sm" id="save-rest-edit">저장</button>
-              <button type="button" class="btn-outline-sm" id="cancel-rest-edit">취소</button>
-              <label class="closed-toggle-label"><input type="checkbox" id="edit-rest-closed" ${detail.isClosed ? 'checked' : ''} /><span class="closed-toggle-track"></span>폐점</label>
-            </div>
-          </div>
-        `);
-
-        document.getElementById('cancel-rest-edit')!.addEventListener('click', () => {
-          area.querySelector('.edit-rest-form')?.remove();
-        });
-
-        document.getElementById('save-rest-edit')!.addEventListener('click', async () => {
-          const newName = (document.getElementById('edit-rest-name') as HTMLInputElement).value.trim();
-          const newAddress = (document.getElementById('edit-rest-address') as HTMLInputElement).value.trim();
-          const newCategory = (document.getElementById('edit-rest-category') as HTMLInputElement).value.trim();
-          const newIsClosed = (document.getElementById('edit-rest-closed') as HTMLInputElement).checked;
-          if (!newName || !newCategory) { showToast('이름과 카테고리를 입력해주세요.', 'info'); return; }
-
-          try {
-            const updateData: Parameters<typeof updateRoomRestaurant>[2] = { name: newName, category: newCategory, isClosed: newIsClosed, ...(newAddress && { address: newAddress }) };
-
-            // 주소가 변경되면 카카오 지오코딩으로 좌표 갱신
-            if (newAddress && newAddress !== detail.address && 'kakao' in window) {
-              try {
-                const coords = await new Promise<{ lat: number; lng: number } | null>((resolve) => {
-                  const maps = (window as Record<string, unknown>).kakao as { maps: { load: (cb: () => void) => void; services: { Geocoder: new () => { addressSearch: (addr: string, cb: (result: { y: string; x: string }[], status: string) => void) => void }; Status: { OK: string } } } };
-                  maps.maps.load(() => {
-                    const geocoder = new maps.maps.services.Geocoder();
-                    geocoder.addressSearch(newAddress, (result, status) => {
-                      if (status === maps.maps.services.Status.OK && result.length > 0) {
-                        resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
-                      } else {
-                        resolve(null);
-                      }
-                    });
-                  });
-                });
-                if (coords) {
-                  updateData.latitude = coords.lat;
-                  updateData.longitude = coords.lng;
-                }
-              } catch { /* 지오코딩 실패 시 좌표 없이 주소만 업데이트 */ }
-            }
-
-            await updateRoomRestaurant(currentRoom.id, restaurantId, updateData);
-            currentRoom = await fetchRoom(currentRoom.id);
-            await loadRestaurantDetail();
-            showToast('식당 정보가 수정되었습니다.', 'success');
-          } catch { showToast('식당 수정에 실패했습니다.'); }
-        });
-      });
-
-      // 식당 삭제
-      document.getElementById('delete-rest-btn')?.addEventListener('click', async () => {
-        if (!await showDangerConfirm('이 식당을 삭제하시겠습니까? 모든 방문 기록과 리뷰도 삭제됩니다.')) return;
-        try {
-          await deleteRoomRestaurant(currentRoom.id, restaurantId);
-          showToast('식당이 삭제되었습니다.', 'success');
-          location.href = `/room?id=${currentRoom.id}`;
-        } catch { showToast('삭제에 실패했습니다.'); }
-      });
-
-      // 더보기(⋯) 메뉴 토글
-      for (const menuBtn of area.querySelectorAll<HTMLButtonElement>('.more-menu-btn')) {
-        menuBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const dropdown = menuBtn.nextElementSibling as HTMLElement;
-          // 다른 열린 메뉴 닫기
-          for (const d of area.querySelectorAll('.more-menu-dropdown')) {
-            if (d !== dropdown) (d as HTMLElement).hidden = true;
-          }
-          dropdown.hidden = !dropdown.hidden;
-        });
-      }
-      document.addEventListener('click', () => {
-        for (const d of area.querySelectorAll('.more-menu-dropdown')) {
-          (d as HTMLElement).hidden = true;
-        }
-      });
-
-      attachVisitAndReviewHandlers();
-      attachStarRatingHandlers(area);
-    } catch {
-      area.innerHTML = '<p class="empty-text">식당 정보를 불러올 수 없습니다.</p>';
+    async function withLoading(btn: HTMLButtonElement, fn: () => Promise<void>) {
+      if (btn.disabled) return;
+      const original = btn.textContent || '';
+      btn.disabled = true;
+      btn.textContent = '처리 중...';
+      try { await fn(); }
+      finally { btn.disabled = false; btn.textContent = original; }
     }
-  }
 
-  function attachVisitAndReviewHandlers() {
-    // 방문 기록 수정
-    for (const btn of area.querySelectorAll<HTMLButtonElement>('.edit-visit-btn')) {
-      btn.addEventListener('click', () => {
-        const visitCard = btn.closest('.visit-card')!;
-        if (visitCard.querySelector('.visit-edit-form')) return;
+    const renderStars = formatRating;
 
-        const visitId = btn.dataset.visitId!;
-        const currentDate = btn.dataset.visitDate || '';
-        const currentMemo = btn.dataset.visitMemo || '';
-        const currentWait = btn.dataset.visitWait || '';
+    /** 클릭 가능한 별점 UI 생성 */
+    function starRatingHtml(name: string, value: number, max = 5, size: 'default' | 'sm' = 'default'): string {
+      const stars = Array.from({ length: max }, (_, i) =>
+        `<span class="star ${i < value ? 'active' : ''}" data-value="${i + 1}">★</span>`
+      ).join('');
+      const sizeClass = size === 'sm' ? ' star-sm' : '';
+      return `<span class="star-rating${sizeClass}" data-name="${name}" data-value="${value}">${stars}<span class="star-label">${value || ''}</span></span>`;
+    }
 
-        const isDateUnknown = currentMemo.startsWith('(날짜 미상)');
-        const waitOptions = ['없음', '~10분', '~30분', '~1시간', '1시간+'];
-        const visitHeader = visitCard.querySelector('.visit-header')!;
-        // 기존 편집 폼이 있으면 제거
-        visitCard.querySelector('.visit-edit-form')?.remove();
-        visitHeader.insertAdjacentHTML('afterend', `
-          <div class="visit-edit-form">
-            <div class="visit-edit-row">
-              <div class="visit-edit-field">
-                <label class="visit-edit-label">날짜</label>
-                <div class="visit-date-row">
-                  <input type="date" class="visit-edit-date" value="${currentDate}" ${isDateUnknown ? 'disabled style="opacity:0.4;"' : ''} />
-                  <label class="date-unknown-toggle"><input type="checkbox" class="visit-edit-date-unknown" ${isDateUnknown ? 'checked' : ''} /> 날짜 모름</label>
-                </div>
-              </div>
-              <div class="visit-edit-field">
-                <label class="visit-edit-label">메모</label>
-                <input type="text" class="visit-edit-memo" value="${escapeHtml(isDateUnknown ? currentMemo.replace('(날짜 미상) ', '').replace('(날짜 미상)', '') : currentMemo)}" placeholder="메모 (선택)" maxlength="500" />
-              </div>
-              <div class="visit-edit-field">
-                <label class="visit-edit-label">웨이팅</label>
-                <div class="wait-chips visit-edit-wait-chips">
-                  ${waitOptions.map((w) => `<button type="button" class="wait-chip${currentWait === w ? ' active' : ''}" data-wait="${w}">${w}</button>`).join('')}
-                </div>
-              </div>
-            </div>
-            <div class="visit-edit-actions">
-              <button type="button" class="btn-outline-sm cancel-visit-edit-btn">취소</button>
-              <button type="button" class="btn-primary-sm save-visit-edit-btn">저장</button>
-            </div>
-          </div>
-        `);
+    /** 세부 평점 한 항목 */
+    function detailStarHtml(label: string, name: string, value: number | string): string {
+      const v = typeof value === 'string' ? (value ? parseInt(value, 10) : 0) : (value || 0);
+      return `<div class="detail-rating-item"><span class="detail-label">${label}</span>${starRatingHtml(name, v, 5, 'sm')}</div>`;
+    }
 
-        // 웨이팅 칩 토글
-        let editWaitTime = currentWait;
-        for (const chip of visitCard.querySelectorAll<HTMLButtonElement>('.visit-edit-wait-chips .wait-chip')) {
-          chip.addEventListener('click', () => {
-            const val = chip.dataset.wait || '';
-            if (editWaitTime === val) {
-              editWaitTime = '';
-              chip.classList.remove('active');
-            } else {
-              editWaitTime = val;
-              for (const c of visitCard.querySelectorAll('.visit-edit-wait-chips .wait-chip')) c.classList.remove('active');
-              chip.classList.add('active');
-            }
+    /** 컨테이너 내 별점 클릭 이벤트 바인딩 */
+    function attachStarRatingHandlers(container: HTMLElement) {
+      for (const ratingEl of container.querySelectorAll<HTMLElement>('.star-rating')) {
+        for (const star of ratingEl.querySelectorAll<HTMLElement>('.star')) {
+          star.addEventListener('click', () => {
+            const val = parseInt(star.dataset.value || '0', 10);
+            const current = parseInt(ratingEl.dataset.value || '0', 10);
+            // 같은 별 다시 클릭하면 해제 (세부 평점만)
+            const newVal = (current === val && ratingEl.classList.contains('star-sm')) ? 0 : val;
+            ratingEl.dataset.value = String(newVal);
+            const stars = ratingEl.querySelectorAll('.star');
+            stars.forEach((s, i) => s.classList.toggle('active', i < newVal));
+            const label = ratingEl.querySelector('.star-label');
+            if (label) label.textContent = newVal ? String(newVal) : '';
           });
         }
-
-        // 날짜 모름 토글
-        const editDateCb = visitCard.querySelector<HTMLInputElement>('.visit-edit-date-unknown')!;
-        const editDateInput = visitCard.querySelector<HTMLInputElement>('.visit-edit-date')!;
-        editDateCb.addEventListener('change', () => {
-          editDateInput.disabled = editDateCb.checked;
-          editDateInput.style.opacity = editDateCb.checked ? '0.4' : '1';
-        });
-
-        visitCard.querySelector('.cancel-visit-edit-btn')!.addEventListener('click', () => {
-          visitCard.querySelector('.visit-edit-form')?.remove();
-        });
-
-        visitCard.querySelector('.save-visit-edit-btn')!.addEventListener('click', async () => {
-          const editIsUnknown = visitCard.querySelector<HTMLInputElement>('.visit-edit-date-unknown')!.checked;
-          const rawDate = visitCard.querySelector<HTMLInputElement>('.visit-edit-date')!.value;
-          const rawMemo = visitCard.querySelector<HTMLInputElement>('.visit-edit-memo')!.value.trim();
-          const newDate = editIsUnknown ? new Date().toISOString().slice(0, 10) : rawDate;
-          const newMemo = editIsUnknown ? (rawMemo ? `(날짜 미상) ${rawMemo}` : '(날짜 미상)') : rawMemo;
-          if (!newDate) { showToast('날짜를 입력해주세요.', 'info'); return; }
-
-          try {
-            await updateRoomVisit(currentRoom.id, visitId, { visitedAt: newDate, memo: newMemo || undefined, waitTime: editWaitTime || undefined });
-            currentRoom = await fetchRoom(currentRoom.id);
-            await loadRestaurantDetail();
-            showToast('방문 기록이 수정되었습니다.', 'success');
-          } catch { showToast('방문 기록 수정에 실패했습니다.'); }
-        });
-      });
+      }
     }
 
-    // 방문 기록 삭제
-    for (const btn of area.querySelectorAll<HTMLButtonElement>('.delete-visit-btn')) {
-      btn.addEventListener('click', async () => {
-        if (!await showDangerConfirm('이 방문 기록을 삭제하시겠습니까? 포함된 리뷰도 삭제됩니다.')) return;
-        try {
-          await deleteRoomVisit(currentRoom.id, btn.dataset.visitId!);
-          currentRoom = await fetchRoom(currentRoom.id);
-          await loadRestaurantDetail();
-        } catch { showToast('방문 기록 삭제에 실패했습니다.'); }
-      });
+    /** star-rating 요소에서 값 읽기 */
+    function getStarValue(container: HTMLElement, name: string): number {
+      const el = container.querySelector<HTMLElement>(`.star-rating[data-name="${name}"]`);
+      return el ? parseInt(el.dataset.value || '0', 10) : 0;
     }
 
-    // 리뷰 작성 폼 토글
-    for (const btn of area.querySelectorAll<HTMLButtonElement>('.toggle-review-form-btn')) {
-      btn.addEventListener('click', () => {
-        const form = document.getElementById(`review-form-${btn.dataset.visitId!}`);
-        if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
-      });
+    function getOptionalStarValue(container: HTMLElement, name: string): number | undefined {
+      const v = getStarValue(container, name);
+      return v > 0 ? v : undefined;
     }
 
-    // 리뷰 작성
-    for (const btn of area.querySelectorAll<HTMLButtonElement>('.submit-visit-review-btn')) {
-      btn.addEventListener('click', () => withLoading(btn, async () => {
-        const visitCard = btn.closest('.visit-card')!;
-        const visitId = btn.dataset.visitId!;
-        const rating = getStarValue(visitCard as HTMLElement, 'new-review-rating');
-        const content = visitCard.querySelector<HTMLTextAreaElement>('.new-review-content')!.value.trim();
-        const wouldRevisit = visitCard.querySelector<HTMLInputElement>('.new-review-revisit')!.checked;
-        if (!rating) { showToast('평점을 선택해주세요.', 'info'); return; }
-        const detailFields = collectDetailFields(visitCard as HTMLElement, 'new-review');
-
-        await createRoomReview(currentRoom.id, visitId, { rating, content, wouldRevisit, ...detailFields });
-        currentRoom = await fetchRoom(currentRoom.id);
-        await loadRestaurantDetail();
-        showToast('리뷰가 작성되었습니다.', 'success');
-      }).catch((err) => showToast(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.')));
+    function getMyRole(): string {
+      const me = currentRoom.members.find((m) => m.userId === currentUser.id);
+      return me?.role || 'member';
     }
 
-    // 리뷰 삭제
-    for (const btn of area.querySelectorAll<HTMLButtonElement>('.delete-rev-btn')) {
-      btn.addEventListener('click', async () => {
-        if (!await showDangerConfirm('이 리뷰를 삭제하시겠습니까?')) return;
-        try {
-          await deleteRoomReview(currentRoom.id, btn.dataset.revId!);
-          currentRoom = await fetchRoom(currentRoom.id);
-          await loadRestaurantDetail();
-        } catch { showToast('리뷰 삭제에 실패했습니다.'); }
-      });
+    function isManagerOrAbove(): boolean { return myRole === 'owner' || myRole === 'manager'; }
+
+    // ─── 렌더링 ───
+
+    function renderReviewCard(rev: RoomReviewWithUser): string {
+      const isReviewOwner = rev.userId === currentUser.id;
+      const canDeleteReview = isReviewOwner || isManagerOrAbove();
+      let actionsHtml = '';
+      if (isReviewOwner || canDeleteReview) {
+        const menuItems: string[] = [];
+        if (isReviewOwner) {
+          menuItems.push(`<button type="button" class="edit-rev-btn" data-rev-id="${rev.id}" data-rating="${rev.rating}" data-content="${escapeHtml(rev.content)}" data-revisit="${rev.wouldRevisit !== false}" data-taste="${rev.tasteRating ?? ''}" data-value="${rev.valueRating ?? ''}" data-service="${rev.serviceRating ?? ''}" data-cleanliness="${rev.cleanlinessRating ?? ''}" data-accessibility="${rev.accessibilityRating ?? ''}" data-fav-menu="${escapeHtml(rev.favoriteMenu ?? '')}" data-try-menu="${escapeHtml(rev.tryNextMenu ?? '')}">수정</button>`);
+        }
+        if (canDeleteReview) {
+          menuItems.push(`<button type="button" class="danger delete-rev-btn" data-rev-id="${rev.id}">삭제</button>`);
+        }
+        actionsHtml = `<div class="room-review-actions"><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden>${menuItems.join('')}</div></span></div>`;
+      }
+
+      const isEdited = rev.updatedAt && rev.updatedAt !== rev.createdAt;
+      const editedBadge = isEdited ? ' <span class="edited-badge">수정됨</span>' : '';
+      const revisitBadge = rev.wouldRevisit === false
+        ? '<span class="revisit-badge no">재방문 X</span>'
+        : '<span class="revisit-badge yes">재방문 O</span>';
+
+      const detailRatings = [
+        rev.tasteRating != null ? `맛 ${rev.tasteRating}` : null,
+        rev.valueRating != null ? `가성비 ${rev.valueRating}` : null,
+        rev.serviceRating != null ? `서비스 ${rev.serviceRating}` : null,
+        rev.cleanlinessRating != null ? `청결 ${rev.cleanlinessRating}` : null,
+        rev.accessibilityRating != null ? `접근성 ${rev.accessibilityRating}` : null,
+      ].filter(Boolean);
+      const detailLine = detailRatings.length > 0 ? `<div class="review-detail-ratings">${detailRatings.join(' · ')}</div>` : '';
+
+      const menuLine = [
+        rev.favoriteMenu ? `또 먹고 싶은 메뉴: ${escapeHtml(rev.favoriteMenu)}` : null,
+        rev.tryNextMenu ? `다음에 시켜볼 메뉴: ${escapeHtml(rev.tryNextMenu)}` : null,
+      ].filter(Boolean);
+      const menuHtml = menuLine.length > 0 ? `<div class="review-menu-info">${menuLine.join(' | ')}</div>` : '';
+
+      return `
+        <div class="room-review-card" data-rev-id="${rev.id}">
+          <div class="room-review-header">
+            <span class="room-review-author">${escapeHtml(rev.user.nickname)} ${revisitBadge}</span>
+            <span class="room-review-rating">${renderStars(rev.rating)} ${rev.rating}</span>
+          </div>
+          ${detailLine}
+          ${rev.content ? `<div class="room-review-content">${escapeHtml(rev.content)}</div>` : ''}
+          ${menuHtml}
+          <div class="room-review-footer">
+            <span>${formatDate(rev.createdAt)}${editedBadge}</span>
+            ${actionsHtml}
+          </div>
+        </div>
+      `;
     }
 
-    // 리뷰 수정
-    for (const btn of area.querySelectorAll<HTMLButtonElement>('.edit-rev-btn')) {
-      btn.addEventListener('click', () => {
-        const revId = btn.dataset.revId!;
-        const origRating = btn.dataset.rating!;
-        const origContent = btn.dataset.content!;
-        const origRevisit = btn.dataset.revisit === 'true';
-        const card = area.querySelector<HTMLElement>(`.room-review-card[data-rev-id="${revId}"]`)!;
+    function renderVisitCard(visit: RoomVisitWithDetails): string {
+      const canDeleteVisit = visit.createdById === currentUser.id || isManagerOrAbove();
+      const participantsHtml = visit.participants && visit.participants.length > 0
+        ? visit.participants.map((p) => escapeHtml(p.user.nickname)).join(', ')
+        : '';
 
-        if (card.querySelector('.review-form')) return;
+      const myReviewExists = visit.reviews.some((r) => r.userId === currentUser.id);
+      const reviewFormId = `review-form-${visit.id}`;
 
-        card.insertAdjacentHTML('beforeend', `
-          <div class="review-form">
-            <div class="review-form-section">
-              <span class="review-form-label">종합 평점</span>
-              ${starRatingHtml('edit-rating', Number(origRating))}
+      const reviewFormHtml = myReviewExists
+        ? ''
+        : `<button type="button" class="btn-outline-sm toggle-review-form-btn" data-visit-id="${visit.id}">리뷰 작성</button>
+           <div class="review-form" id="${reviewFormId}" style="display:none;">
+             <div class="review-form-section">
+               <span class="review-form-label">종합 평점</span>
+               ${starRatingHtml('new-review-rating', 3)}
+             </div>
+             <div class="review-form-section">
+               <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
+               <div class="detail-rating-inline">
+                 ${detailStarHtml('맛', 'new-review-taste', 0)}
+                 ${detailStarHtml('가성비', 'new-review-value', 0)}
+                 ${detailStarHtml('서비스', 'new-review-service', 0)}
+                 ${detailStarHtml('청결', 'new-review-cleanliness', 0)}
+                 ${detailStarHtml('접근성', 'new-review-accessibility', 0)}
+               </div>
+             </div>
+             <textarea class="new-review-content" placeholder="한줄 리뷰 (선택)"></textarea>
+             <div class="review-form-extras">
+               <label class="revisit-toggle"><input type="checkbox" class="new-review-revisit" checked /> 재방문 의사</label>
+               <input type="text" class="new-review-fav-menu" placeholder="또 먹고 싶은 메뉴 (선택)" maxlength="200" />
+             </div>
+             <button type="button" class="btn-primary-sm submit-visit-review-btn" data-visit-id="${visit.id}">리뷰 작성</button>
+           </div>`;
+
+      const reviewsHtml = visit.reviews.map(renderReviewCard).join('');
+
+      const isDateUnknown = visit.memo?.startsWith('(날짜 미상)') ?? false;
+      const displayDate = isDateUnknown ? '날짜 미상' : formatDate(visit.visitedAt);
+      const displayMemo = isDateUnknown ? (visit.memo?.replace('(날짜 미상) ', '').replace('(날짜 미상)', '') || '') : (visit.memo || '');
+
+      return `
+        <div class="visit-card" data-visit-id="${visit.id}">
+          <div class="visit-header">
+            <span class="visit-date${isDateUnknown ? ' date-unknown' : ''}">${displayDate}</span>
+            ${visit.waitTime ? `<span class="wait-badge">웨이팅: ${escapeHtml(visit.waitTime)}</span>` : ''}
+            ${participantsHtml ? `<span class="visit-participants">함께: ${participantsHtml}</span>` : ''}
+            <span class="visit-creator">기록: ${escapeHtml(visit.createdBy?.nickname ?? '(탈퇴한 사용자)')}</span>
+            ${canDeleteVisit ? `<span class="visit-actions"><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" class="edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}" data-visit-wait="${escapeHtml(visit.waitTime || '')}">수정</button><button type="button" class="danger delete-visit-btn" data-visit-id="${visit.id}">삭제</button></div></span></span>` : ''}
+          </div>
+          ${displayMemo ? `<div class="visit-memo">${escapeHtml(displayMemo)}</div>` : ''}
+          <div class="visit-reviews">
+            ${reviewsHtml || '<p class="empty-text">아직 리뷰가 없습니다.</p>'}
+          </div>
+          ${reviewFormHtml}
+        </div>
+      `;
+    }
+
+    function collectDetailFields(container: HTMLElement, prefix: string): Partial<ReviewData> {
+      const optStr = (sel: string) => { const v = container.querySelector<HTMLInputElement>(sel)?.value.trim(); return v || undefined; };
+      return {
+        tasteRating: getOptionalStarValue(container, `${prefix}-taste`),
+        valueRating: getOptionalStarValue(container, `${prefix}-value`),
+        serviceRating: getOptionalStarValue(container, `${prefix}-service`),
+        cleanlinessRating: getOptionalStarValue(container, `${prefix}-cleanliness`),
+        accessibilityRating: getOptionalStarValue(container, `${prefix}-accessibility`),
+        favoriteMenu: optStr(`.${prefix}-fav-menu`),
+      };
+    }
+
+    // ─── 식당 상세 로드 ───
+
+    async function loadRestaurantDetail() {
+      area.innerHTML = '<p class="empty-text">로딩 중...</p>';
+      const detail = await fetchRoomRestaurant(currentRoom.id, restaurantId);
+      renderRestaurantDetail(detail);
+    }
+
+    function renderRestaurantDetail(detail: Awaited<ReturnType<typeof fetchRoomRestaurant>>) {
+      try {
+        const allReviews = detail.visits.flatMap((v) => v.reviews);
+
+        const avgRating = allReviews.length > 0
+          ? Math.round(allReviews.reduce((a, r) => a + r.rating, 0) / allReviews.length * 10) / 10
+          : null;
+
+        const canEditRest = detail.addedById === currentUser.id || isManagerOrAbove();
+        let restMenuHtml = '';
+        if (canEditRest) {
+          restMenuHtml = `<span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" id="edit-rest-btn">수정</button><button type="button" class="danger" id="delete-rest-btn">식당 삭제</button></div></span>`;
+        }
+
+
+        const sortedVisits = [...detail.visits].sort((a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime());
+
+
+        const helpHintHtml = sortedVisits.length === 0
+          ? `<div class="inline-help-hint">
+              <span class="inline-help-icon">?</span>
+              <div>
+                <strong>처음이신가요?</strong>
+                <p>위의 "방문 기록 추가"에서 날짜를 선택하고 등록하세요. 방문을 추가하면 리뷰를 작성할 수 있습니다.</p>
+              </div>
+            </div>`
+          : '';
+
+        const visitsHtml = sortedVisits.length > 0
+          ? sortedVisits.map(renderVisitCard).join('')
+          : '<p class="empty-text">아직 방문 기록이 없습니다.</p>';
+
+        area.innerHTML = `
+          <div class="room-rest-detail">
+            <h2>${detail.isClosed ? '<span class="closed-badge">폐점</span> ' : ''}${escapeHtml(detail.name)}</h2>
+            <div class="detail-address">${escapeHtml(detail.address)}</div>
+            <div class="detail-meta">
+              <span class="category-badge">${escapeHtml(detail.category)}</span>
+              ${avgRating !== null ? `<span>${renderStars(avgRating)} ${avgRating}</span>` : ''}
+              <span>등록: ${escapeHtml(detail.addedBy?.nickname ?? '(탈퇴한 사용자)')}</span>
+              <span class="detail-actions">${restMenuHtml}</span>
             </div>
-            <div class="review-form-section">
-              <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
-              <div class="detail-rating-inline">
-                ${detailStarHtml('맛', 'edit-taste', btn.dataset.taste || '')}
-                ${detailStarHtml('가성비', 'edit-value', btn.dataset.value || '')}
-                ${detailStarHtml('서비스', 'edit-service', btn.dataset.service || '')}
-                ${detailStarHtml('청결', 'edit-cleanliness', btn.dataset.cleanliness || '')}
-                ${detailStarHtml('접근성', 'edit-accessibility', btn.dataset.accessibility || '')}
+            <div class="visits-heading-row">
+              <h3 class="visits-heading">방문 기록 (${detail.visits.length})</h3>
+              <a href="/room/add?roomId=${currentRoom.id}&restaurantId=${restaurantId}&name=${encodeURIComponent(detail.name)}" class="btn-primary-sm" style="text-decoration:none;">+ 방문 추가</a>
+            </div>
+            ${helpHintHtml}
+            <div id="visits-list">${visitsHtml}</div>
+          </div>
+        `;
+
+        // 식당 수정
+        document.getElementById('edit-rest-btn')?.addEventListener('click', () => {
+          const metaEl = area.querySelector('.detail-meta');
+          if (!metaEl) return;
+          if (area.querySelector('.edit-rest-form')) return;
+
+          metaEl.insertAdjacentHTML('afterend', `
+            <div class="edit-rest-form" style="background:var(--bg-hover);border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
+              <div class="form-row full" style="margin-bottom:0.5rem;">
+                <input type="text" id="edit-rest-name" value="${escapeHtml(detail.name)}" placeholder="식당 이름" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
+              </div>
+              <div class="form-row" style="margin-bottom:0.5rem;">
+                <input type="text" id="edit-rest-address" value="${escapeHtml(detail.address)}" placeholder="주소" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
+              </div>
+              <div class="form-row" style="margin-bottom:0.5rem;">
+                <input type="text" id="edit-rest-category" value="${escapeHtml(detail.category)}" placeholder="카테고리" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
+              </div>
+              <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+                <button type="button" class="btn-primary-sm" id="save-rest-edit">저장</button>
+                <button type="button" class="btn-outline-sm" id="cancel-rest-edit">취소</button>
+                <label class="closed-toggle-label"><input type="checkbox" id="edit-rest-closed" ${detail.isClosed ? 'checked' : ''} /><span class="closed-toggle-track"></span>폐점</label>
               </div>
             </div>
-            <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
-            <div class="review-form-extras">
-              <label class="revisit-toggle"><input type="checkbox" class="edit-revisit" ${origRevisit ? 'checked' : ''} /> 재방문 의사</label>
-              <input type="text" class="edit-fav-menu" placeholder="또 먹고 싶은 메뉴 (선택)" maxlength="200" value="${escapeHtml(btn.dataset.favMenu || '')}" />
-            </div>
-            <div style="display:flex;gap:0.5rem;">
-              <button type="button" class="btn-primary-sm save-edit-btn">저장</button>
-              <button type="button" class="btn-outline-sm cancel-edit-btn">취소</button>
-            </div>
-          </div>
-        `);
-        attachStarRatingHandlers(card);
+          `);
 
-        card.querySelector('.save-edit-btn')!.addEventListener('click', async () => {
-          const newRating = getStarValue(card, 'edit-rating');
-          const newContent = card.querySelector<HTMLTextAreaElement>('.edit-content')!.value.trim();
-          const newRevisit = card.querySelector<HTMLInputElement>('.edit-revisit')!.checked;
-          const detailFields = collectDetailFields(card, 'edit');
+          document.getElementById('cancel-rest-edit')?.addEventListener('click', () => {
+            area.querySelector('.edit-rest-form')?.remove();
+          });
 
+          document.getElementById('save-rest-edit')?.addEventListener('click', async () => {
+            const newName = (document.getElementById('edit-rest-name') as HTMLInputElement | null)?.value.trim() || '';
+            const newAddress = (document.getElementById('edit-rest-address') as HTMLInputElement | null)?.value.trim() || '';
+            const newCategory = (document.getElementById('edit-rest-category') as HTMLInputElement | null)?.value.trim() || '';
+            const newIsClosed = (document.getElementById('edit-rest-closed') as HTMLInputElement | null)?.checked ?? false;
+            if (!newName || !newCategory) { showToast('이름과 카테고리를 입력해주세요.', 'info'); return; }
+
+            try {
+              const updateData: Parameters<typeof updateRoomRestaurant>[2] = { name: newName, category: newCategory, isClosed: newIsClosed, ...(newAddress && { address: newAddress }) };
+
+              // 주소가 변경되면 카카오 지오코딩으로 좌표 갱신
+              if (newAddress && newAddress !== detail.address && 'kakao' in window) {
+                try {
+                  const coords = await new Promise<{ lat: number; lng: number } | null>((resolve) => {
+                    const maps = (window as Record<string, unknown>).kakao as { maps: { load: (cb: () => void) => void; services: { Geocoder: new () => { addressSearch: (addr: string, cb: (result: { y: string; x: string }[], status: string) => void) => void }; Status: { OK: string } } } };
+                    maps.maps.load(() => {
+                      const geocoder = new maps.maps.services.Geocoder();
+                      geocoder.addressSearch(newAddress, (result, status) => {
+                        if (status === maps.maps.services.Status.OK && result.length > 0) {
+                          resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
+                        } else {
+                          resolve(null);
+                        }
+                      });
+                    });
+                  });
+                  if (coords) {
+                    updateData.latitude = coords.lat;
+                    updateData.longitude = coords.lng;
+                  }
+                } catch { /* 지오코딩 실패 시 좌표 없이 주소만 업데이트 */ }
+              }
+
+              await updateRoomRestaurant(currentRoom.id, restaurantId, updateData);
+              currentRoom = await fetchRoom(currentRoom.id);
+              await loadRestaurantDetail();
+              showToast('식당 정보가 수정되었습니다.', 'success');
+            } catch { showToast('식당 수정에 실패했습니다.'); }
+          });
+        });
+
+        // 식당 삭제
+        document.getElementById('delete-rest-btn')?.addEventListener('click', async () => {
+          if (!await showDangerConfirm('이 식당을 삭제하시겠습니까? 모든 방문 기록과 리뷰도 삭제됩니다.')) return;
           try {
-            await updateRoomReview(currentRoom.id, revId, { rating: newRating, content: newContent, wouldRevisit: newRevisit, ...detailFields });
+            await deleteRoomRestaurant(currentRoom.id, restaurantId);
+            showToast('식당이 삭제되었습니다.', 'success');
+            location.href = `/room?id=${currentRoom.id}`;
+          } catch { showToast('삭제에 실패했습니다.'); }
+        });
+
+        // 더보기(⋯) 메뉴 토글
+        for (const menuBtn of area.querySelectorAll<HTMLButtonElement>('.more-menu-btn')) {
+          menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = menuBtn.nextElementSibling as HTMLElement;
+            // 다른 열린 메뉴 닫기
+            for (const d of area.querySelectorAll('.more-menu-dropdown')) {
+              if (d !== dropdown) (d as HTMLElement).hidden = true;
+            }
+            dropdown.hidden = !dropdown.hidden;
+          });
+        }
+        document.addEventListener('click', () => {
+          for (const d of area.querySelectorAll('.more-menu-dropdown')) {
+            (d as HTMLElement).hidden = true;
+          }
+        });
+
+        attachVisitAndReviewHandlers();
+        attachStarRatingHandlers(area);
+      } catch {
+        area.innerHTML = '<p class="empty-text">식당 정보를 불러올 수 없습니다.</p>';
+      }
+    }
+
+    function attachVisitAndReviewHandlers() {
+      // 방문 기록 수정
+      for (const btn of area.querySelectorAll<HTMLButtonElement>('.edit-visit-btn')) {
+        btn.addEventListener('click', () => {
+          const visitCard = btn.closest('.visit-card');
+          if (!visitCard) return;
+          if (visitCard.querySelector('.visit-edit-form')) return;
+
+          const visitId = btn.dataset.visitId || '';
+          const currentDate = btn.dataset.visitDate || '';
+          const currentMemo = btn.dataset.visitMemo || '';
+          const currentWait = btn.dataset.visitWait || '';
+
+          const isDateUnknown = currentMemo.startsWith('(날짜 미상)');
+          const waitOptions = ['없음', '~10분', '~30분', '~1시간', '1시간+'];
+          const visitHeader = visitCard.querySelector('.visit-header');
+          if (!visitHeader) return;
+          // 기존 편집 폼이 있으면 제거
+          visitCard.querySelector('.visit-edit-form')?.remove();
+          visitHeader.insertAdjacentHTML('afterend', `
+            <div class="visit-edit-form">
+              <div class="visit-edit-row">
+                <div class="visit-edit-field">
+                  <label class="visit-edit-label">날짜</label>
+                  <div class="visit-date-row">
+                    <input type="date" class="visit-edit-date" value="${currentDate}" ${isDateUnknown ? 'disabled style="opacity:0.4;"' : ''} />
+                    <label class="date-unknown-toggle"><input type="checkbox" class="visit-edit-date-unknown" ${isDateUnknown ? 'checked' : ''} /> 날짜 모름</label>
+                  </div>
+                </div>
+                <div class="visit-edit-field">
+                  <label class="visit-edit-label">메모</label>
+                  <input type="text" class="visit-edit-memo" value="${escapeHtml(isDateUnknown ? currentMemo.replace('(날짜 미상) ', '').replace('(날짜 미상)', '') : currentMemo)}" placeholder="메모 (선택)" maxlength="500" />
+                </div>
+                <div class="visit-edit-field">
+                  <label class="visit-edit-label">웨이팅</label>
+                  <div class="wait-chips visit-edit-wait-chips">
+                    ${waitOptions.map((w) => `<button type="button" class="wait-chip${currentWait === w ? ' active' : ''}" data-wait="${w}">${w}</button>`).join('')}
+                  </div>
+                </div>
+              </div>
+              <div class="visit-edit-actions">
+                <button type="button" class="btn-outline-sm cancel-visit-edit-btn">취소</button>
+                <button type="button" class="btn-primary-sm save-visit-edit-btn">저장</button>
+              </div>
+            </div>
+          `);
+
+          // 웨이팅 칩 토글
+          let editWaitTime = currentWait;
+          for (const chip of visitCard.querySelectorAll<HTMLButtonElement>('.visit-edit-wait-chips .wait-chip')) {
+            chip.addEventListener('click', () => {
+              const val = chip.dataset.wait || '';
+              if (editWaitTime === val) {
+                editWaitTime = '';
+                chip.classList.remove('active');
+              } else {
+                editWaitTime = val;
+                for (const c of visitCard.querySelectorAll('.visit-edit-wait-chips .wait-chip')) c.classList.remove('active');
+                chip.classList.add('active');
+              }
+            });
+          }
+
+          // 날짜 모름 토글
+          const editDateCb = visitCard.querySelector<HTMLInputElement>('.visit-edit-date-unknown');
+          const editDateInput = visitCard.querySelector<HTMLInputElement>('.visit-edit-date');
+          if (editDateCb && editDateInput) {
+            editDateCb.addEventListener('change', () => {
+              editDateInput.disabled = editDateCb.checked;
+              editDateInput.style.opacity = editDateCb.checked ? '0.4' : '1';
+            });
+          }
+
+          visitCard.querySelector('.cancel-visit-edit-btn')?.addEventListener('click', () => {
+            visitCard.querySelector('.visit-edit-form')?.remove();
+          });
+
+          visitCard.querySelector('.save-visit-edit-btn')?.addEventListener('click', async () => {
+            const editIsUnknown = visitCard.querySelector<HTMLInputElement>('.visit-edit-date-unknown')?.checked ?? false;
+            const rawDate = visitCard.querySelector<HTMLInputElement>('.visit-edit-date')?.value || '';
+            const rawMemo = visitCard.querySelector<HTMLInputElement>('.visit-edit-memo')?.value.trim() || '';
+            const newDate = editIsUnknown ? new Date().toISOString().slice(0, 10) : rawDate;
+            const newMemo = editIsUnknown ? (rawMemo ? `(날짜 미상) ${rawMemo}` : '(날짜 미상)') : rawMemo;
+            if (!newDate) { showToast('날짜를 입력해주세요.', 'info'); return; }
+
+            try {
+              await updateRoomVisit(currentRoom.id, visitId, { visitedAt: newDate, memo: newMemo || undefined, waitTime: editWaitTime || undefined });
+              currentRoom = await fetchRoom(currentRoom.id);
+              await loadRestaurantDetail();
+              showToast('방문 기록이 수정되었습니다.', 'success');
+            } catch { showToast('방문 기록 수정에 실패했습니다.'); }
+          });
+        });
+      }
+
+      // 방문 기록 삭제
+      for (const btn of area.querySelectorAll<HTMLButtonElement>('.delete-visit-btn')) {
+        btn.addEventListener('click', async () => {
+          if (!await showDangerConfirm('이 방문 기록을 삭제하시겠습니까? 포함된 리뷰도 삭제됩니다.')) return;
+          try {
+            await deleteRoomVisit(currentRoom.id, btn.dataset.visitId || '');
             currentRoom = await fetchRoom(currentRoom.id);
             await loadRestaurantDetail();
-            showToast('리뷰가 수정되었습니다.', 'success');
-          } catch { showToast('수정에 실패했습니다.'); }
+          } catch { showToast('방문 기록 삭제에 실패했습니다.'); }
         });
+      }
 
-        card.querySelector('.cancel-edit-btn')!.addEventListener('click', () => {
-          card.querySelector('.review-form')!.remove();
+      // 리뷰 작성 폼 토글
+      for (const btn of area.querySelectorAll<HTMLButtonElement>('.toggle-review-form-btn')) {
+        btn.addEventListener('click', () => {
+          const form = document.getElementById(`review-form-${btn.dataset.visitId || ''}`);
+          if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
         });
-      });
+      }
+
+      // 리뷰 작성
+      for (const btn of area.querySelectorAll<HTMLButtonElement>('.submit-visit-review-btn')) {
+        btn.addEventListener('click', () => withLoading(btn, async () => {
+          const visitCard = btn.closest('.visit-card');
+          if (!visitCard) return;
+          const visitId = btn.dataset.visitId || '';
+          const rating = getStarValue(visitCard as HTMLElement, 'new-review-rating');
+          const content = visitCard.querySelector<HTMLTextAreaElement>('.new-review-content')?.value.trim() || '';
+          const wouldRevisit = visitCard.querySelector<HTMLInputElement>('.new-review-revisit')?.checked ?? true;
+          if (!rating) { showToast('평점을 선택해주세요.', 'info'); return; }
+          const detailFields = collectDetailFields(visitCard as HTMLElement, 'new-review');
+
+          await createRoomReview(currentRoom.id, visitId, { rating, content, wouldRevisit, ...detailFields });
+          currentRoom = await fetchRoom(currentRoom.id);
+          await loadRestaurantDetail();
+          showToast('리뷰가 작성되었습니다.', 'success');
+        }).catch((err) => showToast(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.')));
+      }
+
+      // 리뷰 삭제
+      for (const btn of area.querySelectorAll<HTMLButtonElement>('.delete-rev-btn')) {
+        btn.addEventListener('click', async () => {
+          if (!await showDangerConfirm('이 리뷰를 삭제하시겠습니까?')) return;
+          try {
+            await deleteRoomReview(currentRoom.id, btn.dataset.revId || '');
+            currentRoom = await fetchRoom(currentRoom.id);
+            await loadRestaurantDetail();
+          } catch { showToast('리뷰 삭제에 실패했습니다.'); }
+        });
+      }
+
+      // 리뷰 수정
+      for (const btn of area.querySelectorAll<HTMLButtonElement>('.edit-rev-btn')) {
+        btn.addEventListener('click', () => {
+          const revId = btn.dataset.revId || '';
+          const origRating = btn.dataset.rating || '0';
+          const origContent = btn.dataset.content || '';
+          const origRevisit = btn.dataset.revisit === 'true';
+          const card = area.querySelector<HTMLElement>(`.room-review-card[data-rev-id="${revId}"]`);
+          if (!card) return;
+
+          if (card.querySelector('.review-form')) return;
+
+          card.insertAdjacentHTML('beforeend', `
+            <div class="review-form">
+              <div class="review-form-section">
+                <span class="review-form-label">종합 평점</span>
+                ${starRatingHtml('edit-rating', Number(origRating))}
+              </div>
+              <div class="review-form-section">
+                <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
+                <div class="detail-rating-inline">
+                  ${detailStarHtml('맛', 'edit-taste', btn.dataset.taste || '')}
+                  ${detailStarHtml('가성비', 'edit-value', btn.dataset.value || '')}
+                  ${detailStarHtml('서비스', 'edit-service', btn.dataset.service || '')}
+                  ${detailStarHtml('청결', 'edit-cleanliness', btn.dataset.cleanliness || '')}
+                  ${detailStarHtml('접근성', 'edit-accessibility', btn.dataset.accessibility || '')}
+                </div>
+              </div>
+              <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
+              <div class="review-form-extras">
+                <label class="revisit-toggle"><input type="checkbox" class="edit-revisit" ${origRevisit ? 'checked' : ''} /> 재방문 의사</label>
+                <input type="text" class="edit-fav-menu" placeholder="또 먹고 싶은 메뉴 (선택)" maxlength="200" value="${escapeHtml(btn.dataset.favMenu || '')}" />
+              </div>
+              <div style="display:flex;gap:0.5rem;">
+                <button type="button" class="btn-primary-sm save-edit-btn">저장</button>
+                <button type="button" class="btn-outline-sm cancel-edit-btn">취소</button>
+              </div>
+            </div>
+          `);
+          attachStarRatingHandlers(card);
+
+          card.querySelector('.save-edit-btn')?.addEventListener('click', async () => {
+            const newRating = getStarValue(card, 'edit-rating');
+            const newContent = card.querySelector<HTMLTextAreaElement>('.edit-content')?.value.trim() || '';
+            const newRevisit = card.querySelector<HTMLInputElement>('.edit-revisit')?.checked ?? true;
+            const detailFields = collectDetailFields(card, 'edit');
+
+            try {
+              await updateRoomReview(currentRoom.id, revId, { rating: newRating, content: newContent, wouldRevisit: newRevisit, ...detailFields });
+              currentRoom = await fetchRoom(currentRoom.id);
+              await loadRestaurantDetail();
+              showToast('리뷰가 수정되었습니다.', 'success');
+            } catch { showToast('수정에 실패했습니다.'); }
+          });
+
+          card.querySelector('.cancel-edit-btn')?.addEventListener('click', () => {
+            card.querySelector('.review-form')?.remove();
+          });
+        });
+      }
     }
-  }
 
-  // ─── 초기화 ───
+    // ─── 초기화 ───
 
-  (async () => {
-    const params = new URLSearchParams(location.search);
-    const roomId = params.get('roomId');
-    const rid = params.get('id');
+    (async () => {
+      const params = new URLSearchParams(location.search);
+      const roomId = params.get('roomId');
+      const rid = params.get('id');
 
-    if (!roomId || !rid) {
-      loadingMsg.hidden = true;
-      errorMsg.textContent = '잘못된 접근입니다.';
-      errorMsg.hidden = false;
-      return;
-    }
-
-    restaurantId = rid;
-    backLink.href = `/room?id=${roomId}`;
-
-    try {
-      const [user, room, detail] = await Promise.all([
-        fetchCurrentUser(),
-        fetchRoom(roomId),
-        fetchRoomRestaurant(roomId, rid),
-      ]);
-
-      if (!user) {
+      if (!roomId || !rid) {
         loadingMsg.hidden = true;
-        errorMsg.textContent = '로그인이 필요합니다.';
+        errorMsg.textContent = '잘못된 접근입니다.';
         errorMsg.hidden = false;
         return;
       }
 
-      currentUser = user;
-      currentRoom = room;
-      myRole = getMyRole();
-      loadingMsg.hidden = true;
-      restaurantContent.hidden = false;
+      restaurantId = rid;
+      backLink.href = `/room?id=${roomId}`;
 
-      renderRestaurantDetail(detail);
-    } catch {
-      loadingMsg.hidden = true;
-      errorMsg.textContent = '식당 정보를 불러올 수 없습니다.';
-      errorMsg.hidden = false;
-    }
-  })();
+      try {
+        const [user, room, detail] = await Promise.all([
+          fetchCurrentUser(),
+          fetchRoom(roomId),
+          fetchRoomRestaurant(roomId, rid),
+        ]);
+
+        if (!user) {
+          loadingMsg.hidden = true;
+          errorMsg.textContent = '로그인이 필요합니다.';
+          errorMsg.hidden = false;
+          return;
+        }
+
+        currentUser = user;
+        currentRoom = room;
+        myRole = getMyRole();
+        loadingMsg.hidden = true;
+        restaurantContent.hidden = false;
+
+        renderRestaurantDetail(detail);
+      } catch {
+        loadingMsg.hidden = true;
+        errorMsg.textContent = '식당 정보를 불러올 수 없습니다.';
+        errorMsg.hidden = false;
+      }
+    })();
+  }
+
+  initRestaurantPage();
+  document.addEventListener('astro:page-load', initRestaurantPage);
 </script>

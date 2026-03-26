@@ -1876,9 +1876,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import { getCities, getNeighborhoods } from '@/data/areas';
   import { formatRating, formatDate } from '@repo/utils';
 
-  const loadingMsg = document.getElementById('loading-msg')!;
-  const errorMsg = document.getElementById('error-msg')!;
-  const content = document.getElementById('room-content')!;
+  function initRoomPage() {
+
+  const loadingMsg = document.getElementById('loading-msg');
+  const errorMsg = document.getElementById('error-msg');
+  const content = document.getElementById('room-content');
+
+  if (!loadingMsg || !errorMsg || !content) return;
 
   // 카카오맵 SDK 로드 여부
   const hasKakaoMap = typeof window !== 'undefined' && 'kakao' in window;
@@ -1921,9 +1925,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   const renderStars = formatRating;
 
   // ── 바텀시트 유틸 ──
-  const roomSortBackdrop = document.getElementById('room-sort-backdrop')!;
-  const roomSortSheet = document.getElementById('room-sort-sheet')!;
-  const roomSortOptions = document.getElementById('room-sort-options')!;
+  const roomSortBackdrop = document.getElementById('room-sort-backdrop');
+  const roomSortSheet = document.getElementById('room-sort-sheet');
+  const roomSortOptions = document.getElementById('room-sort-options');
+
+  if (!roomSortBackdrop || !roomSortSheet || !roomSortOptions) return;
 
   function openRoomSortSheet(
     options: { value: string; label: string }[],
@@ -2246,11 +2252,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   function attachTabHandlers() {
+    const restaurantsPanel = document.getElementById('tab-restaurants');
+    const regionPanel = document.getElementById('tab-region');
+    const statsPanel = document.getElementById('tab-stats');
+    const membersPanel = document.getElementById('tab-members');
+    if (!restaurantsPanel || !regionPanel || !statsPanel || !membersPanel) return;
     const panels: Record<string, HTMLElement> = {
-      restaurants: document.getElementById('tab-restaurants')!,
-      region: document.getElementById('tab-region')!,
-      stats: document.getElementById('tab-stats')!,
-      members: document.getElementById('tab-members')!,
+      restaurants: restaurantsPanel,
+      region: regionPanel,
+      stats: statsPanel,
+      members: membersPanel,
     };
     const timelinePanel = document.getElementById('tab-timeline');
     if (timelinePanel) panels.timeline = timelinePanel;
@@ -2306,14 +2317,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>
     `;
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-    overlay.querySelector('.help-close-btn')!.addEventListener('click', () => overlay.remove());
+    overlay.querySelector('.help-close-btn')?.addEventListener('click', () => overlay.remove());
     document.body.appendChild(overlay);
   }
 
   // ─── 멤버 탭 ───
 
   function renderMembersTab() {
-    const panel = document.getElementById('tab-members')!;
+    const panel = document.getElementById('tab-members');
+    if (!panel) return;
 
     panel.innerHTML = `<div class="member-list">${currentRoom.members
       .map((m) => {
@@ -2464,7 +2476,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   async function renderStatsTab() {
-    const panel = document.getElementById('tab-stats')!;
+    const panel = document.getElementById('tab-stats');
+    if (!panel) return;
     const restaurants = currentRoom.restaurants;
 
     if (restaurants.length === 0) {
@@ -2892,7 +2905,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     // 선택지 추가
     document.getElementById('poll-add-option')?.addEventListener('click', () => {
-      const list = document.getElementById('poll-options-list')!;
+      const list = document.getElementById('poll-options-list');
+      if (!list) return;
       const count = list.querySelectorAll('.poll-option-input').length;
       if (count >= 10) { showToast('선택지는 최대 10개까지 가능합니다.'); return; }
       const input = document.createElement('input');
@@ -3013,7 +3027,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   let restTotal = 0;
 
   async function renderRestaurantsTab() {
-    const panel = document.getElementById('tab-restaurants')!;
+    const panel = document.getElementById('tab-restaurants');
+    if (!panel) return;
 
     const categoryChipsHtml = `
       <div class="category-chips" id="add-rest-category-chips">
@@ -3574,7 +3589,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   function renderRegionTab() {
-    const panel = document.getElementById('tab-region')!;
+    const panel = document.getElementById('tab-region');
+    if (!panel) return;
     const restaurants = currentRoom.restaurants;
 
     if (restaurants.length === 0) {
@@ -3926,7 +3942,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const CustomOverlayConstructor = maps.CustomOverlay as new (opts: Record<string, unknown>) => Record<string, unknown>;
     const LatLngBounds = maps.LatLngBounds as new () => Record<string, (pos: unknown) => void>;
 
-    const container = document.getElementById('kakao-map')!;
+    const container = document.getElementById('kakao-map');
+    if (!container) return;
     const center = new LatLng(
       restaurantsWithCoords[0].latitude!,
       restaurantsWithCoords[0].longitude!,
@@ -4118,4 +4135,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       errorMsg.hidden = false;
     }
   })();
+
+  } // end initRoomPage
+
+  initRoomPage();
+  document.addEventListener('astro:page-load', initRoomPage);
 </script>

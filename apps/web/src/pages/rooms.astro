@@ -213,149 +213,159 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import { fetchCurrentUser, fetchMyRooms, createRoom } from '@/lib/api';
   import type { RoomListItem } from '@/lib/api';
 
-  const loadingMsg = document.getElementById('loading-msg')!;
-  const loginMsg = document.getElementById('login-msg')!;
-  const roomsContent = document.getElementById('rooms-content')!;
-  const roomsList = document.getElementById('rooms-list')!;
-  const emptyMsg = document.getElementById('empty-msg')!;
-  const formError = document.getElementById('form-error')!;
-  const createForm = document.getElementById('create-form') as HTMLFormElement;
-  const createNameInput = document.getElementById('create-name') as HTMLInputElement;
-  const roomsToolbar = document.getElementById('rooms-toolbar')!;
-  const roomsCount = document.getElementById('rooms-count')!;
-  const sortTrigger = document.getElementById('sort-trigger')!;
-  const sortLabel = document.getElementById('sort-label')!;
-  const sortBackdrop = document.getElementById('sort-backdrop')!;
-  const sortSheet = document.getElementById('sort-sheet')!;
-  const sortOptions = document.getElementById('sort-options')!;
+  function initRoomsPage() {
+    const loadingMsg = document.getElementById('loading-msg');
+    const loginMsg = document.getElementById('login-msg');
+    const roomsContent = document.getElementById('rooms-content');
+    const roomsList = document.getElementById('rooms-list');
+    if (!loadingMsg || !loginMsg || !roomsContent || !roomsList) return;
 
-  function escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
+    const emptyMsg = document.getElementById('empty-msg');
+    const formError = document.getElementById('form-error');
+    const createForm = document.getElementById('create-form') as HTMLFormElement | null;
+    const createNameInput = document.getElementById('create-name') as HTMLInputElement | null;
+    const roomsToolbar = document.getElementById('rooms-toolbar');
+    const roomsCount = document.getElementById('rooms-count');
+    const sortTrigger = document.getElementById('sort-trigger');
+    const sortLabel = document.getElementById('sort-label');
+    const sortBackdrop = document.getElementById('sort-backdrop');
+    const sortSheet = document.getElementById('sort-sheet');
+    const sortOptions = document.getElementById('sort-options');
+    const roomsSearchWrap = document.getElementById('rooms-search-wrap');
+    const roomsSearchInput = document.getElementById('rooms-search') as HTMLInputElement | null;
 
-  const roomsSearchWrap = document.getElementById('rooms-search-wrap')!;
-  const roomsSearchInput = document.getElementById('rooms-search') as HTMLInputElement;
-
-  const roleLabel: Record<string, string> = { owner: '방장', manager: '매니저', member: '멤버' };
-  let allRooms: RoomListItem[] = [];
-  let currentSort = 'recent';
-  let searchQuery = '';
-  const sortLabels: Record<string, string> = { recent: '최근 참여순', name: '이름순', members: '멤버 많은순', restaurants: '식당 많은순' };
-
-  function sortRooms(rooms: RoomListItem[], sortBy: string): RoomListItem[] {
-    const sorted = [...rooms];
-    switch (sortBy) {
-      case 'name': return sorted.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-      case 'members': return sorted.sort((a, b) => b.memberCount - a.memberCount);
-      case 'restaurants': return sorted.sort((a, b) => b.restaurantCount - a.restaurantCount);
-      default: return sorted;
+    function escapeHtml(text: string): string {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
-  }
 
-  function filterRooms(rooms: RoomListItem[]): RoomListItem[] {
-    if (!searchQuery) return rooms;
-    const q = searchQuery.toLowerCase();
-    return rooms.filter((r) => r.name.toLowerCase().includes(q));
-  }
+    const roleLabel: Record<string, string> = { owner: '방장', manager: '매니저', member: '멤버' };
+    let allRooms: RoomListItem[] = [];
+    let currentSort = 'recent';
+    let searchQuery = '';
+    const sortLabels: Record<string, string> = { recent: '최근 참여순', name: '이름순', members: '멤버 많은순', restaurants: '식당 많은순' };
 
-  function applyAndRender() {
-    const filtered = filterRooms(sortRooms(allRooms, currentSort));
-    renderRooms(filtered);
-  }
-
-  function renderRooms(rooms: RoomListItem[]) {
-    if (rooms.length === 0) {
-      roomsList.innerHTML = '';
-      roomsToolbar.hidden = true;
-      emptyMsg.hidden = allRooms.length === 0 ? false : true;
-      if (allRooms.length > 0 && searchQuery) {
-        roomsList.innerHTML = '<p class="status-msg" style="padding:2rem 1rem">검색 결과가 없습니다.</p>';
-      } else if (allRooms.length === 0) {
-        emptyMsg.hidden = false;
+    function sortRooms(rooms: RoomListItem[], sortBy: string): RoomListItem[] {
+      const sorted = [...rooms];
+      switch (sortBy) {
+        case 'name': return sorted.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+        case 'members': return sorted.sort((a, b) => b.memberCount - a.memberCount);
+        case 'restaurants': return sorted.sort((a, b) => b.restaurantCount - a.restaurantCount);
+        default: return sorted;
       }
-      return;
     }
-    emptyMsg.hidden = true;
-    roomsToolbar.hidden = false;
-    roomsCount.textContent = `${rooms.length}개의 방`;
-    roomsList.innerHTML = rooms.map((r) => `
-      <a href="/room?id=${r.id}" class="room-card">
-        <div class="room-info">
-          <div class="room-name">${escapeHtml(r.name)}</div>
-          <div class="room-meta">멤버 ${r.memberCount}명 · 식당 ${r.restaurantCount}개</div>
-        </div>
-        <div class="room-right">
-          <span class="room-role ${r.myRole}">${roleLabel[r.myRole] || r.myRole}</span>
-          <svg class="room-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </a>
-    `).join('');
-  }
 
-  function openSortSheet() {
-    sortBackdrop.hidden = false;
-    sortSheet.hidden = false;
-    requestAnimationFrame(() => { sortBackdrop.classList.add('visible'); sortSheet.classList.add('visible'); });
-  }
+    function filterRooms(rooms: RoomListItem[]): RoomListItem[] {
+      if (!searchQuery) return rooms;
+      const q = searchQuery.toLowerCase();
+      return rooms.filter((r) => r.name.toLowerCase().includes(q));
+    }
 
-  function closeSortSheet() {
-    sortBackdrop.classList.remove('visible');
-    sortSheet.classList.remove('visible');
-    setTimeout(() => { sortBackdrop.hidden = true; sortSheet.hidden = true; }, 300);
-  }
+    function applyAndRender() {
+      const filtered = filterRooms(sortRooms(allRooms, currentSort));
+      renderRooms(filtered);
+    }
 
-  function updateSearchVisibility() {
-    roomsSearchWrap.hidden = false;
-  }
+    function renderRooms(rooms: RoomListItem[]) {
+      if (rooms.length === 0) {
+        roomsList.innerHTML = '';
+        if (roomsToolbar) roomsToolbar.hidden = true;
+        if (emptyMsg) emptyMsg.hidden = allRooms.length === 0 ? false : true;
+        if (allRooms.length > 0 && searchQuery) {
+          roomsList.innerHTML = '<p class="status-msg" style="padding:2rem 1rem">검색 결과가 없습니다.</p>';
+        } else if (allRooms.length === 0 && emptyMsg) {
+          emptyMsg.hidden = false;
+        }
+        return;
+      }
+      if (emptyMsg) emptyMsg.hidden = true;
+      if (roomsToolbar) roomsToolbar.hidden = false;
+      if (roomsCount) roomsCount.textContent = `${rooms.length}개의 방`;
+      roomsList.innerHTML = rooms.map((r) => `
+        <a href="/room?id=${r.id}" class="room-card">
+          <div class="room-info">
+            <div class="room-name">${escapeHtml(r.name)}</div>
+            <div class="room-meta">멤버 ${r.memberCount}명 · 식당 ${r.restaurantCount}개</div>
+          </div>
+          <div class="room-right">
+            <span class="room-role ${r.myRole}">${roleLabel[r.myRole] || r.myRole}</span>
+            <svg class="room-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </a>
+      `).join('');
+    }
 
-  roomsSearchInput.addEventListener('input', () => {
-    searchQuery = roomsSearchInput.value.trim();
-    applyAndRender();
-  });
+    function openSortSheet() {
+      if (sortBackdrop) { sortBackdrop.hidden = false; }
+      if (sortSheet) { sortSheet.hidden = false; }
+      requestAnimationFrame(() => { sortBackdrop?.classList.add('visible'); sortSheet?.classList.add('visible'); });
+    }
 
-  sortTrigger.addEventListener('click', openSortSheet);
-  sortBackdrop.addEventListener('click', closeSortSheet);
+    function closeSortSheet() {
+      sortBackdrop?.classList.remove('visible');
+      sortSheet?.classList.remove('visible');
+      setTimeout(() => { if (sortBackdrop) sortBackdrop.hidden = true; if (sortSheet) sortSheet.hidden = true; }, 300);
+    }
 
-  for (const btn of sortOptions.querySelectorAll<HTMLButtonElement>('.sheet-option')) {
-    btn.addEventListener('click', () => {
-      currentSort = btn.dataset.sort!;
-      sortLabel.textContent = sortLabels[currentSort];
-      for (const b of sortOptions.querySelectorAll('.sheet-option')) b.classList.remove('active');
-      btn.classList.add('active');
+    function updateSearchVisibility() {
+      if (roomsSearchWrap) roomsSearchWrap.hidden = false;
+    }
+
+    roomsSearchInput?.addEventListener('input', () => {
+      searchQuery = roomsSearchInput.value.trim();
       applyAndRender();
-      closeSortSheet();
     });
-  }
 
-  createForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    formError.hidden = true;
-    const name = createNameInput.value.trim();
-    if (!name) return;
-    try {
-      await createRoom(name);
-      createNameInput.value = '';
+    sortTrigger?.addEventListener('click', openSortSheet);
+    sortBackdrop?.addEventListener('click', closeSortSheet);
+
+    if (sortOptions) {
+      for (const btn of sortOptions.querySelectorAll<HTMLButtonElement>('.sheet-option')) {
+        btn.addEventListener('click', () => {
+          currentSort = btn.dataset.sort ?? 'recent';
+          if (sortLabel) sortLabel.textContent = sortLabels[currentSort];
+          for (const b of sortOptions.querySelectorAll('.sheet-option')) b.classList.remove('active');
+          btn.classList.add('active');
+          applyAndRender();
+          closeSortSheet();
+        });
+      }
+    }
+
+    createForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (formError) formError.hidden = true;
+      const name = createNameInput?.value.trim();
+      if (!name) return;
+      try {
+        await createRoom(name);
+        if (createNameInput) createNameInput.value = '';
+        allRooms = await fetchMyRooms();
+        updateSearchVisibility();
+        applyAndRender();
+      } catch (err) {
+        if (formError) {
+          formError.textContent = err instanceof Error ? err.message : '방 생성에 실패했습니다.';
+          formError.hidden = false;
+        }
+      }
+    });
+
+    (async () => {
+      const user = await fetchCurrentUser();
+      loadingMsg.hidden = true;
+      if (!user) {
+        loginMsg.hidden = false;
+        return;
+      }
+      roomsContent.hidden = false;
       allRooms = await fetchMyRooms();
       updateSearchVisibility();
       applyAndRender();
-    } catch (err) {
-      formError.textContent = err instanceof Error ? err.message : '방 생성에 실패했습니다.';
-      formError.hidden = false;
-    }
-  });
+    })();
+  }
 
-  (async () => {
-    const user = await fetchCurrentUser();
-    loadingMsg.hidden = true;
-    if (!user) {
-      loginMsg.hidden = false;
-      return;
-    }
-    roomsContent.hidden = false;
-    allRooms = await fetchMyRooms();
-    updateSearchVisibility();
-    applyAndRender();
-  })();
+  initRoomsPage();
+  document.addEventListener('astro:page-load', initRoomsPage);
 </script>
