@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { measure } from '../common/perf';
 
 interface KakaoTokenResponse {
   access_token: string;
@@ -41,36 +42,40 @@ export class AuthService {
 
   /** 카카오 인가 코드로 토큰 교환 */
   async exchangeKakaoCode(code: string): Promise<KakaoTokenResponse> {
-    const res = await fetch('https://kauth.kakao.com/oauth/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        client_id: process.env.KAKAO_CLIENT_ID!,
-        redirect_uri: process.env.KAKAO_CALLBACK_URL!,
-        code,
-        ...(process.env.KAKAO_CLIENT_SECRET ? { client_secret: process.env.KAKAO_CLIENT_SECRET } : {}),
-      }),
+    return measure('auth.exchangeKakaoCode', async () => {
+      const res = await fetch('https://kauth.kakao.com/oauth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: process.env.KAKAO_CLIENT_ID!,
+          redirect_uri: process.env.KAKAO_CALLBACK_URL!,
+          code,
+          ...(process.env.KAKAO_CLIENT_SECRET ? { client_secret: process.env.KAKAO_CLIENT_SECRET } : {}),
+        }),
+      });
+
+      if (!res.ok) {
+        throw new UnauthorizedException('카카오 토큰 교환 실패');
+      }
+
+      return res.json() as Promise<KakaoTokenResponse>;
     });
-
-    if (!res.ok) {
-      throw new UnauthorizedException('카카오 토큰 교환 실패');
-    }
-
-    return res.json() as Promise<KakaoTokenResponse>;
   }
 
   /** 카카오 액세스 토큰으로 유저 정보 조회 */
   async getKakaoUser(accessToken: string): Promise<KakaoUserResponse> {
-    const res = await fetch('https://kapi.kakao.com/v2/user/me', {
-      headers: { Authorization: `Bearer ${accessToken}` },
+    return measure('auth.getKakaoUser', async () => {
+      const res = await fetch('https://kapi.kakao.com/v2/user/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (!res.ok) {
+        throw new UnauthorizedException('카카오 유저 정보 조회 실패');
+      }
+
+      return res.json() as Promise<KakaoUserResponse>;
     });
-
-    if (!res.ok) {
-      throw new UnauthorizedException('카카오 유저 정보 조회 실패');
-    }
-
-    return res.json() as Promise<KakaoUserResponse>;
   }
 
   /** 카카오 유저 정보로 계정 조회 또는 생성 */
@@ -161,22 +166,28 @@ export class AuthService {
       throw new UnauthorizedException('유효하지 않은 리프레시 토큰');
     }
 
-    const accounts = await this.prisma.read.account.findMany({
-      where: { userId: payload.sub },
-    });
-
-    const valid = await Promise.any(
-      accounts.map(async (account) => {
-        if (!account.refreshToken) return false;
-        return bcrypt.compare(refreshToken, account.refreshToken);
+    const accounts = await measure('auth.refresh.findAccounts', () =>
+      this.prisma.read.account.findMany({
+        where: { userId: payload.sub },
       }),
-    ).catch(() => false);
+    );
+
+    const valid = await measure('auth.refresh.bcryptCompare', () =>
+      Promise.any(
+        accounts.map(async (account) => {
+          if (!account.refreshToken) return false;
+          return bcrypt.compare(refreshToken, account.refreshToken);
+        }),
+      ).catch(() => false),
+    );
 
     if (!valid) {
       throw new UnauthorizedException('리프레시 토큰 불일치');
     }
 
-    return this.generateTokens(payload.sub);
+    return measure('auth.refresh.generateTokens', () =>
+      this.generateTokens(payload.sub),
+    );
   }
 
   /** 로그아웃: DB의 Refresh Token 무효화 */
@@ -210,10 +221,12 @@ export class AuthService {
 
   /** 유저 프로필 조회 (id, email, nickname, role) */
   async getUserProfile(userId: string) {
-    return this.prisma.read.user.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true },
-    });
+    return measure('auth.getUserProfile', () =>
+      this.prisma.read.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true },
+      }),
+    );
   }
 
   /** Access Token에서 유저 정보 추출 */

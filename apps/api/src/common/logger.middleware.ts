@@ -20,7 +20,7 @@ export class LoggerMiddleware implements NestMiddleware {
         this.logger.error(message);
       } else if (level === 'warn') {
         this.logger.warn(message);
-      } else if (ms > 1000) {
+      } else if (ms > 500) {
         this.logger.warn(`[SLOW] ${message}`);
       } else {
         this.logger.log(message);

@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { measure } from '../common/perf';
 
 /** 평균 평점 계산 (소수점 1자리 반올림). 빈 배열이면 null 반환. */
 function calcAvgRating(ratings: number[]): number | null {
@@ -33,28 +34,32 @@ export class RoomsService {
 
   /** 방 생성 (생성자 = owner) */
   async create(name: string, ownerId: string) {
-    const joinedCount = await this.prisma.read.roomMember.count({ where: { userId: ownerId } });
+    const joinedCount = await measure('room.create.countRooms', () =>
+      this.prisma.read.roomMember.count({ where: { userId: ownerId } }),
+    );
     if (joinedCount >= MAX_ROOMS_PER_USER) {
       throw new ForbiddenException(`참여할 수 있는 방은 최대 ${MAX_ROOMS_PER_USER}개입니다.`);
     }
 
     const inviteCode = await this.generateInviteCode();
 
-    return this.prisma.write.$transaction(async (tx) => {
-      const room = await tx.room.create({
-        data: {
-          name,
-          inviteCode,
-          ownerId,
-        },
-      });
+    return measure('room.create.transaction', () =>
+      this.prisma.write.$transaction(async (tx) => {
+        const room = await tx.room.create({
+          data: {
+            name,
+            inviteCode,
+            ownerId,
+          },
+        });
 
-      await tx.roomMember.create({
-        data: { role: 'owner', roomId: room.id, userId: ownerId },
-      });
+        await tx.roomMember.create({
+          data: { role: 'owner', roomId: room.id, userId: ownerId },
+        });
 
-      return room;
-    });
+        return room;
+      }),
+    );
   }
 
   /** 내 방 목록 */
@@ -81,29 +86,31 @@ export class RoomsService {
 
   /** 방 상세 조회 */
   async findOne(roomId: string, userId?: string) {
-    const room = await this.prisma.read.room.findUnique({
-      where: { id: roomId },
-      include: {
-        members: {
-          include: {
-            user: { select: { id: true, nickname: true, profileImageUrl: true } },
-          },
-          orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
-        },
-        restaurants: {
-          include: {
-            addedBy: { select: { id: true, nickname: true } },
-            visits: {
-              include: {
-                reviews: { select: { rating: true } },
-              },
+    const room = await measure('room.findOne.query', () =>
+      this.prisma.read.room.findUnique({
+        where: { id: roomId },
+        include: {
+          members: {
+            include: {
+              user: { select: { id: true, nickname: true, profileImageUrl: true } },
             },
-            _count: { select: { visits: true } },
+            orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
           },
-          orderBy: { createdAt: 'desc' },
+          restaurants: {
+            include: {
+              addedBy: { select: { id: true, nickname: true } },
+              visits: {
+                include: {
+                  reviews: { select: { rating: true } },
+                },
+              },
+              _count: { select: { visits: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
         },
-      },
-    });
+      }),
+    );
 
     if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
 
@@ -111,19 +118,23 @@ export class RoomsService {
 
     const wishlistedSet = new Set<string>();
     if (userId) {
-      const wishlists = await this.prisma.read.roomWishlist.findMany({
-        where: { userId, roomRestaurantId: { in: restaurantIds } },
-        select: { roomRestaurantId: true },
-      });
+      const wishlists = await measure('room.findOne.myWishlist', () =>
+        this.prisma.read.roomWishlist.findMany({
+          where: { userId, roomRestaurantId: { in: restaurantIds } },
+          select: { roomRestaurantId: true },
+        }),
+      );
       for (const w of wishlists) wishlistedSet.add(w.roomRestaurantId);
     }
 
     // 방 전체 찜 수 집계
-    const wishlistCounts = await this.prisma.read.roomWishlist.groupBy({
-      by: ['roomRestaurantId'],
-      where: { roomRestaurantId: { in: restaurantIds } },
-      _count: true,
-    });
+    const wishlistCounts = await measure('room.findOne.wishlistCounts', () =>
+      this.prisma.read.roomWishlist.groupBy({
+        by: ['roomRestaurantId'],
+        where: { roomRestaurantId: { in: restaurantIds } },
+        _count: true,
+      }),
+    );
     const wishCountMap = new Map<string, number>();
     for (const wc of wishlistCounts) {
       wishCountMap.set(wc.roomRestaurantId, wc._count);
@@ -481,36 +492,42 @@ export class RoomsService {
     }
 
     // 계산 필드 정렬 시 전체 fetch 후 메모리 정렬 → 페이지네이션
-    const [restaurants, total] = await Promise.all([
-      this.prisma.read.roomRestaurant.findMany({
-        where,
-        include: {
-          addedBy: { select: { id: true, nickname: true } },
-          visits: { include: { reviews: { select: { rating: true } } } },
-          _count: { select: { visits: true } },
-        },
-        orderBy,
-        ...(isDbSort ? { skip, take: pageSize } : {}),
-      }),
-      this.prisma.read.roomRestaurant.count({ where }),
-    ]);
+    const [restaurants, total] = await measure('restaurants.list.query', () =>
+      Promise.all([
+        this.prisma.read.roomRestaurant.findMany({
+          where,
+          include: {
+            addedBy: { select: { id: true, nickname: true } },
+            visits: { include: { reviews: { select: { rating: true } } } },
+            _count: { select: { visits: true } },
+          },
+          orderBy,
+          ...(isDbSort ? { skip, take: pageSize } : {}),
+        }),
+        this.prisma.read.roomRestaurant.count({ where }),
+      ]),
+    );
 
     const restaurantIds = restaurants.map((r) => r.id);
 
     const wishlistedSet = new Set<string>();
     if (userId) {
-      const wishlists = await this.prisma.read.roomWishlist.findMany({
-        where: { userId, roomRestaurantId: { in: restaurantIds } },
-        select: { roomRestaurantId: true },
-      });
+      const wishlists = await measure('restaurants.list.myWishlist', () =>
+        this.prisma.read.roomWishlist.findMany({
+          where: { userId, roomRestaurantId: { in: restaurantIds } },
+          select: { roomRestaurantId: true },
+        }),
+      );
       for (const w of wishlists) wishlistedSet.add(w.roomRestaurantId);
     }
 
-    const wishlistCounts = await this.prisma.read.roomWishlist.groupBy({
-      by: ['roomRestaurantId'],
-      where: { roomRestaurantId: { in: restaurantIds } },
-      _count: true,
-    });
+    const wishlistCounts = await measure('restaurants.list.wishlistCounts', () =>
+      this.prisma.read.roomWishlist.groupBy({
+        by: ['roomRestaurantId'],
+        where: { roomRestaurantId: { in: restaurantIds } },
+        _count: true,
+      }),
+    );
     const wishCountMap = new Map<string, number>();
     for (const wc of wishlistCounts) {
       wishCountMap.set(wc.roomRestaurantId, wc._count);
@@ -626,26 +643,28 @@ export class RoomsService {
 
   /** 방 내 식당 상세 (방문 기록 + 리뷰 포함) */
   async findRestaurantDetail(roomId: string, restaurantId: string) {
-    const restaurant = await this.prisma.read.roomRestaurant.findUnique({
-      where: { id: restaurantId },
-      include: {
-        addedBy: { select: { id: true, nickname: true } },
-        visits: {
-          include: {
-            createdBy: { select: { id: true, nickname: true } },
-            participants: {
-              include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+    const restaurant = await measure('restaurant.detail.query', () =>
+      this.prisma.read.roomRestaurant.findUnique({
+        where: { id: restaurantId },
+        include: {
+          addedBy: { select: { id: true, nickname: true } },
+          visits: {
+            include: {
+              createdBy: { select: { id: true, nickname: true } },
+              participants: {
+                include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+              },
+              reviews: {
+                include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+                orderBy: { createdAt: 'desc' },
+              },
+              _count: { select: { reviews: true } },
             },
-            reviews: {
-              include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
-              orderBy: { createdAt: 'desc' },
-            },
-            _count: { select: { reviews: true } },
+            orderBy: { visitedAt: 'desc' },
           },
-          orderBy: { visitedAt: 'desc' },
         },
-      },
-    });
+      }),
+    );
 
     if (!restaurant || restaurant.roomId !== roomId) {
       throw new NotFoundException('식당을 찾을 수 없습니다');
@@ -663,28 +682,30 @@ export class RoomsService {
       throw new NotFoundException('식당을 찾을 수 없습니다');
     }
 
-    const visit = await this.prisma.write.roomVisit.create({
-      data: {
-        restaurantId,
-        createdById: userId,
-        visitedAt: new Date(visitedAt),
-        memo,
-        waitTime,
-        participants: participantIds && participantIds.length > 0
-          ? { create: participantIds.map((uid) => ({ userId: uid })) }
-          : undefined,
-      },
-      include: {
-        createdBy: { select: { id: true, nickname: true } },
-        participants: {
-          include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+    const visit = await measure('visit.create.write', () =>
+      this.prisma.write.roomVisit.create({
+        data: {
+          restaurantId,
+          createdById: userId,
+          visitedAt: new Date(visitedAt),
+          memo,
+          waitTime,
+          participants: participantIds && participantIds.length > 0
+            ? { create: participantIds.map((uid) => ({ userId: uid })) }
+            : undefined,
         },
-        reviews: {
-          include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+        include: {
+          createdBy: { select: { id: true, nickname: true } },
+          participants: {
+            include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+          },
+          reviews: {
+            include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+          },
+          _count: { select: { reviews: true } },
         },
-        _count: { select: { reviews: true } },
-      },
-    });
+      }),
+    );
 
     // 알림: 방문 기록 추가
     if (visit.createdBy) {
@@ -762,13 +783,15 @@ export class RoomsService {
       throw new ConflictException('이 방문에 이미 리뷰를 작성했습니다. 기존 리뷰를 수정해 주세요.');
     }
 
-    const review = await this.prisma.write.roomReview.create({
-      data: {
-        visitId, userId, rating, content: content ?? '', wouldRevisit,
-        tasteRating, valueRating, serviceRating, cleanlinessRating, accessibilityRating,
-        favoriteMenu, tryNextMenu,
-      },
-    });
+    const review = await measure('review.create.write', () =>
+      this.prisma.write.roomReview.create({
+        data: {
+          visitId, userId, rating, content: content ?? '', wouldRevisit,
+          tasteRating, valueRating, serviceRating, cleanlinessRating, accessibilityRating,
+          favoriteMenu, tryNextMenu,
+        },
+      }),
+    );
 
     // 알림: 리뷰 작성
     const reviewer = await this.prisma.read.user.findUnique({ where: { id: userId }, select: { nickname: true } });

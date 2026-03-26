@@ -1,23 +1,53 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Prisma, PrismaClient } from '@prisma/client';
+
+type PrismaClientWithEvents = PrismaClient<
+  Prisma.PrismaClientOptions,
+  'query'
+>;
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
-  private readonly writer: PrismaClient;
-  private readonly reader: PrismaClient;
+  private readonly writer: PrismaClientWithEvents;
+  private readonly reader: PrismaClientWithEvents;
+  private readonly logger = new Logger('Prisma');
 
   constructor() {
     this.writer = new PrismaClient({
       datasourceUrl: process.env.DATABASE_URL,
+      log: [{ emit: 'event', level: 'query' }],
     });
 
     this.reader = new PrismaClient({
       datasourceUrl: process.env.DATABASE_READER_URL || process.env.DATABASE_URL,
+      log: [{ emit: 'event', level: 'query' }],
     });
   }
 
   async onModuleInit() {
     await Promise.all([this.writer.$connect(), this.reader.$connect()]);
+
+    const SLOW_QUERY_MS = 200;
+
+    this.writer.$on('query', (e: Prisma.QueryEvent) => {
+      if (e.duration >= SLOW_QUERY_MS) {
+        this.logger.warn(
+          `[SLOW WRITER] ${e.duration}ms | ${e.query} | params: ${e.params}`,
+        );
+      } else {
+        this.logger.debug(`[WRITER] ${e.duration}ms | ${e.query}`);
+      }
+    });
+
+    this.reader.$on('query', (e: Prisma.QueryEvent) => {
+      if (e.duration >= SLOW_QUERY_MS) {
+        this.logger.warn(
+          `[SLOW READER] ${e.duration}ms | ${e.query} | params: ${e.params}`,
+        );
+      } else {
+        this.logger.debug(`[READER] ${e.duration}ms | ${e.query}`);
+      }
+    });
   }
 
   async onModuleDestroy() {
