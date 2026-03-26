@@ -359,6 +359,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const content = document.getElementById('add-content');
     if (!loadingMsg || !errorMsg || !content) return;
 
+    // 상태 초기화 (중복 실행 시 이전 에러 제거)
+    loadingMsg.hidden = false;
+    errorMsg.hidden = true;
+    errorMsg.textContent = '';
+    content.hidden = true;
+    content.innerHTML = '';
+
     const params = new URLSearchParams(location.search);
     const roomId = params.get('roomId');
     const existingRestId = params.get('restaurantId');
