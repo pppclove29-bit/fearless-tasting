@@ -701,8 +701,11 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
       hamburgerBtn.classList.remove('active');
       navLinks.classList.remove('open');
 
-      hamburgerBtn.addEventListener('click', () => {
-        hamburgerBtn.classList.toggle('active');
+      // 기존 리스너 제거를 위해 replaceWith로 교체
+      const newBtn = hamburgerBtn.cloneNode(true) as HTMLElement;
+      hamburgerBtn.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => {
+        newBtn.classList.toggle('active');
         navLinks.classList.toggle('open');
       });
     }
@@ -772,7 +775,12 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
           };
           updateBadge();
 
-          bellBtn.addEventListener('click', async (e) => {
+          // 기존 리스너 제거를 위해 교체
+          const newBell = bellBtn.cloneNode(true) as HTMLElement;
+          bellBtn.replaceWith(newBell);
+          newBell.hidden = false;
+
+          newBell.addEventListener('click', async (e) => {
             e.stopPropagation();
             const existing = document.querySelector('.notif-dropdown');
             if (existing) { existing.remove(); dropdownOpen = false; return; }
@@ -816,7 +824,7 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
             });
 
             const closeDropdown = (ev: MouseEvent) => {
-              if (!dropdown.contains(ev.target as Node) && ev.target !== bellBtn) {
+              if (!dropdown.contains(ev.target as Node) && ev.target !== newBell) {
                 dropdown.remove();
                 dropdownOpen = false;
                 document.removeEventListener('click', closeDropdown);
@@ -831,10 +839,14 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
       }
     });
 
-    logoutBtn?.addEventListener('click', () => {
-      logout();
-      location.href = '/';
-    });
+    if (logoutBtn) {
+      const newLogoutBtn = logoutBtn.cloneNode(true) as HTMLElement;
+      logoutBtn.replaceWith(newLogoutBtn);
+      newLogoutBtn.addEventListener('click', () => {
+        logout();
+        location.href = '/';
+      });
+    }
 
     // 알림 드롭다운 정리 (페이지 전환 시)
     document.querySelector('.notif-dropdown')?.remove();
