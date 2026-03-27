@@ -852,8 +852,7 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     document.querySelector('.notif-dropdown')?.remove();
   }
 
-  // 최초 로드 + View Transitions 이후 매번 실행
-  initPage();
+  // astro:page-load는 최초 로드에서도 발생
   document.addEventListener('astro:page-load', initPage);
 
   // PWA Service Worker 등록 (1회만)
