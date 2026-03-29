@@ -798,6 +798,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     gap: 0.35rem;
   }
 
+  .detail-guide-desc {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    min-height: 1em;
+    margin-top: 0.1rem;
+  }
+
   .detail-rating-item {
     display: flex;
     align-items: center;
@@ -911,10 +918,24 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return `<span class="star-rating${sizeClass}" data-name="${name}" data-value="${value}">${stars}<span class="star-label">${value || ''}</span></span>`;
     }
 
+    const DETAIL_GUIDES: Record<string, string[]> = {
+      taste: ['남겼다','억지로 먹었다','다 먹었다','한 그릇 더 먹고 싶었다','먹는 내내 감탄했다'],
+      value: ['돈 줘도 안 먹는다','돈 주면 먹는다','가격만큼 먹었다','이 가격에 이 정도면 굿','사장님 남는 거 맞아요?'],
+      service: ['손님이 죄인인 줄','뭔가 언짢았다','딱히 신경 안 썼다','기분 좋게 먹었다','사장님이 내 팬인가보다'],
+      cleanliness: ['나오면 안 될 게 나왔다','먹는 내내 찝찝했다','보통이다','깔끔하다','수술실인가?'],
+      accessibility: ['등산인가 식사인가','찾아가는 것부터 고생','갈 만하다','역에서 가깝고 편하다','나오자마자 바로 앞'],
+    };
+
+    const LABEL_TO_KEY: Record<string, string> = {
+      '맛': 'taste', '가성비': 'value', '서비스': 'service', '청결': 'cleanliness', '접근성': 'accessibility',
+    };
+
     /** 세부 평점 한 항목 */
     function detailStarHtml(label: string, name: string, value: number | string): string {
       const v = typeof value === 'string' ? (value ? parseInt(value, 10) : 0) : (value || 0);
-      return `<div class="detail-rating-item"><span class="detail-label">${label}</span>${starRatingHtml(name, v, 5, 'sm')}</div>`;
+      const key = LABEL_TO_KEY[label] || '';
+      const guideText = v > 0 && DETAIL_GUIDES[key] ? `${v}점 — ${DETAIL_GUIDES[key][v - 1]}` : '';
+      return `<div class="detail-rating-item" data-guide-key="${key}"><span class="detail-label">${label}</span>${starRatingHtml(name, v, 5, 'sm')}<div class="detail-guide-desc">${guideText}</div></div>`;
     }
 
     /** 컨테이너 내 별점 클릭 이벤트 바인딩 */
@@ -931,6 +952,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             stars.forEach((s, i) => s.classList.toggle('active', i < newVal));
             const label = ratingEl.querySelector('.star-label');
             if (label) label.textContent = newVal ? String(newVal) : '';
+            // 가이드 문구 업데이트
+            const item = ratingEl.closest<HTMLElement>('.detail-rating-item');
+            const guideKey = item?.dataset.guideKey || '';
+            const descEl = item?.querySelector<HTMLElement>('.detail-guide-desc');
+            if (descEl && DETAIL_GUIDES[guideKey]) {
+              descEl.textContent = newVal > 0 ? `${newVal}점 — ${DETAIL_GUIDES[guideKey][newVal - 1]}` : '';
+            }
           });
         }
       }
@@ -1027,7 +1055,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                ${starRatingHtml('new-review-rating', 3)}
              </div>
              <div class="review-form-section">
-               <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
+               <span class="review-form-label">세부 평점 <span class="optional-hint">(선택 · 같은 별 재클릭 시 취소)</span></span>
                <div class="detail-rating-inline">
                  ${detailStarHtml('맛', 'new-review-taste', 0)}
                  ${detailStarHtml('가성비', 'new-review-value', 0)}
@@ -1409,7 +1437,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 ${starRatingHtml('edit-rating', Number(origRating))}
               </div>
               <div class="review-form-section">
-                <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
+                <span class="review-form-label">세부 평점 <span class="optional-hint">(선택 · 같은 별 재클릭 시 취소)</span></span>
                 <div class="detail-rating-inline">
                   ${detailStarHtml('맛', 'edit-taste', btn.dataset.taste || '')}
                   ${detailStarHtml('가성비', 'edit-value', btn.dataset.value || '')}
