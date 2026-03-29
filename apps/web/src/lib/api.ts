@@ -3,7 +3,7 @@ import type {
   SharedRoomDetail, SharedRoomRestaurantDetail,
   AuthUser, RoomListItem, RoomMemberInfo, RoomRestaurantInfo,
   RoomDetailResponse, RoomRestaurantDetailResponse, PaginatedRestaurants,
-  ReviewData, MyWishlistItem, ReviewComparison, CompareReviewsResponse,
+  ReviewData, ReviewComparison, CompareReviewsResponse,
   Inquiry, Notice, PollOption, Poll, TimelineItem,
   AppNotification, RoomStats, PlatformStats,
   RankingUser, RankingsResponse, DiscoverRestaurant, DiscoverResponse,
@@ -12,7 +12,7 @@ import type {
 export type {
   AuthUser, RoomListItem, RoomMemberInfo, RoomRestaurantInfo,
   RoomDetailResponse, RoomRestaurantDetailResponse, PaginatedRestaurants,
-  ReviewData, MyWishlistItem, ReviewComparison, CompareReviewsResponse,
+  ReviewData, ReviewComparison, CompareReviewsResponse,
   Inquiry, Notice, PollOption, Poll, TimelineItem,
   RoomStats, PlatformStats, RankingUser, RankingsResponse,
   DiscoverRestaurant, DiscoverResponse,
@@ -542,23 +542,6 @@ export async function fetchRankings(): Promise<RankingsResponse> {
   return res.json();
 }
 
-// ─── 위시리스트 ───
-
-/** 위시리스트 토글 */
-export async function toggleWishlist(roomId: string, restaurantId: string): Promise<{ wishlisted: boolean }> {
-  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${restaurantId}/wishlist`, { method: 'POST' });
-  await throwIfNotOk(res, '위시리스트 변경에 실패했습니다.');
-  return res.json();
-}
-
-// ─── 내 찜 목록 ───
-
-/** 내가 찜한 식당 목록 */
-export async function fetchMyWishlists(): Promise<MyWishlistItem[]> {
-  const res = await apiFetch(`${API_BASE}/users/me/wishlists`);
-  if (!res.ok) return [];
-  return res.json();
-}
 
 // ─── 공개 맛집 추천 ───
 

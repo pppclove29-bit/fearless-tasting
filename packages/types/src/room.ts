@@ -42,7 +42,6 @@ export interface RoomRestaurant {
   addedById: string | null;
   createdAt: string;
   avgRating: number | null;
-  wishlistCount: number;
   _count: { visits: number; reviews: number };
 }
 
@@ -175,7 +174,6 @@ export interface RoomMemberInfo {
 export interface RoomRestaurantInfo extends RoomRestaurant {
   addedBy: { id: string; nickname: string } | null;
   avgRating: number | null;
-  wishlisted: boolean;
 }
 
 export interface RoomDetailResponse extends Room {
@@ -219,19 +217,6 @@ export interface ReviewData {
   accessibilityRating?: number | null;
   favoriteMenu?: string | null;
   tryNextMenu?: string | null;
-}
-
-export interface MyWishlistItem {
-  id: string;
-  createdAt: string;
-  roomRestaurant: {
-    id: string;
-    name: string;
-    category: string;
-    address: string;
-    roomId: string;
-    room: { id: string; name: string };
-  };
 }
 
 export interface ReviewComparison {

@@ -465,32 +465,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     min-width: 0;
   }
 
-  .btn-wishlist {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    background: var(--bg-hover);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    cursor: pointer;
-    padding: 0.2rem 0.5rem;
-    color: var(--text-muted);
-    font-size: 0.7rem;
-    font-weight: 500;
-    transition: all 0.2s;
-    flex-shrink: 0;
-    overflow: hidden;
-  }
-
-  .btn-wishlist:hover { border-color: var(--border-mid); color: var(--text-sub); }
-  .btn-wishlist.active { background: var(--bg-hover); border-color: #f9a8d4; color: #e11d48; }
-  .btn-wishlist.active:hover { border-color: #f472b6; }
-
-  .wishlist-count {
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: inherit;
-  }
 
   .room-rest-rating {
     font-size: 0.8rem;
@@ -1867,7 +1841,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     updateRoomMemberRole, kickRoomMember, transferOwnership,
     createRoomRestaurant, fetchRoomRestaurants,
     toggleShareCode, updateRoom, regenerateInviteCode,
-    fetchRoomStats, toggleWishlist,
+    fetchRoomStats,
     createPoll, fetchPolls, votePoll, closePoll,
     fetchTimeline,
     showToast, showConfirm, showDangerConfirm,
@@ -1978,10 +1952,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="room-rest-meta">${escapeHtml(r.address)} · ${escapeHtml(r.category)}</div>
         <div class="room-rest-footer">
           <span class="room-rest-reviews-count">방문 ${r._count.visits}회 · 리뷰 ${r._count.reviews}개</span>
-          <button type="button" class="btn-wishlist ${r.wishlisted ? 'active' : ''}" data-rid="${r.id}" title="좋아요">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="${r.wishlisted ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            좋아요${r.wishlistCount > 0 ? `<span class="wishlist-count">${r.wishlistCount}</span>` : ''}
-          </button>
         </div>
       </div>`;
   }
@@ -3117,7 +3087,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>
     `;
 
-    const restSortLabels: Record<string, string> = { latest: '최신순', 'rating-high': '평점 높은순', 'rating-low': '평점 낮은순', reviews: '리뷰 많은순', visits: '방문 많은순', wishlist: '좋아요순', name: '이름순' };
+    const restSortLabels: Record<string, string> = { latest: '최신순', 'rating-high': '평점 높은순', 'rating-low': '평점 낮은순', reviews: '리뷰 많은순', visits: '방문 많은순', name: '이름순' };
 
     panel.innerHTML = addFormHtml
       + `<div class="rest-list-header"><h3 class="section-subtitle">식당 목록 <span class="section-count" id="rest-total-count">-</span></h3><a href="/room/add?roomId=${currentRoom.id}" class="add-rest-fab">+ 식당 등록</a></div>`
@@ -4054,46 +4024,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   function attachRestaurantCardHandlers() {
     for (const card of document.querySelectorAll<HTMLElement>('.room-restaurant-card')) {
       card.addEventListener('click', (e) => {
-        if ((e.target as HTMLElement).closest('.btn-wishlist')) return;
         const rid = card.dataset.rid!;
         location.href = `/room/restaurant?roomId=${currentRoom.id}&id=${rid}`;
-      });
-    }
-    for (const btn of document.querySelectorAll<HTMLButtonElement>('.btn-wishlist')) {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const rid = btn.dataset.rid!;
-        try {
-          const { wishlisted } = await toggleWishlist(currentRoom.id, rid);
-          const rest = currentRoom.restaurants.find((r) => r.id === rid);
-          const restInData = restData.find((r) => r.id === rid);
-          for (const r of [rest, restInData]) {
-            if (r) {
-              r.wishlisted = wishlisted;
-              r.wishlistCount = (r.wishlistCount ?? 0) + (wishlisted ? 1 : -1);
-            }
-          }
-          btn.classList.toggle('active', wishlisted);
-          const svg = btn.querySelector('svg path');
-          if (svg) svg.setAttribute('fill', wishlisted ? 'currentColor' : 'none');
-          // 찜 수 업데이트
-          let countEl = btn.querySelector('.wishlist-count');
-          const count = rest?.wishlistCount ?? 0;
-          if (count > 0) {
-            if (!countEl) {
-              countEl = document.createElement('span');
-              countEl.className = 'wishlist-count';
-              btn.appendChild(countEl);
-            }
-            countEl.textContent = String(count);
-          } else if (countEl) {
-            countEl.remove();
-          }
-          btn.style.transform = 'scale(1.3)';
-          setTimeout(() => { btn.style.transform = ''; }, 200);
-        } catch {
-          showToast('좋아요 변경에 실패했습니다.');
-        }
       });
     }
   }

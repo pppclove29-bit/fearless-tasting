@@ -304,28 +304,6 @@ export class UsersService {
     };
   }
 
-  /** 내가 찜한 식당 목록 */
-  async getMyWishlists(userId: string) {
-    return this.prisma.read.roomWishlist.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        createdAt: true,
-        roomRestaurant: {
-          select: {
-            id: true,
-            name: true,
-            category: true,
-            address: true,
-            roomId: true,
-            room: { select: { id: true, name: true } },
-          },
-        },
-      },
-    });
-  }
-
   /** 관리자 대시보드 통계 */
   async getStats() {
     const now = new Date();

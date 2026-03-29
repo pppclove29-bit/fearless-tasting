@@ -114,32 +114,6 @@ export class RoomsService {
 
     if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
 
-    const restaurantIds = room.restaurants.map((r) => r.id);
-
-    const wishlistedSet = new Set<string>();
-    if (userId) {
-      const wishlists = await measure('room.findOne.myWishlist', () =>
-        this.prisma.read.roomWishlist.findMany({
-          where: { userId, roomRestaurantId: { in: restaurantIds } },
-          select: { roomRestaurantId: true },
-        }),
-      );
-      for (const w of wishlists) wishlistedSet.add(w.roomRestaurantId);
-    }
-
-    // 방 전체 찜 수 집계
-    const wishlistCounts = await measure('room.findOne.wishlistCounts', () =>
-      this.prisma.read.roomWishlist.groupBy({
-        by: ['roomRestaurantId'],
-        where: { roomRestaurantId: { in: restaurantIds } },
-        _count: true,
-      }),
-    );
-    const wishCountMap = new Map<string, number>();
-    for (const wc of wishlistCounts) {
-      wishCountMap.set(wc.roomRestaurantId, wc._count);
-    }
-
     return {
       ...room,
       restaurants: room.restaurants.map(({ visits, ...rest }) => {
@@ -147,8 +121,6 @@ export class RoomsService {
         return {
           ...rest,
           avgRating: calcAvgRating(allRatings),
-          wishlisted: wishlistedSet.has(rest.id),
-          wishlistCount: wishCountMap.get(rest.id) ?? 0,
           _count: { ...rest._count, reviews: allRatings.length },
         };
       }),
@@ -508,38 +480,11 @@ export class RoomsService {
       ]),
     );
 
-    const restaurantIds = restaurants.map((r) => r.id);
-
-    const wishlistedSet = new Set<string>();
-    if (userId) {
-      const wishlists = await measure('restaurants.list.myWishlist', () =>
-        this.prisma.read.roomWishlist.findMany({
-          where: { userId, roomRestaurantId: { in: restaurantIds } },
-          select: { roomRestaurantId: true },
-        }),
-      );
-      for (const w of wishlists) wishlistedSet.add(w.roomRestaurantId);
-    }
-
-    const wishlistCounts = await measure('restaurants.list.wishlistCounts', () =>
-      this.prisma.read.roomWishlist.groupBy({
-        by: ['roomRestaurantId'],
-        where: { roomRestaurantId: { in: restaurantIds } },
-        _count: true,
-      }),
-    );
-    const wishCountMap = new Map<string, number>();
-    for (const wc of wishlistCounts) {
-      wishCountMap.set(wc.roomRestaurantId, wc._count);
-    }
-
     let data = restaurants.map(({ visits, ...rest }) => {
       const allRatings = visits.flatMap((v) => v.reviews.map((r) => r.rating));
       return {
         ...rest,
         avgRating: calcAvgRating(allRatings),
-        wishlisted: wishlistedSet.has(rest.id),
-        wishlistCount: wishCountMap.get(rest.id) ?? 0,
         _count: { ...rest._count, reviews: allRatings.length },
       };
     });
@@ -551,7 +496,6 @@ export class RoomsService {
         case 'rating-low': data.sort((a, b) => (a.avgRating ?? 0) - (b.avgRating ?? 0)); break;
         case 'reviews': data.sort((a, b) => b._count.reviews - a._count.reviews); break;
         case 'visits': data.sort((a, b) => b._count.visits - a._count.visits); break;
-        case 'wishlist': data.sort((a, b) => (b.wishlistCount ?? 0) - (a.wishlistCount ?? 0)); break;
       }
       data = data.slice(skip, skip + pageSize);
     }
@@ -853,30 +797,6 @@ export class RoomsService {
     return this.prisma.write.roomReview.delete({ where: { id: reviewId } });
   }
 
-  // ─── 위시리스트 ───
-
-  /** 위시리스트 토글 (추가/제거) */
-  async toggleWishlist(roomId: string, restaurantId: string, userId: string): Promise<{ wishlisted: boolean }> {
-    const restaurant = await this.prisma.read.roomRestaurant.findFirst({
-      where: { id: restaurantId, roomId },
-    });
-    if (!restaurant) throw new NotFoundException('식당을 찾을 수 없습니다.');
-
-    const existing = await this.prisma.read.roomWishlist.findUnique({
-      where: { userId_roomRestaurantId: { userId, roomRestaurantId: restaurantId } },
-    });
-
-    if (existing) {
-      await this.prisma.write.roomWishlist.delete({ where: { id: existing.id } });
-      return { wishlisted: false };
-    }
-
-    await this.prisma.write.roomWishlist.create({
-      data: { userId, roomRestaurantId: restaurantId },
-    });
-    return { wishlisted: true };
-  }
-
   // ─── 공개 맛집 추천 ───
 
   /** 공개 맛집 추천 리스트 (비로그인 가능) */
@@ -884,8 +804,8 @@ export class RoomsService {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-    // 3개 쿼리 병렬 실행
-    const [recentReviews, restaurants, wishlisted] = await Promise.all([
+    // 2개 쿼리 병렬 실행
+    const [recentReviews, restaurants] = await Promise.all([
       // 1) 최근 고평점 식당 — 최근 90일 내 리뷰 기준
       this.prisma.read.roomReview.findMany({
         where: { createdAt: { gte: ninetyDaysAgo } },
@@ -905,12 +825,6 @@ export class RoomsService {
           address: true,
           category: true,
           _count: { select: { visits: true } },
-        },
-      }),
-      // 3) 위시리스트 인기 식당
-      this.prisma.read.roomWishlist.findMany({
-        select: {
-          roomRestaurant: { select: { name: true, address: true, category: true } },
         },
       }),
     ]);
@@ -944,20 +858,7 @@ export class RoomsService {
       .sort((a, b) => b.visitCount - a.visitCount)
       .slice(0, 10);
 
-    const wishMap = new Map<string, { name: string; address: string; category: string; wishlistCount: number }>();
-    for (const w of wishlisted) {
-      const rest = w.roomRestaurant;
-      const key = `${rest.name}||${rest.address}`;
-      const entry = wishMap.get(key) ?? { name: rest.name, address: rest.address, category: rest.category, wishlistCount: 0 };
-      entry.wishlistCount += 1;
-      wishMap.set(key, entry);
-    }
-
-    const mostWishlisted = Array.from(wishMap.values())
-      .sort((a, b) => b.wishlistCount - a.wishlistCount)
-      .slice(0, 10);
-
-    return { topRated, mostRevisited, mostWishlisted };
+    return { topRated, mostRevisited };
   }
 
   // ──────────────── 투표 ────────────────

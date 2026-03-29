@@ -44,14 +44,6 @@ export class UsersController {
     return this.usersService.getRankings();
   }
 
-  /** 내가 찜한 식당 목록 */
-  @Get('me/wishlists')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '내가 찜한 식당 목록' })
-  getMyWishlists(@CurrentUser() user: { id: string }) {
-    return this.usersService.getMyWishlists(user.id);
-  }
-
   /** 내 알림 목록 */
   @Get('me/notifications')
   @UseGuards(JwtAuthGuard)

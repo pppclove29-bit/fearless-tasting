@@ -35,8 +35,6 @@ model User {
   roomReviews         RoomReview[]
   /// 강퇴 기록
   roomKicks           RoomKick[]
-  /// 위시리스트
-  wishlists           RoomWishlist[]
   /// 생성한 투표
   createdPolls        RoomPoll[]             @relation("PollCreator")
   /// 투표 참여 기록
@@ -168,8 +166,6 @@ model RoomRestaurant {
   addedById    String?
   /// 방문 기록 목록
   visits       RoomVisit[]
-  /// 위시리스트
-  wishlists    RoomWishlist[]
   /// 투표 선택지 연결
   pollOptions  RoomPollOption[]
   /// 등록일
@@ -284,26 +280,6 @@ model RoomKick {
   /// 같은 방에서 같은 유저 중복 강퇴 방지
   @@unique([roomId, userId])
   @@index([userId])
-}
-
-/// 방 내 식당 위시리스트 (유저별 찜)
-model RoomWishlist {
-  /// 고유 식별자
-  id               String         @id @default(uuid())
-  /// 위시리스트 등록 유저
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// 유저 ID (FK)
-  userId           String
-  /// 위시리스트 대상 식당
-  roomRestaurant   RoomRestaurant @relation(fields: [roomRestaurantId], references: [id], onDelete: Cascade)
-  /// 식당 ID (FK)
-  roomRestaurantId String
-  /// 등록일
-  createdAt        DateTime       @default(now())
-
-  @@unique([userId, roomRestaurantId])
-  @@index([userId])
-  @@index([roomRestaurantId])
 }
 
 /// 서비스 공지사항 (관리자가 작성, 전체 사용자에게 노출)

@@ -422,22 +422,6 @@ export class RoomsController {
     return this.roomsService.removeReview(revId, user.id, req.roomMember.role);
   }
 
-  // ─── 위시리스트 ───
-
-  /** 위시리스트 토글 */
-  @Post(':id/restaurants/:rid/wishlist')
-  @UseGuards(RoomMemberGuard)
-  @ApiOperation({ summary: '위시리스트 토글 (추가/제거)' })
-  @ApiParam({ name: 'id', description: '방 ID' })
-  @ApiParam({ name: 'rid', description: '식당 ID' })
-  toggleWishlist(
-    @Param('id') roomId: string,
-    @Param('rid') restaurantId: string,
-    @CurrentUser() user: { id: string },
-  ) {
-    return this.roomsService.toggleWishlist(roomId, restaurantId, user.id);
-  }
-
   // ─── 투표 ───
 
   /** 투표 생성 */

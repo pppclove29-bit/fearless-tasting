@@ -25,7 +25,6 @@ export type {
   RoomRestaurantDetailResponse,
   PaginatedRestaurants,
   ReviewData,
-  MyWishlistItem,
   ReviewComparison,
   CompareReviewsResponse,
 } from './room';
