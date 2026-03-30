@@ -1116,7 +1116,7 @@ import AdSlot from '@/components/AdSlot.astro';
 </style>
 
 <script>
-  import { fetchCurrentUser, fetchMyRooms, createRoom, fetchPlatformStats, fetchNotices } from '@/lib/api';
+  import { fetchCurrentUser, getCachedUser, fetchMyRooms, createRoom, fetchPlatformStats, fetchNotices } from '@/lib/api';
   import type { RoomListItem } from '@/lib/api';
 
   async function initHomePage() {
@@ -1124,6 +1124,16 @@ import AdSlot from '@/components/AdSlot.astro';
     const dashboard = document.getElementById('dashboard');
     const roomsList = document.getElementById('rooms-list');
     if (!landing || !dashboard || !roomsList) return;
+
+    // 캐시된 유저가 있으면 즉시 랜딩/로그인 버튼 숨김 (깜빡임 방지)
+    const cached = getCachedUser();
+    if (cached) {
+      landing.hidden = true;
+      dashboard.hidden = false;
+      for (const cta of document.querySelectorAll<HTMLElement>('.login-only-cta')) {
+        cta.hidden = true;
+      }
+    }
 
     const _loadingMsg = document.getElementById('loading-msg');
     const emptyMsg = document.getElementById('empty-msg');
@@ -1342,6 +1352,13 @@ import AdSlot from '@/components/AdSlot.astro';
       allRooms = await fetchMyRooms();
       if (homeSearchWrap) homeSearchWrap.hidden = allRooms.length === 0;
       applyAndRenderHome();
+    } else if (cached) {
+      // 캐시는 있었지만 실제 인증 실패 — 랜딩 복원
+      landing.hidden = false;
+      dashboard.hidden = true;
+      for (const cta of document.querySelectorAll<HTMLElement>('.login-only-cta')) {
+        cta.hidden = false;
+      }
     }
   }
 

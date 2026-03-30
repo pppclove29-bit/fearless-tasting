@@ -26,10 +26,16 @@ self.addEventListener('fetch', (event) => {
   // API 요청은 캐시하지 않음 (외부 origin 또는 /api/ 경로)
   if (request.url.includes('/api/') || request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
 
-  // 네비게이션(HTML) 요청: network-first
+  // 네비게이션(HTML) 요청: network-first + 캐시 업데이트
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/'))
+      fetch(request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      }).catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
     );
     return;
   }
