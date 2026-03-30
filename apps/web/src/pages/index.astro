@@ -1296,7 +1296,7 @@ import AdSlot from '@/components/AdSlot.astro';
 
     // 유저/통계/공지 병렬 로드
     const [user, statsResult, noticesResult] = await Promise.all([
-      fetchCurrentUser(),
+      fetchCurrentUser().catch(() => null),
       fetchPlatformStats().catch(() => null),
       fetchNotices().catch(() => null),
     ]);
@@ -1343,22 +1343,20 @@ import AdSlot from '@/components/AdSlot.astro';
       }
     }
 
-    if (user) {
+    const loggedIn = user ?? cached;
+    if (loggedIn) {
       landing.hidden = true;
       dashboard.hidden = false;
       for (const cta of document.querySelectorAll<HTMLElement>('.login-only-cta')) {
         cta.hidden = true;
       }
-      allRooms = await fetchMyRooms();
+      try {
+        allRooms = await fetchMyRooms();
+      } catch {
+        allRooms = [];
+      }
       if (homeSearchWrap) homeSearchWrap.hidden = allRooms.length === 0;
       applyAndRenderHome();
-    } else if (cached) {
-      // 캐시는 있었지만 실제 인증 실패 — 랜딩 복원
-      landing.hidden = false;
-      dashboard.hidden = true;
-      for (const cta of document.querySelectorAll<HTMLElement>('.login-only-cta')) {
-        cta.hidden = false;
-      }
     }
   }
 
