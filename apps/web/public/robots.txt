@@ -11,6 +11,7 @@ Disallow: /admin
 Disallow: /login
 Disallow: /room
 Disallow: /rooms
+Allow: /rooms/public
 Disallow: /add
 Disallow: /profile
 Disallow: /join
@@ -23,6 +24,7 @@ Disallow: /admin
 Disallow: /login
 Disallow: /room
 Disallow: /rooms
+Allow: /rooms/public
 Disallow: /profile
 Disallow: /join
 
@@ -33,6 +35,7 @@ Disallow: /admin
 Disallow: /login
 Disallow: /room
 Disallow: /rooms
+Allow: /rooms/public
 Disallow: /profile
 Disallow: /join
 
@@ -41,3 +44,4 @@ User-agent: Google-Extended
 Disallow: /
 
 Sitemap: https://fearless-tasting.pages.dev/sitemap-0.xml
+Sitemap: https://fearless-tasting.pages.dev/sitemap-public-rooms.xml

@@ -8,6 +8,7 @@ export interface Room {
   ownerId: string;
   shareCode?: string | null;
   shareCodeEnabled?: boolean;
+  isPublic: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -239,4 +240,23 @@ export interface ReviewComparison {
 export interface CompareReviewsResponse {
   restaurant: { id: string; name: string; roomId: string };
   comparisons: ReviewComparison[];
+}
+
+// ─── 공개 방 목록 ───
+
+export interface PublicRoomListItem {
+  id: string;
+  name: string;
+  restaurantCount: number;
+  reviewCount: number;
+  avgRating: number | null;
+  topCategories: string[];
+  updatedAt: string;
+}
+
+export interface PaginatedPublicRooms {
+  data: PublicRoomListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
 }

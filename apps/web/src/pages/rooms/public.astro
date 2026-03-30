@@ -1,0 +1,314 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+export const prerender = false;
+
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+const siteUrl = (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '');
+
+interface PublicRoomListItem {
+  id: string;
+  name: string;
+  restaurantCount: number;
+  reviewCount: number;
+  avgRating: number | null;
+  topCategories: string[];
+  updatedAt: string;
+}
+
+interface PaginatedPublicRooms {
+  data: PublicRoomListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+let initialData: PaginatedPublicRooms | null = null;
+
+try {
+  const res = await fetch(`${API_BASE}/rooms/public?page=1&pageSize=12`);
+  if (res.ok) {
+    initialData = await res.json();
+  }
+} catch {
+  // SSR fetch failed
+}
+---
+
+<BaseLayout title="공개 맛집 방 — 다른 사람들의 맛집 리스트 구경하기" description="다른 사람들의 맛집 리스트를 구경하세요. 공개된 방의 식당과 리뷰를 확인할 수 있습니다.">
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "공개 맛집 방 - 무모한 시식가",
+      "description": "다른 사람들의 맛집 리스트를 구경하세요",
+      "url": siteUrl + "/rooms/public",
+    })} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "홈", "item": siteUrl },
+        { "@type": "ListItem", "position": 2, "name": "공개 맛집 방", "item": siteUrl + "/rooms/public" },
+      ]
+    })} />
+  </Fragment>
+
+  <div class="public-rooms-page">
+    <section class="public-rooms-hero">
+      <h1>공개 맛집 방</h1>
+      <p class="public-rooms-desc">다른 사람들의 맛집 리스트를 구경하세요</p>
+    </section>
+
+    <div id="public-rooms-content">
+      {!initialData || initialData.data.length === 0 ? (
+        <p class="public-rooms-empty">아직 공개된 방이 없습니다.</p>
+      ) : (
+        <div id="public-rooms-grid" class="public-rooms-grid">
+          {initialData.data.map((room) => (
+            <a href={`/rooms/public/${room.id}`} class="public-room-card">
+              <div class="public-room-name">{room.name}</div>
+              <div class="public-room-categories">
+                {room.topCategories.length > 0
+                  ? room.topCategories.map((cat) => (
+                      <span class="public-room-cat-badge">{cat}</span>
+                    ))
+                  : <span class="public-room-cat-badge">-</span>
+                }
+              </div>
+              <div class="public-room-stats">
+                <span>식당 {room.restaurantCount}곳</span>
+                <span class="public-room-stat-dot">&middot;</span>
+                <span>리뷰 {room.reviewCount}개</span>
+                {room.avgRating !== null && (
+                  <>
+                    <span class="public-room-stat-dot">&middot;</span>
+                    <span class="public-room-avg-rating">{room.avgRating.toFixed(1)}</span>
+                  </>
+                )}
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+
+    {initialData && initialData.total > initialData.pageSize && (
+      <div class="public-rooms-more-wrap">
+        <button type="button" class="public-rooms-more-btn" id="load-more-btn">더보기</button>
+      </div>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .public-rooms-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  .public-rooms-hero {
+    text-align: center;
+    padding: 2rem 0 1.5rem;
+  }
+
+  .public-rooms-hero h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .public-rooms-desc {
+    font-size: 0.9rem;
+    color: var(--text-sub);
+    margin-top: 0.3rem;
+  }
+
+  .public-rooms-empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .public-rooms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .public-room-card {
+    display: block;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+
+  .public-room-card:hover {
+    border-color: var(--border-mid);
+  }
+
+  .public-room-card:active {
+    transform: scale(0.99);
+  }
+
+  .public-room-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 0.4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .public-room-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .public-room-cat-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    background: var(--bg-hover);
+    color: var(--text-sub);
+  }
+
+  .public-room-stats {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+  }
+
+  .public-room-stat-dot {
+    color: var(--text-muted);
+  }
+
+  .public-room-avg-rating {
+    color: #e6a817;
+    font-weight: 600;
+  }
+
+  .public-rooms-more-wrap {
+    text-align: center;
+    padding: 1.5rem 0 2rem;
+  }
+
+  .public-rooms-more-btn {
+    padding: 0.6rem 2rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-sub);
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+
+  .public-rooms-more-btn:hover {
+    border-color: var(--border-mid);
+  }
+
+  .public-rooms-more-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  @media (max-width: 500px) {
+    .public-rooms-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  import { fetchPublicRooms } from '@/lib/api';
+  import type { PaginatedPublicRooms, PublicRoomListItem } from '@/lib/api';
+
+  function initPublicRoomsPage() {
+    const grid = document.getElementById('public-rooms-grid');
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    const contentEl = document.getElementById('public-rooms-content');
+    if (!contentEl) return;
+
+    let currentPage = 1;
+    const pageSize = 12;
+
+    function escapeHtml(text: string): string {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function renderRoomCard(room: PublicRoomListItem): string {
+      const cats = room.topCategories.length > 0
+        ? room.topCategories.map((c) => `<span class="public-room-cat-badge">${escapeHtml(c)}</span>`).join('')
+        : '<span class="public-room-cat-badge">-</span>';
+      const avgRatingHtml = room.avgRating !== null
+        ? `<span class="public-room-stat-dot">&middot;</span><span class="public-room-avg-rating">${room.avgRating.toFixed(1)}</span>`
+        : '';
+      return `
+        <a href="/rooms/public/${room.id}" class="public-room-card">
+          <div class="public-room-name">${escapeHtml(room.name)}</div>
+          <div class="public-room-categories">${cats}</div>
+          <div class="public-room-stats">
+            <span>식당 ${room.restaurantCount}곳</span>
+            <span class="public-room-stat-dot">&middot;</span>
+            <span>리뷰 ${room.reviewCount}개</span>
+            ${avgRatingHtml}
+          </div>
+        </a>
+      `;
+    }
+
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', async () => {
+        loadMoreBtn.disabled = true;
+        loadMoreBtn.textContent = '불러오는 중...';
+        try {
+          currentPage++;
+          const result: PaginatedPublicRooms = await fetchPublicRooms(currentPage, pageSize);
+
+          if (result.data.length > 0) {
+            let targetGrid = grid;
+            if (!targetGrid) {
+              contentEl.innerHTML = '<div id="public-rooms-grid" class="public-rooms-grid"></div>';
+              targetGrid = document.getElementById('public-rooms-grid');
+            }
+            if (targetGrid) {
+              targetGrid.insertAdjacentHTML('beforeend', result.data.map(renderRoomCard).join(''));
+            }
+          }
+
+          const loaded = currentPage * pageSize;
+          if (loaded >= result.total || result.data.length === 0) {
+            loadMoreBtn.remove();
+          } else {
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.textContent = '더보기';
+          }
+        } catch {
+          loadMoreBtn.disabled = false;
+          loadMoreBtn.textContent = '더보기';
+          currentPage--;
+        }
+      });
+    }
+  }
+
+  document.addEventListener('astro:page-load', initPublicRoomsPage);
+</script>

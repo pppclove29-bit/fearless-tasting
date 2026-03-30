@@ -7,6 +7,7 @@ import type {
   Inquiry, Notice, PollOption, Poll, TimelineItem,
   AppNotification, RoomStats, PlatformStats,
   RankingUser, RankingsResponse, DiscoverRestaurant, DiscoverResponse,
+  PublicRoomListItem, PaginatedPublicRooms,
 } from '@repo/types';
 
 export type {
@@ -16,6 +17,7 @@ export type {
   Inquiry, Notice, PollOption, Poll, TimelineItem,
   RoomStats, PlatformStats, RankingUser, RankingsResponse,
   DiscoverRestaurant, DiscoverResponse,
+  PublicRoomListItem, PaginatedPublicRooms,
 };
 export type { AppNotification as Notification } from '@repo/types';
 
@@ -107,7 +109,7 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
   }
 
   if (res.status === 401) {
-    const isPublicUrl = url.includes('/shared/') || url.includes('/auth/kakao') || url.includes('/auth/refresh');
+    const isPublicUrl = url.includes('/shared/') || url.includes('/rooms/public') || url.includes('/auth/kakao') || url.includes('/auth/refresh');
 
     if (getRefreshToken()) {
       const refreshed = await refreshTokens();
@@ -323,11 +325,11 @@ export async function fetchRoom(id: string): Promise<RoomDetailResponse> {
 }
 
 /** 방 생성 */
-export async function createRoom(name: string): Promise<Room> {
+export async function createRoom(name: string, isPublic = false): Promise<Room> {
   const res = await apiFetch(`${API_BASE}/rooms`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, isPublic }),
   });
   await throwIfNotOk(res, '방 생성에 실패했습니다.');
   return res.json();
@@ -697,6 +699,40 @@ export async function fetchUnreadNotificationCount(): Promise<number> {
 /** 알림 모두 읽음 처리 */
 export async function markNotificationsRead(): Promise<void> {
   await apiFetch(`${API_BASE}/users/me/notifications/read`, { method: 'PATCH' });
+}
+
+// ─── 공개 방 ───
+
+/** 공개 방 목록 (비로그인 가능) */
+export async function fetchPublicRooms(page = 1, pageSize = 12): Promise<PaginatedPublicRooms> {
+  const res = await apiFetch(`${API_BASE}/rooms/public?page=${page}&pageSize=${pageSize}`);
+  await throwIfNotOk(res, '공개 방 목록을 불러올 수 없습니다.');
+  return res.json();
+}
+
+/** 공개 방 상세 (비로그인 가능) */
+export async function fetchPublicRoomDetail(roomId: string): Promise<SharedRoomDetail> {
+  const res = await apiFetch(`${API_BASE}/rooms/public/${roomId}`);
+  await throwIfNotOk(res, '공개 방을 찾을 수 없습니다.');
+  return res.json();
+}
+
+/** 공개 방 식당 상세 (비로그인 가능) */
+export async function fetchPublicRoomRestaurantDetail(roomId: string, rid: string): Promise<SharedRoomRestaurantDetail> {
+  const res = await apiFetch(`${API_BASE}/rooms/public/${roomId}/restaurants/${rid}`);
+  await throwIfNotOk(res, '식당 조회에 실패했습니다.');
+  return res.json();
+}
+
+/** 공개 방 설정 토글 (방장만) */
+export async function toggleRoomPublic(roomId: string, isPublic: boolean): Promise<{ isPublic: boolean }> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/public`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isPublic }),
+  });
+  await throwIfNotOk(res, '공개 설정 변경에 실패했습니다.');
+  return res.json();
 }
 
 // ─── 리뷰 비교 ───

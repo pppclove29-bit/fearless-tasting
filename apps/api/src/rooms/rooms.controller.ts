@@ -15,6 +15,7 @@ import type { UpdateRoomReviewDto } from './dto/update-room-review.dto';
 import type { CreateRoomVisitDto } from './dto/create-room-visit.dto';
 import type { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 import type { ToggleShareCodeDto } from './dto/toggle-share-code.dto';
+import type { TogglePublicDto } from './dto/toggle-public.dto';
 import type { UpdateRoomDto } from './dto/update-room.dto';
 import type { UpdateRoomRestaurantDto } from './dto/update-room-restaurant.dto';
 import type { UpdateRoomVisitDto } from './dto/update-room-visit.dto';
@@ -41,7 +42,7 @@ export class RoomsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '방 생성' })
   create(@CurrentUser() user: { id: string }, @Body() dto: CreateRoomDto) {
-    return this.roomsService.create(dto.name, user.id);
+    return this.roomsService.create(dto.name, user.id, dto.isPublic);
   }
 
   /** 내 방 목록 */
@@ -97,6 +98,48 @@ export class RoomsController {
     @Param('rid') rid: string,
   ) {
     return this.roomsService.findSharedRestaurantDetail(shareCode, rid);
+  }
+
+  // ─── 공개 방 API (비로그인) ───
+
+  /** 공개 방 목록 */
+  @Get('public')
+  @ApiOperation({ summary: '공개 방 목록 (비로그인 가능)' })
+  findPublicRooms(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.roomsService.findPublicRooms(
+      page ? parseInt(page, 10) : 1,
+      pageSize ? Math.min(50, parseInt(pageSize, 10)) : 10,
+    );
+  }
+
+  /** 공개 방 sitemap용 ID 목록 */
+  @Get('public/sitemap-ids')
+  @ApiOperation({ summary: '공개 방 ID 목록 (sitemap용, 비로그인 가능)' })
+  getPublicRoomSitemapIds() {
+    return this.roomsService.findPublicRoomIds();
+  }
+
+  /** 공개 방 상세 */
+  @Get('public/:id')
+  @ApiOperation({ summary: '공개 방 상세 (비로그인 가능)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  findPublicRoomDetail(@Param('id') id: string) {
+    return this.roomsService.findPublicRoomDetail(id);
+  }
+
+  /** 공개 방 식당 상세 */
+  @Get('public/:id/restaurants/:rid')
+  @ApiOperation({ summary: '공개 방 식당 상세 (비로그인 가능)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  @ApiParam({ name: 'rid', description: '식당 ID' })
+  findPublicRoomRestaurantDetail(
+    @Param('id') id: string,
+    @Param('rid') rid: string,
+  ) {
+    return this.roomsService.findPublicRoomRestaurantDetail(id, rid);
   }
 
   /** 방 통계 */
@@ -162,6 +205,19 @@ export class RoomsController {
     @Body() dto: ToggleShareCodeDto,
   ) {
     return this.roomsService.toggleShareCode(id, user.id, dto.action);
+  }
+
+  /** 공개 방 설정 (owner만) */
+  @Patch(':id/public')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '공개 방 설정 (방장만)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  togglePublic(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+    @Body() dto: TogglePublicDto,
+  ) {
+    return this.roomsService.togglePublic(id, user.id, dto.isPublic);
   }
 
   /** 멤버 역할 변경 */

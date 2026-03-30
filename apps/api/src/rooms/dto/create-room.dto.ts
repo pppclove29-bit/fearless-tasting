@@ -1,4 +1,4 @@
-import { IsString, MaxLength, MinLength } from 'class-validator';
+import { IsString, MaxLength, MinLength, IsOptional, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateRoomDto {
@@ -7,4 +7,9 @@ export class CreateRoomDto {
   @MinLength(1)
   @MaxLength(100)
   name!: string;
+
+  @ApiProperty({ description: '공개 방 여부', required: false })
+  @IsOptional()
+  @IsBoolean()
+  isPublic?: boolean;
 }

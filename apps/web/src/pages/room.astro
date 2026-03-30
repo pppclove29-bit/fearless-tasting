@@ -148,6 +148,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     background: rgba(220, 38, 38, 0.08);
   }
 
+  .room-action-chip--active {
+    color: #16a34a;
+    border-color: rgba(22, 163, 74, 0.3);
+    background: rgba(22, 163, 74, 0.06);
+  }
+
+  .room-action-chip--active:hover {
+    border-color: rgba(22, 163, 74, 0.5);
+    background: rgba(22, 163, 74, 0.1);
+  }
+
   .room-action-chip--right {
     margin-left: auto;
   }
@@ -1840,7 +1851,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     fetchCurrentUser, fetchRoom, deleteRoom, leaveRoom,
     updateRoomMemberRole, kickRoomMember, transferOwnership,
     createRoomRestaurant, fetchRoomRestaurants,
-    toggleShareCode, updateRoom, regenerateInviteCode,
+    toggleShareCode, toggleRoomPublic, updateRoom, regenerateInviteCode,
     fetchRoomStats,
     createPoll, fetchPolls, votePoll, closePoll,
     fetchTimeline,
@@ -2016,6 +2027,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${isManagerOrAbove() ? '<span>공개 초대: 비회원도 읽기 전용으로 열람 가능</span>' : ''}
         </div>
         <div class="room-header-actions">
+          ${isOwner() ? `<button type="button" class="room-action-chip ${currentRoom.isPublic ? 'room-action-chip--active' : ''}" id="toggle-public-btn">${svgGlobe} 공개 방${currentRoom.isPublic ? ' · ON' : ''}</button>` : ''}
           ${isOwner()
             ? `<button type="button" class="room-action-chip room-action-chip--danger room-action-chip--right" id="delete-room-btn">${svgTrash} 방 삭제</button>`
             : `<button type="button" class="room-action-chip room-action-chip--danger room-action-chip--right" id="leave-room-btn">${svgExit} 방 나가기</button>`}
@@ -2212,6 +2224,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             showToast('공개 초대가 활성화되었습니다!', 'success');
           } catch { showToast('공개 링크 생성에 실패했습니다.'); }
         }
+      });
+    }
+
+    // 공개 방 토글 버튼
+    const togglePublicBtn = document.getElementById('toggle-public-btn');
+    if (togglePublicBtn) {
+      togglePublicBtn.addEventListener('click', async () => {
+        const newValue = !currentRoom.isPublic;
+        const msg = newValue
+          ? '방을 공개하시겠습니까? 누구나 식당 목록과 리뷰를 볼 수 있습니다.'
+          : '방을 비공개로 전환하시겠습니까?';
+        if (!await showConfirm(msg)) return;
+        try {
+          const result = await toggleRoomPublic(currentRoom.id, newValue);
+          currentRoom.isPublic = result.isPublic;
+          const svgGlobe = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+          togglePublicBtn.innerHTML = `${svgGlobe} 공개 방${result.isPublic ? ' · ON' : ''}`;
+          togglePublicBtn.classList.toggle('room-action-chip--active', result.isPublic);
+          showToast(result.isPublic ? '공개 방으로 설정되었습니다!' : '비공개로 전환되었습니다.', 'success');
+        } catch { showToast('공개 설정 변경에 실패했습니다.'); }
       });
     }
   }

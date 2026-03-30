@@ -89,6 +89,8 @@ model Room {
   shareCode           String?          @unique @db.VarChar(8)
   /// 공유 코드 활성 여부
   shareCodeEnabled    Boolean          @default(false)
+  /// 공개 방 여부 (맛집 탐색 페이지 노출)
+  isPublic            Boolean          @default(false)
   /// 방장 (User FK)
   owner               User             @relation("RoomOwner", fields: [ownerId], references: [id])
   /// 방장 ID
@@ -109,6 +111,7 @@ model Room {
   updatedAt           DateTime         @updatedAt
 
   @@index([ownerId])
+  @@index([isPublic, updatedAt])
 }
 
 /// 방 멤버 (owner/manager/member 역할)

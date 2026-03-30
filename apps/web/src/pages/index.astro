@@ -34,6 +34,10 @@ import AdSlot from '@/components/AdSlot.astro';
           <input type="text" id="create-name" placeholder="방 이름을 입력하세요" required maxlength="100" />
           <button type="submit" class="btn-primary">만들기</button>
         </div>
+        <label class="public-toggle-label">
+          <input type="checkbox" id="create-public" />
+          <span>공개 방으로 만들기</span>
+        </label>
       </form>
     </div>
 
@@ -887,6 +891,23 @@ import AdSlot from '@/components/AdSlot.astro';
     color: #fca5a5;
   }
 
+  .public-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    cursor: pointer;
+  }
+
+  .public-toggle-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--text-heading);
+    cursor: pointer;
+  }
+
   @media (max-width: 600px) {
     .rooms-actions {
       flex-direction: column;
@@ -1205,15 +1226,19 @@ import AdSlot from '@/components/AdSlot.astro';
       }
     }
 
+    const createPublicCheckbox = document.getElementById('create-public') as HTMLInputElement | null;
+
     createForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (formError) formError.hidden = true;
       const name = createNameInput?.value.trim();
       if (!name) return;
+      const isPublic = createPublicCheckbox?.checked ?? false;
 
       try {
-        await createRoom(name);
+        await createRoom(name, isPublic);
         if (createNameInput) createNameInput.value = '';
+        if (createPublicCheckbox) createPublicCheckbox.checked = false;
         allRooms = await fetchMyRooms();
         if (homeSearchWrap) homeSearchWrap.hidden = allRooms.length === 0;
         applyAndRenderHome();
