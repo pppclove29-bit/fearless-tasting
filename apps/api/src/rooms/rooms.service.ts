@@ -132,24 +132,23 @@ export class RoomsService {
     const room = await this.prisma.read.room.findUnique({ where: { inviteCode } });
     if (!room) throw new NotFoundException('유효하지 않은 초대 코드입니다');
 
-    const kicked = await this.prisma.read.roomKick.findUnique({
-      where: { roomId_userId: { roomId: room.id, userId } },
-    });
+    // 4개 검증 쿼리 병렬 실행
+    const [kicked, existing, userRoomCount, memberCount] = await Promise.all([
+      this.prisma.read.roomKick.findUnique({
+        where: { roomId_userId: { roomId: room.id, userId } },
+      }),
+      this.prisma.read.roomMember.findUnique({
+        where: { roomId_userId: { roomId: room.id, userId } },
+      }),
+      this.prisma.read.roomMember.count({ where: { userId } }),
+      this.prisma.read.roomMember.count({ where: { roomId: room.id } }),
+    ]);
+
     if (kicked) throw new ForbiddenException('이 방에서 강퇴되어 재입장할 수 없습니다.');
-
-    const existing = await this.prisma.read.roomMember.findUnique({
-      where: { roomId_userId: { roomId: room.id, userId } },
-    });
     if (existing) throw new ConflictException('이미 이 방에 참여하고 있습니다');
-
-    const userRoomCount = await this.prisma.read.roomMember.count({ where: { userId } });
     if (userRoomCount >= MAX_ROOMS_PER_USER) {
       throw new ForbiddenException(`참여할 수 있는 방은 최대 ${MAX_ROOMS_PER_USER}개입니다.`);
     }
-
-    const memberCount = await this.prisma.read.roomMember.count({
-      where: { roomId: room.id },
-    });
     if (memberCount >= MAX_ROOM_MEMBERS) {
       throw new ForbiddenException(`방 인원이 가득 찼습니다 (최대 ${MAX_ROOM_MEMBERS}명)`);
     }
@@ -204,14 +203,15 @@ export class RoomsService {
 
   /** 멤버 역할 변경 (owner만) */
   async updateMemberRole(roomId: string, targetUserId: string, role: string, requesterId: string) {
-    const room = await this.prisma.read.room.findUnique({ where: { id: roomId } });
+    const [room, member] = await Promise.all([
+      this.prisma.read.room.findUnique({ where: { id: roomId } }),
+      this.prisma.read.roomMember.findUnique({
+        where: { roomId_userId: { roomId, userId: targetUserId } },
+      }),
+    ]);
     if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
     if (room.ownerId !== requesterId) throw new ForbiddenException('방장만 역할을 변경할 수 있습니다');
     if (targetUserId === requesterId) throw new ForbiddenException('본인의 역할은 변경할 수 없습니다');
-
-    const member = await this.prisma.read.roomMember.findUnique({
-      where: { roomId_userId: { roomId, userId: targetUserId } },
-    });
     if (!member) throw new NotFoundException('해당 멤버를 찾을 수 없습니다');
 
     return this.prisma.write.roomMember.update({
@@ -222,14 +222,15 @@ export class RoomsService {
 
   /** 멤버 강퇴 (owner만) */
   async kickMember(roomId: string, targetUserId: string, requesterId: string) {
-    const room = await this.prisma.read.room.findUnique({ where: { id: roomId } });
+    const [room, member] = await Promise.all([
+      this.prisma.read.room.findUnique({ where: { id: roomId } }),
+      this.prisma.read.roomMember.findUnique({
+        where: { roomId_userId: { roomId, userId: targetUserId } },
+      }),
+    ]);
     if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
     if (room.ownerId !== requesterId) throw new ForbiddenException('방장만 멤버를 강퇴할 수 있습니다');
     if (targetUserId === requesterId) throw new ForbiddenException('본인을 강퇴할 수 없습니다');
-
-    const member = await this.prisma.read.roomMember.findUnique({
-      where: { roomId_userId: { roomId, userId: targetUserId } },
-    });
     if (!member) throw new NotFoundException('해당 멤버를 찾을 수 없습니다');
 
     await this.prisma.write.$transaction(async (tx) => {
@@ -249,14 +250,15 @@ export class RoomsService {
     if (room.ownerId !== requesterId) throw new ForbiddenException('방장만 위임할 수 있습니다');
     if (targetUserId === requesterId) throw new ForbiddenException('본인에게 위임할 수 없습니다');
 
-    const targetMember = await this.prisma.read.roomMember.findUnique({
-      where: { roomId_userId: { roomId, userId: targetUserId } },
-    });
+    const [targetMember, requesterMember] = await Promise.all([
+      this.prisma.read.roomMember.findUnique({
+        where: { roomId_userId: { roomId, userId: targetUserId } },
+      }),
+      this.prisma.read.roomMember.findUnique({
+        where: { roomId_userId: { roomId, userId: requesterId } },
+      }),
+    ]);
     if (!targetMember) throw new NotFoundException('해당 멤버를 찾을 수 없습니다');
-
-    const requesterMember = await this.prisma.read.roomMember.findUnique({
-      where: { roomId_userId: { roomId, userId: requesterId } },
-    });
     if (!requesterMember) throw new NotFoundException('멤버를 찾을 수 없습니다');
 
     return this.prisma.write.$transaction([
@@ -294,12 +296,13 @@ export class RoomsService {
 
   /** 공유 코드 활성화/비활성화/재생성 (owner + manager) */
   async toggleShareCode(roomId: string, requesterId: string, action: 'enable' | 'disable' | 'regenerate') {
-    const room = await this.prisma.read.room.findUnique({ where: { id: roomId } });
+    const [room, member] = await Promise.all([
+      this.prisma.read.room.findUnique({ where: { id: roomId } }),
+      this.prisma.read.roomMember.findUnique({
+        where: { roomId_userId: { roomId, userId: requesterId } },
+      }),
+    ]);
     if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
-
-    const member = await this.prisma.read.roomMember.findUnique({
-      where: { roomId_userId: { roomId, userId: requesterId } },
-    });
     if (!member || (member.role !== 'owner' && member.role !== 'manager')) {
       throw new ForbiddenException('매니저 이상의 권한이 필요합니다');
     }
@@ -714,15 +717,16 @@ export class RoomsService {
     favoriteMenu?: string,
     tryNextMenu?: string,
   ) {
-    const visit = await this.prisma.read.roomVisit.findUnique({
-      where: { id: visitId },
-      include: { restaurant: { select: { name: true, roomId: true } } },
-    });
+    const [visit, existing] = await Promise.all([
+      this.prisma.read.roomVisit.findUnique({
+        where: { id: visitId },
+        include: { restaurant: { select: { name: true, roomId: true } } },
+      }),
+      this.prisma.read.roomReview.findUnique({
+        where: { visitId_userId: { visitId, userId } },
+      }),
+    ]);
     if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
-
-    const existing = await this.prisma.read.roomReview.findUnique({
-      where: { visitId_userId: { visitId, userId } },
-    });
     if (existing) {
       throw new ConflictException('이 방문에 이미 리뷰를 작성했습니다. 기존 리뷰를 수정해 주세요.');
     }
@@ -1046,20 +1050,21 @@ export class RoomsService {
 
   /** 같은 식당에 대한 멤버별 리뷰 비교 */
   async compareReviews(restaurantId: string) {
-    const restaurant = await this.prisma.read.roomRestaurant.findUnique({
-      where: { id: restaurantId },
-      select: { id: true, name: true, roomId: true },
-    });
+    const [restaurant, reviews] = await Promise.all([
+      this.prisma.read.roomRestaurant.findUnique({
+        where: { id: restaurantId },
+        select: { id: true, name: true, roomId: true },
+      }),
+      this.prisma.read.roomReview.findMany({
+        where: { visit: { restaurantId } },
+        include: {
+          user: { select: { id: true, nickname: true } },
+          visit: { select: { visitedAt: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
     if (!restaurant) throw new NotFoundException('식당을 찾을 수 없습니다.');
-
-    const reviews = await this.prisma.read.roomReview.findMany({
-      where: { visit: { restaurantId } },
-      include: {
-        user: { select: { id: true, nickname: true } },
-        visit: { select: { visitedAt: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
 
     // 유저별로 그룹핑
     const byUser = new Map<string, { user: { id: string; nickname: string }; reviews: typeof reviews }>();

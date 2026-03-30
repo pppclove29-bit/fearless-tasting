@@ -4,6 +4,9 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { measure } from '../common/perf';
 
+/** bcrypt salt rounds: 8 ≈ ~0.3s (vs 10 ≈ ~1.4s). 2^8 = 256 iterations — 충분한 보안 수준 */
+const BCRYPT_SALT_ROUNDS = 8;
+
 interface KakaoTokenResponse {
   access_token: string;
   token_type: string;
@@ -146,7 +149,7 @@ export class AuthService {
       expiresIn: '7d',
     });
 
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, BCRYPT_SALT_ROUNDS);
     await this.prisma.write.account.updateMany({
       where: { userId },
       data: { refreshToken: hashedRefreshToken },
