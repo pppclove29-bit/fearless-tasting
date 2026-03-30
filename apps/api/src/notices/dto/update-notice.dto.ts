@@ -1,20 +1,25 @@
-import { IsString, MaxLength, IsBoolean, IsOptional } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, MaxLength, IsBoolean, IsOptional, IsInt } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateNoticeDto {
-  @ApiProperty({ description: '공지 제목', maxLength: 200, required: false })
+  @ApiPropertyOptional({ description: '공지 제목', maxLength: 200 })
   @IsString()
   @MaxLength(200)
   @IsOptional()
   title?: string;
 
-  @ApiProperty({ description: '공지 본문', required: false })
+  @ApiPropertyOptional({ description: '공지 본문' })
   @IsString()
   @IsOptional()
   content?: string;
 
-  @ApiProperty({ description: '활성 여부', required: false })
+  @ApiPropertyOptional({ description: '활성 여부' })
   @IsBoolean()
   @IsOptional()
   enabled?: boolean;
+
+  @ApiPropertyOptional({ description: '정렬 순서 (작을수록 위)' })
+  @IsInt()
+  @IsOptional()
+  sortOrder?: number;
 }

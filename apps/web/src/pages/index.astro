@@ -266,43 +266,68 @@ import AdSlot from '@/components/AdSlot.astro';
 </style>
 
 <style is:global>
-  .notice-banner-item {
-    background: #fefce8;
-    border: 1px solid #fde68a;
+  .notice-list {
+    border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    background: var(--bg-card);
   }
 
-  .notice-banner-title {
+  .notice-list-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    font-size: 0.875rem;
-    color: #92400e;
-    margin-bottom: 0.25rem;
+    color: var(--text-muted);
+    background: var(--bg-hover);
+    border-bottom: 1px solid var(--border);
   }
 
-  .notice-banner-content {
+  .notice-list-item {
+    border-bottom: 1px solid var(--border-light, var(--border));
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .notice-list-item:last-child { border-bottom: none; }
+  .notice-list-item:hover { background: var(--bg-hover); }
+
+  .notice-list-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.55rem 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .notice-list-item-title {
     font-size: 0.82rem;
-    color: #78350f;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .notice-list-item-date {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .notice-list-item-content {
+    padding: 0 0.75rem 0.6rem;
+    font-size: 0.8rem;
+    color: var(--text-sub);
     line-height: 1.5;
     white-space: pre-wrap;
   }
 
-  .notice-banner-date {
-    font-size: 0.7rem;
-    color: #a16207;
-    margin-top: 0.25rem;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .notice-banner-item {
-      background: #422006;
-      border-color: #713f12;
-    }
-    .notice-banner-title { color: #fde68a; }
-    .notice-banner-content { color: #fcd34d; }
-    .notice-banner-date { color: #d97706; }
-  }
+  .notice-list-item-content[hidden] { display: none; }
 </style>
 
 <style>
@@ -1281,16 +1306,30 @@ import AdSlot from '@/components/AdSlot.astro';
       if (platformStats) platformStats.hidden = false;
     }
 
-    // 공지 배너 렌더링
+    // 공지 리스트 렌더링
     if (noticesResult && noticesResult.length > 0) {
       const banner = document.getElementById('notice-banner');
       if (banner) {
-        banner.innerHTML = noticesResult.map((n) => `
-          <div class="notice-banner-item">
-            <div class="notice-banner-title">${escapeHtml(n.title)}</div>
-            <div class="notice-banner-content">${escapeHtml(n.content)}</div>
-          </div>
-        `).join('');
+        banner.innerHTML = `
+          <div class="notice-list">
+            <div class="notice-list-header">공지사항</div>
+            ${noticesResult.map((n) => `
+              <div class="notice-list-item">
+                <div class="notice-list-item-header">
+                  <span class="notice-list-item-title">${escapeHtml(n.title)}</span>
+                  <span class="notice-list-item-date">${formatDate(n.createdAt)}</span>
+                </div>
+                <div class="notice-list-item-content" hidden>${escapeHtml(n.content)}</div>
+              </div>
+            `).join('')}
+          </div>`;
+        // 클릭 시 내용 펼치기/접기
+        for (const item of banner.querySelectorAll<HTMLElement>('.notice-list-item')) {
+          item.addEventListener('click', () => {
+            const content = item.querySelector<HTMLElement>('.notice-list-item-content');
+            if (content) content.hidden = !content.hidden;
+          });
+        }
       }
     }
 

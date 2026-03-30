@@ -3,6 +3,7 @@ export interface Notice {
   title: string;
   content: string;
   enabled: boolean;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 }

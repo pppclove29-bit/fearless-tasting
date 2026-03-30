@@ -571,7 +571,7 @@ export async function fetchAllNotices(): Promise<Notice[]> {
 }
 
 /** 공지 생성 (관리자) */
-export async function createNotice(data: { title: string; content: string; enabled?: boolean }): Promise<Notice> {
+export async function createNotice(data: { title: string; content: string; enabled?: boolean; sortOrder?: number }): Promise<Notice> {
   const res = await apiFetch(`${API_BASE}/notices`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -582,7 +582,7 @@ export async function createNotice(data: { title: string; content: string; enabl
 }
 
 /** 공지 수정 (관리자) */
-export async function updateNotice(id: string, data: { title?: string; content?: string; enabled?: boolean }): Promise<Notice> {
+export async function updateNotice(id: string, data: { title?: string; content?: string; enabled?: boolean; sortOrder?: number }): Promise<Notice> {
   const res = await apiFetch(`${API_BASE}/notices/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

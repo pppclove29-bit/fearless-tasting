@@ -30,7 +30,7 @@ export class NoticesController {
   @UseGuards(AdminGuard)
   @ApiOperation({ summary: '공지 생성', description: '새 공지사항을 등록합니다. 관리자 권한 필요.' })
   create(@Body() dto: CreateNoticeDto) {
-    return this.noticesService.create(dto.title, dto.content, dto.enabled ?? true);
+    return this.noticesService.create(dto.title, dto.content, dto.enabled ?? true, dto.sortOrder ?? 0);
   }
 
   /** 공지 수정 (관리자) */
@@ -42,6 +42,7 @@ export class NoticesController {
       title: dto.title,
       content: dto.content,
       enabled: dto.enabled,
+      sortOrder: dto.sortOrder,
     });
   }
 

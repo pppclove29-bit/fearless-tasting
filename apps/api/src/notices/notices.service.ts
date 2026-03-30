@@ -6,9 +6,9 @@ export class NoticesService {
   constructor(private readonly prisma: PrismaService) {}
 
   /** 공지 생성 */
-  async create(title: string, content: string, enabled: boolean) {
+  async create(title: string, content: string, enabled: boolean, sortOrder: number) {
     return this.prisma.write.notice.create({
-      data: { title, content, enabled },
+      data: { title, content, enabled, sortOrder },
     });
   }
 
@@ -16,7 +16,7 @@ export class NoticesService {
   async findAll() {
     // writer에서 읽어 생성/수정 직후 재조회 시 replication lag 방지
     return this.prisma.write.notice.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
     });
   }
 
@@ -24,12 +24,12 @@ export class NoticesService {
   async findActive() {
     return this.prisma.read.notice.findMany({
       where: { enabled: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
     });
   }
 
   /** 공지 수정 */
-  async update(id: string, data: { title?: string; content?: string; enabled?: boolean }) {
+  async update(id: string, data: { title?: string; content?: string; enabled?: boolean; sortOrder?: number }) {
     const notice = await this.prisma.read.notice.findUnique({ where: { id } });
     if (!notice) throw new NotFoundException('공지사항을 찾을 수 없습니다.');
 
