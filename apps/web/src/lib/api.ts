@@ -109,7 +109,7 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
   }
 
   if (res.status === 401) {
-    const isPublicUrl = url.includes('/shared/') || url.includes('/rooms/public') || url.includes('/auth/kakao') || url.includes('/auth/refresh');
+    const isPublicUrl = url.includes('/rooms/public') || url.includes('/auth/kakao') || url.includes('/auth/refresh');
 
     if (getRefreshToken()) {
       const refreshed = await refreshTokens();
@@ -551,39 +551,6 @@ export async function fetchRankings(): Promise<RankingsResponse> {
 export async function fetchDiscover(): Promise<DiscoverResponse> {
   const res = await apiFetch(`${API_BASE}/rooms/discover`);
   await throwIfNotOk(res, '맛집 추천 조회에 실패했습니다.');
-  return res.json();
-}
-
-// ─── 공유 링크 ───
-
-/** 공유 코드로 방 조회 (비로그인) */
-export async function fetchSharedRoom(shareCode: string): Promise<SharedRoomDetail> {
-  const res = await apiFetch(`${API_BASE}/rooms/shared/${shareCode}`);
-  await throwIfNotOk(res, '유효하지 않은 공유 링크입니다.');
-  return res.json();
-}
-
-/** 공유 코드로 식당 상세 (비로그인) */
-export async function fetchSharedRestaurantDetail(
-  shareCode: string,
-  rid: string,
-): Promise<SharedRoomRestaurantDetail> {
-  const res = await apiFetch(`${API_BASE}/rooms/shared/${shareCode}/restaurants/${rid}`);
-  await throwIfNotOk(res, '식당 조회에 실패했습니다.');
-  return res.json();
-}
-
-/** 공유 코드 관리 */
-export async function toggleShareCode(
-  roomId: string,
-  action: 'enable' | 'disable' | 'regenerate',
-): Promise<{ shareCode: string | null; shareCodeEnabled: boolean }> {
-  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/share-code`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action }),
-  });
-  await throwIfNotOk(res, '공유 코드 관리에 실패했습니다.');
   return res.json();
 }
 

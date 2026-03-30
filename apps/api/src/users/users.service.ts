@@ -93,8 +93,6 @@ export class UsersService {
         ownedRooms: {
           select: {
             id: true,
-            shareCode: true,
-            shareCodeEnabled: true,
             members: { select: { id: true } },
           },
         },
@@ -187,7 +185,6 @@ export class UsersService {
 
       // 방장 정보 분석
       const ownedRoomCount = user.ownedRooms.length;
-      const hasSharedRoom = user.ownedRooms.some((r) => r.shareCode && r.shareCodeEnabled);
       const maxMembersInOwnedRoom = user.ownedRooms.reduce((max, r) => Math.max(max, r.members.length), 0);
 
       // ── 업적 계산 ──
@@ -249,7 +246,6 @@ export class UsersService {
       // 공유 및 초대 계열
       if (ownedRoomCount >= 1) achievements.push({ id: 'room-creator', name: '방 개설자', icon: '🏠', description: '첫 방 개설' });
       if (ownedRoomCount >= 3) achievements.push({ id: 'room-builder', name: '방 빌더', icon: '🏗️', description: '방 3개 이상 개설' });
-      if (hasSharedRoom) achievements.push({ id: 'share-master', name: '공유의 달인', icon: '🔗', description: '맛집 리스트를 세상에 공개' });
       if (maxMembersInOwnedRoom >= 5) achievements.push({ id: 'inviter', name: '초대왕', icon: '📨', description: '방에 5명 이상 초대' });
 
       return {

@@ -248,61 +248,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
   .invite-action-item:hover { background: var(--bg-hover); }
 
-  .share-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  .share-label svg {
-    width: 13px;
-    height: 13px;
-    flex-shrink: 0;
-  }
-
-  .share-desc {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    margin-left: 0.25rem;
-  }
-
-  .share-link {
-    font-family: monospace;
-    font-size: 0.72rem;
-    color: var(--text-sub);
-    word-break: break-all;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .share-link-actions {
-    display: flex;
-    gap: 0.3rem;
-    margin-left: auto;
-  }
-
-  .btn-share-action {
-    padding: 0.2rem 0.5rem;
-    background: var(--bg-card);
-    color: var(--text-sub);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 0.7rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: border-color 0.15s;
-    font-family: inherit;
-  }
-
-  .btn-share-action:hover { border-color: var(--text-muted); }
-
   .btn-danger-sm {
     padding: 0.4rem 0.75rem;
     background: #dc2626;
@@ -1851,7 +1796,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     fetchCurrentUser, fetchRoom, deleteRoom, leaveRoom,
     updateRoomMemberRole, kickRoomMember, transferOwnership,
     createRoomRestaurant, fetchRoomRestaurants,
-    toggleShareCode, toggleRoomPublic, updateRoom, regenerateInviteCode,
+    toggleRoomPublic, updateRoom, regenerateInviteCode,
     fetchRoomStats,
     createPoll, fetchPolls, votePoll, closePoll,
     fetchTimeline,
@@ -1981,32 +1926,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   function isOwner(): boolean { return myRole === 'owner'; }
   function isManagerOrAbove(): boolean { return myRole === 'owner' || myRole === 'manager'; }
 
-  // ─── 공유 버튼 업데이트 (전체 렌더링 없이) ───
-
-  function updateShareButton() {
-    const btn = document.getElementById('invite-public-btn');
-    if (!btn) return;
-    const svgGlobe = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
-    const isActive = currentRoom.shareCodeEnabled && currentRoom.shareCode;
-    btn.innerHTML = `${svgGlobe} 공개 초대${isActive ? ' · ON' : ''}`;
-    btn.classList.toggle('active', !!isActive);
-  }
-
   // ─── 렌더링 ───
 
   function renderPage() {
     myRole = getMyRole();
 
     const svgLink = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-    const _svgShare = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
-    const _svgRefresh = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
-    const _svgHelp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
 
     const svgExit = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
     const svgTrash = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
     const svgGlobe = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
-
-    const isShareActive = currentRoom.shareCodeEnabled && currentRoom.shareCode;
 
     const expiryText = '';
 
@@ -2020,11 +1949,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
         <div class="invite-row">
           <button type="button" class="invite-btn invite-btn--member" id="invite-member-btn">${svgLink} 방 초대${expiryText}</button>
-          ${isManagerOrAbove() ? `<button type="button" class="invite-btn invite-btn--public ${isShareActive ? 'active' : ''}" id="invite-public-btn">${svgGlobe} 공개 초대${isShareActive ? ' · ON' : ''}</button>` : ''}
         </div>
         <div class="invite-desc">
           <span>방 초대: 링크를 복사해서 친구에게 보내세요</span>
-          ${isManagerOrAbove() ? '<span>공개 초대: 비회원도 읽기 전용으로 열람 가능</span>' : ''}
         </div>
         <div class="room-header-actions">
           ${isOwner() ? `<button type="button" class="room-action-chip ${currentRoom.isPublic ? 'room-action-chip--active' : ''}" id="toggle-public-btn">${svgGlobe} 공개 방${currentRoom.isPublic ? ' · ON' : ''}</button>` : ''}
@@ -2162,71 +2089,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       } catch (err) { showToast(err instanceof Error ? err.message : '방 나가기에 실패했습니다.'); }
     });
 
-    // 공개 초대 버튼
-    const invitePublicBtn = document.getElementById('invite-public-btn');
-    if (invitePublicBtn) {
-      invitePublicBtn.addEventListener('click', async () => {
-        const isActive = currentRoom.shareCodeEnabled && currentRoom.shareCode;
-
-        if (isActive) {
-          // 이미 활성화 → 링크 복사 + 드롭다운으로 끄기/재생성
-          const shareUrl = `${location.origin}/share?code=${currentRoom.shareCode}`;
-          navigator.clipboard.writeText(shareUrl);
-          showToast('공개 링크가 복사되었습니다!', 'success');
-
-          const existing = invitePublicBtn.querySelector('.invite-actions');
-          if (existing) { existing.remove(); return; }
-
-          const dropdown = document.createElement('div');
-          dropdown.className = 'invite-actions';
-          dropdown.innerHTML = `
-            <button type="button" class="invite-action-item" id="public-disable-action">공개 초대 끄기</button>
-            <button type="button" class="invite-action-item" id="public-regen-action">링크 재생성</button>
-          `;
-          invitePublicBtn.appendChild(dropdown);
-
-          dropdown.querySelector('#public-disable-action')?.addEventListener('click', async (ev) => {
-            ev.stopPropagation();
-            dropdown.remove();
-            if (!await showConfirm('공개 초대를 끄시겠습니까?')) return;
-            try {
-              const result = await toggleShareCode(currentRoom.id, 'disable');
-              currentRoom.shareCode = result.shareCode;
-              currentRoom.shareCodeEnabled = result.shareCodeEnabled;
-              updateShareButton();
-            } catch { showToast('비활성화에 실패했습니다.'); }
-          });
-
-          dropdown.querySelector('#public-regen-action')?.addEventListener('click', async (ev) => {
-            ev.stopPropagation();
-            dropdown.remove();
-            if (!await showConfirm('링크를 재생성하시겠습니까? 기존 링크는 사용할 수 없게 됩니다.')) return;
-            try {
-              const result = await toggleShareCode(currentRoom.id, 'regenerate');
-              currentRoom.shareCode = result.shareCode;
-              currentRoom.shareCodeEnabled = result.shareCodeEnabled;
-              updateShareButton();
-              showToast('공유 링크가 재생성되었습니다.', 'success');
-            } catch { showToast('재생성에 실패했습니다.'); }
-          });
-
-          const close = (ev: MouseEvent) => {
-            if (!dropdown.contains(ev.target as Node)) { dropdown.remove(); document.removeEventListener('click', close); }
-          };
-          setTimeout(() => document.addEventListener('click', close), 0);
-        } else {
-          // 비활성화 → 활성화
-          try {
-            const result = await toggleShareCode(currentRoom.id, 'enable');
-            currentRoom.shareCode = result.shareCode;
-            currentRoom.shareCodeEnabled = result.shareCodeEnabled;
-            updateShareButton();
-            showToast('공개 초대가 활성화되었습니다!', 'success');
-          } catch { showToast('공개 링크 생성에 실패했습니다.'); }
-        }
-      });
-    }
-
     // 공개 방 토글 버튼
     const togglePublicBtn = document.getElementById('toggle-public-btn');
     if (togglePublicBtn) {
@@ -2313,7 +2175,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </div>
         </div>
         <div class="help-tip">
-          <strong>TIP</strong> 초대 링크로 친구를 초대하고, 공유 링크를 만들면 비회원도 읽기 전용으로 열람할 수 있어요.
+          <strong>TIP</strong> 초대 링크로 친구를 초대하고 함께 맛집 리뷰를 공유해보세요.
         </div>
         <button type="button" class="help-close-btn">확인</button>
       </div>

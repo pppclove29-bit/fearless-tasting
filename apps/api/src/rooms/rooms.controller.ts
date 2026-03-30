@@ -14,13 +14,12 @@ import type { CreateRoomReviewDto } from './dto/create-room-review.dto';
 import type { UpdateRoomReviewDto } from './dto/update-room-review.dto';
 import type { CreateRoomVisitDto } from './dto/create-room-visit.dto';
 import type { UpdateMemberRoleDto } from './dto/update-member-role.dto';
-import type { ToggleShareCodeDto } from './dto/toggle-share-code.dto';
 import type { TogglePublicDto } from './dto/toggle-public.dto';
 import type { UpdateRoomDto } from './dto/update-room.dto';
 import type { UpdateRoomRestaurantDto } from './dto/update-room-restaurant.dto';
 import type { UpdateRoomVisitDto } from './dto/update-room-visit.dto';
 import type { CreatePollDto } from './dto/create-poll.dto';
-import { RoomManagerGuard } from './guards/room-manager.guard';
+
 
 interface RequestWithRoomMember extends Request {
   roomMember: { role: 'owner' | 'manager' | 'member' };
@@ -76,28 +75,6 @@ export class RoomsController {
   @ApiOperation({ summary: '공개 맛집 추천 리스트 (비로그인 가능)' })
   getDiscoverRestaurants() {
     return this.roomsService.getDiscoverRestaurants();
-  }
-
-  // ─── 공유 링크 (비로그인 공개) ───
-
-  /** 공유 코드로 방 조회 */
-  @Get('shared/:shareCode')
-  @ApiOperation({ summary: '공유 링크로 방 조회 (비로그인 가능)' })
-  @ApiParam({ name: 'shareCode', description: '공유 코드' })
-  findByShareCode(@Param('shareCode') shareCode: string) {
-    return this.roomsService.findByShareCode(shareCode);
-  }
-
-  /** 공유 코드로 식당 상세 */
-  @Get('shared/:shareCode/restaurants/:rid')
-  @ApiOperation({ summary: '공유 링크 식당 상세 (비로그인 가능)' })
-  @ApiParam({ name: 'shareCode', description: '공유 코드' })
-  @ApiParam({ name: 'rid', description: '식당 ID' })
-  findSharedRestaurantDetail(
-    @Param('shareCode') shareCode: string,
-    @Param('rid') rid: string,
-  ) {
-    return this.roomsService.findSharedRestaurantDetail(shareCode, rid);
   }
 
   // ─── 공개 방 API (비로그인) ───
@@ -192,19 +169,6 @@ export class RoomsController {
     @CurrentUser() user: { id: string },
   ) {
     return this.roomsService.regenerateInviteCode(id, user.id);
-  }
-
-  /** 공유 코드 관리 (owner + manager) */
-  @Patch(':id/share-code')
-  @UseGuards(RoomManagerGuard)
-  @ApiOperation({ summary: '공유 코드 활성화/비활성화/재생성' })
-  @ApiParam({ name: 'id', description: '방 ID' })
-  toggleShareCode(
-    @Param('id') id: string,
-    @CurrentUser() user: { id: string },
-    @Body() dto: ToggleShareCodeDto,
-  ) {
-    return this.roomsService.toggleShareCode(id, user.id, dto.action);
   }
 
   /** 공개 방 설정 (owner만) */

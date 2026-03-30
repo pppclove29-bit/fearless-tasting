@@ -16,8 +16,7 @@ export default defineConfig({
         !page.includes('/profile') &&
         !page.includes('/join') &&
         !page.includes('/404') &&
-        !page.includes('/map') &&
-        !page.includes('/share'),
+        !page.includes('/map'),
     }),
   ],
 });

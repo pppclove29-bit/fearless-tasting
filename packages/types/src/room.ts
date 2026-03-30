@@ -6,8 +6,6 @@ export interface Room {
   inviteCode: string;
   inviteCodeExpiresAt?: string | null;
   ownerId: string;
-  shareCode?: string | null;
-  shareCodeEnabled?: boolean;
   isPublic: boolean;
   createdAt: string;
   updatedAt: string;

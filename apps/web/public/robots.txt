@@ -6,7 +6,6 @@ Allow: /rankings
 Allow: /discover
 Allow: /cs
 Allow: /privacy
-Allow: /share
 Disallow: /admin
 Disallow: /login
 Disallow: /room
