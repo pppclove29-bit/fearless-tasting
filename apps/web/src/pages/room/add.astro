@@ -235,23 +235,25 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .star-btn.active { color: #f59e0b; }
   .star-btn.hover { color: #f59e0b; }
 
-  .detail-rating-row { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
+  .detail-rating-row { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.2rem; }
   .detail-rating-label { font-size: 0.85rem; color: var(--text-heading); font-weight: 600; }
-  .detail-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .detail-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
   .detail-chip {
-    padding: 0.4rem 0.7rem;
+    padding: 0.35rem 0.65rem;
     border: 1px solid var(--border);
     border-radius: 20px;
     background: var(--bg);
     color: var(--text-sub);
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-family: inherit;
     cursor: pointer;
     transition: all 0.15s;
-    white-space: nowrap;
   }
   .detail-chip:hover { border-color: var(--text-muted); color: var(--text); }
   .detail-chip.active { background: var(--text-heading); color: var(--bg); border-color: var(--text-heading); }
+  .detail-chip--skip { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.15rem; }
+  .detail-chip--skip.active { background: var(--bg-hover); color: var(--text-sub); border-color: var(--border-mid); }
+  .chip-score { font-weight: 700; margin-right: 0.1rem; }
 
   /* 체크박스 */
   .check-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--text-sub); }
@@ -536,8 +538,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <div class="detail-rating-row">
                 <span class="detail-rating-label">${label}</span>
                 <div class="detail-chips" data-key="${key}">
-                  <button type="button" class="detail-chip active" data-val="0">잘 모르겠어요</button>
-                  ${(guides as string[]).map((g, i) => `<button type="button" class="detail-chip" data-val="${i+1}">${g}</button>`).join('')}
+                  <button type="button" class="detail-chip detail-chip--skip active" data-val="0">잘 모르겠어요</button>
+                  ${(guides as string[]).map((g, i) => `<button type="button" class="detail-chip" data-val="${i+1}"><span class="chip-score">${i+1}</span> ${g}</button>`).join('')}
                 </div>
               </div>
             `).join('')}

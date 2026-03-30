@@ -825,6 +825,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
   .detail-chip:hover { border-color: var(--text-muted); color: var(--text); }
   .detail-chip.active { background: var(--text-heading); color: var(--bg); border-color: var(--text-heading); }
+  .detail-chip--skip { font-size: 0.68rem; color: var(--text-muted); margin-bottom: 0.1rem; }
+  .detail-chip--skip.active { background: var(--bg-hover); color: var(--text-sub); border-color: var(--border-mid); }
+  .chip-score { font-weight: 700; margin-right: 0.1rem; }
 
   .detail-rating-item .star-rating .star-label {
     font-size: 0.82rem;
@@ -940,9 +943,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const key = LABEL_TO_KEY[label] || '';
       const guides = DETAIL_GUIDES[key] || [];
       const chips = [
-        `<button type="button" class="detail-chip ${v === 0 ? 'active' : ''}" data-val="0">잘 모르겠어요</button>`,
+        `<button type="button" class="detail-chip detail-chip--skip ${v === 0 ? 'active' : ''}" data-val="0">잘 모르겠어요</button>`,
         ...guides.map((g: string, i: number) =>
-          `<button type="button" class="detail-chip ${v === i + 1 ? 'active' : ''}" data-val="${i + 1}">${g}</button>`
+          `<button type="button" class="detail-chip ${v === i + 1 ? 'active' : ''}" data-val="${i + 1}"><span class="chip-score">${i + 1}</span> ${g}</button>`
         ),
       ].join('');
       return `<div class="detail-rating-item" data-guide-key="${key}"><span class="detail-label">${label}</span><div class="detail-chips" data-name="${name}">${chips}</div></div>`;
