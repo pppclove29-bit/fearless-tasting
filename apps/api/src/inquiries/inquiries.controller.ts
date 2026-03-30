@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/guards/admin.guard';
-import type { InquiriesService } from './inquiries.service';
+import { InquiriesService } from './inquiries.service';
 import type { CreateInquiryDto } from './dto/create-inquiry.dto';
 
 @ApiTags('문의')

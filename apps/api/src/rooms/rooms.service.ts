@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import type { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { measure } from '../common/perf';
 
 /** 평균 평점 계산 (소수점 1자리 반올림). 빈 배열이면 null 반환. */
