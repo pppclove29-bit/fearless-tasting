@@ -18,6 +18,10 @@ async function bootstrap() {
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
+  // ETag 비활성화: 304 응답이 프론트 fetch()에서 에러로 처리되는 문제 방지
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('etag', false);
+
   if (process.env.NODE_ENV !== 'production') {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('무모한 시식가 API')
