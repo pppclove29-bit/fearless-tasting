@@ -65,7 +65,8 @@ export class RoomsService {
 
   /** 내 방 목록 */
   async findMyRooms(userId: string) {
-    const memberships = await this.prisma.read.roomMember.findMany({
+    // writer에서 읽어 생성/삭제 직후 재조회 시 replication lag 방지
+    const memberships = await this.prisma.write.roomMember.findMany({
       where: { userId },
       include: {
         room: {
@@ -88,7 +89,8 @@ export class RoomsService {
   /** 방 상세 조회 */
   async findOne(roomId: string, _userId?: string) {
     const room = await measure('room.findOne.query', () =>
-      this.prisma.read.room.findUnique({
+      // writer에서 읽어 수정 직후 재조회 시 replication lag 방지
+      this.prisma.write.room.findUnique({
         where: { id: roomId },
         include: {
           members: {
@@ -446,7 +448,8 @@ export class RoomsService {
   /** 방 내 식당 상세 (방문 기록 + 리뷰 포함) */
   async findRestaurantDetail(roomId: string, restaurantId: string) {
     const restaurant = await measure('restaurant.detail.query', () =>
-      this.prisma.read.roomRestaurant.findUnique({
+      // writer에서 읽어 수정 직후 재조회 시 replication lag 방지
+      this.prisma.write.roomRestaurant.findUnique({
         where: { id: restaurantId },
         include: {
           addedBy: { select: { id: true, nickname: true } },
@@ -478,7 +481,7 @@ export class RoomsService {
   // ─── 방문 기록 ───
 
   /** 방문 기록 생성 */
-  async createVisit(roomId: string, restaurantId: string, userId: string, visitedAt: string, memo?: string, waitTime?: string, participantIds?: string[]) {
+  async createVisit(roomId: string, restaurantId: string, userId: string, visitedAt: string, memo?: string, waitTime?: string, isDelivery?: boolean, participantIds?: string[]) {
     const restaurant = await this.prisma.read.roomRestaurant.findUnique({ where: { id: restaurantId } });
     if (!restaurant || restaurant.roomId !== roomId) {
       throw new NotFoundException('식당을 찾을 수 없습니다');
@@ -492,6 +495,7 @@ export class RoomsService {
           visitedAt: new Date(visitedAt),
           memo,
           waitTime,
+          isDelivery: isDelivery ?? false,
           participants: participantIds && participantIds.length > 0
             ? { create: participantIds.map((uid) => ({ userId: uid })) }
             : undefined,
@@ -522,7 +526,7 @@ export class RoomsService {
     visitId: string,
     userId: string,
     memberRole: 'owner' | 'manager' | 'member',
-    data: { visitedAt?: string; memo?: string | null; waitTime?: string | null },
+    data: { visitedAt?: string; memo?: string | null; waitTime?: string | null; isDelivery?: boolean },
   ) {
     const visit = await this.prisma.read.roomVisit.findUnique({ where: { id: visitId } });
     if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
@@ -538,6 +542,7 @@ export class RoomsService {
         ...(data.visitedAt !== undefined && { visitedAt: new Date(data.visitedAt) }),
         ...(data.memo !== undefined && { memo: data.memo }),
         ...(data.waitTime !== undefined && { waitTime: data.waitTime }),
+        ...(data.isDelivery !== undefined && { isDelivery: data.isDelivery }),
       },
     });
   }

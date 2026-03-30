@@ -51,6 +51,7 @@ export interface RoomVisit {
   visitedAt: string;
   memo?: string | null;
   waitTime?: WaitTime | null;
+  isDelivery: boolean;
   restaurantId: string;
   createdById: string | null;
   createdAt: string;

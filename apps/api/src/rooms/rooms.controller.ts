@@ -7,18 +7,18 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RoomMemberGuard } from './guards/room-member.guard';
 import { RoomsService } from './rooms.service';
 import { RoomStatsService } from './room-stats.service';
-import type { CreateRoomDto } from './dto/create-room.dto';
-import type { JoinRoomDto } from './dto/join-room.dto';
-import type { CreateRoomRestaurantDto } from './dto/create-room-restaurant.dto';
-import type { CreateRoomReviewDto } from './dto/create-room-review.dto';
-import type { UpdateRoomReviewDto } from './dto/update-room-review.dto';
-import type { CreateRoomVisitDto } from './dto/create-room-visit.dto';
-import type { UpdateMemberRoleDto } from './dto/update-member-role.dto';
-import type { TogglePublicDto } from './dto/toggle-public.dto';
-import type { UpdateRoomDto } from './dto/update-room.dto';
-import type { UpdateRoomRestaurantDto } from './dto/update-room-restaurant.dto';
-import type { UpdateRoomVisitDto } from './dto/update-room-visit.dto';
-import type { CreatePollDto } from './dto/create-poll.dto';
+import { CreateRoomDto } from './dto/create-room.dto';
+import { JoinRoomDto } from './dto/join-room.dto';
+import { CreateRoomRestaurantDto } from './dto/create-room-restaurant.dto';
+import { CreateRoomReviewDto } from './dto/create-room-review.dto';
+import { UpdateRoomReviewDto } from './dto/update-room-review.dto';
+import { CreateRoomVisitDto } from './dto/create-room-visit.dto';
+import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
+import { TogglePublicDto } from './dto/toggle-public.dto';
+import { UpdateRoomDto } from './dto/update-room.dto';
+import { UpdateRoomRestaurantDto } from './dto/update-room-restaurant.dto';
+import { UpdateRoomVisitDto } from './dto/update-room-visit.dto';
+import { CreatePollDto } from './dto/create-poll.dto';
 
 
 interface RequestWithRoomMember extends Request {
@@ -345,7 +345,7 @@ export class RoomsController {
     @CurrentUser() user: { id: string },
     @Body() dto: CreateRoomVisitDto,
   ) {
-    return this.roomsService.createVisit(id, rid, user.id, dto.visitedAt, dto.memo, dto.waitTime, dto.participantIds);
+    return this.roomsService.createVisit(id, rid, user.id, dto.visitedAt, dto.memo, dto.waitTime, dto.isDelivery, dto.participantIds);
   }
 
   /** 방문 기록 수정 (생성자 or 매니저+) */
@@ -364,6 +364,7 @@ export class RoomsController {
       visitedAt: dto.visitedAt,
       memo: dto.memo,
       waitTime: dto.waitTime,
+      isDelivery: dto.isDelivery,
     });
   }
 

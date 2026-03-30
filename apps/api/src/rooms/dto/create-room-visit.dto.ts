@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString, IsArray, IsIn, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsArray, IsIn, MaxLength, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 const WAIT_TIMES = ['없음', '~10분', '~30분', '~1시간', '1시간+'] as const;
@@ -19,6 +19,11 @@ export class CreateRoomVisitDto {
   @IsString()
   @IsIn(WAIT_TIMES)
   waitTime?: string;
+
+  @ApiPropertyOptional({ description: '배달 여부' })
+  @IsOptional()
+  @IsBoolean()
+  isDelivery?: boolean;
 
   @ApiPropertyOptional({ description: '함께 간 멤버 ID 목록' })
   @IsOptional()

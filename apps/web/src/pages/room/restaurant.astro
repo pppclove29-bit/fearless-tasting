@@ -152,6 +152,28 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: #dc2626;
   }
 
+  .more-menu-title {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .delivery-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    background: var(--accent-bg, rgba(59, 130, 246, 0.12));
+    color: var(--accent, #3b82f6);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+  }
+
   /* 식당 상세 */
   .room-rest-detail {
     background: var(--bg-card);
@@ -1019,7 +1041,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         if (canDeleteReview) {
           menuItems.push(`<button type="button" class="danger delete-rev-btn" data-rev-id="${rev.id}">삭제</button>`);
         }
-        actionsHtml = `<div class="room-review-actions"><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden>${menuItems.join('')}</div></span></div>`;
+        actionsHtml = `<div class="room-review-actions"><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="리뷰 더보기">⋯</button><div class="more-menu-dropdown" hidden><div class="more-menu-title">리뷰</div>${menuItems.join('')}</div></span></div>`;
       }
 
       const isEdited = rev.updatedAt && rev.updatedAt !== rev.createdAt;
@@ -1106,9 +1128,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="visit-header">
             <span class="visit-date${isDateUnknown ? ' date-unknown' : ''}">${displayDate}</span>
             ${visit.waitTime ? `<span class="wait-badge">웨이팅: ${escapeHtml(visit.waitTime)}</span>` : ''}
+            ${visit.isDelivery ? '<span class="delivery-badge">배달</span>' : ''}
             ${participantsHtml ? `<span class="visit-participants">함께: ${participantsHtml}</span>` : ''}
             <span class="visit-creator">기록: ${escapeHtml(visit.createdBy?.nickname ?? '(탈퇴한 사용자)')}</span>
-            ${canDeleteVisit ? `<span class="visit-actions"><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" class="edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}" data-visit-wait="${escapeHtml(visit.waitTime || '')}">수정</button><button type="button" class="danger delete-visit-btn" data-visit-id="${visit.id}">삭제</button></div></span></span>` : ''}
+            ${canDeleteVisit ? `<span class="visit-actions"><span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="방문 더보기">⋯</button><div class="more-menu-dropdown" hidden><div class="more-menu-title">방문</div><button type="button" class="edit-visit-btn" data-visit-id="${visit.id}" data-visit-date="${visit.visitedAt.slice(0, 10)}" data-visit-memo="${escapeHtml(visit.memo || '')}" data-visit-wait="${escapeHtml(visit.waitTime || '')}" data-visit-delivery="${visit.isDelivery ? 'true' : 'false'}">수정</button><button type="button" class="danger delete-visit-btn" data-visit-id="${visit.id}">삭제</button></div></span></span>` : ''}
           </div>
           ${displayMemo ? `<div class="visit-memo">${escapeHtml(displayMemo)}</div>` : ''}
           <div class="visit-reviews">
@@ -1150,7 +1173,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const canEditRest = detail.addedById === currentUser.id || isManagerOrAbove();
         let restMenuHtml = '';
         if (canEditRest) {
-          restMenuHtml = `<span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="더보기">⋯</button><div class="more-menu-dropdown" hidden><button type="button" id="edit-rest-btn">수정</button><button type="button" class="danger" id="delete-rest-btn">식당 삭제</button></div></span>`;
+          restMenuHtml = `<span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="식당 더보기">⋯</button><div class="more-menu-dropdown" hidden><div class="more-menu-title">식당</div><button type="button" id="edit-rest-btn">수정</button><button type="button" class="danger" id="delete-rest-btn">삭제</button></div></span>`;
         }
 
 
@@ -1199,12 +1222,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           metaEl.insertAdjacentHTML('afterend', `
             <div class="edit-rest-form" style="background:var(--bg-hover);border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
               <div class="form-row full" style="margin-bottom:0.5rem;">
+                <label for="edit-rest-name" style="font-size:0.75rem;font-weight:600;color:var(--text-sub);margin-bottom:0.2rem;display:block;">식당 이름</label>
                 <input type="text" id="edit-rest-name" value="${escapeHtml(detail.name)}" placeholder="식당 이름" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
               </div>
               <div class="form-row" style="margin-bottom:0.5rem;">
+                <label for="edit-rest-address" style="font-size:0.75rem;font-weight:600;color:var(--text-sub);margin-bottom:0.2rem;display:block;">주소</label>
                 <input type="text" id="edit-rest-address" value="${escapeHtml(detail.address)}" placeholder="주소" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
               </div>
               <div class="form-row" style="margin-bottom:0.5rem;">
+                <label for="edit-rest-category" style="font-size:0.75rem;font-weight:600;color:var(--text-sub);margin-bottom:0.2rem;display:block;">카테고리</label>
                 <input type="text" id="edit-rest-category" value="${escapeHtml(detail.category)}" placeholder="카테고리" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
               </div>
               <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
@@ -1307,6 +1333,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           const currentDate = btn.dataset.visitDate || '';
           const currentMemo = btn.dataset.visitMemo || '';
           const currentWait = btn.dataset.visitWait || '';
+          const currentDelivery = btn.dataset.visitDelivery === 'true';
 
           const isDateUnknown = currentMemo.startsWith('(날짜 미상)');
           const waitOptions = ['없음', '~10분', '~30분', '~1시간', '1시간+'];
@@ -1333,6 +1360,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                   <div class="wait-chips visit-edit-wait-chips">
                     ${waitOptions.map((w) => `<button type="button" class="wait-chip${currentWait === w ? ' active' : ''}" data-wait="${w}">${w}</button>`).join('')}
                   </div>
+                </div>
+                <div class="visit-edit-field">
+                  <label class="visit-edit-label">배달</label>
+                  <label class="revisit-toggle"><input type="checkbox" class="visit-edit-delivery" ${currentDelivery ? 'checked' : ''} /> 배달 주문</label>
                 </div>
               </div>
               <div class="visit-edit-actions">
@@ -1381,7 +1412,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             if (!newDate) { showToast('날짜를 입력해주세요.', 'info'); return; }
 
             try {
-              await updateRoomVisit(currentRoom.id, visitId, { visitedAt: newDate, memo: newMemo || undefined, waitTime: editWaitTime || undefined });
+              const editDelivery = visitCard.querySelector<HTMLInputElement>('.visit-edit-delivery')?.checked ?? false;
+              await updateRoomVisit(currentRoom.id, visitId, { visitedAt: newDate, memo: newMemo || undefined, waitTime: editWaitTime || undefined, isDelivery: editDelivery });
               currentRoom = await fetchRoom(currentRoom.id);
               await loadRestaurantDetail();
               showToast('방문 기록이 수정되었습니다.', 'success');

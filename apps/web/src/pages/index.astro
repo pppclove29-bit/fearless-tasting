@@ -34,10 +34,13 @@ import AdSlot from '@/components/AdSlot.astro';
           <input type="text" id="create-name" placeholder="방 이름을 입력하세요" required maxlength="100" />
           <button type="submit" class="btn-primary">만들기</button>
         </div>
-        <label class="public-toggle-label">
-          <input type="checkbox" id="create-public" />
-          <span>공개 방으로 만들기</span>
-        </label>
+        <div class="public-toggle-row">
+          <label class="public-toggle-label">
+            <input type="checkbox" id="create-public" />
+            <span>공개 방으로 만들기</span>
+          </label>
+          <span class="public-help-trigger" title="공개 방은 누구나 초대 코드 없이 식당 목록과 리뷰를 열람할 수 있는 방입니다. 방 멤버만 작성/수정할 수 있습니다.">?</span>
+        </div>
       </form>
     </div>
 
@@ -880,11 +883,17 @@ import AdSlot from '@/components/AdSlot.astro';
     color: #fca5a5;
   }
 
-  .public-toggle-label {
+  .public-toggle-row {
     display: flex;
     align-items: center;
     gap: 0.4rem;
     margin-top: 0.5rem;
+  }
+
+  .public-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
     font-size: 0.8rem;
     color: var(--text-sub);
     cursor: pointer;
@@ -895,6 +904,20 @@ import AdSlot from '@/components/AdSlot.astro';
     height: 16px;
     accent-color: var(--text-heading);
     cursor: pointer;
+  }
+
+  .public-help-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid var(--text-muted);
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: help;
   }
 
   @media (max-width: 600px) {

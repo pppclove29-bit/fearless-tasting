@@ -184,6 +184,8 @@ model RoomVisit {
   memo         String?                @db.VarChar(500)
   /// 웨이팅 (없음/~10분/~30분/~1시간/1시간+)
   waitTime     String?                @db.VarChar(20)
+  /// 배달 여부
+  isDelivery   Boolean                @default(false)
   /// 방문 대상 식당
   restaurant   RoomRestaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   /// 식당 ID (FK)

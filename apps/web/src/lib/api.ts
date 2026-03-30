@@ -450,7 +450,7 @@ export async function updateRoomRestaurant(
 export async function createRoomVisit(
   roomId: string,
   rid: string,
-  data: { visitedAt: string; memo?: string; waitTime?: string; participantIds?: string[] },
+  data: { visitedAt: string; memo?: string; waitTime?: string; isDelivery?: boolean; participantIds?: string[] },
 ): Promise<RoomVisitWithDetails> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}/visits`, {
     method: 'POST',
@@ -471,7 +471,7 @@ export async function deleteRoomVisit(roomId: string, visitId: string): Promise<
 export async function updateRoomVisit(
   roomId: string,
   visitId: string,
-  data: { visitedAt?: string; memo?: string; waitTime?: string },
+  data: { visitedAt?: string; memo?: string; waitTime?: string; isDelivery?: boolean },
 ): Promise<void> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/visits/${visitId}`, {
     method: 'PATCH',

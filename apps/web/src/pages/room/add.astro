@@ -511,6 +511,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <textarea class="form-textarea" id="visit-memo" placeholder="함께 간 사람, 특이사항 등" maxlength="500"></textarea>
         </div>
 
+        <div class="form-group">
+          <label class="check-row">
+            <input type="checkbox" id="visit-delivery" /> 배달 주문
+          </label>
+        </div>
+
         <hr class="form-divider" />
 
         <div class="form-group">
@@ -881,10 +887,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         let memo = (document.getElementById('visit-memo') as HTMLTextAreaElement)?.value.trim() || '';
         if (dateUnknown.checked) memo = memo ? `(날짜 미상) ${memo}` : '(날짜 미상)';
 
+        const isDelivery = (document.getElementById('visit-delivery') as HTMLInputElement | null)?.checked ?? false;
         const visit = await createRoomVisit(roomId!, restaurantId, {
           visitedAt: visitDate,
           memo: memo || undefined,
           waitTime: selectedWait || undefined,
+          isDelivery: isDelivery || undefined,
         });
 
         // 3) 리뷰

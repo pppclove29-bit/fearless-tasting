@@ -35,7 +35,8 @@ export class InquiriesService {
 
   /** 문의 목록 조회 */
   async findAll() {
-    return this.prisma.read.inquiry.findMany({
+    // writer에서 읽어 생성 직후 재조회 시 replication lag 방지
+    return this.prisma.write.inquiry.findMany({
       orderBy: { createdAt: 'desc' },
     });
   }

@@ -14,7 +14,8 @@ export class NoticesService {
 
   /** 전체 공지 조회 (관리자용, 비활성 포함) */
   async findAll() {
-    return this.prisma.read.notice.findMany({
+    // writer에서 읽어 생성/수정 직후 재조회 시 replication lag 방지
+    return this.prisma.write.notice.findMany({
       orderBy: { createdAt: 'desc' },
     });
   }
