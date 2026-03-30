@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fearless-tasting-v3';
+const CACHE_NAME = 'fearless-tasting-v4';
 const PRECACHE_URLS = [
   '/',
   '/favicon.svg',
