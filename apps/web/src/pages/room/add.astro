@@ -393,7 +393,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       loadingMsg.hidden = true;
       content.hidden = false;
       renderWizard(user, room);
-    } catch {
+    } catch (err) {
+      console.error('[add] init 실패:', err);
       loadingMsg.hidden = true;
       errorMsg.textContent = '페이지를 불러올 수 없습니다.';
       errorMsg.hidden = false;
