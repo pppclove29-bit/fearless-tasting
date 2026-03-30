@@ -834,7 +834,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     }
 
-    document.getElementById('btn-step2-back')!.addEventListener('click', () => goToStep(1));
+    document.getElementById('btn-step2-back')?.addEventListener('click', () => goToStep(1));
 
     // ── 제출 ──
     const submitBtn = document.getElementById('btn-submit') as HTMLButtonElement;
