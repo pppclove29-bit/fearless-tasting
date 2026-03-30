@@ -235,23 +235,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .star-btn.active { color: #f59e0b; }
   .star-btn.hover { color: #f59e0b; }
 
-  .form-hint { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem; }
-  .detail-rating-row { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.75rem; }
-  .detail-rating-header { display: flex; align-items: baseline; gap: 0.4rem; }
-  .detail-rating-label { font-size: 0.82rem; color: var(--text-sub); font-weight: 500; }
-  .detail-rating-desc { font-size: 0.75rem; color: var(--text-muted); min-height: 1.2em; transition: color 0.15s; }
-  .detail-stars { display: inline-flex; gap: 0.1rem; }
-  .detail-star {
-    background: none;
-    border: none;
+  .detail-rating-row { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
+  .detail-rating-label { font-size: 0.85rem; color: var(--text-heading); font-weight: 600; }
+  .detail-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .detail-chip {
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--bg);
+    color: var(--text-sub);
+    font-size: 0.78rem;
+    font-family: inherit;
     cursor: pointer;
-    padding: 0;
-    font-size: 1.1rem;
-    color: var(--border);
-    line-height: 1;
+    transition: all 0.15s;
+    white-space: nowrap;
   }
-  .detail-star.active { color: #f59e0b; }
-  .detail-star.hover { color: #f59e0b; }
+  .detail-chip:hover { border-color: var(--text-muted); color: var(--text); }
+  .detail-chip.active { background: var(--text-heading); color: var(--bg); border-color: var(--text-heading); }
 
   /* 체크박스 */
   .check-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--text-sub); }
@@ -525,7 +525,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         <div class="form-group">
           <label class="form-label">세부 평점 (선택)</label>
-          <p class="form-hint">같은 별을 다시 누르면 취소됩니다</p>
           <div id="detail-ratings">
             ${[
               ['taste','맛',['남겼다','억지로 먹었다','다 먹었다','한 그릇 더 먹고 싶었다','먹는 내내 감탄했다']],
@@ -535,13 +534,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               ['accessibility','접근성',['등산인가 식사인가','찾아가는 것부터 고생','갈 만하다','역에서 가깝고 편하다','나오자마자 바로 앞']],
             ].map(([key, label, guides]) => `
               <div class="detail-rating-row">
-                <div class="detail-rating-header">
-                  <span class="detail-rating-label">${label}</span>
+                <span class="detail-rating-label">${label}</span>
+                <div class="detail-chips" data-key="${key}">
+                  <button type="button" class="detail-chip active" data-val="0">잘 모르겠어요</button>
+                  ${(guides as string[]).map((g, i) => `<button type="button" class="detail-chip" data-val="${i+1}">${g}</button>`).join('')}
                 </div>
-                <div class="detail-stars" data-key="${key}">
-                  ${(guides as string[]).map((g, i) => `<button type="button" class="detail-star" data-star="${i+1}" title="${g}">★</button>`).join('')}
-                </div>
-                <div class="detail-rating-desc" data-key="${key}"></div>
               </div>
             `).join('')}
           </div>
@@ -786,40 +783,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     }
 
-    const detailGuides: Record<string, string[]> = {
-      taste: ['남겼다','억지로 먹었다','다 먹었다','한 그릇 더 먹고 싶었다','먹는 내내 감탄했다'],
-      value: ['돈 줘도 안 먹는다','돈 주면 먹는다','가격만큼 먹었다','이 가격에 이 정도면 굿','사장님 남는 거 맞아요?'],
-      service: ['손님이 죄인인 줄','뭔가 언짢았다','딱히 신경 안 썼다','기분 좋게 먹었다','사장님이 내 팬인가보다'],
-      cleanliness: ['나오면 안 될 게 나왔다','먹는 내내 찝찝했다','보통이다','깔끔하다','수술실인가?'],
-      accessibility: ['등산인가 식사인가','찾아가는 것부터 고생','갈 만하다','역에서 가깝고 편하다','나오자마자 바로 앞'],
-    };
-
-    for (const row of content.querySelectorAll<HTMLElement>('.detail-stars')) {
+    for (const row of content.querySelectorAll<HTMLElement>('.detail-chips')) {
       const key = row.dataset.key || '';
-      const stars = row.querySelectorAll<HTMLButtonElement>('.detail-star');
-      const descEl = row.parentElement?.querySelector<HTMLElement>(`.detail-rating-desc[data-key="${key}"]`);
+      const chips = row.querySelectorAll<HTMLButtonElement>('.detail-chip');
 
-      function updateDesc() {
-        if (!descEl) return;
-        const v = detailRatings[key] || 0;
-        descEl.textContent = v > 0 ? `${v}점 — ${detailGuides[key]?.[v - 1] || ''}` : '';
-      }
-
-      for (const btn of stars) {
-        btn.addEventListener('click', () => {
-          const val = Number(btn.dataset.star);
-          detailRatings[key] = detailRatings[key] === val ? 0 : val;
-          stars.forEach((b, i) => b.classList.toggle('active', i < (detailRatings[key] || 0)));
-          updateDesc();
-        });
-        btn.addEventListener('mouseenter', () => {
-          const hoverVal = Number(btn.dataset.star);
-          stars.forEach((b, i) => b.classList.toggle('hover', i < hoverVal));
-          if (descEl) descEl.textContent = `${hoverVal}점 — ${detailGuides[key]?.[hoverVal - 1] || ''}`;
-        });
-        btn.addEventListener('mouseleave', () => {
-          stars.forEach((b) => b.classList.remove('hover'));
-          updateDesc();
+      for (const chip of chips) {
+        chip.addEventListener('click', () => {
+          const val = Number(chip.dataset.val);
+          detailRatings[key] = val;
+          chips.forEach((c) => c.classList.toggle('active', Number(c.dataset.val) === val));
         });
       }
     }

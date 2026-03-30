@@ -798,29 +798,33 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     gap: 0.35rem;
   }
 
-  .detail-guide-desc {
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    min-height: 1em;
-    margin-top: 0.1rem;
-  }
-
   .detail-rating-item {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 0.2rem;
   }
 
   .detail-rating-item .detail-label {
     font-size: 0.82rem;
     color: var(--text-sub);
-    min-width: 3rem;
     white-space: nowrap;
   }
 
-  .detail-rating-item .star-rating .star {
-    font-size: 1.25rem;
+  .detail-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.2rem; }
+  .detail-chip {
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--bg);
+    color: var(--text-sub);
+    font-size: 0.72rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
   }
+  .detail-chip:hover { border-color: var(--text-muted); color: var(--text); }
+  .detail-chip.active { background: var(--text-heading); color: var(--bg); border-color: var(--text-heading); }
 
   .detail-rating-item .star-rating .star-label {
     font-size: 0.82rem;
@@ -930,12 +934,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       '맛': 'taste', '가성비': 'value', '서비스': 'service', '청결': 'cleanliness', '접근성': 'accessibility',
     };
 
-    /** 세부 평점 한 항목 */
-    function detailStarHtml(label: string, name: string, value: number | string): string {
+    /** 세부 평점 한 항목 (칩 버튼) */
+    function detailChipHtml(label: string, name: string, value: number | string): string {
       const v = typeof value === 'string' ? (value ? parseInt(value, 10) : 0) : (value || 0);
       const key = LABEL_TO_KEY[label] || '';
-      const guideText = v > 0 && DETAIL_GUIDES[key] ? `${v}점 — ${DETAIL_GUIDES[key][v - 1]}` : '';
-      return `<div class="detail-rating-item" data-guide-key="${key}"><span class="detail-label">${label}</span>${starRatingHtml(name, v, 5, 'sm')}<div class="detail-guide-desc">${guideText}</div></div>`;
+      const guides = DETAIL_GUIDES[key] || [];
+      const chips = [
+        `<button type="button" class="detail-chip ${v === 0 ? 'active' : ''}" data-val="0">잘 모르겠어요</button>`,
+        ...guides.map((g: string, i: number) =>
+          `<button type="button" class="detail-chip ${v === i + 1 ? 'active' : ''}" data-val="${i + 1}">${g}</button>`
+        ),
+      ].join('');
+      return `<div class="detail-rating-item" data-guide-key="${key}"><span class="detail-label">${label}</span><div class="detail-chips" data-name="${name}">${chips}</div></div>`;
     }
 
     /** 컨테이너 내 별점 클릭 이벤트 바인딩 */
@@ -952,13 +962,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             stars.forEach((s, i) => s.classList.toggle('active', i < newVal));
             const label = ratingEl.querySelector('.star-label');
             if (label) label.textContent = newVal ? String(newVal) : '';
-            // 가이드 문구 업데이트
-            const item = ratingEl.closest<HTMLElement>('.detail-rating-item');
-            const guideKey = item?.dataset.guideKey || '';
-            const descEl = item?.querySelector<HTMLElement>('.detail-guide-desc');
-            if (descEl && DETAIL_GUIDES[guideKey]) {
-              descEl.textContent = newVal > 0 ? `${newVal}점 — ${DETAIL_GUIDES[guideKey][newVal - 1]}` : '';
-            }
+          });
+        }
+      }
+      // Detail chip handlers
+      for (const chipGroup of container.querySelectorAll<HTMLElement>('.detail-chips')) {
+        const chips = chipGroup.querySelectorAll<HTMLButtonElement>('.detail-chip');
+        for (const chip of chips) {
+          chip.addEventListener('click', () => {
+            const val = parseInt(chip.dataset.val || '0', 10);
+            chipGroup.dataset.value = String(val);
+            chips.forEach(c => c.classList.toggle('active', parseInt(c.dataset.val || '-1', 10) === val));
           });
         }
       }
@@ -970,8 +984,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return el ? parseInt(el.dataset.value || '0', 10) : 0;
     }
 
-    function getOptionalStarValue(container: HTMLElement, name: string): number | undefined {
-      const v = getStarValue(container, name);
+    /** detail-chips 요소에서 값 읽기 */
+    function getChipValue(container: HTMLElement, name: string): number {
+      const el = container.querySelector<HTMLElement>(`.detail-chips[data-name="${name}"]`);
+      return el ? parseInt(el.dataset.value || '0', 10) : 0;
+    }
+
+    function getOptionalChipValue(container: HTMLElement, name: string): number | undefined {
+      const v = getChipValue(container, name);
       return v > 0 ? v : undefined;
     }
 
@@ -1055,13 +1075,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                ${starRatingHtml('new-review-rating', 3)}
              </div>
              <div class="review-form-section">
-               <span class="review-form-label">세부 평점 <span class="optional-hint">(선택 · 같은 별 재클릭 시 취소)</span></span>
+               <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
                <div class="detail-rating-inline">
-                 ${detailStarHtml('맛', 'new-review-taste', 0)}
-                 ${detailStarHtml('가성비', 'new-review-value', 0)}
-                 ${detailStarHtml('서비스', 'new-review-service', 0)}
-                 ${detailStarHtml('청결', 'new-review-cleanliness', 0)}
-                 ${detailStarHtml('접근성', 'new-review-accessibility', 0)}
+                 ${detailChipHtml('맛', 'new-review-taste', 0)}
+                 ${detailChipHtml('가성비', 'new-review-value', 0)}
+                 ${detailChipHtml('서비스', 'new-review-service', 0)}
+                 ${detailChipHtml('청결', 'new-review-cleanliness', 0)}
+                 ${detailChipHtml('접근성', 'new-review-accessibility', 0)}
                </div>
              </div>
              <textarea class="new-review-content" placeholder="한줄 리뷰 (선택)"></textarea>
@@ -1099,11 +1119,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     function collectDetailFields(container: HTMLElement, prefix: string): Partial<ReviewData> {
       const optStr = (sel: string) => { const v = container.querySelector<HTMLInputElement>(sel)?.value.trim(); return v || undefined; };
       return {
-        tasteRating: getOptionalStarValue(container, `${prefix}-taste`),
-        valueRating: getOptionalStarValue(container, `${prefix}-value`),
-        serviceRating: getOptionalStarValue(container, `${prefix}-service`),
-        cleanlinessRating: getOptionalStarValue(container, `${prefix}-cleanliness`),
-        accessibilityRating: getOptionalStarValue(container, `${prefix}-accessibility`),
+        tasteRating: getOptionalChipValue(container, `${prefix}-taste`),
+        valueRating: getOptionalChipValue(container, `${prefix}-value`),
+        serviceRating: getOptionalChipValue(container, `${prefix}-service`),
+        cleanlinessRating: getOptionalChipValue(container, `${prefix}-cleanliness`),
+        accessibilityRating: getOptionalChipValue(container, `${prefix}-accessibility`),
         favoriteMenu: optStr(`.${prefix}-fav-menu`),
       };
     }
@@ -1437,13 +1457,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 ${starRatingHtml('edit-rating', Number(origRating))}
               </div>
               <div class="review-form-section">
-                <span class="review-form-label">세부 평점 <span class="optional-hint">(선택 · 같은 별 재클릭 시 취소)</span></span>
+                <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
                 <div class="detail-rating-inline">
-                  ${detailStarHtml('맛', 'edit-taste', btn.dataset.taste || '')}
-                  ${detailStarHtml('가성비', 'edit-value', btn.dataset.value || '')}
-                  ${detailStarHtml('서비스', 'edit-service', btn.dataset.service || '')}
-                  ${detailStarHtml('청결', 'edit-cleanliness', btn.dataset.cleanliness || '')}
-                  ${detailStarHtml('접근성', 'edit-accessibility', btn.dataset.accessibility || '')}
+                  ${detailChipHtml('맛', 'edit-taste', btn.dataset.taste || '')}
+                  ${detailChipHtml('가성비', 'edit-value', btn.dataset.value || '')}
+                  ${detailChipHtml('서비스', 'edit-service', btn.dataset.service || '')}
+                  ${detailChipHtml('청결', 'edit-cleanliness', btn.dataset.cleanliness || '')}
+                  ${detailChipHtml('접근성', 'edit-accessibility', btn.dataset.accessibility || '')}
                 </div>
               </div>
               <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
