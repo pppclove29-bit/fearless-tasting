@@ -235,25 +235,78 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .star-btn.active { color: #f59e0b; }
   .star-btn.hover { color: #f59e0b; }
 
-  .detail-rating-row { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.2rem; }
-  .detail-rating-label { font-size: 0.85rem; color: var(--text-heading); font-weight: 600; }
-  .detail-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
-  .detail-chip {
-    padding: 0.35rem 0.65rem;
+  /* 세부평점 슬라이더 */
+  .detail-slider { margin-bottom: 0.8rem; }
+  .detail-slider[hidden] { display: none !important; }
+  .detail-slider-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+  }
+  .detail-slider-label { font-size: 0.85rem; font-weight: 600; color: var(--text-heading); }
+  .detail-slider-skip {
+    padding: 0.2rem 0.5rem;
     border: 1px solid var(--border);
-    border-radius: 20px;
-    background: var(--bg);
-    color: var(--text-sub);
-    font-size: 0.76rem;
+    border-radius: 12px;
+    background: none;
+    color: var(--text-muted);
+    font-size: 0.72rem;
     font-family: inherit;
     cursor: pointer;
     transition: all 0.15s;
   }
-  .detail-chip:hover { border-color: var(--text-muted); color: var(--text); }
-  .detail-chip.active { background: var(--text-heading); color: var(--bg); border-color: var(--text-heading); }
-  .detail-chip--skip { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.15rem; }
-  .detail-chip--skip.active { background: var(--bg-hover); color: var(--text-sub); border-color: var(--border-mid); }
-  .chip-score { font-weight: 700; margin-right: 0.1rem; }
+  .detail-slider-skip:hover { border-color: var(--text-muted); }
+  .detail-slider-skip.active { background: var(--bg-hover); color: var(--text-sub); border-color: var(--border-mid); }
+  .detail-slider-body { padding: 0 0.2rem; }
+  .detail-slider-body[hidden] { display: none !important; }
+  .detail-slider-descs {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    margin-bottom: 0.15rem;
+  }
+  .detail-slider-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  .detail-slider-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--text-heading);
+    border: 2px solid var(--bg-card);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    cursor: grab;
+  }
+  .detail-slider-range::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--text-heading);
+    border: 2px solid var(--bg-card);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    cursor: grab;
+  }
+  .detail-slider-ticks {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 8px;
+    margin-top: 0.15rem;
+  }
+  .detail-slider-ticks span {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+  }
 
   /* 체크박스 */
   .check-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--text-sub); }
@@ -541,11 +594,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               ['cleanliness','청결',['나오면 안 될 게 나왔다','먹는 내내 찝찝했다','보통이다','깔끔하다','수술실인가?']],
               ['accessibility','접근성',['등산인가 식사인가','찾아가는 것부터 고생','갈 만하다','역에서 가깝고 편하다','나오자마자 바로 앞']],
             ].map(([key, label, guides]) => `
-              <div class="detail-rating-row">
-                <span class="detail-rating-label">${label}</span>
-                <div class="detail-chips" data-key="${key}">
-                  <button type="button" class="detail-chip detail-chip--skip active" data-val="0">잘 모르겠어요</button>
-                  ${(guides as string[]).map((g, i) => `<button type="button" class="detail-chip" data-val="${i+1}"><span class="chip-score">${i+1}</span> ${g}</button>`).join('')}
+              <div class="detail-slider" data-key="${key}" data-value="0">
+                <div class="detail-slider-header">
+                  <span class="detail-slider-label">${label}</span>
+                  <button type="button" class="detail-slider-skip active">잘 모르겠음</button>
+                </div>
+                <div class="detail-slider-body" hidden>
+                  <div class="detail-slider-descs">
+                    <span>${(guides as string[])[0]}</span>
+                    <span>${(guides as string[])[4]}</span>
+                  </div>
+                  <input type="range" class="detail-slider-range" min="1" max="5" step="1" value="3" />
+                  <div class="detail-slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
                 </div>
               </div>
             `).join('')}
@@ -791,17 +851,30 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     }
 
-    for (const row of content.querySelectorAll<HTMLElement>('.detail-chips')) {
-      const key = row.dataset.key || '';
-      const chips = row.querySelectorAll<HTMLButtonElement>('.detail-chip');
+    for (const slider of content.querySelectorAll<HTMLElement>('.detail-slider')) {
+      const key = slider.dataset.key || '';
+      const skipBtn = slider.querySelector<HTMLButtonElement>('.detail-slider-skip');
+      const body = slider.querySelector<HTMLElement>('.detail-slider-body');
+      const range = slider.querySelector<HTMLInputElement>('.detail-slider-range');
 
-      for (const chip of chips) {
-        chip.addEventListener('click', () => {
-          const val = Number(chip.dataset.val);
-          detailRatings[key] = val;
-          chips.forEach((c) => c.classList.toggle('active', Number(c.dataset.val) === val));
-        });
-      }
+      skipBtn?.addEventListener('click', () => {
+        const isNowSkipped = !skipBtn.classList.contains('active');
+        skipBtn.classList.toggle('active', isNowSkipped);
+        if (body) body.hidden = isNowSkipped;
+        const val = isNowSkipped ? 0 : Number(range?.value || 3);
+        detailRatings[key] = val;
+        slider.dataset.value = String(val);
+      });
+
+      range?.addEventListener('input', () => {
+        const val = Number(range.value);
+        detailRatings[key] = val;
+        slider.dataset.value = String(val);
+        if (skipBtn?.classList.contains('active')) {
+          skipBtn.classList.remove('active');
+          if (body) body.hidden = false;
+        }
+      });
     }
 
     // 재방문 의사 버튼

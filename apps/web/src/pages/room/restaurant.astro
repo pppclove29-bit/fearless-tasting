@@ -492,7 +492,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .visit-reviews {
-    margin-top: 0.4rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--border);
+  }
+
+  .visit-reviews-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+    letter-spacing: 0.02em;
   }
 
   .visit-edit-form {
@@ -832,27 +842,85 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     white-space: nowrap;
   }
 
-  .detail-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.2rem; }
-  .detail-chip {
-    padding: 0.3rem 0.6rem;
+  /* 세부평점 슬라이더 */
+  .detail-slider { margin-bottom: 0.6rem; }
+  .detail-slider[hidden] { display: none !important; }
+  .detail-slider-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+  }
+  .detail-slider-label { font-size: 0.8rem; font-weight: 600; color: var(--text-heading); }
+  .detail-slider-skip {
+    padding: 0.2rem 0.5rem;
     border: 1px solid var(--border);
-    border-radius: 16px;
-    background: var(--bg);
-    color: var(--text-sub);
-    font-size: 0.72rem;
+    border-radius: 12px;
+    background: none;
+    color: var(--text-muted);
+    font-size: 0.68rem;
     font-family: inherit;
     cursor: pointer;
     transition: all 0.15s;
-    white-space: nowrap;
   }
-  .detail-chip:hover { border-color: var(--text-muted); color: var(--text); }
-  .detail-chip.active { background: var(--text-heading); color: var(--bg); border-color: var(--text-heading); }
-  .detail-chip--skip { font-size: 0.68rem; color: var(--text-muted); margin-bottom: 0.1rem; }
-  .detail-chip--skip.active { background: var(--bg-hover); color: var(--text-sub); border-color: var(--border-mid); }
-  .chip-score { font-weight: 700; margin-right: 0.1rem; }
-
-  .detail-rating-item .star-rating .star-label {
-    font-size: 0.82rem;
+  .detail-slider-skip:hover { border-color: var(--text-muted); }
+  .detail-slider-skip.active { background: var(--bg-hover); color: var(--text-sub); border-color: var(--border-mid); }
+  .detail-slider-body { padding: 0 0.2rem; }
+  .detail-slider-body[hidden] { display: none !important; }
+  .detail-slider-descs {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-bottom: 0.15rem;
+  }
+  .detail-slider-value {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 0.1rem;
+    min-height: 1.1em;
+  }
+  .detail-slider-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  .detail-slider-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--text-heading);
+    border: 2px solid var(--bg-card);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    cursor: grab;
+  }
+  .detail-slider-range::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--text-heading);
+    border: 2px solid var(--bg-card);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    cursor: grab;
+  }
+  .detail-slider-ticks {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 8px;
+    margin-top: 0.15rem;
+  }
+  .detail-slider-ticks span {
+    font-size: 0.6rem;
+    color: var(--text-muted);
   }
 
 
@@ -959,18 +1027,28 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       '맛': 'taste', '가성비': 'value', '서비스': 'service', '청결': 'cleanliness', '접근성': 'accessibility',
     };
 
-    /** 세부 평점 한 항목 (칩 버튼) */
-    function detailChipHtml(label: string, name: string, value: number | string): string {
+    /** 세부 평점 한 항목 (슬라이더) */
+    function detailSliderHtml(label: string, name: string, value: number | string): string {
       const v = typeof value === 'string' ? (value ? parseInt(value, 10) : 0) : (value || 0);
       const key = LABEL_TO_KEY[label] || '';
       const guides = DETAIL_GUIDES[key] || [];
-      const chips = [
-        `<button type="button" class="detail-chip detail-chip--skip ${v === 0 ? 'active' : ''}" data-val="0">잘 모르겠어요</button>`,
-        ...guides.map((g: string, i: number) =>
-          `<button type="button" class="detail-chip ${v === i + 1 ? 'active' : ''}" data-val="${i + 1}"><span class="chip-score">${i + 1}</span> ${g}</button>`
-        ),
-      ].join('');
-      return `<div class="detail-rating-item" data-guide-key="${key}"><span class="detail-label">${label}</span><div class="detail-chips" data-name="${name}">${chips}</div></div>`;
+      const isActive = v > 0;
+      const sliderVal = isActive ? v : 3;
+      return `
+        <div class="detail-slider" data-name="${name}" data-value="${v}">
+          <div class="detail-slider-header">
+            <span class="detail-slider-label">${label}</span>
+            <button type="button" class="detail-slider-skip${!isActive ? ' active' : ''}">잘 모르겠음</button>
+          </div>
+          <div class="detail-slider-body"${!isActive ? ' hidden' : ''}>
+            <div class="detail-slider-descs">
+              <span>${guides[0] || ''}</span>
+              <span>${guides[4] || ''}</span>
+            </div>
+            <input type="range" class="detail-slider-range" min="1" max="5" step="1" value="${sliderVal}" />
+            <div class="detail-slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+          </div>
+        </div>`;
     }
 
     /** 컨테이너 내 별점 클릭 이벤트 바인딩 */
@@ -990,16 +1068,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           });
         }
       }
-      // Detail chip handlers
-      for (const chipGroup of container.querySelectorAll<HTMLElement>('.detail-chips')) {
-        const chips = chipGroup.querySelectorAll<HTMLButtonElement>('.detail-chip');
-        for (const chip of chips) {
-          chip.addEventListener('click', () => {
-            const val = parseInt(chip.dataset.val || '0', 10);
-            chipGroup.dataset.value = String(val);
-            chips.forEach(c => c.classList.toggle('active', parseInt(c.dataset.val || '-1', 10) === val));
-          });
-        }
+      // 세부평점 슬라이더 핸들러
+      for (const slider of container.querySelectorAll<HTMLElement>('.detail-slider')) {
+        const skipBtn = slider.querySelector<HTMLButtonElement>('.detail-slider-skip');
+        const body = slider.querySelector<HTMLElement>('.detail-slider-body');
+        const range = slider.querySelector<HTMLInputElement>('.detail-slider-range');
+
+        skipBtn?.addEventListener('click', () => {
+          const isNowSkipped = !skipBtn.classList.contains('active');
+          skipBtn.classList.toggle('active', isNowSkipped);
+          if (body) body.hidden = isNowSkipped;
+          slider.dataset.value = isNowSkipped ? '0' : (range?.value || '3');
+        });
+
+        range?.addEventListener('input', () => {
+          slider.dataset.value = range.value;
+          if (skipBtn?.classList.contains('active')) {
+            skipBtn.classList.remove('active');
+            if (body) body.hidden = false;
+          }
+        });
       }
     }
 
@@ -1009,15 +1097,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return el ? parseInt(el.dataset.value || '0', 10) : 0;
     }
 
-    /** detail-chips 요소에서 값 읽기 */
-    function getChipValue(container: HTMLElement, name: string): number {
-      const el = container.querySelector<HTMLElement>(`.detail-chips[data-name="${name}"]`);
+    /** 세부평점 슬라이더에서 값 읽기 */
+    function getSliderValue(container: HTMLElement, name: string): number {
+      const el = container.querySelector<HTMLElement>(`.detail-slider[data-name="${name}"]`);
       return el ? parseInt(el.dataset.value || '0', 10) : 0;
     }
 
-    function getOptionalChipValue(container: HTMLElement, name: string): number | undefined {
-      const v = getChipValue(container, name);
-      return v > 0 ? v : undefined;
+    function getOptionalSliderValue(container: HTMLElement, name: string, sendNull = false): number | null | undefined {
+      const v = getSliderValue(container, name);
+      return v > 0 ? v : (sendNull ? null : undefined);
     }
 
     function getMyRole(): string {
@@ -1102,11 +1190,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
              <div class="review-form-section">
                <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
                <div class="detail-rating-inline">
-                 ${detailChipHtml('맛', 'new-review-taste', 0)}
-                 ${detailChipHtml('가성비', 'new-review-value', 0)}
-                 ${detailChipHtml('서비스', 'new-review-service', 0)}
-                 ${detailChipHtml('청결', 'new-review-cleanliness', 0)}
-                 ${detailChipHtml('접근성', 'new-review-accessibility', 0)}
+                 ${detailSliderHtml('맛', 'new-review-taste', 0)}
+                 ${detailSliderHtml('가성비', 'new-review-value', 0)}
+                 ${detailSliderHtml('서비스', 'new-review-service', 0)}
+                 ${detailSliderHtml('청결', 'new-review-cleanliness', 0)}
+                 ${detailSliderHtml('접근성', 'new-review-accessibility', 0)}
                </div>
              </div>
              <textarea class="new-review-content" placeholder="한줄 리뷰 (선택)"></textarea>
@@ -1135,6 +1223,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </div>
           ${displayMemo ? `<div class="visit-memo">${escapeHtml(displayMemo)}</div>` : ''}
           <div class="visit-reviews">
+            <div class="visit-reviews-title">리뷰 (${visit.reviews.length})</div>
             ${reviewsHtml || '<p class="empty-text">아직 리뷰가 없습니다.</p>'}
           </div>
           ${reviewFormHtml}
@@ -1142,14 +1231,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       `;
     }
 
-    function collectDetailFields(container: HTMLElement, prefix: string): Partial<ReviewData> {
+    function collectDetailFields(container: HTMLElement, prefix: string, isEdit = false): Partial<ReviewData> {
       const optStr = (sel: string) => { const v = container.querySelector<HTMLInputElement>(sel)?.value.trim(); return v || undefined; };
+      const getVal = (name: string) => getOptionalSliderValue(container, `${prefix}-${name}`, isEdit);
       return {
-        tasteRating: getOptionalChipValue(container, `${prefix}-taste`),
-        valueRating: getOptionalChipValue(container, `${prefix}-value`),
-        serviceRating: getOptionalChipValue(container, `${prefix}-service`),
-        cleanlinessRating: getOptionalChipValue(container, `${prefix}-cleanliness`),
-        accessibilityRating: getOptionalChipValue(container, `${prefix}-accessibility`),
+        tasteRating: getVal('taste'),
+        valueRating: getVal('value'),
+        serviceRating: getVal('service'),
+        cleanlinessRating: getVal('cleanliness'),
+        accessibilityRating: getVal('accessibility'),
         favoriteMenu: optStr(`.${prefix}-fav-menu`),
       };
     }
@@ -1225,11 +1315,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 <label for="edit-rest-name" style="font-size:0.75rem;font-weight:600;color:var(--text-sub);margin-bottom:0.2rem;display:block;">식당 이름</label>
                 <input type="text" id="edit-rest-name" value="${escapeHtml(detail.name)}" placeholder="식당 이름" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
               </div>
-              <div class="form-row" style="margin-bottom:0.5rem;">
+              <div class="form-row full" style="margin-bottom:0.5rem;">
                 <label for="edit-rest-address" style="font-size:0.75rem;font-weight:600;color:var(--text-sub);margin-bottom:0.2rem;display:block;">주소</label>
                 <input type="text" id="edit-rest-address" value="${escapeHtml(detail.address)}" placeholder="주소" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
               </div>
-              <div class="form-row" style="margin-bottom:0.5rem;">
+              <div class="form-row full" style="margin-bottom:0.5rem;">
                 <label for="edit-rest-category" style="font-size:0.75rem;font-weight:600;color:var(--text-sub);margin-bottom:0.2rem;display:block;">카테고리</label>
                 <input type="text" id="edit-rest-category" value="${escapeHtml(detail.category)}" placeholder="카테고리" style="width:100%;padding:0.5rem;border:1px solid var(--border-mid);border-radius:6px;font-size:0.85rem;background:var(--bg-card);color:var(--text);" />
               </div>
@@ -1494,11 +1584,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <div class="review-form-section">
                 <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
                 <div class="detail-rating-inline">
-                  ${detailChipHtml('맛', 'edit-taste', btn.dataset.taste || '')}
-                  ${detailChipHtml('가성비', 'edit-value', btn.dataset.value || '')}
-                  ${detailChipHtml('서비스', 'edit-service', btn.dataset.service || '')}
-                  ${detailChipHtml('청결', 'edit-cleanliness', btn.dataset.cleanliness || '')}
-                  ${detailChipHtml('접근성', 'edit-accessibility', btn.dataset.accessibility || '')}
+                  ${detailSliderHtml('맛', 'edit-taste', btn.dataset.taste || '')}
+                  ${detailSliderHtml('가성비', 'edit-value', btn.dataset.value || '')}
+                  ${detailSliderHtml('서비스', 'edit-service', btn.dataset.service || '')}
+                  ${detailSliderHtml('청결', 'edit-cleanliness', btn.dataset.cleanliness || '')}
+                  ${detailSliderHtml('접근성', 'edit-accessibility', btn.dataset.accessibility || '')}
                 </div>
               </div>
               <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
@@ -1518,7 +1608,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             const newRating = getStarValue(card, 'edit-rating');
             const newContent = card.querySelector<HTMLTextAreaElement>('.edit-content')?.value.trim() || '';
             const newRevisit = card.querySelector<HTMLInputElement>('.edit-revisit')?.checked ?? true;
-            const detailFields = collectDetailFields(card, 'edit');
+            const detailFields = collectDetailFields(card, 'edit', true);
 
             try {
               await updateRoomReview(currentRoom.id, revId, { rating: newRating, content: newContent, wouldRevisit: newRevisit, ...detailFields });
