@@ -45,9 +45,10 @@ apps/api/src/
 │   ├── dto/        # 방 관련 DTO (CreateRoom, JoinRoom, ToggleShareCode 등)
 │   ├── rooms.service.ts       # 방/식당/리뷰/방문 CRUD
 │   └── room-stats.service.ts  # 방 통계 (getRoomStats, analyzeMemberBehaviors 등)
-├── users/          # 유저 조회, 닉네임 수정, 찜 목록
+├── users/          # 유저 조회, 닉네임 수정
 ├── inquiries/      # 문의 CRUD
-└── prisma/         # PrismaService (Reader/Writer 분리)
+├── common/         # 공통 유틸 (LoggerMiddleware, measure 성능 측정)
+└── prisma/         # PrismaService (Reader/Writer 분리, 쿼리 로깅)
 ```
 
 ## 공유 타입 패키지 (`packages/types/`)
@@ -60,7 +61,7 @@ packages/types/src/
 ├── user.ts         # User, AuthUser
 ├── room.ts         # Room, RoomRestaurant, RoomVisit, RoomReview, RoomListItem,
 │                   #   RoomDetailResponse, PaginatedRestaurants, ReviewData,
-│                   #   MyWishlistItem, ReviewComparison, CompareReviewsResponse 등
+│                   #   ReviewComparison, CompareReviewsResponse 등
 ├── stats.ts        # RoomStats, PlatformStats
 ├── ranking.ts      # RankingUser, RankingsResponse
 ├── discover.ts     # DiscoverRestaurant, DiscoverResponse
@@ -84,7 +85,7 @@ packages/types/src/
 | RoomVisitParticipant | 방문 참여자 태그                 | RoomVisit, User                          |
 | RoomReview           | 방문별 리뷰 (세부 평점, 메뉴)    | RoomVisit, User                          |
 | RoomKick             | 방 강퇴 기록 (재입장 차단)       | Room, User                               |
-| RoomWishlist         | 식당 찜 (유저별)                 | RoomRestaurant, User                     |
+| RoomNotification     | 방 알림 (식당/방문/리뷰 알림)    | Room, User                               |
 | Inquiry              | 고객 문의                        | -                                        |
 
 ## 방(Room) 권한 체계
@@ -151,11 +152,13 @@ packages/types/src/
 | ----------------- | --------------------------------------------------- |
 | `/`               | 홈 — 랜딩 페이지 + 로그인 시 내 방 대시보드         |
 | `/rooms`          | 내 방 — 방 목록, 검색, 정렬, 방 생성                |
-| `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 찜, 멤버 관리, 공유 링크, 검색/페이지네이션 |
+| `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 멤버 관리, 공유 링크, 검색/페이지네이션 |
+| `/room/add`       | 식당 등록 + 리뷰 — 카카오 검색/직접 입력 → 방문·리뷰 한 번에 |
+| `/room/restaurant`| 식당 상세 — 방문 기록, 리뷰 CRUD, 세부 평점          |
 | `/share/:code`    | 공유 열람 — 비로그인, 읽기 전용 (식당/리뷰 열람, 동적 OG) |
 | `/join?code=xxx`  | 초대 링크 자동 입장 (미로그인 시 로그인 후 리다이렉트) |
 | `/login`          | 카카오 로그인                                       |
-| `/discover`       | 맛집 추천 — 고평점/재방문/관심 맛집 공개 랭킹       |
+| `/discover`       | 맛집 추천 — 고평점/재방문 맛집 공개 랭킹             |
 | `/rankings`       | 유저 랭킹 — 리뷰 수/평균 평점/방문 수 기준          |
 | `/about`          | 서비스 소개 — 기능, 업적, 사용 흐름                 |
 | `/cs`             | 문의 등록                                           |
@@ -170,17 +173,44 @@ apps/web/src/components/
 └── AdSlot.astro   # 재사용 가능한 광고 슬롯 (환경변수 기반 활성화)
 ```
 
+## View Transitions 패턴
+
+Astro View Transitions 사용 시 `<script>` 모듈은 최초 1회만 실행됨. 페이지별 초기화가 필요한 스크립트는 반드시 아래 패턴을 따라야 함:
+
+```typescript
+// 1. import는 모듈 레벨 (함수 바깥)
+import { fetchCurrentUser } from '@/lib/api';
+
+// 2. 초기화 코드를 함수로 감싸기
+function initMyPage() {
+  const el = document.getElementById('my-el');
+  if (!el) return; // 해당 페이지가 아니면 early return
+
+  // DOM 조작, 이벤트 리스너 등
+}
+
+// 3. astro:page-load 이벤트만 사용 (직접 호출 금지 — 이중 실행 방지)
+document.addEventListener('astro:page-load', initMyPage);
+```
+
+**주의사항:**
+- `initMyPage()` 직접 호출 금지 — `astro:page-load`는 최초 로드에서도 발생하므로 이중 실행됨
+- 이벤트 리스너 중복 등록 방지: `cloneNode(true)` + `replaceWith`로 기존 리스너 제거
+- 다크모드: `astro:after-swap` 이벤트에서 `data-theme` 재적용 (`is:inline` 스크립트)
+- `fetchCurrentUser` 캐시: `astro:before-swap`에서 `resetUserCache()` 호출
+
+## 알림 시스템
+
+- `RoomNotification` 모델: 방 내 활동 (식당 등록, 방문, 리뷰, 멤버 참여) 시 자동 생성
+- `createNotificationForRoom()`: 해당 방 멤버 전원에게 알림 (본인 제외), fire-and-forget
+- 프론트: BaseLayout 알림 벨 → 드롭다운으로 최근 20개 표시
+- API: `GET /users/me/notifications`, `GET /users/me/notifications/unread-count`, `PATCH /users/me/notifications/read`
+
 ## 방 인원 제한
 
 - `MAX_ROOM_MEMBERS = 4` (rooms.service.ts)
 - `MAX_ROOMS_PER_USER = 30` — 유저당 참여 가능한 방 수 제한
 - 초대 코드 입장 및 방 생성 시 멤버 수/방 수 체크, 초과 시 403
-
-## 빠른 리뷰
-
-- `POST /rooms/:id/restaurants/:rid/quick-review` — 방문 기록 + 리뷰를 한 번에 생성 (트랜잭션)
-- 기존 2단계 (방문 추가 → 리뷰 작성)를 1단계로 단축
-- 프론트엔드: 식당 상세의 "빠른 리뷰" 폼
 
 ## 식당/방문 수정
 
@@ -203,19 +233,33 @@ apps/web/src/components/
 ## 리뷰 입력
 
 - 리뷰 본문(content): 선택 입력 (별점만으로 리뷰 가능, 최대 2000자)
-- 세부 평점 5항목: 맛(tasteRating), 가성비(valueRating), 서비스(serviceRating), 청결(cleanlinessRating), 접근성(accessibilityRating) — 모두 선택 입력
+- 세부 평점 5항목 (모두 선택, 같은 별 재클릭 시 취소):
+  - 맛(tasteRating): 남겼다(1) ~ 먹는 내내 감탄했다(5)
+  - 가성비(valueRating): 돈 줘도 안 먹는다(1) ~ 사장님 남는 거 맞아요?(5)
+  - 서비스(serviceRating): 손님이 죄인인 줄(1) ~ 사장님이 내 팬인가보다(5)
+  - 청결(cleanlinessRating): 나오면 안 될 게 나왔다(1) ~ 수술실인가?(5)
+  - 접근성(accessibilityRating): 등산인가 식사인가(1) ~ 나오자마자 바로 앞(5)
+- 재방문 의사(wouldRevisit): 또 가고 싶어요 / 글쎄요
 - 또 먹고 싶은 메뉴(favoriteMenu) 입력 (선택)
 - 카테고리: 칩 셀렉터 (13종 프리셋 + "기타" 커스텀 입력)
-- 웨이팅: 칩 버튼 (없음/5분/10분/15분/20분/30분/30분+)
+- 웨이팅: 칩 버튼 (없음/~10분/~30분/~1시간/1시간+)
 - 식당 목록: 10개씩 페이지네이션 ("더보기" 버튼) + 검색 (이름/주소/카테고리)
 
 ## 식당 등록 UI
 
-- 우측 슬라이드 드로어 패널 (식당 목록과 분리)
-- 카카오 검색 모드: 장소 검색 → 자동 입력 (호버 시 SDK StaticMap 미니지도 미리보기)
-- 직접 입력 모드: 이름/주소/카테고리 수동 입력 (주소 → Geocoder 좌표 변환)
+- `/room/add` 페이지: 식당 등록 → 방문 기록 → 리뷰를 3단계 위저드로 한 번에 처리
+- 카카오 검색 모드: 장소 검색 → 자동 입력
+- 직접 입력 모드: 이름/주소/카테고리 수동 입력
 - 폐점 여부 체크박스 (등록/수정 시 모두 가능)
 - 폐점 식당은 카드에 빨간 "폐점" 뱃지 + 반투명 처리
+
+## 성능 측정
+
+- `measure()` 유틸 (`common/perf.ts`): 함수 단위 소요시간 측정 (DB/외부API/CPU 구간별)
+  - 100ms 미만: debug, 100~500ms: log, 500ms 이상: warn `[SLOW]`
+- Prisma 쿼리 이벤트 로깅 (`prisma.service.ts`): 200ms 이상 `[SLOW READER/WRITER]` 경고
+- HTTP 요청 로깅 (`logger.middleware.ts`): 500ms 이상 `[SLOW]` 경고
+- 개발 환경에서 debug 로그 레벨 활성화
 
 ## PWA (Progressive Web App)
 
@@ -230,7 +274,7 @@ apps/web/src/components/
 
 ## SEO
 
-- `@astrojs/sitemap` — 빌드 시 sitemap.xml 자동 생성 (공개 페이지만, changefreq/priority 설정)
+- `@astrojs/sitemap` — 빌드 시 sitemap.xml 자동 생성 (공개 페이지만)
 - `robots.txt` — 크롤러별 세분화 (Googlebot/Bingbot 별도 규칙, AI 크롤러 차단)
 - `robots` 메타 태그: `max-snippet:-1, max-image-preview:large` (리치 스니펫 허용)
 - Open Graph + Twitter Card 메타 태그 (`og:image:alt`, `twitter:image:alt` 포함)
@@ -242,7 +286,6 @@ apps/web/src/components/
   - 문의: `ContactPage` + `BreadcrumbList`
   - 공유 페이지: `ItemList` (FoodEstablishment 목록)
 - BaseLayout Props: `title`, `description`, `ogImage`, `ogImageAlt`, `noindex`
-- 페이지별 CTR 최적화 타이틀/설명 (키워드 전면 배치, CTA 포함)
 - `SITE_URL` 환경변수로 sitemap 도메인 설정
 - Cloudflare Pages `_headers` 파일로 sitemap/robots.txt 캐시 설정
 
@@ -292,7 +335,7 @@ apps/web/src/components/
 - **선제 갱신**: access token 만료 1분 전에 자동 refresh (JWT `exp` 디코딩)
 - **401 처리**: refresh token으로 재시도 → 실패 시 `clearTokens()` + `/login` 리다이렉트
 - **refresh mutex**: 동시 401 발생 시 refresh 요청 1회만 실행
-- **fetchCurrentUser 캐싱**: 같은 페이지 내 중복 호출 방지 (BaseLayout + 페이지 스크립트)
+- **fetchCurrentUser 캐싱**: 같은 페이지 내 중복 호출 방지, View Transitions 전환 시 `resetUserCache()` 호출
 - **로그아웃**: 즉시 localStorage/쿠키 삭제, 서버 DB 무효화는 fire-and-forget
 - Access Token 만료: 15분, Refresh Token 만료: 7일
 

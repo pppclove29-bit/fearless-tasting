@@ -1846,8 +1846,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     fetchTimeline,
     showToast, showConfirm, showDangerConfirm,
   } from '@/lib/api';
-  import type { AuthUser, RoomDetailResponse, RoomRestaurantInfo, RoomStats, Poll, TimelineItem, PaginatedRestaurants } from '@/lib/api';
-  import { getCities, getNeighborhoods } from '@/data/areas';
+  import type { AuthUser, RoomDetailResponse, RoomRestaurantInfo, RoomStats, Poll, TimelineItem } from '@/lib/api';
+  // getCities, getNeighborhoods are defined locally below
   import { formatRating, formatDate } from '@repo/utils';
 
   function initRoomPage() {
@@ -1874,7 +1874,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     };
   }
   const Kakao = (window as { Kakao?: KakaoSDK }).Kakao;
-  const hasKakaoShare = !!Kakao;
+  const _hasKakaoShare = !!Kakao;
   if (Kakao && !Kakao.isInitialized()) {
     const kakaoKey = document.querySelector<HTMLMetaElement>('meta[name="kakao-app-key"]')?.content;
     if (kakaoKey) Kakao.init(kakaoKey);
@@ -1987,9 +1987,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     myRole = getMyRole();
 
     const svgLink = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-    const svgShare = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
-    const svgRefresh = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
-    const svgHelp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+    const _svgShare = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
+    const _svgRefresh = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
+    const _svgHelp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
 
     const svgExit = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
     const svgTrash = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
@@ -2216,7 +2216,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
   }
 
-  function switchToTab(tabName: string) {
+  function _switchToTab(tabName: string) {
     const btn = document.querySelector<HTMLButtonElement>(`.room-tab-btn[data-tab="${tabName}"]`);
     if (btn) btn.click();
   }
@@ -2468,7 +2468,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     const { summary, memberStats, categoryStats, regionStats, detailRatingAvg,
             monthlyVisits, dayOfWeekVisits, waitTimeStats,
-            topFavoriteMenus, topTryNextMenus, topRevisitRestaurants,
+            topFavoriteMenus: _topFavoriteMenus, topTryNextMenus: _topTryNextMenus, topRevisitRestaurants,
             topRatedRestaurants, bottomRatedRestaurants, unreviewedVisits,
             memberBehaviors, bestCombos, activityTrend, ratingInflation,
             staleRestaurants, diversityIndex, waitTolerance, peakMonth } = stats;
@@ -2786,7 +2786,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   // ─── 투표 탭 ───
 
-  async function renderPollTab() {
+  async function _renderPollTab() {
     const panel = document.getElementById('tab-poll');
     if (!panel) return;
 
@@ -3381,7 +3381,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           const coords = await new Promise<{ lat: number; lng: number } | null>((resolve) => {
             const maps = (window as Record<string, unknown>).kakao as Record<string, unknown>;
             const geocoder = new ((maps.maps as Record<string, unknown>).services as Record<string, new () => Record<string, unknown>>).Geocoder();
-            (geocoder as Record<string, Function>).addressSearch(address, (result: Array<{ y: string; x: string }>, status: string) => {
+            (geocoder as Record<string, (...args: unknown[]) => unknown>).addressSearch(address, (result: Array<{ y: string; x: string }>, status: string) => {
               if (status === 'OK' && result.length > 0) {
                 resolve({ lat: Number(result[0].y), lng: Number(result[0].x) });
               } else {
@@ -3480,7 +3480,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 const LatLng = maps.LatLng as new (lat: number, lng: number) => unknown;
                 const center = new LatLng(y, x);
                 const StaticMap = maps.StaticMap as new (container: HTMLElement, options: Record<string, unknown>) => unknown;
-                const Marker = (maps as Record<string, Record<string, unknown>>).Marker as Record<string, unknown>;
+                const _Marker = (maps as Record<string, Record<string, unknown>>).Marker as Record<string, unknown>;
                 new StaticMap(mapDiv, {
                   center,
                   level: 3,
@@ -3757,7 +3757,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     // ── 지도 통합 ──
     let regionMap: Record<string, unknown> | null = null;
-    let regionMarkerPairs: { marker: Record<string, unknown>; overlay: Record<string, unknown>; restaurant: typeof restaurants[0] }[] = [];
+    const regionMarkerPairs: { marker: Record<string, unknown>; overlay: Record<string, unknown>; restaurant: typeof restaurants[0] }[] = [];
     let regionActiveOverlay: Record<string, unknown> | null = null;
 
     async function initRegionMap() {
@@ -3869,7 +3869,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   // ─── 카카오맵 지도 탭 ───
 
-  async function renderMapTab() {
+  async function _renderMapTab() {
     const panel = document.getElementById('tab-map');
     if (!panel) return;
 
@@ -4023,7 +4023,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   function attachRestaurantCardHandlers() {
     for (const card of document.querySelectorAll<HTMLElement>('.room-restaurant-card')) {
-      card.addEventListener('click', (e) => {
+      card.addEventListener('click', (_e) => {
         const rid = card.dataset.rid!;
         location.href = `/room/restaurant?roomId=${currentRoom.id}&id=${rid}`;
       });

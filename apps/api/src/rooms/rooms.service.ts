@@ -1,6 +1,6 @@
-import { Injectable, Logger, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import { PrismaService } from '../prisma/prisma.service';
+import type { PrismaService } from '../prisma/prisma.service';
 import { measure } from '../common/perf';
 
 /** 평균 평점 계산 (소수점 1자리 반올림). 빈 배열이면 null 반환. */
@@ -85,7 +85,7 @@ export class RoomsService {
   }
 
   /** 방 상세 조회 */
-  async findOne(roomId: string, userId?: string) {
+  async findOne(roomId: string, _userId?: string) {
     const room = await measure('room.findOne.query', () =>
       this.prisma.read.room.findUnique({
         where: { id: roomId },

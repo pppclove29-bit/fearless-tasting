@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import type { PrismaService } from '../prisma/prisma.service';
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -107,14 +107,11 @@ export class UsersService {
       const restaurantVisitMap = new Map<string, number>();
       const allVisitDates: Date[] = [];
       let totalParticipatedVisits = 0;
-      let reviewableVisits = 0;
-
       // 직접 생성한 방문
       for (const v of user.createdVisits) {
         restaurantVisitMap.set(v.restaurantId, (restaurantVisitMap.get(v.restaurantId) || 0) + 1);
         allVisitDates.push(new Date(v.visitedAt));
         totalParticipatedVisits++;
-        reviewableVisits++;
       }
 
       // 참여자로 태그된 방문
@@ -122,8 +119,6 @@ export class UsersService {
         restaurantVisitMap.set(p.visit.restaurantId, (restaurantVisitMap.get(p.visit.restaurantId) || 0) + 1);
         allVisitDates.push(new Date(p.visit.visitedAt));
         totalParticipatedVisits++;
-        const hasMyReview = p.visit.reviews.some((r) => r.userId === user.id);
-        if (!hasMyReview) reviewableVisits++;
       }
 
       const reviewCount = user.roomReviews.length;

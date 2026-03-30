@@ -1,10 +1,10 @@
 import { Controller, Get, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
-import { UsersService } from './users.service';
+import type { UsersService } from './users.service';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { UpdateUserDto } from './dto/update-user.dto';
+import type { UpdateUserDto } from './dto/update-user.dto';
 
 @ApiTags('사용자')
 @Controller('users')

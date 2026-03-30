@@ -1,6 +1,7 @@
-import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
-import { Request } from 'express';
-import { RoomMemberGuard } from './room-member.guard';
+import type { CanActivate, ExecutionContext} from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
+import type { Request } from 'express';
+import type { RoomMemberGuard } from './room-member.guard';
 
 interface RequestWithRoomMember extends Request {
   roomMember: { role: string };

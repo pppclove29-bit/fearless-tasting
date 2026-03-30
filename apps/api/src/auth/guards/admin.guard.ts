@@ -1,7 +1,8 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
-import { Request } from 'express';
-import { JwtAuthGuard } from './jwt-auth.guard';
-import { PrismaService } from '../../prisma/prisma.service';
+import type { CanActivate, ExecutionContext} from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
+import type { Request } from 'express';
+import type { JwtAuthGuard } from './jwt-auth.guard';
+import type { PrismaService } from '../../prisma/prisma.service';
 
 /** JwtAuthGuard를 먼저 통과한 뒤, DB에서 role === 'admin'인지 확인하는 Guard */
 @Injectable()

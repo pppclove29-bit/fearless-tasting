@@ -1113,7 +1113,7 @@ import AdSlot from '@/components/AdSlot.astro';
     const roomsList = document.getElementById('rooms-list');
     if (!landing || !dashboard || !roomsList) return;
 
-    const loadingMsg = document.getElementById('loading-msg');
+    const _loadingMsg = document.getElementById('loading-msg');
     const emptyMsg = document.getElementById('empty-msg');
     const formError = document.getElementById('form-error');
     const createForm = document.getElementById('create-form') as HTMLFormElement | null;

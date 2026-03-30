@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/guards/admin.guard';
-import { NoticesService } from './notices.service';
-import { CreateNoticeDto } from './dto/create-notice.dto';
-import { UpdateNoticeDto } from './dto/update-notice.dto';
+import type { NoticesService } from './notices.service';
+import type { CreateNoticeDto } from './dto/create-notice.dto';
+import type { UpdateNoticeDto } from './dto/update-notice.dto';
 
 @ApiTags('공지사항')
 @Controller('notices')

@@ -411,7 +411,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const today = new Date().toISOString().split('T')[0];
 
     const isExisting = !!existingRestId;
-    let currentStep = isExisting ? 2 : 1;
+    const _currentStep = isExisting ? 2 : 1;
     let placeData: Record<string, string> = {};
     let selectedCategory = '';
     let selectedWait = '';
@@ -656,7 +656,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           const m = k.maps as Record<string, unknown>;
           const svc = m.services as Record<string, new () => Record<string, unknown>>;
           const places = new svc.Places();
-          (places.keywordSearch as Function)(kw, (data: Array<Record<string, string>>, status: string) => {
+          (places.keywordSearch as (...args: unknown[]) => unknown)(kw, (data: Array<Record<string, string>>, status: string) => {
             const OK = ((m.services as Record<string, Record<string, string>>).Status as Record<string, string>).OK;
             if (status !== OK || !data.length) { resultsDiv.hidden = true; return; }
             resultsDiv.innerHTML = data.slice(0, 10).map((p, i) => {

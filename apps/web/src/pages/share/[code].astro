@@ -2,7 +2,6 @@
 export const prerender = false;
 
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { formatRating } from '@repo/utils';
 import type { SharedRoomDetail } from '@repo/types';
 
 const { code } = Astro.params;
@@ -30,9 +29,6 @@ const description = room
   ? `${room.name}의 맛집 ${room.restaurants.length}곳${topCategories ? ` (${topCategories} 등)` : ''} — 실제 방문 리뷰와 평점을 확인하세요.`
   : '공유된 맛집 리스트를 확인하세요';
 
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
 ---
 
 <BaseLayout
