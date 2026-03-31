@@ -467,7 +467,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const today = new Date().toISOString().split('T')[0];
 
     const isExisting = !!existingRestId;
-    const _currentStep = isExisting ? 2 : 1;
+    let currentStep = isExisting ? 2 : 1;
     let placeData: Record<string, string> = {};
     let selectedCategory = '';
     let selectedWait = '';
