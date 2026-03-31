@@ -1105,6 +1105,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.85rem;
     line-height: 1;
   }
+  .fav-menu-label {
+    font-weight: 500;
+    opacity: 0.7;
+    font-size: 0.72rem;
+  }
   @media (prefers-color-scheme: dark) {
     .review-fav-menu {
       background: rgba(245, 158, 11, 0.12);
@@ -1381,7 +1386,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       ].filter(Boolean);
 
       const favMenuHtml = rev.favoriteMenu
-        ? `<div class="review-fav-menu"><span class="fav-menu-icon">&#x1F372;</span> ${escapeHtml(rev.favoriteMenu)}</div>`
+        ? `<div class="review-fav-menu"><span class="fav-menu-icon">&#x1F372;</span><span class="fav-menu-label">또 먹고 싶은</span> ${escapeHtml(rev.favoriteMenu)}</div>`
         : '';
 
       const hasExtras = detailRatings.length > 0 || rev.tryNextMenu;
