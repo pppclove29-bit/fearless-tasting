@@ -1039,6 +1039,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-width: 0 7px 7px 0;
     border-color: transparent var(--bg-card) transparent transparent;
   }
+  @media (prefers-color-scheme: dark) {
+    .review-speech {
+      background: #333338;
+      border-color: #444449;
+    }
+    .review-speech::before {
+      border-color: transparent #444449 transparent transparent;
+    }
+    .review-speech::after {
+      border-color: transparent #333338 transparent transparent;
+    }
+  }
   .review-stars-big {
     display: flex;
     align-items: center;
