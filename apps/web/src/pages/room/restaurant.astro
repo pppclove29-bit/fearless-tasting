@@ -1088,6 +1088,30 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-bottom: 0.15rem;
     display: block;
   }
+  .review-fav-menu {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.65rem;
+    background: rgba(255, 152, 0, 0.1);
+    border: 1px solid rgba(255, 152, 0, 0.25);
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #f59e0b;
+    margin-bottom: 0.4rem;
+  }
+  .fav-menu-icon {
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+  @media (prefers-color-scheme: dark) {
+    .review-fav-menu {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
+    }
+  }
   .review-extras[hidden] { display: none; }
   .review-extras {
     animation: visitFadeIn 0.2s ease;
@@ -1356,16 +1380,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         rev.accessibilityRating != null ? `접근성 ${rev.accessibilityRating}` : null,
       ].filter(Boolean);
 
-      const menuParts = [
-        rev.favoriteMenu ? `또 먹고 싶은: ${escapeHtml(rev.favoriteMenu)}` : null,
-        rev.tryNextMenu ? `다음에: ${escapeHtml(rev.tryNextMenu)}` : null,
-      ].filter(Boolean);
+      const favMenuHtml = rev.favoriteMenu
+        ? `<div class="review-fav-menu"><span class="fav-menu-icon">&#x1F372;</span> ${escapeHtml(rev.favoriteMenu)}</div>`
+        : '';
 
-      const hasExtras = detailRatings.length > 0 || menuParts.length > 0;
+      const hasExtras = detailRatings.length > 0 || rev.tryNextMenu;
       const extrasHtml = hasExtras ? `
         <div class="review-extras" hidden>
           ${detailRatings.length > 0 ? `<div class="review-detail-chips">${detailRatings.map(r => `<span class="review-detail-chip">${r}</span>`).join('')}</div>` : ''}
-          ${menuParts.length > 0 ? `<div class="review-meta-row">${menuParts.join(' · ')}</div>` : ''}
+          ${rev.tryNextMenu ? `<div class="review-meta-row">다음에 시켜볼: ${escapeHtml(rev.tryNextMenu)}</div>` : ''}
         </div>
         <button type="button" class="review-toggle-extras">전체보기</button>
       ` : '';
@@ -1389,6 +1412,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <div class="review-nickname">${escapeHtml(rev.user.nickname)} ${revisitBadge} ${actionsHtml}</div>
             <div class="review-speech">${speechContent}</div>
             <div class="review-stars-big">${bigStars} <span class="rating-num">${rev.rating}</span></div>
+            ${favMenuHtml}
             ${extrasHtml}
           </div>
         </div>
