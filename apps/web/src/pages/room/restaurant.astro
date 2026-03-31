@@ -1006,7 +1006,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     gap: 0.3rem;
   }
   .review-speech {
-    background: var(--bg-hover);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 2px 12px 12px 12px;
     padding: 0.65rem 0.9rem;
     font-size: 0.9rem;
@@ -1014,6 +1015,29 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     line-height: 1.55;
     margin-bottom: 0.5rem;
     word-break: break-word;
+    position: relative;
+  }
+  .review-speech::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -7px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 8px 8px 0;
+    border-color: transparent var(--border) transparent transparent;
+  }
+  .review-speech::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -5px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 7px 7px 0;
+    border-color: transparent var(--bg-card) transparent transparent;
   }
   .review-stars-big {
     display: flex;
