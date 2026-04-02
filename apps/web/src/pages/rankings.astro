@@ -169,11 +169,17 @@ const month = now.getMonth() + 1;
     min-width: 0;
   }
 
+  .ranking-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.2rem;
+  }
+
   .ranking-name {
     font-size: 1rem;
     font-weight: 700;
     color: var(--text-heading);
-    margin-bottom: 0.2rem;
   }
 
   .ranking-category {
@@ -337,9 +343,11 @@ const month = now.getMonth() + 1;
             return `
               <div class="ranking-item">
                 <div class="ranking-rank${rankClass}">${rankContent}</div>
-                <span class="ranking-category">${r.category}</span>
                 <div class="ranking-info">
-                  <div class="ranking-name">${r.name}</div>
+                  <div class="ranking-name-row">
+                    <div class="ranking-name">${r.name}</div>
+                    <span class="ranking-category">${r.category}</span>
+                  </div>
                   <div class="ranking-address">${shortAddr}</div>
                 </div>
                 <div class="ranking-stat">

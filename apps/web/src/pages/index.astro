@@ -1120,6 +1120,7 @@ import AdSlot from '@/components/AdSlot.astro';
 <script>
   import { fetchCurrentUser, getCachedUser, fetchMyRooms, createRoom, fetchPlatformStats, fetchNotices } from '@/lib/api';
   import type { RoomListItem } from '@/lib/api';
+  import { formatDate } from '@repo/utils';
 
   async function initHomePage() {
     const landing = document.getElementById('landing');
