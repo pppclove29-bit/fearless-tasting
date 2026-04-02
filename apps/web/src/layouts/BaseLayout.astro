@@ -168,11 +168,30 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     </div>
 
     <footer>
-      <p class="footer-desc">우리만의 맛집 리스트를 만들고 공유하는 플랫폼</p>
-      <p class="footer-links">
-        <a href="/about">소개</a> · <a href="/rooms" id="footer-rooms-link" hidden>내 방</a><span id="footer-rooms-sep" hidden> · </span><a href="/rankings">랭킹</a> · <a href="/discover">맛집</a> · <a href="/cs">문의</a> · <a href="/privacy">개인정보처리방침</a>
-      </p>
-      <p>&copy; 2026 무모한 시식가</p>
+      <div class="footer-inner">
+        <div class="footer-col footer-brand-col">
+          <a href="/" class="footer-brand">무모한 시식가</a>
+          <p class="footer-tagline">우리만의 맛집 리스트를 만들고 공유하는 플랫폼</p>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-col-title">메뉴</h4>
+          <a href="/about">소개</a>
+          <a href="/rankings">랭킹</a>
+          <a href="/discover">맛집</a>
+          <a href="/cs">문의</a>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-col-title">정보</h4>
+          <a href="/privacy">개인정보처리방침</a>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-col-title">연락처</h4>
+          <span>이메일: pppclove29@naver.com</span>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 무모한 시식가. All rights reserved.</p>
+      </div>
     </footer>
   </body>
 </html>
@@ -582,29 +601,79 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
 
   footer {
     border-top: 1px solid var(--border);
-    text-align: center;
-    padding: 1.5rem;
-    font-size: 0.8rem;
+    padding: 2.5rem 1.5rem 0;
+    font-size: 0.82rem;
     color: var(--text-muted);
     background: var(--bg-card);
   }
 
-  .footer-desc {
-    color: var(--text-tertiary);
-    margin-bottom: 0.4rem;
+  .footer-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 2rem;
+    padding-bottom: 2rem;
   }
 
-  .footer-links {
-    margin-bottom: 0.4rem;
+  .footer-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .footer-brand-col {
+    gap: 0.3rem;
+  }
+
+  .footer-brand {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    text-decoration: none;
+  }
+
+  .footer-tagline {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .footer-col-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-sub);
+    margin-bottom: 0.2rem;
   }
 
   footer a {
     color: var(--text-muted);
     text-decoration: none;
+    font-size: 0.8rem;
   }
 
   footer a:hover {
     color: var(--text-sub);
+  }
+
+  .footer-bottom {
+    max-width: 960px;
+    margin: 0 auto;
+    border-top: 1px solid var(--border);
+    padding: 1.25rem 0;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 600px) {
+    .footer-inner {
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .footer-brand-col {
+      grid-column: 1 / -1;
+    }
   }
 
   /* PWA 설치 배너 */
@@ -732,10 +801,7 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
 
       const myRoomsLink = document.getElementById('my-rooms-link');
       if (myRoomsLink) myRoomsLink.hidden = false;
-      const footerRoomsLink = document.getElementById('footer-rooms-link');
-      if (footerRoomsLink) footerRoomsLink.hidden = false;
-      const footerRoomsSep = document.getElementById('footer-rooms-sep');
-      if (footerRoomsSep) footerRoomsSep.hidden = false;
+      // footer-rooms-link removed in footer redesign
 
       if (user.role === 'admin') {
         const adminLink = document.getElementById('admin-link');

@@ -25,13 +25,13 @@ export const prerender = false;
 
   <div class="discover-page">
     <section class="discover-hero">
-      <h1>맛집 추천</h1>
-      <p class="discover-desc">무모한 시식가 유저들의 실제 방문 데이터를 기반으로 한 맛집 리스트</p>
+      <span class="discover-badge">엄선된 맛집 리스트</span>
+      <h1>맛집 목록</h1>
+      <p class="discover-desc">지역별, 카테고리별 최고의 맛집을 찾아보세요</p>
     </section>
 
-    <div class="discover-tabs">
-      <button type="button" class="discover-tab active" data-tab="topRated">고평점</button>
-      <button type="button" class="discover-tab" data-tab="mostRevisited">재방문</button>
+    <div class="discover-filters" id="discover-filters">
+      <button type="button" class="filter-chip active" data-category="전체">전체</button>
     </div>
 
     <div id="discover-content">
@@ -51,54 +51,70 @@ export const prerender = false;
 
 <style>
   .discover-page {
-    max-width: 720px;
+    max-width: 960px;
     margin: 0 auto;
   }
 
   .discover-hero {
     text-align: center;
-    padding: 2rem 0 1rem;
+    padding: 2.5rem 0 1.5rem;
+    background: var(--bg-hover);
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+  }
+
+  .discover-badge {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 100px;
+    margin-bottom: 0.75rem;
   }
 
   .discover-hero h1 {
-    font-size: 1.6rem;
-    font-weight: 700;
+    font-size: 1.8rem;
+    font-weight: 800;
     color: var(--text-heading);
+    margin-bottom: 0.4rem;
   }
 
   .discover-desc {
     font-size: 0.9rem;
     color: var(--text-sub);
-    margin-top: 0.3rem;
   }
 
-  .discover-tabs {
+  .discover-filters {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
   }
 
-  .discover-tab {
-    padding: 0.6rem 1rem;
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    font-size: 0.9rem;
+  .filter-chip {
+    padding: 0.5rem 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    background: var(--bg-card);
+    font-size: 0.82rem;
     font-weight: 500;
-    cursor: pointer;
-    color: var(--text-muted);
-    transition: color 0.15s, border-color 0.15s;
-  }
-
-  .discover-tab:hover {
     color: var(--text-sub);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
   }
 
-  .discover-tab.active {
+  .filter-chip:hover {
+    border-color: var(--border-mid);
     color: var(--text-heading);
-    border-bottom-color: var(--text-heading);
+  }
+
+  .filter-chip.active {
+    background: var(--text-heading);
+    color: var(--bg);
+    border-color: var(--text-heading);
   }
 
   .discover-loading {
@@ -114,91 +130,134 @@ export const prerender = false;
     font-size: 0.9rem;
   }
 
-  .discover-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+  .discover-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+
+  @media (max-width: 768px) {
+    .discover-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .discover-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   .discover-card {
     background: var(--bg-card);
-    padding: 0.85rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: box-shadow 0.2s, transform 0.15s;
+  }
+
+  .discover-card:hover {
+    box-shadow: 0 4px 16px var(--shadow);
+    transform: translateY(-2px);
+  }
+
+  .card-image {
+    width: 100%;
+    height: 160px;
+    background: var(--bg-hover);
     display: flex;
     align-items: center;
-    gap: 0.85rem;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    transition: background 0.15s, box-shadow 0.15s;
-  }
-  .discover-card:hover {
-    background: var(--bg-hover);
-    box-shadow: 0 2px 8px var(--shadow);
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 2rem;
   }
 
-  .discover-card.top-1 {
-    background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,215,0,0.02));
-    border-color: rgba(255,215,0,0.3);
+  .card-body {
     padding: 1rem;
   }
-  .discover-card.top-2 {
-    background: linear-gradient(135deg, rgba(192,192,192,0.1), rgba(192,192,192,0.02));
-    border-color: rgba(192,192,192,0.3);
-  }
-  .discover-card.top-3 {
-    background: linear-gradient(135deg, rgba(205,127,50,0.08), rgba(205,127,50,0.02));
-    border-color: rgba(205,127,50,0.3);
+
+  .card-category {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-sub);
+    margin-bottom: 0.4rem;
   }
 
-  .discover-rank {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    min-width: 24px;
-    text-align: center;
-  }
-
-  .discover-rank.rank-medal {
-    font-size: 1.4rem;
-  }
-
-  .discover-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .discover-name {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-heading);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .discover-meta {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    margin-top: 0.15rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .discover-stat {
-    text-align: right;
-    white-space: nowrap;
-  }
-
-  .discover-stat-value {
+  .card-name {
     font-size: 1rem;
     font-weight: 700;
     color: var(--text-heading);
+    margin-bottom: 0.35rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .discover-stat-label {
-    font-size: 0.72rem;
+  .card-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .card-rating-star {
+    color: #f59e0b;
+  }
+
+  .card-rating-value {
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .card-rating-count {
     color: var(--text-muted);
+    font-size: 0.78rem;
+  }
+
+  .card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .card-info-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .card-info-row svg {
+    flex-shrink: 0;
+    color: var(--text-muted);
+  }
+
+  .card-info-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-btn {
     display: block;
+    width: 100%;
+    padding: 0.6rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: default;
+    font-family: inherit;
   }
 
   .discover-seo {
@@ -232,33 +291,65 @@ export const prerender = false;
   import { fetchDiscover } from '@/lib/api';
   import type { DiscoverResponse } from '@/lib/api';
 
+  const CATEGORY_ICONS: Record<string, string> = {
+    '한식': '🍚', '양식': '🍝', '일식': '🍣', '중식': '🥟',
+    '프렌치': '🥐', '아시안': '🍜', '카페': '☕', '분식': '🥘',
+    '치킨': '🍗', '피자': '🍕', '패스트푸드': '🍔', '해산물': '🦐',
+    '고기': '🥩',
+  };
+
+  function getCategoryIcon(category: string): string {
+    return CATEGORY_ICONS[category] || '🍽️';
+  }
+
   async function initDiscoverPage() {
     const contentEl = document.getElementById('discover-content');
-    if (!contentEl) return;
+    const filtersEl = document.getElementById('discover-filters');
+    if (!contentEl || !filtersEl) return;
 
-    const tabs = document.querySelectorAll<HTMLButtonElement>('.discover-tab');
     let data: DiscoverResponse | null = null;
-    let currentTab = 'topRated';
+    let currentCategory = '전체';
 
-    function renderList(tab: string) {
-      if (!data) return;
+    function getAllItems() {
+      if (!data) return [];
+      const seen = new Set<string>();
+      const merged: { name: string; address: string; category: string; avgRating: number; reviewCount: number }[] = [];
+      for (const item of data.topRated) {
+        if (!seen.has(item.name)) {
+          seen.add(item.name);
+          merged.push(item);
+        }
+      }
+      return merged;
+    }
 
-      type ListItem = { name: string; address: string; category: string };
-      let items: ListItem[] = [];
-      let statFn: (item: ListItem, idx: number) => string = () => '';
+    function getCategories() {
+      const items = getAllItems();
+      const cats = new Set<string>();
+      items.forEach((item) => cats.add(item.category));
+      return Array.from(cats);
+    }
 
-      if (tab === 'topRated') {
-        items = data.topRated;
-        statFn = (item) => {
-          const r = item as (typeof data)['topRated'][0];
-          return `<div class="discover-stat"><span class="discover-stat-value">${r.avgRating}</span><span class="discover-stat-label">평점 (${r.reviewCount}개)</span></div>`;
-        };
-      } else if (tab === 'mostRevisited') {
-        items = data.mostRevisited;
-        statFn = (item) => {
-          const r = item as (typeof data)['mostRevisited'][0];
-          return `<div class="discover-stat"><span class="discover-stat-value">${r.visitCount}회</span><span class="discover-stat-label">방문</span></div>`;
-        };
+    function renderFilters() {
+      const cats = getCategories();
+      filtersEl.innerHTML = `
+        <button type="button" class="filter-chip ${currentCategory === '전체' ? 'active' : ''}" data-category="전체">전체</button>
+        ${cats.map((c) => `<button type="button" class="filter-chip ${currentCategory === c ? 'active' : ''}" data-category="${c}">${c}</button>`).join('')}
+      `;
+
+      for (const btn of filtersEl.querySelectorAll<HTMLButtonElement>('.filter-chip')) {
+        btn.addEventListener('click', () => {
+          currentCategory = btn.dataset.category ?? '전체';
+          renderFilters();
+          renderCards();
+        });
+      }
+    }
+
+    function renderCards() {
+      let items = getAllItems();
+      if (currentCategory !== '전체') {
+        items = items.filter((item) => item.category === currentCategory);
       }
 
       if (items.length === 0) {
@@ -266,27 +357,36 @@ export const prerender = false;
         return;
       }
 
-      const medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49'];
-      contentEl.innerHTML = `<div class="discover-list">${items.map((item, i) => {
-        const rank = i < 3 ? `<span class="discover-rank rank-medal">${medals[i]}</span>` : `<span class="discover-rank">${i + 1}</span>`;
-        const topClass = i === 0 ? ' top-1' : i === 1 ? ' top-2' : i === 2 ? ' top-3' : '';
+      contentEl.innerHTML = `<div class="discover-grid">${items.map((item) => {
         const shortAddr = item.address.replace(/^(\S+[시도])\s+(\S+[시군구]).*$/, '$1 $2').replace(/^(\S+)\s*$/, '$1');
-        return `<div class="discover-card${topClass}">${rank}<div class="discover-info"><div class="discover-name">${item.name}</div><div class="discover-meta">${shortAddr} · ${item.category}</div></div>${statFn(item, i)}</div>`;
+        const icon = getCategoryIcon(item.category);
+        return `
+          <div class="discover-card">
+            <div class="card-image">${icon}</div>
+            <div class="card-body">
+              <span class="card-category">${item.category}</span>
+              <div class="card-name">${item.name}</div>
+              <div class="card-rating">
+                <span class="card-rating-star">★</span>
+                <span class="card-rating-value">${item.avgRating}</span>
+                <span class="card-rating-count">(${item.reviewCount})</span>
+              </div>
+              <div class="card-info">
+                <div class="card-info-row">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span class="card-info-text">${shortAddr}</span>
+                </div>
+              </div>
+              <div class="card-btn">상세보기</div>
+            </div>
+          </div>`;
       }).join('')}</div>`;
     }
 
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        tabs.forEach((t) => t.classList.remove('active'));
-        tab.classList.add('active');
-        currentTab = tab.dataset.tab ?? 'topRated';
-        renderList(currentTab);
-      });
-    });
-
     try {
       data = await fetchDiscover();
-      renderList(currentTab);
+      renderFilters();
+      renderCards();
     } catch {
       contentEl.innerHTML = '<div class="discover-empty">맛집 추천을 불러올 수 없습니다.</div>';
     }
