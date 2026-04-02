@@ -306,12 +306,6 @@ const month = now.getMonth() + 1;
 <script>
   import { fetchDiscover, fetchPlatformStats } from '@/lib/api';
 
-  const RANK_ICONS: Record<number, string> = {
-    1: '🏆',
-    2: '🥈',
-    3: '🥉',
-  };
-
   async function initRankingsPage() {
     const loadingEl = document.getElementById('rankings-loading');
     const errorEl = document.getElementById('rankings-error');
@@ -335,7 +329,7 @@ const month = now.getMonth() + 1;
         : `<div class="ranking-list">${restaurants.map((r, i) => {
             const rank = i + 1;
             const rankClass = rank <= 3 ? ` rank-${rank}` : '';
-            const rankContent = RANK_ICONS[rank] || String(rank);
+            const rankContent = String(rank);
             const shortAddr = r.address.replace(/^(\S+[시도])\s+(\S+[시군구]).*$/, '$1 $2').replace(/^(\S+)\s*$/, '$1');
             return `
               <div class="ranking-item">
