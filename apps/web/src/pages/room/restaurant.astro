@@ -842,86 +842,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     white-space: nowrap;
   }
 
-  /* 세부평점 슬라이더 */
-  .detail-slider { margin-bottom: 0.6rem; }
-  .detail-slider[hidden] { display: none !important; }
-  .detail-slider-header {
+  /* 세부평점 별 */
+  .detail-slider {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.3rem;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
   }
-  .detail-slider-label { font-size: 0.8rem; font-weight: 600; color: var(--text-heading); }
-  .detail-slider-skip {
-    padding: 0.2rem 0.5rem;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: none;
-    color: var(--text-muted);
-    font-size: 0.68rem;
-    font-family: inherit;
+  .detail-slider-label { font-size: 0.8rem; font-weight: 600; color: var(--text-heading); min-width: 3.5em; }
+  .detail-stars { display: inline-flex; gap: 0.1rem; }
+  .detail-star {
+    font-size: 1.3rem;
+    color: var(--border);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: color 0.1s;
+    line-height: 1;
   }
-  .detail-slider-skip:hover { border-color: var(--text-muted); }
-  .detail-slider-skip.active { background: var(--bg-hover); color: var(--text-sub); border-color: var(--border-mid); }
-  .detail-slider-body { padding: 0 0.2rem; }
-  .detail-slider-body[hidden] { display: none !important; }
-  .detail-slider-descs {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    margin-bottom: 0.15rem;
-  }
-  .detail-slider-value {
-    text-align: center;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--text-heading);
-    margin-bottom: 0.1rem;
-    min-height: 1.1em;
-  }
-  .detail-slider-range {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: var(--border);
-    outline: none;
-    cursor: pointer;
-  }
-  .detail-slider-range::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--text-heading);
-    border: 2px solid var(--bg-card);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-    cursor: grab;
-  }
-  .detail-slider-range::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--text-heading);
-    border: 2px solid var(--bg-card);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-    cursor: grab;
-  }
-  .detail-slider-ticks {
-    display: flex;
-    justify-content: space-between;
-    padding: 0 8px;
-    margin-top: 0.15rem;
-  }
-  .detail-slider-ticks span {
-    font-size: 0.6rem;
-    color: var(--text-muted);
-  }
+  .detail-star.active { color: #f59e0b; }
 
 
   .review-detail-ratings {
@@ -1249,39 +1186,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return `<span class="star-rating${sizeClass}" data-name="${name}" data-value="${value}">${stars}<span class="star-label">${value || ''}</span></span>`;
     }
 
-    const DETAIL_GUIDES: Record<string, string[]> = {
-      taste: ['남겼다','억지로 먹었다','다 먹었다','한 그릇 더 먹고 싶었다','먹는 내내 감탄했다'],
-      value: ['돈 줘도 안 먹는다','돈 주면 먹는다','가격만큼 먹었다','이 가격에 이 정도면 굿','사장님 남는 거 맞아요?'],
-      service: ['손님이 죄인인 줄','뭔가 언짢았다','딱히 신경 안 썼다','기분 좋게 먹었다','사장님이 내 팬인가보다'],
-      cleanliness: ['나오면 안 될 게 나왔다','먹는 내내 찝찝했다','보통이다','깔끔하다','수술실인가?'],
-      accessibility: ['등산인가 식사인가','찾아가는 것부터 고생','갈 만하다','역에서 가깝고 편하다','나오자마자 바로 앞'],
-    };
-
-    const LABEL_TO_KEY: Record<string, string> = {
-      '맛': 'taste', '가성비': 'value', '서비스': 'service', '청결': 'cleanliness', '접근성': 'accessibility',
-    };
-
-    /** 세부 평점 한 항목 (슬라이더) */
+    /** 세부 평점 한 항목 (별) */
     function detailSliderHtml(label: string, name: string, value: number | string): string {
       const v = typeof value === 'string' ? (value ? parseInt(value, 10) : 0) : (value || 0);
-      const key = LABEL_TO_KEY[label] || '';
-      const guides = DETAIL_GUIDES[key] || [];
-      const isActive = v > 0;
-      const sliderVal = isActive ? v : 3;
+      const stars = Array.from({ length: 5 }, (_, i) =>
+        `<span class="detail-star ${i < v ? 'active' : ''}" data-value="${i + 1}">★</span>`
+      ).join('');
       return `
         <div class="detail-slider" data-name="${name}" data-value="${v}">
-          <div class="detail-slider-header">
-            <span class="detail-slider-label">${label}</span>
-            <button type="button" class="detail-slider-skip${!isActive ? ' active' : ''}">잘 모르겠음</button>
-          </div>
-          <div class="detail-slider-body"${!isActive ? ' hidden' : ''}>
-            <div class="detail-slider-descs">
-              <span>${guides[0] || ''}</span>
-              <span>${guides[4] || ''}</span>
-            </div>
-            <input type="range" class="detail-slider-range" min="1" max="5" step="1" value="${sliderVal}" />
-            <div class="detail-slider-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
-          </div>
+          <span class="detail-slider-label">${label}</span>
+          <span class="detail-stars">${stars}</span>
         </div>`;
     }
 
@@ -1302,26 +1216,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           });
         }
       }
-      // 세부평점 슬라이더 핸들러
+      // 세부평점 별 클릭 핸들러
       for (const slider of container.querySelectorAll<HTMLElement>('.detail-slider')) {
-        const skipBtn = slider.querySelector<HTMLButtonElement>('.detail-slider-skip');
-        const body = slider.querySelector<HTMLElement>('.detail-slider-body');
-        const range = slider.querySelector<HTMLInputElement>('.detail-slider-range');
-
-        skipBtn?.addEventListener('click', () => {
-          const isNowSkipped = !skipBtn.classList.contains('active');
-          skipBtn.classList.toggle('active', isNowSkipped);
-          if (body) body.hidden = isNowSkipped;
-          slider.dataset.value = isNowSkipped ? '0' : (range?.value || '3');
-        });
-
-        range?.addEventListener('input', () => {
-          slider.dataset.value = range.value;
-          if (skipBtn?.classList.contains('active')) {
-            skipBtn.classList.remove('active');
-            if (body) body.hidden = false;
-          }
-        });
+        for (const star of slider.querySelectorAll<HTMLElement>('.detail-star')) {
+          star.addEventListener('click', () => {
+            const val = parseInt(star.dataset.value || '0', 10);
+            const current = parseInt(slider.dataset.value || '0', 10);
+            const newVal = current === val ? 0 : val;
+            slider.dataset.value = String(newVal);
+            slider.querySelectorAll('.detail-star').forEach((s, i) => s.classList.toggle('active', i < newVal));
+          });
+        }
       }
     }
 
@@ -1331,7 +1236,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return el ? parseInt(el.dataset.value || '0', 10) : 0;
     }
 
-    /** 세부평점 슬라이더에서 값 읽기 */
+    /** 세부평점 별에서 값 읽기 */
     function getSliderValue(container: HTMLElement, name: string): number {
       const el = container.querySelector<HTMLElement>(`.detail-slider[data-name="${name}"]`);
       return el ? parseInt(el.dataset.value || '0', 10) : 0;

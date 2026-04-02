@@ -901,6 +901,14 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
               dropdown.querySelectorAll('.notif-item.unread').forEach((el) => el.classList.remove('unread'));
             });
 
+            // 개별 알림 클릭 시에도 전체 읽음 처리
+            for (const item of dropdown.querySelectorAll<HTMLElement>('.notif-item')) {
+              item.addEventListener('click', () => {
+                markNotificationsRead().catch(() => {});
+                badge.hidden = true;
+              });
+            }
+
             const closeDropdown = (ev: MouseEvent) => {
               if (!dropdown.contains(ev.target as Node) && ev.target !== newBell) {
                 dropdown.remove();
