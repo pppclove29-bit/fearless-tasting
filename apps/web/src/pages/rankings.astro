@@ -177,14 +177,17 @@ const month = now.getMonth() + 1;
   }
 
   .ranking-category {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 0.15rem 0.5rem;
     border: 1px solid var(--border);
     border-radius: 4px;
     font-size: 0.7rem;
     font-weight: 500;
     color: var(--text-sub);
-    margin-bottom: 0.25rem;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   .ranking-address {
@@ -329,14 +332,14 @@ const month = now.getMonth() + 1;
         : `<div class="ranking-list">${restaurants.map((r, i) => {
             const rank = i + 1;
             const rankClass = rank <= 3 ? ` rank-${rank}` : '';
-            const rankContent = String(rank);
+            const rankContent = rank === 1 ? '👑' : String(rank);
             const shortAddr = r.address.replace(/^(\S+[시도])\s+(\S+[시군구]).*$/, '$1 $2').replace(/^(\S+)\s*$/, '$1');
             return `
               <div class="ranking-item">
                 <div class="ranking-rank${rankClass}">${rankContent}</div>
+                <span class="ranking-category">${r.category}</span>
                 <div class="ranking-info">
                   <div class="ranking-name">${r.name}</div>
-                  <span class="ranking-category">${r.category}</span>
                   <div class="ranking-address">${shortAddr}</div>
                 </div>
                 <div class="ranking-stat">

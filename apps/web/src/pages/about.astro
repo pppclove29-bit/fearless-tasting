@@ -25,6 +25,7 @@ import AdSlot from '@/components/AdSlot.astro';
 
   <div class="about-page">
     <section class="about-hero">
+      <span class="about-badge">프라이빗 맛집 리뷰 플랫폼</span>
       <h1>무모한 시식가</h1>
       <p class="about-tagline">우리만의 맛집 리스트를 만들고 공유하는 플랫폼</p>
     </section>
@@ -213,26 +214,39 @@ import AdSlot from '@/components/AdSlot.astro';
 
   .about-hero {
     text-align: center;
-    padding: 2rem 0 1.5rem;
+    padding: 2.5rem 0 1.5rem;
+    background: var(--bg-hover);
+    border-radius: 16px;
+    margin-bottom: 1rem;
+  }
+
+  .about-badge {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 100px;
+    margin-bottom: 0.75rem;
   }
 
   .about-hero h1 {
     font-size: 1.8rem;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--text-heading);
-    margin: 0;
+    margin: 0 0 0.4rem;
   }
 
   .about-tagline {
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: var(--text-sub);
-    margin-top: 0.4rem;
   }
 
   .about-section {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 1.5rem;
     margin-bottom: 1rem;
   }

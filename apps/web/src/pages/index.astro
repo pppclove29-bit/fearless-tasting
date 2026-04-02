@@ -334,18 +334,20 @@ import AdSlot from '@/components/AdSlot.astro';
   /* ─── 랜딩 ─── */
   .hero {
     text-align: center;
-    padding: 5rem 1rem 3.5rem;
+    padding: 4rem 1.5rem 3rem;
+    background: var(--bg-hover);
+    border-radius: 16px;
+    margin-bottom: 2rem;
   }
 
   .hero-badge {
     display: inline-block;
-    padding: 0.35rem 0.9rem;
-    background: var(--bg-hover);
-    border: 1px solid var(--border);
+    padding: 0.35rem 1rem;
+    background: var(--text-heading);
+    color: var(--bg);
     border-radius: 100px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--text-sub);
+    font-size: 0.78rem;
+    font-weight: 600;
     margin-bottom: 1.25rem;
   }
 
@@ -707,7 +709,7 @@ import AdSlot from '@/components/AdSlot.astro';
   }
 
   @media (max-width: 600px) {
-    .hero { padding: 3rem 0.5rem 2.5rem; }
+    .hero { padding: 2.5rem 1rem 2rem; }
     .hero-title { font-size: 2rem; }
     .hero-sub { font-size: 0.9rem; }
     .features { grid-template-columns: 1fr; }

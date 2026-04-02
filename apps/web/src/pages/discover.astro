@@ -161,17 +161,6 @@ export const prerender = false;
     transform: translateY(-2px);
   }
 
-  .card-image {
-    width: 100%;
-    height: 160px;
-    background: var(--bg-hover);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    font-size: 2rem;
-  }
-
   .card-body {
     padding: 1rem;
   }
@@ -362,7 +351,6 @@ export const prerender = false;
         const icon = getCategoryIcon(item.category);
         return `
           <div class="discover-card">
-            <div class="card-image">${icon}</div>
             <div class="card-body">
               <span class="card-category">${item.category}</span>
               <div class="card-name">${item.name}</div>

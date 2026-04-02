@@ -5,6 +5,12 @@ export const prerender = false;
 
 <BaseLayout title="내 프로필" description="내 프로필 관리 - 닉네임 수정, 활동 요약, 계정 관리">
   <div class="profile-page" id="profile-page" hidden>
+    <section class="profile-hero">
+      <span class="profile-badge">내 계정</span>
+      <h1 class="profile-hero-title">프로필</h1>
+      <p class="profile-hero-desc">계정 정보와 설정을 관리하세요</p>
+    </section>
+
     <section class="profile-card">
       <div class="profile-header">
         <div class="profile-avatar" id="profile-avatar"></div>
@@ -64,6 +70,37 @@ export const prerender = false;
   .profile-page {
     max-width: 560px;
     margin: 0 auto;
+  }
+
+  .profile-hero {
+    text-align: center;
+    padding: 2.5rem 0 1.5rem;
+    background: var(--bg-hover);
+    border-radius: 16px;
+    margin-bottom: 1rem;
+  }
+
+  .profile-badge {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 100px;
+    margin-bottom: 0.75rem;
+  }
+
+  .profile-hero-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    margin: 0 0 0.4rem;
+  }
+
+  .profile-hero-desc {
+    font-size: 0.9rem;
+    color: var(--text-sub);
   }
 
   .profile-loading {
@@ -208,7 +245,7 @@ export const prerender = false;
   .profile-section {
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: 14px;
     padding: 1.5rem;
     margin-bottom: 1rem;
   }

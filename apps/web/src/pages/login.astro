@@ -4,62 +4,110 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
 <BaseLayout title="로그인" description="카카오 계정으로 간편하게 로그인하세요">
   <div class="login-page">
-    <h1>로그인</h1>
-    <p class="login-desc">카카오 계정으로 간편하게 시작하세요.</p>
+    <section class="login-hero">
+      <span class="login-badge">간편 로그인</span>
+      <h1>로그인</h1>
+      <p class="login-desc">카카오 계정으로 간편하게 시작하세요</p>
+    </section>
 
-    <div id="login-ui" hidden>
-      <a href=`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao` class="kakao-btn">
-        카카오로 시작하기
-      </a>
-    </div>
+    <div class="login-card">
+      <div id="login-ui" hidden>
+        <p class="login-card-desc">카카오 계정으로 3초 만에 가입하고<br/>우리만의 맛집 리스트를 만들어보세요.</p>
+        <a href=`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao` class="kakao-btn">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align: -3px; margin-right: 6px;">
+            <path d="M9 1C4.58 1 1 3.8 1 7.2c0 2.2 1.47 4.13 3.68 5.22-.16.6-.59 2.17-.67 2.51-.1.42.15.41.32.3.13-.09 2.1-1.43 2.95-2.01.55.08 1.12.12 1.72.12 4.42 0 8-2.8 8-6.14S13.42 1 9 1z" fill="currentColor"/>
+          </svg>
+          카카오로 시작하기
+        </a>
+      </div>
 
-    <div class="login-success" id="login-success" hidden>
-      <p>로그인 성공! 이동 중...</p>
+      <div class="login-success" id="login-success" hidden>
+        <p>로그인 성공! 이동 중...</p>
+      </div>
     </div>
   </div>
 </BaseLayout>
 
 <style>
   .login-page {
-    max-width: 400px;
-    margin: 3rem auto;
-    text-align: center;
-    padding: 0 1rem;
+    max-width: 480px;
+    margin: 0 auto;
   }
 
-  h1 {
-    margin-bottom: 0.5rem;
+  .login-hero {
+    text-align: center;
+    padding: 2.5rem 0 1.5rem;
+    background: var(--bg-hover);
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+  }
+
+  .login-badge {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 100px;
+    margin-bottom: 0.75rem;
+  }
+
+  .login-hero h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    margin: 0 0 0.4rem;
   }
 
   .login-desc {
-    color: var(--text-sub);
     font-size: 0.9rem;
-    margin-bottom: 2rem;
+    color: var(--text-sub);
+  }
+
+  .login-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+  }
+
+  .login-card-desc {
+    font-size: 0.88rem;
+    color: var(--text-sub);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
   }
 
   .kakao-btn {
-    display: inline-block;
-    padding: 0.75rem 2rem;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.85rem 2rem;
     background: #FEE500;
     color: #191919;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    border-radius: 8px;
+    border-radius: 12px;
     text-decoration: none;
-    transition: background 0.15s;
+    transition: background 0.15s, transform 0.1s;
   }
 
   .kakao-btn:hover {
     background: #F5DC00;
   }
 
+  .kakao-btn:active {
+    transform: scale(0.98);
+  }
+
   .login-success {
-    margin-top: 1.5rem;
     padding: 1rem;
     background: #f0fdf4;
     border: 1px solid #bbf7d0;
-    border-radius: 8px;
+    border-radius: 10px;
     color: #16a34a;
+    font-size: 0.9rem;
   }
 </style>
 
