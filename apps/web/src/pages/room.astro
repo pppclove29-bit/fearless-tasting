@@ -409,7 +409,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     transition: border-color 0.15s, transform 0.1s;
   }
 
-  .room-restaurant-card:hover { border-color: var(--border-mid); }
+  .room-restaurant-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(13, 148, 136, 0.08); }
   .room-restaurant-card:active { transform: scale(0.99); }
 
   .room-restaurant-card.is-closed {
@@ -565,7 +565,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     align-items: center;
     gap: 0.3rem;
     padding: 0.4rem 0.85rem;
-    background: #6366f1;
+    background: var(--accent);
     color: #fff;
     border: none;
     border-radius: 100px;
@@ -579,7 +579,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     flex-shrink: 0;
   }
 
-  .add-rest-fab:hover { background: #4f46e5; color: #fff; }
+  .add-rest-fab:hover { background: color-mix(in srgb, var(--accent) 85%, #000); color: #fff; }
 
   /* 식당 등록 폼 */
   .add-restaurant-form {
@@ -873,22 +873,25 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .category-filter-btn {
-    padding: 0.3rem 0.7rem;
-    border: 1px solid var(--border-mid);
+    padding: 0.35rem 0.85rem;
+    border: 1.5px solid var(--border);
     border-radius: 100px;
     background: var(--bg-card);
     color: var(--text-sub);
     font-size: 0.8rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+    transition: all 0.15s;
+    font-family: inherit;
   }
 
-  .category-filter-btn:hover { background: var(--bg-hover); }
+  .category-filter-btn:hover { border-color: var(--accent); color: var(--accent); }
 
   .category-filter-btn.active {
-    background: var(--text-heading);
-    color: var(--bg);
-    border-color: var(--text-heading);
+    background: var(--accent-bg);
+    color: var(--accent);
+    border-color: var(--accent);
+    font-weight: 600;
   }
 
   /* ─── 투표 ─── */
@@ -1267,10 +1270,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .stat-section-title {
-    font-size: 0.9rem;
-    font-weight: 600;
+    font-size: 0.82rem;
+    font-weight: 700;
     margin-bottom: 0.75rem;
     color: var(--text-heading);
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid var(--accent);
+    display: inline-block;
   }
 
   .stat-highlight {
@@ -1313,7 +1319,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .stat-bar-fill {
     height: 100%;
-    background: #6366f1;
+    background: var(--accent);
     border-radius: 7px;
     transition: width 0.3s;
     min-width: 4px;
@@ -1402,7 +1408,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-family: inherit;
     transition: all 0.15s;
   }
-  .month-year-btn.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+  .month-year-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
   .month-chart-year { display: none; }
   .month-chart-year.active { display: block; }
@@ -2585,7 +2591,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   // ─── 통계 탭 ───
 
-  const barColors = ['#6366f1','#8b5cf6','#a78bfa','#c084fc','#d8b4fe','#e9d5ff','#f3e8ff','#818cf8','#93c5fd','#7dd3fc'];
+  const barColors = ['#0d9488','#14b8a6','#2dd4bf','#5eead4','#99f6e4','#ccfbf1','#f0fdfa','#06b6d4','#22d3ee','#67e8f9'];
 
   function renderBarChart(entries: [string, number][]): string {
     if (entries.length === 0) return '';
@@ -2620,9 +2626,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const isDark = document.documentElement.classList.contains('dark');
     const gridColor = isDark ? 'rgba(255,255,255,0.15)' : '#e8e8e8';
     const labelColor = isDark ? 'rgba(255,255,255,0.6)' : '#666';
-    const polyStroke = isDark ? '#818cf8' : '#6366f1';
-    const polyFill = isDark ? 'rgba(129,140,248,0.2)' : 'rgba(99,102,241,0.12)';
-    const dotColor = isDark ? '#a5b4fc' : '#6366f1';
+    const polyStroke = isDark ? '#2dd4bf' : '#0d9488';
+    const polyFill = isDark ? 'rgba(45,212,191,0.2)' : 'rgba(13,148,136,0.12)';
+    const dotColor = isDark ? '#5eead4' : '#0d9488';
 
     // 그리드 원
     const gridCircles = [1, 2, 3, 4, 5].map((lv) => {
@@ -2796,7 +2802,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${reorderedDays.map((count, i) => `
             <div class="day-bar-col">
               <div class="day-bar-count">${count || ''}</div>
-              <div class="day-bar" style="height:${Math.max(count / maxDay * 70, 2)}px;background:${i >= 5 ? '#f87171' : '#6366f1'};"></div>
+              <div class="day-bar" style="height:${Math.max(count / maxDay * 70, 2)}px;background:${i >= 5 ? '#f87171' : 'var(--accent)'};"></div>
               <div class="day-bar-label">${dayLabels[i]}</div>
             </div>`).join('')}
         </div>
