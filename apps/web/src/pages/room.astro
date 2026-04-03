@@ -32,19 +32,41 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <style is:global>
-  .back-link {
-    display: inline-flex;
+  /* 브레드크럼 */
+  .breadcrumb {
+    display: flex;
     align-items: center;
     gap: 0.3rem;
     margin-bottom: 1rem;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+  }
+
+  .breadcrumb a {
     color: var(--text-muted);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.15s;
+    white-space: nowrap;
   }
 
-  .back-link:hover { color: var(--text-heading); }
+  .breadcrumb a:hover { color: var(--text-heading); }
+
+  .breadcrumb .bc-sep {
+    color: var(--border-mid);
+    font-size: 0.7rem;
+    user-select: none;
+  }
+
+  .breadcrumb .bc-current {
+    color: var(--text-heading);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
 
   .room-header {
     background: var(--bg-card);
@@ -1409,6 +1431,263 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.85rem;
   }
 
+  /* 빈 상태 개선 */
+  .empty-state {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    color: var(--text-muted);
+  }
+
+  .empty-state-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.6;
+  }
+
+  .empty-state-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-sub);
+    margin-bottom: 0.35rem;
+  }
+
+  .empty-state-desc {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.5rem 1rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    border: none;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.15s;
+    font-family: inherit;
+  }
+
+  .empty-state-cta:hover { opacity: 0.85; }
+
+  /* Notion식 공유 팝오버 */
+  .share-popover {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    margin-top: 0.5rem;
+    overflow: hidden;
+    animation: sharePopoverIn 0.15s ease;
+  }
+
+  .share-popover[hidden] { display: none !important; }
+
+  @keyframes sharePopoverIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .share-popover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1rem 0.5rem;
+  }
+
+  .share-popover-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .share-popover-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.2rem;
+    line-height: 1;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+
+  .share-popover-close:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+  }
+
+  .share-popover-body {
+    padding: 0 1rem 1rem;
+  }
+
+  .share-section {
+    padding: 0.6rem 0;
+  }
+
+  .share-section + .share-section {
+    border-top: 1px solid var(--border-light);
+  }
+
+  .share-section-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-sub);
+    margin-bottom: 0.4rem;
+  }
+
+  .share-section-label svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  .share-section-desc {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+  }
+
+  .share-link-row {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .share-link-input {
+    flex: 1;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-family: monospace;
+    background: var(--bg-hover);
+    color: var(--text-sub);
+    min-width: 0;
+  }
+
+  .share-copy-btn {
+    padding: 0.45rem 0.75rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+
+  .share-copy-btn:hover { opacity: 0.85; }
+
+  .share-action-text {
+    display: block;
+    margin-top: 0.35rem;
+    padding: 0;
+    border: none;
+    background: none;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+
+  .share-action-text:hover { color: var(--text-heading); }
+
+  .share-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .share-toggle-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .share-toggle-label input { display: none; }
+
+  .share-toggle-track {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background: var(--border-mid);
+    border-radius: 100px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .share-toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+
+  .share-toggle-label input:checked + .share-toggle-track {
+    background: #22c55e;
+  }
+
+  .share-toggle-label input:checked + .share-toggle-track::after {
+    transform: translateX(16px);
+  }
+
+  .share-member-avatars {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+  }
+
+  .share-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--bg-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg-card);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-sub);
+    cursor: default;
+  }
+
+  .share-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .share-avatar-more {
+    background: var(--bg-hover);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+  }
+
   /* 지역 탭 */
   .region-tab {
     display: flex;
@@ -1940,24 +2219,68 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const expiryText = '';
 
     content.innerHTML = `
-      <a href="/" class="back-link">&larr; 내 방 목록</a>
+      <nav class="breadcrumb">
+        <a href="/">홈</a>
+        <span class="bc-sep">›</span>
+        <a href="/rooms">내 방</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-current">${escapeHtml(currentRoom.name)}</span>
+      </nav>
       <div class="room-header">
         <div class="room-name-row">
           <h1 id="room-name-display">${escapeHtml(currentRoom.name)}</h1>
           ${isOwner() ? '<button type="button" class="btn-edit-name" id="edit-name-btn" title="방 이름 변경">✎</button>' : ''}
           <input type="text" id="room-name-input" class="room-name-input" maxlength="100" hidden />
         </div>
-        <div class="invite-row">
-          <button type="button" class="invite-btn invite-btn--member" id="invite-member-btn">${svgLink} 방 초대${expiryText}</button>
-        </div>
-        <div class="invite-desc">
-          <span>방 초대: 링크를 복사해서 친구에게 보내세요</span>
-        </div>
         <div class="room-header-actions">
-          ${isOwner() ? `<button type="button" class="room-action-chip ${currentRoom.isPublic ? 'room-action-chip--active' : ''}" id="toggle-public-btn">${svgGlobe} 공개 방${currentRoom.isPublic ? ' · ON' : ''}</button>` : ''}
+          <button type="button" class="room-action-chip" id="share-popover-btn">${svgLink} 공유</button>
           ${isOwner()
             ? `<button type="button" class="room-action-chip room-action-chip--danger room-action-chip--right" id="delete-room-btn">${svgTrash} 방 삭제</button>`
             : `<button type="button" class="room-action-chip room-action-chip--danger room-action-chip--right" id="leave-room-btn">${svgExit} 방 나가기</button>`}
+        </div>
+
+        <!-- Notion식 공유 팝오버 -->
+        <div id="share-popover" class="share-popover" hidden>
+          <div class="share-popover-header">
+            <span class="share-popover-title">공유</span>
+            <button type="button" class="share-popover-close" id="share-popover-close">&times;</button>
+          </div>
+          <div class="share-popover-body">
+            <div class="share-section">
+              <div class="share-section-label">${svgLink} 초대 링크</div>
+              <div class="share-link-row">
+                <input type="text" class="share-link-input" id="share-invite-url" value="${getInviteLink()}" readonly />
+                <button type="button" class="share-copy-btn" id="copy-invite-btn">복사</button>
+              </div>
+              ${isOwner() ? '<button type="button" class="share-action-text" id="invite-regen-action">초대 코드 재생성</button>' : ''}
+            </div>
+            ${isOwner() ? `
+            <div class="share-section">
+              <div class="share-toggle-row">
+                <div>
+                  <div class="share-section-label">${svgGlobe} 공개 방</div>
+                  <div class="share-section-desc">누구나 식당 목록과 리뷰를 볼 수 있습니다</div>
+                </div>
+                <label class="share-toggle-label">
+                  <input type="checkbox" id="toggle-public-cb" ${currentRoom.isPublic ? 'checked' : ''} />
+                  <span class="share-toggle-track"></span>
+                </label>
+              </div>
+            </div>` : ''}
+            <div class="share-section share-members-preview">
+              <div class="share-section-label">멤버 (${currentRoom.members.length}명)</div>
+              <div class="share-member-avatars">
+                ${currentRoom.members.slice(0, 6).map(m => {
+                  const nick = escapeHtml(m.user.nickname);
+                  const roleLabel = m.role === 'owner' ? '방장' : (m.role === 'manager' ? '매니저' : '');
+                  return m.user.profileImageUrl
+                    ? `<div class="share-avatar" title="${nick}${roleLabel ? ' · ' + roleLabel : ''}"><img src="${escapeHtml(m.user.profileImageUrl)}" alt="${nick}" /></div>`
+                    : `<div class="share-avatar" title="${nick}${roleLabel ? ' · ' + roleLabel : ''}"><span>${nick.charAt(0)}</span></div>`;
+                }).join('')}
+                ${currentRoom.members.length > 6 ? `<div class="share-avatar share-avatar-more">+${currentRoom.members.length - 6}</div>` : ''}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2036,38 +2359,60 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
 
     // 방 초대 버튼
-    const inviteMemberBtn = document.getElementById('invite-member-btn');
-    if (inviteMemberBtn) {
-      inviteMemberBtn.addEventListener('click', () => {
-        const existing = inviteMemberBtn.querySelector('.invite-actions');
-        if (existing) { existing.remove(); return; }
+    // 공유 팝오버
+    const sharePopoverBtn = document.getElementById('share-popover-btn');
+    const sharePopover = document.getElementById('share-popover');
+    if (sharePopoverBtn && sharePopover) {
+      sharePopoverBtn.addEventListener('click', () => {
+        sharePopover.hidden = !sharePopover.hidden;
+      });
+      document.getElementById('share-popover-close')?.addEventListener('click', () => {
+        sharePopover.hidden = true;
+      });
 
+      // 초대 링크 복사
+      document.getElementById('copy-invite-btn')?.addEventListener('click', () => {
         navigator.clipboard.writeText(getInviteLink());
+        const btn = document.getElementById('copy-invite-btn');
+        if (btn) { btn.textContent = '복사됨!'; setTimeout(() => { btn.textContent = '복사'; }, 1500); }
         showToast('초대 링크가 복사되었습니다!', 'success');
+      });
 
-        const dropdown = document.createElement('div');
-        dropdown.className = 'invite-actions';
-        dropdown.innerHTML = `
-          ${isOwner() ? '<button type="button" class="invite-action-item" id="invite-regen-action">초대 코드 재생성</button>' : ''}
-        `;
-        inviteMemberBtn.appendChild(dropdown);
+      // 초대 코드 재생성
+      document.getElementById('invite-regen-action')?.addEventListener('click', async () => {
+        if (!await showConfirm('초대 링크를 재생성하시겠습니까? 기존 링크는 사용할 수 없게 됩니다.')) return;
+        try {
+          const result = await regenerateInviteCode(currentRoom.id);
+          currentRoom.inviteCode = result.inviteCode;
+          currentRoom.inviteCodeExpiresAt = result.inviteCodeExpiresAt;
+          const urlInput = document.getElementById('share-invite-url') as HTMLInputElement | null;
+          if (urlInput) urlInput.value = getInviteLink();
+          showToast('초대 링크가 재생성되었습니다.', 'success');
+        } catch { showToast('초대 링크 재생성에 실패했습니다.'); }
+      });
 
-        dropdown.querySelector('#invite-regen-action')?.addEventListener('click', async (ev) => {
-          ev.stopPropagation();
-          dropdown.remove();
-          if (!await showConfirm('초대 링크를 재생성하시겠습니까? 기존 링크는 사용할 수 없게 됩니다.')) return;
+      // 공개 방 토글
+      const togglePublicCb = document.getElementById('toggle-public-cb') as HTMLInputElement | null;
+      if (togglePublicCb) {
+        togglePublicCb.addEventListener('change', async () => {
+          const newValue = togglePublicCb.checked;
           try {
-            const result = await regenerateInviteCode(currentRoom.id);
-            currentRoom.inviteCode = result.inviteCode;
-            currentRoom.inviteCodeExpiresAt = result.inviteCodeExpiresAt;
-            showToast('초대 링크가 재생성되었습니다.', 'success');
-          } catch { showToast('초대 링크 재생성에 실패했습니다.'); }
+            const result = await toggleRoomPublic(currentRoom.id, newValue);
+            currentRoom.isPublic = result.isPublic;
+            togglePublicCb.checked = result.isPublic;
+            showToast(result.isPublic ? '공개 방으로 설정되었습니다!' : '비공개로 전환되었습니다.', 'success');
+          } catch {
+            togglePublicCb.checked = !newValue;
+            showToast('공개 설정 변경에 실패했습니다.');
+          }
         });
+      }
 
-        const close = (ev: MouseEvent) => {
-          if (!dropdown.contains(ev.target as Node)) { dropdown.remove(); document.removeEventListener('click', close); }
-        };
-        setTimeout(() => document.addEventListener('click', close), 0);
+      // 팝오버 외부 클릭 시 닫기
+      document.addEventListener('click', (e) => {
+        if (!sharePopover.hidden && !sharePopover.contains(e.target as Node) && !sharePopoverBtn.contains(e.target as Node)) {
+          sharePopover.hidden = true;
+        }
       });
     }
 
@@ -2088,26 +2433,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         location.href = '/';
       } catch (err) { showToast(err instanceof Error ? err.message : '방 나가기에 실패했습니다.'); }
     });
-
-    // 공개 방 토글 버튼
-    const togglePublicBtn = document.getElementById('toggle-public-btn');
-    if (togglePublicBtn) {
-      togglePublicBtn.addEventListener('click', async () => {
-        const newValue = !currentRoom.isPublic;
-        const msg = newValue
-          ? '방을 공개하시겠습니까? 누구나 식당 목록과 리뷰를 볼 수 있습니다.'
-          : '방을 비공개로 전환하시겠습니까?';
-        if (!await showConfirm(msg)) return;
-        try {
-          const result = await toggleRoomPublic(currentRoom.id, newValue);
-          currentRoom.isPublic = result.isPublic;
-          const svgGlobe = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
-          togglePublicBtn.innerHTML = `${svgGlobe} 공개 방${result.isPublic ? ' · ON' : ''}`;
-          togglePublicBtn.classList.toggle('room-action-chip--active', result.isPublic);
-          showToast(result.isPublic ? '공개 방으로 설정되었습니다!' : '비공개로 전환되었습니다.', 'success');
-        } catch { showToast('공개 설정 변경에 실패했습니다.'); }
-      });
-    }
   }
 
   function _switchToTab(tabName: string) {
@@ -2345,7 +2670,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const restaurants = currentRoom.restaurants;
 
     if (restaurants.length === 0) {
-      panel.innerHTML = '<p class="empty-text">아직 등록된 식당이 없습니다. 식당을 추가하면 통계를 확인할 수 있습니다.</p>';
+      panel.innerHTML = `<div class="empty-state"><div class="empty-state-icon">&#x1F4CA;</div><div class="empty-state-title">아직 통계 데이터가 없어요</div><div class="empty-state-desc">식당을 추가하고 리뷰를 남기면<br/>방 통계를 확인할 수 있어요</div></div>`;
       return;
     }
 
@@ -2763,7 +3088,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       ? `<h3 class="section-subtitle">마감된 투표</h3>${closedPolls.map(renderPollCard).join('')}`
       : '';
 
-    const emptyHtml = polls.length === 0 ? '<p class="empty-text">아직 투표가 없습니다. 첫 투표를 만들어보세요!</p>' : '';
+    const emptyHtml = polls.length === 0 ? '<div class="empty-state"><div class="empty-state-icon">&#x1F5F3;&#xFE0F;</div><div class="empty-state-title">아직 투표가 없어요</div><div class="empty-state-desc">멤버들과 함께 다음 맛집을 정해보세요!</div></div>' : '';
 
     panel.innerHTML = createFormHtml + emptyHtml + activePollsHtml + closedPollsHtml;
 
@@ -2840,7 +3165,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
 
     if (items.length === 0) {
-      panel.innerHTML = '<p class="empty-text">아직 활동 내역이 없습니다. 식당을 등록하거나 리뷰를 남겨보세요.</p>';
+      panel.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#x1F4DD;</div><div class="empty-state-title">아직 활동 내역이 없어요</div><div class="empty-state-desc">식당을 등록하거나 리뷰를 남기면<br/>여기에 활동이 기록돼요</div></div>';
       return;
     }
 
@@ -3058,7 +3383,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     if (!listEl) return;
 
     if (restTotal === 0) {
-      listEl.innerHTML = `<p class="empty-text">${searchQuery || activeCategory ? '검색 결과가 없습니다.' : '등록된 식당이 없습니다.'}</p>`;
+      if (searchQuery || activeCategory) {
+        listEl.innerHTML = '<p class="empty-text">검색 결과가 없습니다.</p>';
+      } else {
+        listEl.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">&#x1F374;</div>
+            <div class="empty-state-title">아직 등록된 식당이 없어요</div>
+            <div class="empty-state-desc">첫 번째 맛집을 등록하고<br/>친구들과 리뷰를 나눠보세요!</div>
+            <a href="/room/add?roomId=${currentRoom.id}" class="empty-state-cta">+ 식당 등록하기</a>
+          </div>`;
+      }
       return;
     }
 

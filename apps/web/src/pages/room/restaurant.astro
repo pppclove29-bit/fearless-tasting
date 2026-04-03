@@ -7,7 +7,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     <p id="loading-msg" class="status-msg">로딩 중...</p>
     <p id="error-msg" class="status-msg error" hidden></p>
     <div id="restaurant-content" hidden>
-      <a id="back-link" href="/" class="back-link">&larr; 방으로 돌아가기</a>
+      <nav id="breadcrumb" class="breadcrumb"></nav>
+      <div id="rating-summary" hidden></div>
       <div id="restaurant-detail-area"></div>
     </div>
   </div>
@@ -27,19 +28,292 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <style is:global>
-  .back-link {
-    display: inline-flex;
+  /* 브레드크럼 */
+  .breadcrumb {
+    display: flex;
     align-items: center;
     gap: 0.3rem;
     margin-bottom: 1rem;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+  }
+
+  .breadcrumb a {
     color: var(--text-muted);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.15s;
+    white-space: nowrap;
   }
 
-  .back-link:hover { color: var(--text-heading); }
+  .breadcrumb a:hover { color: var(--text-heading); }
+
+  .breadcrumb .bc-sep {
+    color: var(--border-mid);
+    font-size: 0.7rem;
+    user-select: none;
+  }
+
+  .breadcrumb .bc-current {
+    color: var(--text-heading);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+
+  /* 평점 요약 히어로 (망고플레이트 스타일) */
+  .rating-hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  .rating-hero-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    flex-shrink: 0;
+    min-width: 90px;
+  }
+
+  .rating-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid #e6a817;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(230, 168, 23, 0.06);
+  }
+
+  .rating-circle-num {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .rating-circle-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .rating-hero-stars {
+    color: #e6a817;
+    font-size: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  .rating-hero-stars .star-muted { color: var(--border-mid); }
+
+  .rating-hero-count {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  .rating-hero-bars {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
+  .rating-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .rating-bar-label {
+    font-size: 0.75rem;
+    color: var(--text-sub);
+    font-weight: 500;
+    min-width: 3em;
+    text-align: right;
+  }
+
+  .rating-bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-hover);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .rating-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: #e6a817;
+    transition: width 0.5s ease;
+  }
+
+  .rating-bar-value {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    min-width: 1.8em;
+  }
+
+  .rating-hero-meta {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-light);
+  }
+
+  .rating-meta-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+  }
+
+  .rating-meta-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .rating-meta-value.positive { color: #16a34a; }
+  .rating-meta-value.negative { color: #dc2626; }
+
+  .rating-meta-label {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
+  .rating-hero-empty {
+    text-align: center;
+    padding: 1rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 480px) {
+    .rating-hero {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+    }
+    .rating-hero-score {
+      flex-direction: row;
+      gap: 1rem;
+      min-width: auto;
+    }
+    .rating-hero-score .rating-hero-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+  }
+
+  /* 빈 상태 개선 */
+  .empty-state {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    color: var(--text-muted);
+  }
+
+  .empty-state-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.6;
+  }
+
+  .empty-state-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-sub);
+    margin-bottom: 0.35rem;
+  }
+
+  .empty-state-desc {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.5rem 1rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    border: none;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+
+  .empty-state-cta:hover { opacity: 0.85; }
+
+  /* 리뷰 폼 카드 (망고플레이트식 섹션 구분) */
+  .review-form-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 0.6rem;
+    overflow: hidden;
+  }
+
+  .review-form-card-header {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-sub);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .review-form-card-body {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .review-form-toggles {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .review-form-toggle-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    cursor: pointer;
+  }
+
+  .review-form-toggle-item input[type="checkbox"] {
+    accent-color: #16a34a;
+    width: 16px;
+    height: 16px;
+  }
+
+  .review-form-toggle-text {
+    font-weight: 500;
+  }
 
   .btn-danger-sm {
     padding: 0.4rem 0.75rem;
@@ -1148,10 +1422,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const loadingMsg = document.getElementById('loading-msg');
     const errorMsg = document.getElementById('error-msg');
     const restaurantContent = document.getElementById('restaurant-content');
-    const backLink = document.getElementById('back-link') as HTMLAnchorElement | null;
+    const breadcrumb = document.getElementById('breadcrumb');
+    const ratingSummary = document.getElementById('rating-summary');
     const area = document.getElementById('restaurant-detail-area');
 
-    if (!loadingMsg || !errorMsg || !restaurantContent || !backLink || !area) return;
+    if (!loadingMsg || !errorMsg || !restaurantContent || !breadcrumb || !ratingSummary || !area) return;
 
     let currentRoom: RoomDetailResponse;
     let currentUser: AuthUser;
@@ -1342,13 +1617,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         ? ''
         : `<button type="button" class="btn-outline-sm toggle-review-form-btn" data-visit-id="${visit.id}">리뷰 작성</button>
            <div class="review-form" id="${reviewFormId}" style="display:none;">
-             <div class="review-form-section">
-               <span class="review-form-label">종합 평점</span>
-               ${starRatingHtml('new-review-rating', 3)}
+             <div class="review-form-card">
+               <div class="review-form-card-header">종합 평점</div>
+               <div class="review-form-card-body" style="text-align:center;">
+                 ${starRatingHtml('new-review-rating', 3)}
+               </div>
              </div>
-             <div class="review-form-section">
-               <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
-               <div class="detail-rating-inline">
+             <div class="review-form-card">
+               <div class="review-form-card-header">세부 평점 <span class="optional-hint">(선택 · 같은 별 재클릭 시 취소)</span></div>
+               <div class="review-form-card-body">
                  ${detailSliderHtml('맛', 'new-review-taste', 0)}
                  ${detailSliderHtml('가성비', 'new-review-value', 0)}
                  ${detailSliderHtml('서비스', 'new-review-service', 0)}
@@ -1356,12 +1633,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                  ${detailSliderHtml('접근성', 'new-review-accessibility', 0)}
                </div>
              </div>
-             <textarea class="new-review-content" placeholder="한줄 리뷰 (선택)"></textarea>
-             <div class="review-form-extras">
-               <label class="revisit-toggle"><input type="checkbox" class="new-review-revisit" checked /> 재방문 의사</label>
-               <input type="text" class="new-review-fav-menu" placeholder="또 먹고 싶은 메뉴 (선택)" maxlength="200" />
+             <div class="review-form-card">
+               <div class="review-form-card-header">한줄 리뷰 <span class="optional-hint">(선택)</span></div>
+               <div class="review-form-card-body">
+                 <textarea class="new-review-content" placeholder="이 식당에 대한 한줄 평을 남겨주세요"></textarea>
+               </div>
              </div>
-             <button type="button" class="btn-primary-sm submit-visit-review-btn" data-visit-id="${visit.id}">리뷰 작성</button>
+             <div class="review-form-card">
+               <div class="review-form-card-body">
+                 <div class="review-form-toggles">
+                   <label class="review-form-toggle-item"><input type="checkbox" class="new-review-revisit" checked /><span class="review-form-toggle-text">또 가고 싶어요</span></label>
+                 </div>
+                 <input type="text" class="new-review-fav-menu" placeholder="또 먹고 싶은 메뉴 (선택)" maxlength="200" style="margin-top:0.5rem;" />
+               </div>
+             </div>
+             <button type="button" class="btn-primary-sm submit-visit-review-btn" data-visit-id="${visit.id}" style="width:100%;padding:0.65rem;">리뷰 등록</button>
            </div>`;
 
       const reviewsHtml = visit.reviews.map(renderReviewCard).join('');
@@ -1380,7 +1666,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </div>
           ${displayMemo ? `<div class="visit-memo">${escapeHtml(displayMemo)}</div>` : ''}
           <div class="visit-reviews">
-            ${reviewsHtml || '<p class="empty-text">아직 리뷰가 없습니다.</p>'}
+            ${reviewsHtml || '<p class="empty-text" style="padding:0.75rem 0;">이 방문에 대한 리뷰를 남겨보세요</p>'}
           </div>
           ${reviewFormHtml}
         </div>
@@ -1409,8 +1695,87 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       renderRestaurantDetail(detail);
     }
 
+    function renderRatingSummary(detail: Awaited<ReturnType<typeof fetchRoomRestaurant>>) {
+      const allReviews = detail.visits.flatMap(v => v.reviews);
+      if (allReviews.length === 0) {
+        ratingSummary.innerHTML = `
+          <div class="rating-hero">
+            <div class="rating-hero-empty">아직 리뷰가 없습니다. 첫 번째 리뷰를 남겨보세요!</div>
+          </div>`;
+        ratingSummary.hidden = false;
+        return;
+      }
+
+      const avg = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+      const avgRating = avg(allReviews.map(r => r.rating));
+      const roundedAvg = Math.round(avgRating * 10) / 10;
+
+      const subRatings = [
+        { key: 'tasteRating', label: '맛' },
+        { key: 'valueRating', label: '가성비' },
+        { key: 'serviceRating', label: '서비스' },
+        { key: 'cleanlinessRating', label: '청결' },
+        { key: 'accessibilityRating', label: '접근성' },
+      ] as const;
+
+      const subBarsHtml = subRatings.map(({ key, label }) => {
+        const vals = allReviews.map(r => r[key]).filter((v): v is number => v != null && v > 0);
+        if (vals.length === 0) return '';
+        const subAvg = avg(vals);
+        const pct = (subAvg / 5) * 100;
+        return `
+          <div class="rating-bar-row">
+            <span class="rating-bar-label">${label}</span>
+            <div class="rating-bar-track"><div class="rating-bar-fill" style="width:${pct}%"></div></div>
+            <span class="rating-bar-value">${(Math.round(subAvg * 10) / 10).toFixed(1)}</span>
+          </div>`;
+      }).filter(Boolean).join('');
+
+      const starsHtml = Array.from({ length: 5 }, (_, i) =>
+        `<span class="${i < Math.round(avgRating) ? '' : 'star-muted'}">★</span>`
+      ).join('');
+
+      const revisitYes = allReviews.filter(r => r.wouldRevisit !== false).length;
+      const revisitRate = Math.round((revisitYes / allReviews.length) * 100);
+
+      ratingSummary.innerHTML = `
+        <div class="rating-hero">
+          <div class="rating-hero-score">
+            <div class="rating-circle">
+              <span class="rating-circle-num">${roundedAvg.toFixed(1)}</span>
+              <span class="rating-circle-label">평균</span>
+            </div>
+            <div class="rating-hero-info">
+              <div class="rating-hero-stars">${starsHtml}</div>
+              <div class="rating-hero-count">리뷰 ${allReviews.length}개 · 방문 ${detail.visits.length}회</div>
+            </div>
+          </div>
+          ${subBarsHtml ? `<div class="rating-hero-bars">${subBarsHtml}
+            <div class="rating-hero-meta">
+              <div class="rating-meta-item">
+                <span class="rating-meta-value ${revisitRate >= 50 ? 'positive' : 'negative'}">${revisitRate}%</span>
+                <span class="rating-meta-label">재방문 의사</span>
+              </div>
+            </div>
+          </div>` : ''}
+        </div>`;
+      ratingSummary.hidden = false;
+    }
+
     function renderRestaurantDetail(detail: Awaited<ReturnType<typeof fetchRoomRestaurant>>) {
       try {
+        // 브레드크럼
+        breadcrumb.innerHTML = `
+          <a href="/rooms">내 방</a>
+          <span class="bc-sep">›</span>
+          <a href="/room?id=${currentRoom.id}">${escapeHtml(currentRoom.name)}</a>
+          <span class="bc-sep">›</span>
+          <span class="bc-current">${escapeHtml(detail.name)}</span>
+        `;
+
+        // 평점 요약
+        renderRatingSummary(detail);
+
         const canEditRest = detail.addedById === currentUser.id || isManagerOrAbove();
         let restMenuHtml = '';
         if (canEditRest) {
@@ -1423,18 +1788,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
 
         const helpHintHtml = sortedVisits.length === 0
-          ? `<div class="inline-help-hint">
-              <span class="inline-help-icon">?</span>
-              <div>
-                <strong>처음이신가요?</strong>
-                <p>위의 "방문 기록 추가"에서 날짜를 선택하고 등록하세요. 방문을 추가하면 리뷰를 작성할 수 있습니다.</p>
-              </div>
+          ? `<div class="empty-state">
+              <div class="empty-state-icon">&#x1F37D;&#xFE0F;</div>
+              <div class="empty-state-title">아직 방문 기록이 없어요</div>
+              <div class="empty-state-desc">방문을 추가하면 리뷰를 작성할 수 있어요.<br/>첫 번째 방문을 기록해 보세요!</div>
+              <a href="/room/add?roomId=${currentRoom.id}&restaurantId=${restaurantId}&name=${encodeURIComponent(detail.name)}" class="empty-state-cta">+ 첫 방문 추가하기</a>
             </div>`
           : '';
 
         const visitsHtml = sortedVisits.length > 0
           ? sortedVisits.map((v, i) => renderVisitCard(v, i)).join('')
-          : '<p class="empty-text">아직 방문 기록이 없습니다.</p>';
+          : '';
 
         area.innerHTML = `
           <div class="room-rest-detail">
@@ -1444,10 +1808,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <span class="category-badge">${escapeHtml(detail.category)}</span>
               <span class="detail-actions">${restMenuHtml}</span>
             </div>
+            ${sortedVisits.length > 0 ? `
             <div class="visits-heading-row">
               <h3 class="visits-heading">방문 기록 (${detail.visits.length})</h3>
               <a href="/room/add?roomId=${currentRoom.id}&restaurantId=${restaurantId}&name=${encodeURIComponent(detail.name)}" class="btn-primary-sm" style="text-decoration:none;">+ 방문 추가</a>
-            </div>
+            </div>` : ''}
             ${helpHintHtml}
             ${sortedVisits.length > 0 ? `
               <div class="visit-carousel-nav">
@@ -1844,7 +2209,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       }
 
       restaurantId = rid;
-      backLink.href = `/room?id=${roomId}`;
 
       try {
         const [user, room, detail] = await Promise.all([
