@@ -2278,10 +2278,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <div class="share-member-avatars">
                 ${currentRoom.members.slice(0, 6).map(m => {
                   const nick = escapeHtml(m.user.nickname);
-                  const roleLabel = m.role === 'owner' ? '방장' : (m.role === 'manager' ? '매니저' : '');
+                  const rl = m.role === 'owner' ? '방장' : (m.role === 'manager' ? '매니저' : '');
                   return m.user.profileImageUrl
-                    ? `<div class="share-avatar" title="${nick}${roleLabel ? ' · ' + roleLabel : ''}"><img src="${escapeHtml(m.user.profileImageUrl)}" alt="${nick}" /></div>`
-                    : `<div class="share-avatar" title="${nick}${roleLabel ? ' · ' + roleLabel : ''}"><span>${nick.charAt(0)}</span></div>`;
+                    ? `<div class="share-avatar" title="${nick}${rl ? ' · ' + rl : ''}"><img src="${escapeHtml(m.user.profileImageUrl)}" alt="${nick}" /></div>`
+                    : `<div class="share-avatar" title="${nick}${rl ? ' · ' + rl : ''}"><span>${nick.charAt(0)}</span></div>`;
                 }).join('')}
                 ${currentRoom.members.length > 6 ? `<div class="share-avatar share-avatar-more">+${currentRoom.members.length - 6}</div>` : ''}
               </div>
@@ -4296,7 +4296,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       currentRoom = room;
       loadingMsg.hidden = true;
       renderPage();
-    } catch {
+    } catch (err) {
+      console.error('[room] load failed:', err);
       loadingMsg.hidden = true;
       errorMsg.textContent = '방 정보를 불러올 수 없습니다.';
       errorMsg.hidden = false;
