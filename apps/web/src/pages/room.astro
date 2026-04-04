@@ -2211,6 +2211,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   function isOwner(): boolean { return myRole === 'owner'; }
   function isManagerOrAbove(): boolean { return myRole === 'owner' || myRole === 'manager'; }
 
+  function getInviteLink() {
+    return `${location.origin}/join?code=${currentRoom.inviteCode}`;
+  }
+
   // ─── 렌더링 ───
 
   function renderPage() {
@@ -2360,11 +2364,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     }
 
-    function getInviteLink() {
-      return `${location.origin}/join?code=${currentRoom.inviteCode}`;
-    }
-
-    // 방 초대 버튼
     // 공유 팝오버
     const sharePopoverBtn = document.getElementById('share-popover-btn');
     const sharePopover = document.getElementById('share-popover');
@@ -2868,33 +2867,33 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           const tags: string[] = [];
           // 탐험가 vs 단골러
           if (m.explorerRate !== null) {
-            if (m.explorerRate >= 80) tags.push('<span class="behavior-tag explorer">🧭 탐험가 ' + m.explorerRate + '%</span>');
-            else if (m.explorerRate <= 30) tags.push('<span class="behavior-tag regular">🏠 단골러 ' + (100 - m.explorerRate) + '%</span>');
-            else tags.push('<span class="behavior-tag balanced">⚖️ 균형파 ' + m.explorerRate + '% 탐험</span>');
+            if (m.explorerRate >= 80) tags.push('<span class="behavior-tag explorer" title="방문한 식당 중 ' + m.explorerRate + '%가 새로운 곳이에요">🧭 탐험가 ' + m.explorerRate + '%</span>');
+            else if (m.explorerRate <= 30) tags.push('<span class="behavior-tag regular" title="같은 식당을 자주 재방문해요 (새 식당 ' + m.explorerRate + '%)">🏠 단골러 ' + (100 - m.explorerRate) + '%</span>');
+            else tags.push('<span class="behavior-tag balanced" title="새로운 곳과 단골집을 골고루 다녀요">⚖️ 균형파 ' + m.explorerRate + '% 탐험</span>');
           }
           // 카테고리 편식
           if (m.categoryBias) {
             if (m.categoryBias.rate !== null && m.categoryBias.rate >= 60) {
-              tags.push('<span class="behavior-tag picky">🍽️ ' + escapeHtml(m.categoryBias.category) + ' 올인 ' + m.categoryBias.rate + '%</span>');
+              tags.push('<span class="behavior-tag picky" title="전체 방문의 ' + m.categoryBias.rate + '%가 ' + escapeHtml(m.categoryBias.category) + '이에요">🍽️ ' + escapeHtml(m.categoryBias.category) + ' 올인 ' + m.categoryBias.rate + '%</span>');
             } else if (m.categoryBias.uniqueCategories >= 5) {
-              tags.push('<span class="behavior-tag diverse">🌈 잡식성 (' + m.categoryBias.uniqueCategories + '종)</span>');
+              tags.push('<span class="behavior-tag diverse" title="' + m.categoryBias.uniqueCategories + '가지 다양한 카테고리를 경험했어요">🌈 잡식성 (' + m.categoryBias.uniqueCategories + '종)</span>');
             }
           }
           // 평가 성향
           if (m.ratingTendency) {
-            tags.push('<span class="behavior-tag tendency">👍 ' + m.ratingTendency.generousOn + '에 후함 ' + m.ratingTendency.generousAvg + '</span>');
-            tags.push('<span class="behavior-tag tendency-strict">👎 ' + m.ratingTendency.strictOn + '에 엄격 ' + m.ratingTendency.strictAvg + '</span>');
+            tags.push('<span class="behavior-tag tendency" title="세부 평점 중 ' + m.ratingTendency.generousOn + ' 항목에 가장 높은 점수(평균 ' + m.ratingTendency.generousAvg + ')를 줘요">👍 ' + m.ratingTendency.generousOn + '에 후함 ' + m.ratingTendency.generousAvg + '</span>');
+            tags.push('<span class="behavior-tag tendency-strict" title="세부 평점 중 ' + m.ratingTendency.strictOn + ' 항목에 가장 낮은 점수(평균 ' + m.ratingTendency.strictAvg + ')를 줘요">👎 ' + m.ratingTendency.strictOn + '에 엄격 ' + m.ratingTendency.strictAvg + '</span>');
           }
           // 리뷰 성실도
           if (m.reviewDiligence !== null) {
-            if (m.reviewDiligence >= 90) tags.push('<span class="behavior-tag diligent">✍️ 리뷰 개근 ' + m.reviewDiligence + '%</span>');
-            else if (m.reviewDiligence <= 40) tags.push('<span class="behavior-tag lazy">😴 귀차니즘 ' + m.reviewDiligence + '%</span>');
-            else tags.push('<span class="behavior-tag">✍️ 리뷰율 ' + m.reviewDiligence + '%</span>');
+            if (m.reviewDiligence >= 90) tags.push('<span class="behavior-tag diligent" title="방문의 ' + m.reviewDiligence + '%에 리뷰를 남겼어요. 꾸준한 기록가!">✍️ 리뷰 개근 ' + m.reviewDiligence + '%</span>');
+            else if (m.reviewDiligence <= 40) tags.push('<span class="behavior-tag lazy" title="방문의 ' + m.reviewDiligence + '%만 리뷰를 남겼어요">😴 귀차니즘 ' + m.reviewDiligence + '%</span>');
+            else tags.push('<span class="behavior-tag" title="방문의 ' + m.reviewDiligence + '%에 리뷰를 남겼어요">✍️ 리뷰율 ' + m.reviewDiligence + '%</span>');
           }
           // 주말파 vs 평일파
           if (m.dayPreference) {
-            if (m.dayPreference.type === 'weekend') tags.push('<span class="behavior-tag weekend">🌅 주말파</span>');
-            else if (m.dayPreference.type === 'weekday') tags.push('<span class="behavior-tag weekday">💼 평일파</span>');
+            if (m.dayPreference.type === 'weekend') tags.push('<span class="behavior-tag weekend" title="주로 주말에 맛집을 방문해요">🌅 주말파</span>');
+            else if (m.dayPreference.type === 'weekday') tags.push('<span class="behavior-tag weekday" title="주로 평일에 맛집을 방문해요">💼 평일파</span>');
           }
           if (tags.length === 0) return '';
           return '<div class="behavior-member"><div class="behavior-member-name">' + escapeHtml(m.nickname) + '</div><div class="behavior-tags">' + tags.join('') + '</div></div>';
