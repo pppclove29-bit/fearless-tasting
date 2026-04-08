@@ -342,6 +342,37 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   /* 멤버 리스트 */
+  .member-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .member-count {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .btn-invite {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.5rem 0.85rem;
+    background: #10b981;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+
+  .btn-invite:hover { opacity: 0.85; }
+
   .member-list {
     display: flex;
     flex-direction: column;
@@ -350,31 +381,54 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .member-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 0.85rem;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 0.85rem 1rem;
+    padding: 1rem 1.15rem;
   }
 
-  .member-info {
+  .member-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #10b981;
+    color: #fff;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
+    font-size: 0.95rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .member-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .member-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.1rem;
   }
 
   .member-nickname {
     font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--text);
+    font-weight: 700;
+    color: var(--text-heading);
   }
 
   .member-role-badge {
     display: inline-block;
     padding: 0.1rem 0.4rem;
     border-radius: 4px;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 600;
     background: var(--bg-hover);
     color: var(--text-sub);
@@ -383,10 +437,46 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .member-role-badge.owner { background: #fef3c7; color: #92400e; }
   .member-role-badge.manager { background: #dbeafe; color: #1d4ed8; }
 
+  .member-email {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .member-stats {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .member-stat {
+    text-align: center;
+    min-width: 2.5rem;
+  }
+
+  .member-stat-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    display: block;
+  }
+
+  .member-stat-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+  }
+
+  .member-date {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
   .member-actions {
     display: flex;
     gap: 0.35rem;
     align-items: center;
+    flex-shrink: 0;
   }
 
   .member-actions select {
@@ -398,23 +488,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text);
   }
 
+  @media (max-width: 600px) {
+    .member-item { flex-wrap: wrap; gap: 0.5rem; }
+    .member-stats { margin-left: auto; }
+  }
+
   /* 식당 카드 */
   .room-restaurant-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 1.1rem 1.25rem;
+    padding: 1rem 1.25rem;
     margin-bottom: 0.6rem;
     cursor: pointer;
     transition: border-color 0.15s, transform 0.1s;
   }
 
-  .room-restaurant-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(13, 148, 136, 0.08); }
+  .room-restaurant-card:hover { border-color: var(--border-mid); }
   .room-restaurant-card:active { transform: scale(0.99); }
 
-  .room-restaurant-card.is-closed {
-    opacity: 0.6;
-  }
+  .room-restaurant-card.is-closed { opacity: 0.6; }
 
   .closed-badge {
     display: inline-block;
@@ -427,49 +520,53 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     vertical-align: middle;
   }
 
-  .room-rest-name-row {
+  .room-rest-top {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 0.5rem;
+    align-items: flex-start;
+    gap: 0.75rem;
   }
+
+  .room-rest-info { flex: 1; min-width: 0; }
 
   .room-rest-name {
     font-size: 0.95rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-heading);
-    margin-bottom: 0.15rem;
-    flex: 1;
-    min-width: 0;
+    margin-bottom: 0.2rem;
   }
 
-
-  .room-rest-rating {
-    font-size: 0.8rem;
-    color: #e6a817;
-    font-weight: 500;
+  .room-rest-address {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: 0.1rem;
   }
 
-  .room-rest-meta {
-    font-size: 0.8rem;
+  .room-rest-category {
+    font-size: 0.75rem;
     color: var(--text-muted);
   }
 
+  .room-rest-score {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .room-rest-star { color: #f59e0b; }
+
   .room-rest-footer {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     margin-top: 0.35rem;
   }
 
-  .room-rest-added-by {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-  }
-
   .room-rest-reviews-count {
     font-size: 0.75rem;
-    color: var(--text-sub);
+    color: var(--text-muted);
   }
 
   .section-subtitle {
@@ -1043,8 +1140,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .timeline-item {
     display: flex;
     align-items: flex-start;
-    gap: 0.75rem;
-    padding: 0.75rem 0;
+    gap: 0.85rem;
+    padding: 0.85rem 0.5rem;
     border-bottom: 1px solid var(--border-light);
   }
 
@@ -1053,35 +1150,58 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   a.timeline-link {
     text-decoration: none;
     color: inherit;
-    border-radius: 8px;
+    border-radius: 10px;
     transition: background 0.15s;
     cursor: pointer;
     margin: 0 -0.5rem;
-    padding: 0.75rem 0.5rem;
+    padding: 0.85rem 0.5rem;
   }
   a.timeline-link:hover { background: var(--bg-hover); }
 
-  .timeline-emoji {
-    font-size: 1.4rem;
-    line-height: 1;
+  .timeline-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
     flex-shrink: 0;
-    margin-top: 0.1rem;
+    margin-top: 1px;
   }
+
+  .timeline-icon--restaurant { background: #dcfce7; color: #16a34a; }
+  .timeline-icon--visit { background: #fef3c7; color: #d97706; }
+  .timeline-icon--review { background: #f3e8ff; color: #9333ea; }
+  .timeline-icon--member { background: #dbeafe; color: #2563eb; }
+
+  [data-theme="dark"] .timeline-icon--restaurant { background: #14532d; color: #4ade80; }
+  [data-theme="dark"] .timeline-icon--visit { background: #451a03; color: #fbbf24; }
+  [data-theme="dark"] .timeline-icon--review { background: #3b0764; color: #c084fc; }
+  [data-theme="dark"] .timeline-icon--member { background: #1e3a5f; color: #60a5fa; }
 
   .timeline-body { flex: 1; min-width: 0; }
 
   .timeline-desc {
     font-size: 0.85rem;
     color: var(--text);
-    line-height: 1.4;
+    line-height: 1.5;
   }
 
   .timeline-desc strong { font-weight: 600; color: var(--text-heading); }
 
+  .timeline-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+
   .timeline-date {
     font-size: 0.72rem;
     color: var(--text-muted);
-    margin-top: 0.2rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
   }
 
   /* ─── 도움말 ─── */
@@ -2187,10 +2307,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const closedBadge = r.isClosed ? '<span class="closed-badge">폐점</span> ' : '';
     return `
       <div class="room-restaurant-card${r.isClosed ? ' is-closed' : ''}" data-rid="${r.id}">
-        <div class="room-rest-name-row">
-          <div class="room-rest-name">${closedBadge}${escapeHtml(r.name)}${r.avgRating ? ` <span class="room-rest-rating">${renderStars(r.avgRating)} ${r.avgRating}</span>` : ''}</div>
+        <div class="room-rest-top">
+          <div class="room-rest-info">
+            <div class="room-rest-name">${closedBadge}${escapeHtml(r.name)}</div>
+            <div class="room-rest-address">${escapeHtml(r.address)}</div>
+            <div class="room-rest-category">· ${escapeHtml(r.category)}</div>
+          </div>
+          ${r.avgRating ? `<div class="room-rest-score"><span class="room-rest-star">★</span> ${r.avgRating}</div>` : ''}
         </div>
-        <div class="room-rest-meta">${escapeHtml(r.address)} · ${escapeHtml(r.category)}</div>
         <div class="room-rest-footer">
           <span class="room-rest-reviews-count">방문 ${r._count.visits}회 · 리뷰 ${r._count.reviews}개</span>
         </div>
@@ -2521,8 +2645,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const panel = document.getElementById('tab-members');
     if (!panel) return;
 
-    panel.innerHTML = `<div class="member-list">${currentRoom.members
+    const memberStats = currentRoom.memberStats || {};
+
+    panel.innerHTML = `
+      <div class="member-header">
+        <span class="member-count">멤버 ${currentRoom.members.length}</span>
+        ${isOwner() ? '<button type="button" class="btn-invite" id="member-invite-btn">+ 멤버 초대</button>' : ''}
+      </div>
+      <div class="member-list">${currentRoom.members
       .map((m) => {
+        const nick = escapeHtml(m.user.nickname);
+        const avatar = m.user.profileImageUrl
+          ? `<img src="${escapeHtml(m.user.profileImageUrl)}" alt="${nick}" />`
+          : nick.charAt(0);
+        const stats = (memberStats as Record<string, { restaurantCount?: number; visitCount?: number }>)[m.userId] || {};
+        const joinDate = m.joinedAt ? new Date(m.joinedAt).toLocaleDateString('ko-KR') : '';
+
         let actionsHtml = '';
         if (isOwner() && m.userId !== currentUser.id) {
           actionsHtml = `
@@ -2539,15 +2677,30 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         return `
           <div class="member-item">
+            <div class="member-avatar">${avatar}</div>
             <div class="member-info">
-              <span class="member-nickname">${escapeHtml(m.user.nickname)}</span>
-              <span class="member-role-badge ${m.role}">${roleLabel[m.role]}</span>
+              <div class="member-name-row">
+                <span class="member-nickname">${nick}</span>
+                ${m.role === 'owner' ? '<span>👑</span>' : ''}
+                <span class="member-role-badge ${m.role}">${roleLabel[m.role]}</span>
+              </div>
             </div>
+            <div class="member-stats">
+              <div class="member-stat"><span class="member-stat-value">${stats.restaurantCount ?? 0}</span><span class="member-stat-label">등록</span></div>
+              <div class="member-stat"><span class="member-stat-value">${stats.visitCount ?? 0}</span><span class="member-stat-label">방문</span></div>
+            </div>
+            ${joinDate ? `<span class="member-date">${joinDate}</span>` : ''}
             ${actionsHtml}
           </div>
         `;
       })
       .join('')}</div>`;
+
+    // 멤버 초대 버튼 → 공유 팝오버 열기
+    document.getElementById('member-invite-btn')?.addEventListener('click', () => {
+      const shareBtn = document.getElementById('share-popover-btn');
+      if (shareBtn) shareBtn.click();
+    });
 
     // 역할 변경
     for (const select of panel.querySelectorAll<HTMLSelectElement>('.role-select')) {
@@ -3174,12 +3327,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return;
     }
 
-    const emojiMap: Record<string, string> = {
-      restaurant_added: '🍽️',
-      visit_added: '👣',
-      review_added: '⭐',
-      member_joined: '👋',
+    const iconMap: Record<string, { emoji: string; cls: string }> = {
+      restaurant_added: { emoji: '🍽', cls: 'restaurant' },
+      visit_added: { emoji: '👣', cls: 'visit' },
+      review_added: { emoji: '⭐', cls: 'review' },
+      member_joined: { emoji: '👤', cls: 'member' },
     };
+    const defaultIcon = { emoji: '📌', cls: 'restaurant' };
 
     const getUserName = (d: Record<string, unknown>): string => {
       const user = d.user as { nickname?: string } | null;
@@ -3187,27 +3341,40 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     };
 
     const descMap: Record<string, (data: Record<string, unknown>) => string> = {
-      restaurant_added: (d) => `<strong>${escapeHtml(getUserName(d))}</strong>님이 <strong>${escapeHtml(String(d.restaurantName || ''))}</strong>을(를) 등록했습니다.`,
-      visit_added: (d) => `<strong>${escapeHtml(getUserName(d))}</strong>님이 <strong>${escapeHtml(String(d.restaurantName || ''))}</strong>을(를) 방문했습니다.`,
-      review_added: (d) => `<strong>${escapeHtml(getUserName(d))}</strong>님이 <strong>${escapeHtml(String(d.restaurantName || ''))}</strong>에 리뷰를 남겼습니다.${d.rating ? ` (${renderStars(Number(d.rating))})` : ''}`,
-      member_joined: (d) => `<strong>${escapeHtml(getUserName(d))}</strong>님이 방에 참여했습니다.`,
+      restaurant_added: (d) => `<strong>${escapeHtml(getUserName(d))}</strong>님이 새로운 식당을 등록했습니다.`,
+      visit_added: (d) => `<strong>${escapeHtml(getUserName(d))}</strong>님이 식당을 방문했습니다.`,
+      review_added: (d) => `<strong>${escapeHtml(getUserName(d))}</strong>님이 리뷰를 작성했습니다.`,
+      member_joined: (d) => `<strong>${escapeHtml(getUserName(d))}</strong>님이 새로운 멤버를 초대했습니다.`,
+    };
+
+    const subMap: Record<string, (data: Record<string, unknown>) => string> = {
+      restaurant_added: (d) => `${escapeHtml(String(d.restaurantName || ''))}`,
+      visit_added: (d) => `${escapeHtml(String(d.restaurantName || ''))}`,
+      review_added: (d) => `${escapeHtml(String(d.restaurantName || ''))}${d.content ? ` — "${escapeHtml(String(d.content))}"` : ''}`,
+      member_joined: (d) => {
+        const u = d.user as { nickname?: string } | null;
+        return u?.nickname ? `${escapeHtml(u.nickname)}님이 방에 참여했습니다.` : '';
+      },
     };
 
     const timelineHtml = items.map((item) => {
       const rid = item.data.restaurantId as string | undefined;
       const tag = rid ? 'a' : 'div';
       const href = rid ? ` href="/room/restaurant?roomId=${currentRoom.id}&id=${rid}"` : '';
+      const ic = iconMap[item.type] || defaultIcon;
+      const sub = (subMap[item.type] || (() => ''))(item.data);
       return `
       <${tag}${href} class="timeline-item${rid ? ' timeline-link' : ''}">
-        <span class="timeline-emoji">${emojiMap[item.type] || '📌'}</span>
+        <div class="timeline-icon timeline-icon--${ic.cls}">${ic.emoji}</div>
         <div class="timeline-body">
           <div class="timeline-desc">${(descMap[item.type] || (() => item.type))(item.data)}</div>
-          <div class="timeline-date">${formatDate(item.date)}</div>
+          ${sub ? `<div class="timeline-sub">${sub}</div>` : ''}
         </div>
+        <span class="timeline-date">${formatDate(item.date)}</span>
       </${tag}>`;
     }).join('');
 
-    panel.innerHTML = `<h3 class="section-subtitle">최근 활동</h3><div class="timeline-list">${timelineHtml}</div>`;
+    panel.innerHTML = `<div class="timeline-list">${timelineHtml}</div>`;
   }
 
   // ─── 식당 탭 ───
