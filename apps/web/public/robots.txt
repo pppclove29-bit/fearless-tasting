@@ -42,5 +42,5 @@ Disallow: /join
 User-agent: Google-Extended
 Disallow: /
 
-Sitemap: https://fearless-tasting.pages.dev/sitemap-0.xml
+Sitemap: https://fearless-tasting.pages.dev/sitemap-index.xml
 Sitemap: https://fearless-tasting.pages.dev/sitemap-public-rooms.xml
