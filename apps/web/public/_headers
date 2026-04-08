@@ -19,5 +19,9 @@
   X-Robots-Tag: noai
   Cache-Control: public, max-age=3600
 
+/sitemap-public-rooms.xml
+  X-Robots-Tag: noai
+  Cache-Control: public, max-age=3600
+
 /robots.txt
   Cache-Control: public, max-age=3600
