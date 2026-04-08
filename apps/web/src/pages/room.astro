@@ -1356,7 +1356,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   /* ─── 통계 ─── */
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 0.75rem;
     margin-bottom: 1.25rem;
   }
@@ -1365,20 +1365,51 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 1.25rem;
-    text-align: center;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .stat-card-icon {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+  }
+
+  .stat-card-body { flex: 1; }
+
+  .stat-card-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-bottom: 0.1rem;
   }
 
   .stat-value {
-    font-size: 1.8rem;
-    font-weight: 700;
+    font-size: 1.6rem;
+    font-weight: 800;
     color: var(--text-heading);
-    margin-bottom: 0.15rem;
   }
 
   .stat-label {
     font-size: 0.8rem;
     color: var(--text-muted);
+  }
+
+  .stats-chart-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  @media (max-width: 600px) {
+    .stats-chart-row { grid-template-columns: 1fr; }
+  }
+
+  .chart-container {
+    position: relative;
+    width: 100%;
+    max-height: 280px;
   }
 
   .stat-section {
@@ -2854,10 +2885,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     // ── 기본 요약 ──
     const summaryHtml = `
       <div class="stats-grid">
-        <div class="stat-card"><div class="stat-value">${summary.totalRestaurants}</div><div class="stat-label">식당</div></div>
-        <div class="stat-card"><div class="stat-value">${summary.totalVisits}</div><div class="stat-label">방문</div></div>
-        <div class="stat-card"><div class="stat-value">${summary.totalReviews}</div><div class="stat-label">리뷰</div></div>
-        <div class="stat-card"><div class="stat-value">${summary.overallAvg ?? '-'}</div><div class="stat-label">평균 평점</div></div>
+        <div class="stat-card"><span class="stat-card-icon">🍽</span><div class="stat-card-body"><div class="stat-card-label">총 식당</div><div class="stat-value">${summary.totalRestaurants}</div></div></div>
+        <div class="stat-card"><span class="stat-card-icon">📍</span><div class="stat-card-body"><div class="stat-card-label">총 방문</div><div class="stat-value">${summary.totalVisits}</div></div></div>
+        <div class="stat-card"><span class="stat-card-icon">👥</span><div class="stat-card-body"><div class="stat-card-label">멤버</div><div class="stat-value">${currentRoom.members.length}</div></div></div>
       </div>`;
 
 
@@ -2921,19 +2951,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </div>`).join('')}
       </div>` : '';
 
-    // ── 카테고리 분포 ──
+    // ── 카테고리 + 지역 분포 (Chart.js) ──
     const catHtml = categoryStats.length > 0 ? `
-      <div class="stat-section">
-        <h3 class="stat-section-title">카테고리 분포</h3>
-        ${renderBarChart(categoryStats.map((c) => [c.category, c.count]))}
+      <div class="stats-chart-row">
+        <div class="stat-section">
+          <h3 class="stat-section-title">카테고리별 분포</h3>
+          <div class="chart-container"><canvas id="chart-category"></canvas></div>
+        </div>
+        ${regionStats.length > 1 ? `
+        <div class="stat-section">
+          <h3 class="stat-section-title">지역별 분포</h3>
+          ${renderBarChart(regionStats.slice(0, 10).map((r) => [r.region, r.count]))}
+        </div>` : ''}
       </div>` : '';
-
-    // ── 지역 분포 ──
-    const regionHtml = regionStats.length > 1 ? `
-      <div class="stat-section">
-        <h3 class="stat-section-title">동네별 분포</h3>
-        ${renderBarChart(regionStats.slice(0, 10).map((r) => [r.region, r.count]))}
-      </div>` : '';
+    const regionHtml = '';
 
     // ── 세부 평점 레이더 ──
     const radarHtml = `
@@ -2960,39 +2991,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
       </div>` : '';
 
-    // ── 월별 트렌드 (연도별) ──
-    const years = [...new Set(monthlyVisits.map((m) => m.month.slice(0, 4)))].sort().reverse();
-    const monthHtml = monthlyVisits.length > 0 && years.length > 0 ? (() => {
-      const yearBtns = years.map((y, i) =>
-        `<button type="button" class="month-year-btn${i === 0 ? ' active' : ''}" data-year="${y}">${y}년</button>`
-      ).join('');
-
-      const yearCharts = years.map((y, i) => {
-        const monthLabels = ['1','2','3','4','5','6','7','8','9','10','11','12'];
-        const monthData = monthLabels.map((ml) => {
-          const key = `${y}-${ml.padStart(2, '0')}`;
-          const found = monthlyVisits.find((m) => m.month === key);
-          return found ? found.count : 0;
-        });
-        const maxM = Math.max(...monthData, 1);
-        return `<div class="month-chart-year${i === 0 ? ' active' : ''}" data-year="${y}">
-          <div class="month-chart">
-            ${monthData.map((count, mi) => `
-              <div class="month-bar-col">
-                <div style="font-size:0.65rem;color:var(--text-sub);font-weight:600;">${count || ''}</div>
-                <div class="month-bar" style="height:${Math.max(count / maxM * 70, 2)}px;background:#8b5cf6;"></div>
-                <div class="month-bar-label">${monthLabels[mi]}월</div>
-              </div>`).join('')}
-          </div>
-        </div>`;
-      }).join('');
-
-      return `<div class="stat-section">
-        <h3 class="stat-section-title">월별 방문 트렌드</h3>
-        ${years.length > 1 ? `<div class="month-year-btns">${yearBtns}</div>` : ''}
-        ${yearCharts}
-      </div>`;
-    })() : '';
+    // ── 월별 트렌드 (Chart.js) ──
+    const monthHtml = monthlyVisits.length > 0 ? `
+      <div class="stat-section">
+        <h3 class="stat-section-title">📈 월별 방문 추이</h3>
+        <div class="chart-container"><canvas id="chart-monthly"></canvas></div>
+      </div>` : '';
 
     // ── 웨이팅 분포 ──
     const waitHtml = waitTimeStats.length > 0 ? `
@@ -3141,16 +3145,46 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       ${waitHtml}
     `;
 
-    // 연도 버튼 이벤트
-    for (const btn of panel.querySelectorAll<HTMLButtonElement>('.month-year-btn')) {
-      btn.addEventListener('click', () => {
-        panel.querySelectorAll('.month-year-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        const year = btn.dataset.year!;
-        panel.querySelectorAll('.month-chart-year').forEach((el) => {
-          (el as HTMLElement).classList.toggle('active', (el as HTMLElement).dataset.year === year);
+    // Chart.js 렌더링
+    try {
+      const { Chart, BarController, BarElement, CategoryScale, LinearScale, DoughnutController, ArcElement, Tooltip, Legend } = await import('chart.js');
+      Chart.register(BarController, BarElement, CategoryScale, LinearScale, DoughnutController, ArcElement, Tooltip, Legend);
+
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+      const textColor = isDark ? '#a1a1aa' : '#71717a';
+
+      // 월별 바 차트
+      const monthCanvas = panel.querySelector('#chart-monthly') as HTMLCanvasElement | null;
+      if (monthCanvas && monthlyVisits.length > 0) {
+        const latestYear = [...new Set(monthlyVisits.map((m) => m.month.slice(0, 4)))].sort().reverse()[0];
+        const labels = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+        const data = labels.map((_, i) => {
+          const key = `${latestYear}-${String(i + 1).padStart(2, '0')}`;
+          return monthlyVisits.find((m) => m.month === key)?.count || 0;
         });
-      });
+        new Chart(monthCanvas, {
+          type: 'bar',
+          data: { labels, datasets: [{ data, backgroundColor: '#10b981', borderRadius: 4, barPercentage: 0.6 }] },
+          options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } }, x: { ticks: { color: textColor }, grid: { display: false } } } },
+        });
+      }
+
+      // 카테고리 도넛 차트
+      const catCanvas = panel.querySelector('#chart-category') as HTMLCanvasElement | null;
+      if (catCanvas && categoryStats.length > 0) {
+        const catColors = ['#10b981','#06b6d4','#8b5cf6','#f59e0b','#ef4444','#ec4899','#6366f1','#14b8a6','#f97316','#84cc16'];
+        new Chart(catCanvas, {
+          type: 'doughnut',
+          data: {
+            labels: categoryStats.map((c) => c.category),
+            datasets: [{ data: categoryStats.map((c) => c.count), backgroundColor: catColors.slice(0, categoryStats.length), borderWidth: 0 }],
+          },
+          options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: textColor, font: { size: 11 }, padding: 8 } } } },
+        });
+      }
+    } catch (chartErr) {
+      console.warn('Chart.js 로드 실패:', chartErr);
     }
 
     } catch (renderErr) {

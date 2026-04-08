@@ -84,6 +84,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .step-panel { display: none; }
   .step-panel.active { display: block; }
 
+  .step-panel-inner {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
   .step-title {
     font-size: 1.1rem;
     font-weight: 700;
@@ -330,21 +338,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .manual-hint { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem; }
 
-  .mode-toggle { display: flex; gap: 0.3rem; margin-bottom: 1rem; }
+  .mode-toggle { display: flex; gap: 0; margin-bottom: 1.25rem; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
   .mode-toggle-btn {
     flex: 1;
-    padding: 0.4rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.78rem;
-    font-weight: 500;
+    padding: 0.65rem;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 600;
     cursor: pointer;
     font-family: inherit;
-    background: var(--bg);
+    background: var(--bg-card);
     color: var(--text-muted);
     text-align: center;
+    transition: all 0.15s;
   }
-  .mode-toggle-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .mode-toggle-btn:first-child { border-right: 1px solid var(--border); }
+  .mode-toggle-btn.active { background: #10b981; color: #fff; }
 
   [hidden] { display: none !important; }
 </style>

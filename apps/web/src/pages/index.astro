@@ -21,11 +21,9 @@ import AdSlot from '@/components/AdSlot.astro';
 
   <!-- 내 방 목록 (로그인 시) -->
   <div id="dashboard" hidden>
-    <div class="dashboard-header">
-      <div>
-        <h1>내 방</h1>
-        <p class="page-desc">방을 만들어 함께 맛집 리스트를 공유하세요.</p>
-      </div>
+    <div class="dashboard-hero">
+      <h1>내 방</h1>
+      <p class="page-desc">방을 만들어 함께 맛집 리스트를 공유하세요.</p>
     </div>
 
     <div class="rooms-actions">
@@ -699,11 +697,14 @@ import AdSlot from '@/components/AdSlot.astro';
   }
 
   /* ─── 대시보드 (방 목록) ─── */
-  .dashboard-header {
-    margin-bottom: 1.5rem;
+  .dashboard-hero {
+    background: var(--bg-hover);
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    margin-bottom: 1.25rem;
   }
 
-  h1 {
+  .dashboard-hero h1 {
     margin-bottom: 0.25rem;
     font-size: 1.5rem;
     font-weight: 800;
