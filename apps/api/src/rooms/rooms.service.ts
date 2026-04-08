@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { FcmService } from '../fcm/fcm.service';
 import { measure } from '../common/perf';
 
 /** 평균 평점 계산 (소수점 1자리 반올림). 빈 배열이면 null 반환. */
@@ -16,7 +17,10 @@ const CODE_GEN_MAX_RETRIES = 10;
 
 @Injectable()
 export class RoomsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly fcmService: FcmService,
+  ) {}
 
   private isOwnerOrManager(role: string): boolean {
     return role === 'owner' || role === 'manager';
@@ -898,11 +902,19 @@ export class RoomsService {
     members?: { userId: string }[],
   ) {
     const memberList = members ?? await this.prisma.read.roomMember.findMany({ where: { roomId }, select: { userId: true } });
-    const data = memberList
-      .filter((m) => m.userId !== excludeUserId)
-      .map((m) => ({ roomId, userId: m.userId, type, message }));
+    const recipients = memberList.filter((m) => m.userId !== excludeUserId);
+    const data = recipients.map((m) => ({ roomId, userId: m.userId, type, message }));
     if (data.length > 0) {
       await this.prisma.write.roomNotification.createMany({ data });
+
+      // FCM 푸시 발송 (fire-and-forget)
+      const room = await this.prisma.read.room.findUnique({ where: { id: roomId }, select: { name: true } });
+      this.fcmService.sendToUsers(
+        recipients.map((m) => m.userId),
+        room?.name ?? '무모한 시식가',
+        message,
+        { roomId, link: `/room?id=${roomId}` },
+      ).catch(() => {});
     }
   }
 

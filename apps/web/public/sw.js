@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fearless-tasting-v4';
+const CACHE_NAME = 'fearless-tasting-v5';
 const PRECACHE_URLS = [
   '/',
   '/favicon.svg',
@@ -65,6 +65,52 @@ self.addEventListener('fetch', (event) => {
         return response;
       });
       return cached || fetched;
+    })
+  );
+});
+
+// ─── FCM 푸시 알림 ───
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    payload = { notification: { title: '무모한 시식가', body: event.data.text() } };
+  }
+
+  const { title, body } = payload.notification || {};
+  const data = payload.data || {};
+
+  event.waitUntil(
+    self.registration.showNotification(title || '무모한 시식가', {
+      body: body || '',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag: 'fearless-' + (data.roomId || 'general'),
+      data,
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const data = event.notification.data || {};
+  const url = data.link || '/';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // 이미 열린 탭이 있으면 포커스
+      for (const client of clientList) {
+        if (client.url.includes(url) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // 없으면 새 탭
+      return self.clients.openWindow(url);
     })
   );
 });

@@ -759,9 +759,10 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
 </style>
 
 <script>
-  import { fetchCurrentUser, getCachedUser, logout, resetUserCache, fetchMyNotifications, fetchUnreadNotificationCount, markNotificationsRead } from '@/lib/api';
+  import { fetchCurrentUser, getCachedUser, logout, resetUserCache, fetchMyNotifications, fetchUnreadNotificationCount, markNotificationsRead, apiFetch } from '@/lib/api';
   import type { AuthUser, Notification } from '@/lib/api';
   import { formatDate } from '@repo/utils';
+  import { registerPushToken } from '@/lib/firebase';
 
   // View Transitions 전환 시 유저 캐시 리셋
   document.addEventListener('astro:before-swap', () => {
@@ -841,6 +842,9 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     fetchCurrentUser().then((user) => {
       if (user) {
         applyUserUI(user);
+
+        // FCM 푸시 토큰 등록 (fire-and-forget)
+        registerPushToken(apiFetch).catch(() => {});
 
         // 알림 벨 초기화
         const bellBtn = document.getElementById('notif-bell');

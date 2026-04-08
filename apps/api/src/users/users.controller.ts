@@ -1,15 +1,19 @@
-import { Controller, Get, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { FcmService } from '../fcm/fcm.service';
 
 @ApiTags('사용자')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly fcmService: FcmService,
+  ) {}
 
   /** 사용자 목록 조회 */
   @Get()
@@ -66,6 +70,28 @@ export class UsersController {
   @ApiOperation({ summary: '알림 모두 읽음 처리' })
   markNotificationsRead(@CurrentUser() user: { id: string }) {
     return this.usersService.markNotificationsRead(user.id);
+  }
+
+  /** FCM 토큰 등록 */
+  @Post('me/fcm-token')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'FCM 푸시 토큰 등록' })
+  registerFcmToken(
+    @CurrentUser() user: { id: string },
+    @Body() body: { token: string; device?: string },
+  ) {
+    return this.fcmService.registerToken(user.id, body.token, body.device);
+  }
+
+  /** FCM 토큰 삭제 */
+  @Delete('me/fcm-token')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'FCM 푸시 토큰 삭제' })
+  removeFcmToken(
+    @CurrentUser() user: { id: string },
+    @Body() body: { token: string },
+  ) {
+    return this.fcmService.removeToken(body.token);
   }
 
   /** 관리자 대시보드 통계 (DAU/WAU/MAU 등) */

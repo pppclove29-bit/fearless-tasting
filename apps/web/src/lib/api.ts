@@ -86,7 +86,7 @@ export function clearTokens() {
 }
 
 /** Authorization 헤더 포함 fetch 래퍼 (토큰 만료 임박 시 선제 갱신, 만료 시 자동 갱신) */
-async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
+export async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
   // 만료 1분 전이면 선제적으로 토큰 갱신
   if (isTokenExpiringSoon() && getRefreshToken()) {
     await refreshTokens();
@@ -267,6 +267,18 @@ export function logout(): void {
   cacheUser(null);
   const accessToken = getAccessToken();
   const rt = getRefreshToken();
+
+  // FCM 토큰 삭제 (fire-and-forget, clearTokens 전에 호출)
+  const fcmToken = localStorage.getItem('fcm_token');
+  if (fcmToken && accessToken) {
+    fetch(`${API_BASE}/users/me/fcm-token`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+      body: JSON.stringify({ token: fcmToken }),
+    }).catch(() => {});
+    localStorage.removeItem('fcm_token');
+  }
+
   clearTokens();
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };

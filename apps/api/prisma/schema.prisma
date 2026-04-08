@@ -41,6 +41,8 @@ model User {
   pollVotes           RoomPollVote[]
   /// 방 알림
   notifications       RoomNotification[]
+  /// FCM 푸시 토큰
+  fcmTokens           FcmToken[]
   /// 마지막 활동 시각 (DAU 추적용)
   lastActiveAt        DateTime?
   /// 가입일
@@ -395,6 +397,26 @@ model RoomNotification {
 
   @@index([userId, isRead, createdAt])
   @@index([roomId])
+}
+
+/// FCM 푸시 토큰 (기기별 1개, 유저가 여러 기기 사용 가능)
+model FcmToken {
+  /// 고유 식별자
+  id        String   @id @default(cuid())
+  /// 소유자
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// 소유자 ID (FK)
+  userId    String
+  /// FCM 등록 토큰
+  token     String   @unique @db.VarChar(500)
+  /// 기기 식별 (브라우저/OS 등)
+  device    String?  @db.VarChar(200)
+  /// 생성일
+  createdAt DateTime @default(now())
+  /// 갱신일
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 /// 고객 문의 (지역 추가 요청, 버그 신고, 기타 피드백)

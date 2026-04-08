@@ -10,6 +10,7 @@ import { InquiriesModule } from './inquiries/inquiries.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { NoticesModule } from './notices/notices.module';
 import { HealthModule } from './health/health.module';
+import { FcmModule } from './fcm/fcm.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { HealthModule } from './health/health.module';
       throttlers: [{ ttl: 60000, limit: 120 }],
     }),
     PrismaModule,
+    FcmModule,
     AuthModule,
     UsersModule,
     InquiriesModule,
