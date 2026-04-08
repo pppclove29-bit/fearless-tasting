@@ -669,64 +669,69 @@ export class RoomsService {
 
   /** 공개 맛집 추천 리스트 (비로그인 가능) */
   async getDiscoverRestaurants() {
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    // 공개 방의 식당만 조회
+    const publicRooms = await this.prisma.read.room.findMany({
+      where: { isPublic: true },
+      select: { id: true },
+    });
+    const publicRoomIds = publicRooms.map((r) => r.id);
+    if (publicRoomIds.length === 0) return { topRated: [], topRooms: [] };
 
-    // 2개 쿼리 병렬 실행
-    const [recentReviews, restaurants] = await Promise.all([
-      // 1) 최근 고평점 식당 — 최근 90일 내 리뷰 기준
-      this.prisma.read.roomReview.findMany({
-        where: { createdAt: { gte: ninetyDaysAgo } },
-        select: {
-          rating: true,
-          visit: {
-            select: {
-              restaurant: { select: { name: true, address: true, category: true } },
-            },
+    // 1) 공개 방 고평점 식당
+    const restaurants = await this.prisma.read.roomRestaurant.findMany({
+      where: { roomId: { in: publicRoomIds } },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        category: true,
+        roomId: true,
+        room: { select: { name: true } },
+        _count: { select: { visits: true } },
+        visits: {
+          select: {
+            reviews: { select: { rating: true } },
           },
         },
-      }),
-      // 2) 재방문 많은 식당 — 방문 2회 이상
-      this.prisma.read.roomRestaurant.findMany({
-        select: {
-          name: true,
-          address: true,
-          category: true,
-          _count: { select: { visits: true } },
-        },
-      }),
-    ]);
+      },
+    });
 
-    const ratedMap = new Map<string, { name: string; address: string; category: string; totalRating: number; count: number }>();
-    for (const r of recentReviews) {
-      const rest = r.visit.restaurant;
-      const key = `${rest.name}||${rest.address}`;
-      const entry = ratedMap.get(key) ?? { name: rest.name, address: rest.address, category: rest.category, totalRating: 0, count: 0 };
-      entry.totalRating += r.rating;
-      entry.count += 1;
-      ratedMap.set(key, entry);
-    }
-
-    const topRated = Array.from(ratedMap.values())
-      .filter((e) => e.count >= 2)
-      .map((e) => ({ name: e.name, address: e.address, category: e.category, avgRating: Math.round((e.totalRating / e.count) * 10) / 10, reviewCount: e.count }))
+    const topRated = restaurants
+      .map((r) => {
+        const ratings = r.visits.flatMap((v) => v.reviews.map((rev) => rev.rating));
+        const avg = ratings.length > 0 ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10 : 0;
+        return {
+          name: r.name,
+          address: r.address,
+          category: r.category,
+          avgRating: avg,
+          reviewCount: ratings.length,
+          visitCount: r._count.visits,
+          roomId: r.roomId,
+          roomName: r.room.name,
+        };
+      })
+      .filter((r) => r.reviewCount >= 1)
       .sort((a, b) => b.avgRating - a.avgRating || b.reviewCount - a.reviewCount)
+      .slice(0, 20);
+
+    // 2) 공개 방 TOP (식당 수·리뷰 수 기준)
+    const roomStats = await this.prisma.read.room.findMany({
+      where: { isPublic: true },
+      select: {
+        id: true,
+        name: true,
+        _count: { select: { restaurants: true, members: true } },
+      },
+    });
+
+    const topRooms = roomStats
+      .map((r) => ({ id: r.id, name: r.name, restaurantCount: r._count.restaurants, memberCount: r._count.members }))
+      .filter((r) => r.restaurantCount > 0)
+      .sort((a, b) => b.restaurantCount - a.restaurantCount)
       .slice(0, 10);
 
-    const revisitMap = new Map<string, { name: string; address: string; category: string; visitCount: number }>();
-    for (const r of restaurants) {
-      const key = `${r.name}||${r.address}`;
-      const entry = revisitMap.get(key) ?? { name: r.name, address: r.address, category: r.category, visitCount: 0 };
-      entry.visitCount += r._count.visits;
-      revisitMap.set(key, entry);
-    }
-
-    const mostRevisited = Array.from(revisitMap.values())
-      .filter((e) => e.visitCount >= 2)
-      .sort((a, b) => b.visitCount - a.visitCount)
-      .slice(0, 10);
-
-    return { topRated, mostRevisited };
+    return { topRated, topRooms };
   }
 
   // ──────────────── 투표 ────────────────

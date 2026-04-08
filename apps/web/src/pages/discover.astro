@@ -238,19 +238,17 @@ export const prerender = false;
     text-overflow: ellipsis;
   }
 
-  .card-btn {
-    display: block;
-    width: 100%;
-    padding: 0.6rem;
-    background: var(--text-heading);
-    color: var(--bg);
-    border: none;
-    border-radius: 8px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-align: center;
-    cursor: default;
-    font-family: inherit;
+  .card-room {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--border-light);
+  }
+
+  .discover-card {
+    text-decoration: none;
+    color: inherit;
   }
 
   .discover-seo {
@@ -284,17 +282,6 @@ export const prerender = false;
   import { fetchDiscover } from '@/lib/api';
   import type { DiscoverResponse } from '@/lib/api';
 
-  const CATEGORY_ICONS: Record<string, string> = {
-    '한식': '🍚', '양식': '🍝', '일식': '🍣', '중식': '🥟',
-    '프렌치': '🥐', '아시안': '🍜', '카페': '☕', '분식': '🥘',
-    '치킨': '🍗', '피자': '🍕', '패스트푸드': '🍔', '해산물': '🦐',
-    '고기': '🥩',
-  };
-
-  function getCategoryIcon(category: string): string {
-    return CATEGORY_ICONS[category] || '🍽️';
-  }
-
   async function initDiscoverPage() {
     const contentEl = document.getElementById('discover-content');
     const filtersEl = document.getElementById('discover-filters');
@@ -303,23 +290,10 @@ export const prerender = false;
     let data: DiscoverResponse | null = null;
     let currentCategory = '전체';
 
-    function getAllItems() {
-      if (!data) return [];
-      const seen = new Set<string>();
-      const merged: { name: string; address: string; category: string; avgRating: number; reviewCount: number }[] = [];
-      for (const item of data.topRated) {
-        if (!seen.has(item.name)) {
-          seen.add(item.name);
-          merged.push(item);
-        }
-      }
-      return merged;
-    }
-
     function getCategories() {
-      const items = getAllItems();
+      if (!data) return [];
       const cats = new Set<string>();
-      items.forEach((item) => cats.add(item.category));
+      data.topRated.forEach((item) => cats.add(item.category));
       return Array.from(cats);
     }
 
@@ -340,21 +314,21 @@ export const prerender = false;
     }
 
     function renderCards() {
-      let items = getAllItems();
+      if (!data) return;
+      let items = data.topRated;
       if (currentCategory !== '전체') {
         items = items.filter((item) => item.category === currentCategory);
       }
 
       if (items.length === 0) {
-        contentEl.innerHTML = '<div class="discover-empty">아직 데이터가 충분하지 않습니다.</div>';
+        contentEl.innerHTML = '<div class="discover-empty">아직 공개된 맛집 데이터가 없습니다.<br/>방을 공개로 설정하면 여기에 표시됩니다.</div>';
         return;
       }
 
       contentEl.innerHTML = `<div class="discover-grid">${items.map((item) => {
         const shortAddr = item.address.replace(/^(\S+[시도])\s+(\S+[시군구]).*$/, '$1 $2').replace(/^(\S+)\s*$/, '$1');
-        const icon = getCategoryIcon(item.category);
         return `
-          <div class="discover-card">
+          <a href="/rooms/public/${item.roomId}" class="discover-card">
             <div class="card-body">
               <span class="card-category">${item.category}</span>
               <div class="card-name">${item.name}</div>
@@ -369,9 +343,9 @@ export const prerender = false;
                   <span class="card-info-text">${shortAddr}</span>
                 </div>
               </div>
-              <div class="card-btn">상세보기</div>
+              <div class="card-room">📂 ${item.roomName}</div>
             </div>
-          </div>`;
+          </a>`;
       }).join('')}</div>`;
     }
 

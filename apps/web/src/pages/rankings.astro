@@ -334,25 +334,45 @@ const month = now.getMonth() + 1;
       loadingEl.hidden = true;
       contentEl.hidden = false;
 
-      const restaurants = discoverData.topRated;
+      // 공개 방 TOP 랭킹
+      const topRooms = discoverData.topRooms || [];
+      const topRated = discoverData.topRated || [];
 
-      // 랭킹 리스트 렌더링
-      const listHtml = restaurants.length === 0
-        ? '<p style="text-align:center;padding:2rem;color:var(--text-muted);">아직 데이터가 충분하지 않습니다.</p>'
-        : `<div class="ranking-list">${restaurants.map((r, i) => {
+      // 공개 방 랭킹
+      const roomsHtml = topRooms.length === 0
+        ? '<p style="text-align:center;padding:2rem;color:var(--text-muted);">아직 공개된 방이 없습니다.</p>'
+        : `<h3 style="font-size:1rem;font-weight:700;margin-bottom:0.75rem;color:var(--text-heading);">인기 공개 방</h3>
+           <div class="ranking-list">${topRooms.map((r, i) => {
+            const rank = i + 1;
+            const rankClass = rank <= 3 ? ` rank-${rank}` : '';
+            const rankContent = rank === 1 ? '👑' : String(rank);
+            return `
+              <a href="/rooms/public/${r.id}" class="ranking-item" style="text-decoration:none;color:inherit;">
+                <div class="ranking-rank${rankClass}">${rankContent}</div>
+                <div class="ranking-info">
+                  <div class="ranking-name">${r.name}</div>
+                  <div class="ranking-address">식당 ${r.restaurantCount}개 · 멤버 ${r.memberCount}명</div>
+                </div>
+              </a>`;
+          }).join('')}</div>`;
+
+      // 고평점 식당 리스트
+      const restaurantsHtml = topRated.length === 0 ? ''
+        : `<h3 style="font-size:1rem;font-weight:700;margin:1.5rem 0 0.75rem;color:var(--text-heading);">고평점 맛집</h3>
+           <div class="ranking-list">${topRated.slice(0, 10).map((r, i) => {
             const rank = i + 1;
             const rankClass = rank <= 3 ? ` rank-${rank}` : '';
             const rankContent = rank === 1 ? '👑' : String(rank);
             const shortAddr = r.address.replace(/^(\S+[시도])\s+(\S+[시군구]).*$/, '$1 $2').replace(/^(\S+)\s*$/, '$1');
             return `
-              <div class="ranking-item">
+              <a href="/rooms/public/${r.roomId}" class="ranking-item" style="text-decoration:none;color:inherit;">
                 <div class="ranking-rank${rankClass}">${rankContent}</div>
                 <div class="ranking-info">
                   <div class="ranking-name-row">
                     <div class="ranking-name">${r.name}</div>
                     <span class="ranking-category">${r.category}</span>
                   </div>
-                  <div class="ranking-address">${shortAddr}</div>
+                  <div class="ranking-address">${shortAddr} · 📂 ${r.roomName}</div>
                 </div>
                 <div class="ranking-stat">
                   <div class="ranking-rating">
@@ -361,7 +381,7 @@ const month = now.getMonth() + 1;
                   </div>
                   <div class="ranking-review-count">${r.reviewCount}개 리뷰</div>
                 </div>
-              </div>`;
+              </a>`;
           }).join('')}</div>`;
 
       // 통계 섹션
@@ -376,13 +396,13 @@ const month = now.getMonth() + 1;
             <div class="stat-label">누적 리뷰</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">${restaurants.length > 0 ? restaurants[0].avgRating : '-'}</div>
-            <div class="stat-label">평균 평점</div>
+            <div class="stat-value">${platformStats.roomCount}+</div>
+            <div class="stat-label">개의 방</div>
           </div>
         </div>
       `;
 
-      contentEl.innerHTML = listHtml + statsHtml;
+      contentEl.innerHTML = roomsHtml + restaurantsHtml + statsHtml;
     } catch (err) {
       loadingEl.hidden = true;
       errorEl.hidden = false;
