@@ -409,23 +409,27 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     top: 56px;
     left: 50%;
     transform: translateX(-50%);
-    width: min(380px, calc(100vw - 1.5rem));
+    width: min(360px, calc(100vw - 1.5rem));
     max-height: min(70vh, 450px);
     overflow-y: auto;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
     box-shadow: 0 8px 24px var(--shadow);
     z-index: 200;
-    padding: 0.5rem;
+    padding: 0;
   }
 
   .notif-dropdown-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 0.5rem 0.25rem;
-    font-size: 0.85rem;
+    padding: 0.85rem 1rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .notif-dropdown-title {
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--text-heading);
   }
@@ -433,78 +437,105 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
   .notif-mark-read {
     background: none;
     border: none;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
     cursor: pointer;
     font-family: inherit;
-    padding: 0.2rem 0.4rem;
-    border-radius: 4px;
-    transition: color 0.15s;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
   }
 
-  .notif-mark-read:hover { color: var(--text-heading); }
+  .notif-mark-read:hover { color: var(--text-heading); background: var(--bg-hover); }
+
+  .notif-list {
+    padding: 0.35rem;
+  }
 
   .notif-item {
     display: flex;
-    gap: 0.5rem;
-    padding: 0.6rem 0.5rem;
-    border-radius: 8px;
+    gap: 0.65rem;
+    padding: 0.7rem 0.65rem;
+    border-radius: 10px;
     transition: background 0.15s;
     cursor: pointer;
     text-decoration: none;
     color: inherit;
+    align-items: flex-start;
   }
 
   .notif-item:hover { background: var(--bg-hover); }
-  .notif-item.unread { background: rgba(59, 130, 246, 0.05); position: relative; }
-  .notif-item.unread::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #ef4444;
+
+  .notif-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
     flex-shrink: 0;
-    margin-top: 0.35rem;
+    margin-top: 1px;
   }
+
+  .notif-icon--member { background: #dbeafe; color: #2563eb; }
+  .notif-icon--restaurant { background: #dcfce7; color: #16a34a; }
+  .notif-icon--visit { background: #f3e8ff; color: #9333ea; }
+  .notif-icon--review { background: #fef3c7; color: #d97706; }
+
+  [data-theme="dark"] .notif-icon--member { background: #1e3a5f; color: #60a5fa; }
+  [data-theme="dark"] .notif-icon--restaurant { background: #14532d; color: #4ade80; }
+  [data-theme="dark"] .notif-icon--visit { background: #3b0764; color: #c084fc; }
+  [data-theme="dark"] .notif-icon--review { background: #451a03; color: #fbbf24; }
 
   .notif-item-body { flex: 1; min-width: 0; }
 
+  .notif-item-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 0.15rem;
+  }
+
   .notif-item-msg {
-    font-size: 0.8rem;
-    color: var(--text);
+    font-size: 0.78rem;
+    color: var(--text-sub);
     line-height: 1.4;
     word-break: break-word;
   }
 
-  .notif-item-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 0.25rem;
-  }
-
-  .notif-item-room {
+  .notif-item-date {
     font-size: 0.68rem;
     color: var(--text-muted);
-    background: var(--bg-hover);
-    padding: 0.1rem 0.35rem;
-    border-radius: 4px;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 50%;
+    flex-shrink: 0;
+    margin-top: 2px;
   }
 
-  .notif-item-date {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    white-space: nowrap;
+  .notif-item.unread .notif-item-label { color: var(--text-heading); }
+  .notif-item.unread .notif-item-msg { color: var(--text); }
+  .notif-item.unread .notif-item-date { color: var(--text-sub); }
+
+  .notif-footer {
+    border-top: 1px solid var(--border);
+    padding: 0.6rem 1rem;
+    text-align: center;
   }
+
+  .notif-footer-link {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+
+  .notif-footer-link:hover { color: var(--text-heading); }
 
   .notif-empty {
     text-align: center;
-    padding: 1.5rem 0.5rem;
-    font-size: 0.82rem;
+    padding: 2rem 0.5rem;
+    font-size: 0.85rem;
     color: var(--text-muted);
   }
 
@@ -879,26 +910,43 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
             const dropdown = document.createElement('div');
             dropdown.className = 'notif-dropdown';
 
+            const typeConfig: Record<string, { icon: string; label: string; cls: string }> = {
+              member_joined: { icon: '👤', label: '방 초대', cls: 'member' },
+              restaurant_added: { icon: '🍽', label: '새로운 방문', cls: 'restaurant' },
+              visit_added: { icon: '💬', label: '댓글', cls: 'visit' },
+              review_added: { icon: '⭐', label: '알림', cls: 'review' },
+            };
+            const defaultType = { icon: '🔔', label: '알림', cls: 'review' };
+
             if (notifications.length === 0) {
               dropdown.innerHTML = `
-                <div class="notif-dropdown-header">알림</div>
+                <div class="notif-dropdown-header">
+                  <span class="notif-dropdown-title">알림</span>
+                </div>
                 <div class="notif-empty">알림이 없습니다.</div>`;
             } else {
               dropdown.innerHTML = `
                 <div class="notif-dropdown-header">
-                  알림
+                  <span class="notif-dropdown-title">알림</span>
                   <button type="button" class="notif-mark-read" id="notif-mark-all">모두 읽음</button>
                 </div>
-                ${notifications.slice(0, 20).map((n) => `
-                  <a href="/room?id=${n.roomId}" class="notif-item ${!n.isRead ? 'unread' : ''}">
-                    <div class="notif-item-body">
-                      <div class="notif-item-msg">${n.message}</div>
-                      <div class="notif-item-footer">
-                        <span class="notif-item-room">${n.room.name}</span>
-                        <span class="notif-item-date">${formatDate(n.createdAt)}</span>
+                <div class="notif-list">
+                  ${notifications.slice(0, 20).map((n) => {
+                    const t = typeConfig[n.type] || defaultType;
+                    return `
+                    <a href="/room?id=${n.roomId}" class="notif-item ${!n.isRead ? 'unread' : ''}">
+                      <div class="notif-icon notif-icon--${t.cls}">${t.icon}</div>
+                      <div class="notif-item-body">
+                        <div class="notif-item-label">${t.label}</div>
+                        <div class="notif-item-msg">${n.message}</div>
                       </div>
-                    </div>
-                  </a>`).join('')}`;
+                      <span class="notif-item-date">${formatDate(n.createdAt)}</span>
+                    </a>`;
+                  }).join('')}
+                </div>
+                <div class="notif-footer">
+                  <span class="notif-footer-link">모든 알림 보기</span>
+                </div>`;
             }
 
             document.body.appendChild(dropdown);
