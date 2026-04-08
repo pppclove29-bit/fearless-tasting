@@ -227,7 +227,7 @@ export class AuthService {
     return measure('auth.getUserProfile', () =>
       this.prisma.read.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true },
+        select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true, pushEnabled: true },
       }),
     );
   }

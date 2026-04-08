@@ -43,6 +43,8 @@ model User {
   notifications       RoomNotification[]
   /// FCM 푸시 토큰
   fcmTokens           FcmToken[]
+  /// 푸시 알림 수신 여부
+  pushEnabled         Boolean                @default(true)
   /// 마지막 활동 시각 (DAU 추적용)
   lastActiveAt        DateTime?
   /// 가입일

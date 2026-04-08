@@ -32,6 +32,20 @@ export const prerender = false;
     </section>
 
     <section class="profile-section">
+      <h2>알림 설정</h2>
+      <div class="theme-setting">
+        <div class="theme-setting-info">
+          <span class="theme-setting-label">푸시 알림</span>
+          <span class="theme-setting-current" id="push-current">켜짐</span>
+        </div>
+        <div class="theme-switch-group" id="push-switch-group">
+          <button type="button" class="theme-switch-btn active" data-push="on">켜기</button>
+          <button type="button" class="theme-switch-btn" data-push="off">끄기</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="profile-section">
       <h2>화면 설정</h2>
       <div class="theme-setting">
         <div class="theme-setting-info">
@@ -381,7 +395,7 @@ export const prerender = false;
 </style>
 
 <script>
-  import { fetchCurrentUser, updateNickname, deleteAccount, logout, clearTokens, showToast, showDangerConfirm } from '@/lib/api';
+  import { fetchCurrentUser, updateNickname, updatePushEnabled, deleteAccount, logout, clearTokens, showToast, showDangerConfirm } from '@/lib/api';
 
   async function initProfilePage() {
     const profilePage = document.getElementById('profile-page');
@@ -483,6 +497,36 @@ export const prerender = false;
         }
         updateThemeUI();
       });
+    }
+
+    // 푸시 알림 토글
+    const pushCurrent = document.getElementById('push-current');
+    const pushGroup = document.getElementById('push-switch-group');
+    if (pushCurrent && pushGroup) {
+      function updatePushUI() {
+        if (!pushCurrent || !pushGroup) return;
+        const isOn = user.pushEnabled;
+        pushCurrent.textContent = isOn ? '켜짐' : '꺼짐';
+        for (const btn of pushGroup.querySelectorAll<HTMLButtonElement>('.theme-switch-btn')) {
+          btn.classList.toggle('active', btn.dataset.push === (isOn ? 'on' : 'off'));
+        }
+      }
+      updatePushUI();
+
+      for (const btn of pushGroup.querySelectorAll<HTMLButtonElement>('.theme-switch-btn')) {
+        btn.addEventListener('click', async () => {
+          const enabled = btn.dataset.push === 'on';
+          if (enabled === user.pushEnabled) return;
+          try {
+            await updatePushEnabled(enabled);
+            user.pushEnabled = enabled;
+            updatePushUI();
+            showToast(enabled ? '푸시 알림이 켜졌습니다.' : '푸시 알림이 꺼졌습니다.');
+          } catch (err) {
+            showToast(err instanceof Error ? err.message : '설정 변경에 실패했습니다.');
+          }
+        });
+      }
     }
 
     // 로그아웃

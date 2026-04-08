@@ -13,4 +13,5 @@ export interface AuthUser {
   nickname: string;
   role: string;
   profileImageUrl: string | null;
+  pushEnabled: boolean;
 }

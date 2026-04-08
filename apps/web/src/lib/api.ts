@@ -178,6 +178,17 @@ export async function updateNickname(nickname: string): Promise<AuthUser> {
   return res.json();
 }
 
+/** 푸시 알림 수신 설정 */
+export async function updatePushEnabled(enabled: boolean): Promise<{ id: string; pushEnabled: boolean }> {
+  const res = await apiFetch(`${API_BASE}/users/me/push-enabled`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ enabled }),
+  });
+  await throwIfNotOk(res, '설정 변경에 실패했습니다.');
+  return res.json();
+}
+
 /** 회원 탈퇴 */
 export async function deleteAccount(): Promise<void> {
   const res = await apiFetch(`${API_BASE}/users/me`, { method: 'DELETE' });

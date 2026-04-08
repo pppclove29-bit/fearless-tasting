@@ -94,6 +94,17 @@ export class UsersController {
     return this.fcmService.removeToken(body.token);
   }
 
+  /** 푸시 알림 on/off 토글 */
+  @Patch('me/push-enabled')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '푸시 알림 수신 설정' })
+  async togglePushEnabled(
+    @CurrentUser() user: { id: string },
+    @Body() body: { enabled: boolean },
+  ) {
+    return this.usersService.updatePushEnabled(user.id, body.enabled);
+  }
+
   /** 관리자 대시보드 통계 (DAU/WAU/MAU 등) */
   @Get('stats')
   @UseGuards(AdminGuard)

@@ -44,6 +44,15 @@ export class UsersService {
     });
   }
 
+  /** 푸시 알림 수신 설정 토글 */
+  async updatePushEnabled(userId: string, enabled: boolean) {
+    return this.prisma.write.user.update({
+      where: { id: userId },
+      data: { pushEnabled: enabled },
+      select: { id: true, pushEnabled: true },
+    });
+  }
+
   /** 회원 탈퇴 (방장인 방이 있으면 거부) */
   async deleteAccount(userId: string) {
     const ownedRoom = await this.prisma.read.room.findFirst({

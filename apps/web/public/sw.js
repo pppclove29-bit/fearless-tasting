@@ -1,13 +1,7 @@
-const CACHE_NAME = 'fearless-tasting-v5';
-const PRECACHE_URLS = [
-  '/',
-  '/favicon.svg',
-];
+const CACHE_NAME = 'fearless-tasting-v6';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(['/'])));
   self.skipWaiting();
 });
 
@@ -23,24 +17,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
-  // API 요청은 캐시하지 않음 (외부 origin 또는 /api/ 경로)
+  // API 요청은 캐시하지 않음
   if (request.url.includes('/api/') || request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
 
-  // 네비게이션(HTML) 요청: network-first + 캐시 업데이트
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        }
-        return response;
-      }).catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
-    );
-    return;
-  }
-
-  // favicon, manifest, icons: network-first (변경 시 즉시 반영)
+  // favicon, manifest, icons: 항상 네트워크 우선 + 캐시 갱신
   if (request.url.includes('favicon') || request.url.includes('manifest') || request.url.includes('/icons/')) {
     event.respondWith(
       fetch(request).then((response) => {
@@ -50,6 +30,20 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       }).catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // 네비게이션(HTML) 요청: network-first
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      }).catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
     );
     return;
   }
@@ -103,13 +97,11 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // 이미 열린 탭이 있으면 포커스
       for (const client of clientList) {
         if (client.url.includes(url) && 'focus' in client) {
           return client.focus();
         }
       }
-      // 없으면 새 탭
       return self.clients.openWindow(url);
     })
   );
