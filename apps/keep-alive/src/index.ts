@@ -4,12 +4,12 @@
  */
 
 interface Env {
-  API_URL: string;
+  PUBLIC_API_URL: string;
 }
 
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    const url = `${env.API_URL}/health`;
+    const url = `${env.PUBLIC_API_URL}/health`;
 
     ctx.waitUntil(
       fetch(url, { method: 'GET' })
@@ -25,7 +25,7 @@ export default {
 
   // HTTP 요청 시 수동 트리거 가능 (디버깅용)
   async fetch(request: Request, env: Env): Promise<Response> {
-    const url = `${env.API_URL}/health`;
+    const url = `${env.PUBLIC_API_URL}/health`;
 
     try {
       const res = await fetch(url);
