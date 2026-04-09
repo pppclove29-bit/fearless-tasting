@@ -6,5 +6,5 @@ compatibility_date = "2024-12-01"
 [triggers]
 crons = ["*/14 * * * *"]
 
-# PUBLIC_API_URL은 Cloudflare 대시보드 > Workers > Settings > Variables에서 설정
-# 예: PUBLIC_API_URL = https://api.musikga.kr
+[vars]
+PUBLIC_API_URL = "https://api.musikga.kr"
