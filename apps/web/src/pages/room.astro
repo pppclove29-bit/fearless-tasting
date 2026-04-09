@@ -3680,6 +3680,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       openRoomSortSheet(options, sortOrder, (val) => {
         sortOrder = val;
         restPage = 1;
+        const label = options.find((o) => o.value === val)?.label || '최신순';
+        sortTrigger.innerHTML = `${label} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
         loadRestaurants();
       });
     });
@@ -4169,7 +4171,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       }
 
       // 정렬 이벤트
-      document.getElementById('region-sort-trigger')?.addEventListener('click', () => {
+      const regionSortBtn = document.getElementById('region-sort-trigger');
+      regionSortBtn?.addEventListener('click', () => {
         const options = [
           { value: 'rating-high', label: '평점 높은순' },
           { value: 'rating-low', label: '평점 낮은순' },
@@ -4179,6 +4182,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         ];
         openRoomSortSheet(options, sortBy, (val) => {
           sortBy = val;
+          const label = options.find((o) => o.value === val)?.label || '평점 높은순';
+          if (regionSortBtn) regionSortBtn.innerHTML = `${label} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
           render();
         });
       });
