@@ -34,70 +34,54 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <p class="cs-desc">궁금하신 사항이 있으시면 언제든지 연락주세요</p>
     </section>
 
-    <div class="cs-content">
-      <aside class="cs-contact-cards">
-        <div class="contact-card">
-          <div class="contact-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          </div>
-          <h3>이메일 문의</h3>
-          <p>24시간 접수 가능</p>
-          <p class="contact-value">pppclove29@naver.com</p>
+    <div class="cs-form-wrapper">
+      <h2 class="form-title">문의 작성</h2>
+      <form id="inquiry-form" class="inquiry-form">
+        <div class="form-group">
+          <label for="name">이름 *</label>
+          <input type="text" id="name" name="name" required placeholder="홍길동" />
         </div>
-      </aside>
 
-      <div class="cs-form-wrapper">
-        <h2 class="form-title">문의 작성</h2>
-        <form id="inquiry-form" class="inquiry-form">
-          <div class="form-group">
-            <label for="category">문의 유형 *</label>
-            <select id="category" name="category" required>
-              <option value="">선택해 주세요</option>
-              <option value="region_request">지역 추가 요청</option>
-              <option value="bug_report">버그 신고</option>
-              <option value="feedback">피드백</option>
-              <option value="other">기타</option>
-            </select>
-          </div>
-
+        <div class="form-row">
           <div class="form-group">
             <label for="email">이메일 *</label>
             <input type="email" id="email" name="email" required placeholder="example@email.com" />
           </div>
-
           <div class="form-group">
-            <label for="subject">제목 *</label>
-            <input type="text" id="subject" name="subject" required placeholder="문의 제목을 입력하세요" />
+            <label for="phone">연락처</label>
+            <input type="tel" id="phone" name="phone" placeholder="010-1234-5678" />
           </div>
+        </div>
 
-          <div class="form-group">
-            <label for="content">문의 내용 *</label>
-            <textarea id="content" name="content" rows="5" required placeholder="문의하실 내용을 자세히 입력하세요"></textarea>
-          </div>
+        <div class="form-group">
+          <label for="subject">제목 *</label>
+          <input type="text" id="subject" name="subject" required placeholder="문의 제목을 입력하세요" />
+        </div>
 
-          <button type="submit" id="submit-btn" class="submit-btn">
-            문의 보내기
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
-          <p id="result-msg" class="result-msg" hidden></p>
-        </form>
-      </div>
+        <div class="form-group">
+          <label for="content">문의 내용 *</label>
+          <textarea id="content" name="content" rows="6" required placeholder="문의하실 내용을 자세히 입력해주세요."></textarea>
+        </div>
+
+        <button type="submit" id="submit-btn" class="submit-btn">문의하기</button>
+        <p id="result-msg" class="result-msg" hidden></p>
+      </form>
     </div>
 
     <section class="cs-faq">
       <h2 class="faq-title">자주 묻는 질문</h2>
       <div class="faq-list">
         <div class="faq-item">
-          <h3>비로그인으로도 맛집을 볼 수 있나요?</h3>
-          <p>네, 공유 링크를 통해 비로그인 상태에서도 맛집과 리뷰를 열람할 수 있습니다.</p>
+          <h3>영업시간이 어떻게 되나요?</h3>
+          <p>평일 오전 9시부터 오후 6시까지 운영하며, 주말 및 공휴일은 휴무입니다.</p>
         </div>
         <div class="faq-item">
-          <h3>방에 몇 명까지 참여할 수 있나요?</h3>
-          <p>한 방에 최대 4명까지 참여할 수 있습니다.</p>
+          <h3>재방문 후 리뷰 등록할 수 있나요?</h3>
+          <p>또 방문하신 후 등록하세요.</p>
         </div>
         <div class="faq-item">
-          <h3>문의 답변은 얼마나 걸리나요?</h3>
-          <p>보통 1~2일 내에 이메일로 답변드립니다.</p>
+          <h3>응가는 했나요?</h3>
+          <p>했습니다.</p>
         </div>
       </div>
     </section>
@@ -106,7 +90,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
 <style>
   .cs-page {
-    max-width: 960px;
+    max-width: 720px;
     margin: 0 auto;
   }
 
@@ -119,21 +103,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .cs-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
     padding: 0.35rem 1rem;
-    background: var(--text-heading);
-    color: var(--bg);
+    background: var(--accent-bg);
+    color: var(--accent);
+    border: 1px solid var(--accent);
     font-size: 0.78rem;
     font-weight: 600;
     border-radius: 100px;
     margin-bottom: 0.75rem;
+    letter-spacing: 0.02em;
   }
 
   .cs-hero h1 {
     font-size: 1.8rem;
-    font-weight: 800;
+    font-weight: 900;
     color: var(--text-heading);
     margin-bottom: 0.4rem;
+    letter-spacing: -0.03em;
   }
 
   .cs-desc {
@@ -141,75 +130,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-sub);
   }
 
-  /* 2-column layout */
-  .cs-content {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 1.5rem;
-    margin-bottom: 2.5rem;
-  }
-
-  @media (max-width: 768px) {
-    .cs-content {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  /* Contact cards */
-  .cs-contact-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .contact-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.25rem;
-  }
-
-  .contact-icon {
-    width: 40px;
-    height: 40px;
-    background: var(--bg-hover);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 0.75rem;
-    color: var(--text-heading);
-  }
-
-  .contact-card h3 {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--text-heading);
-    margin-bottom: 0.2rem;
-  }
-
-  .contact-card p {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    line-height: 1.5;
-  }
-
-  .contact-value {
-    font-weight: 600;
-    color: var(--text-sub) !important;
-    margin-top: 0.1rem;
-  }
-
   /* Form */
   .cs-form-wrapper {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 1.5rem;
+    padding: 1.75rem;
+    margin-bottom: 2rem;
   }
 
   .form-title {
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--text-heading);
     margin-bottom: 1.25rem;
@@ -219,6 +150,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+  }
+
+  @media (max-width: 480px) {
+    .form-row { grid-template-columns: 1fr; }
   }
 
   .form-group {
@@ -233,11 +174,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-sub);
   }
 
-  select,
   input,
   textarea {
-    padding: 0.65rem 0.85rem;
-    border: 1px solid var(--border-mid);
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 0.875rem;
     font-family: inherit;
@@ -246,7 +186,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text);
   }
 
-  select:focus,
   input:focus,
   textarea:focus {
     outline: none;
@@ -261,26 +200,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
     margin-top: 0.5rem;
-    padding: 0.75rem;
+    padding: 0.8rem;
     background: var(--text-heading);
     color: var(--bg);
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: opacity 0.15s;
     font-family: inherit;
   }
 
-  .submit-btn:hover {
-    background: var(--text-sub);
-  }
+  .submit-btn:hover { opacity: 0.85; }
 
   .submit-btn:disabled {
-    background: var(--text-muted);
+    opacity: 0.5;
     cursor: not-allowed;
   }
 
@@ -304,10 +240,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .faq-title {
     font-size: 1.15rem;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--text-heading);
     text-align: center;
     margin-bottom: 1.25rem;
+    letter-spacing: -0.02em;
   }
 
   .faq-list {
@@ -352,13 +289,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       resultMsg.hidden = true;
 
       const formData = new FormData(form);
-      const category = formData.get('category') as string;
       const email = formData.get('email') as string;
       const subject = formData.get('subject') as string;
       const content = formData.get('content') as string;
+      const name = formData.get('name') as string;
+      const phone = formData.get('phone') as string;
+
+      const fullContent = `[이름: ${name}]${phone ? ` [연락처: ${phone}]` : ''}\n\n${content}`;
 
       try {
-        await createInquiry({ category, email, subject, content });
+        await createInquiry({ category: 'feedback', email, subject, content: fullContent });
         resultMsg.textContent = '문의가 등록되었습니다. 감사합니다!';
         resultMsg.className = 'result-msg success';
         resultMsg.hidden = false;
