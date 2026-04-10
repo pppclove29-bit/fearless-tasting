@@ -284,6 +284,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
   .revisit-btn:hover { border-color: var(--border-mid); }
   .revisit-btn.active[data-val="yes"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .revisit-btn.active[data-val="maybe"] { background: #f59e0b; color: #fff; border-color: #f59e0b; }
   .revisit-btn.active[data-val="no"] { background: var(--bg-hover); color: var(--text-muted); border-color: var(--border-mid); }
 
   /* 버튼 */
@@ -623,6 +624,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="review-section-title">🔄 재방문 의사</div>
           <div class="revisit-btns" id="revisit-btns">
             <button type="button" class="revisit-btn" data-val="yes">또 가고 싶어요</button>
+            <button type="button" class="revisit-btn" data-val="maybe">사주면 갈게요</button>
             <button type="button" class="revisit-btn" data-val="no">글쎄요</button>
           </div>
         </div>
