@@ -334,6 +334,115 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-weight: 500;
   }
 
+  /* 이미지 업로드 */
+  .image-upload-area {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .image-upload-btn {
+    width: 72px;
+    height: 72px;
+    border: 1.5px dashed var(--border-mid);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .image-upload-btn:hover { border-color: var(--accent); }
+
+  .image-upload-icon {
+    font-size: 1.3rem;
+    color: var(--text-muted);
+    line-height: 1;
+  }
+
+  .image-upload-text {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+
+  .image-preview-list {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .image-preview-item {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .image-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .image-preview-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  /* 리뷰 이미지 갤러리 */
+  .review-images {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .review-images::-webkit-scrollbar { display: none; }
+
+  .review-images img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .review-images img:hover { opacity: 0.85; }
+
+  .image-uploading {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 0.25rem 0;
+  }
+
   .btn-danger-sm {
     padding: 0.4rem 0.75rem;
     background: #dc2626;
@@ -1430,6 +1539,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import type { AuthUser, RoomDetailResponse, ReviewData } from '@/lib/api';
   import type { RoomReviewWithUser, RoomVisitWithDetails } from '@repo/types';
   import { formatRating, formatDate } from '@repo/utils';
+  import { uploadImages } from '@/lib/image-upload';
 
   function initRestaurantPage() {
     const loadingMsg = document.getElementById('loading-msg');
@@ -1603,12 +1713,24 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         `<span class="${i < Math.round(rev.rating) ? '' : 'star-muted'}">★</span>`
       ).join('');
 
+      // 리뷰 이미지
+      let imagesHtml = '';
+      if (rev.images) {
+        try {
+          const urls = JSON.parse(rev.images) as string[];
+          if (urls.length > 0) {
+            imagesHtml = `<div class="review-images">${urls.map(url => `<img src="${escapeHtml(url)}" alt="리뷰 사진" loading="lazy" />`).join('')}</div>`;
+          }
+        } catch { /* 파싱 실패 시 무시 */ }
+      }
+
       return `
         <div class="review-bubble-wrap" data-rev-id="${rev.id}">
           <div class="review-avatar">${avatarHtml}</div>
           <div class="review-bubble-body">
             <div class="review-nickname">${escapeHtml(rev.user.nickname)} ${revisitBadge} ${actionsHtml}</div>
             <div class="review-speech">${speechContent}</div>
+            ${imagesHtml}
             <div class="review-stars-big">${bigStars} <span class="rating-num">${rev.rating}</span></div>
             ${favMenuHtml}
             ${extrasHtml}
@@ -1650,6 +1772,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                <div class="review-form-card-header">한줄 리뷰 <span class="optional-hint">(선택)</span></div>
                <div class="review-form-card-body">
                  <textarea class="new-review-content" placeholder="이 식당에 대한 한줄 평을 남겨주세요"></textarea>
+               </div>
+             </div>
+             <div class="review-form-card">
+               <div class="review-form-card-header">사진 <span class="optional-hint">(선택 · 최대 3장)</span></div>
+               <div class="review-form-card-body">
+                 <div class="image-upload-area" data-visit-id="${visit.id}">
+                   <label class="image-upload-btn">
+                     <input type="file" class="new-review-images" accept="image/*" multiple hidden />
+                     <span class="image-upload-icon">+</span>
+                     <span class="image-upload-text">사진 추가</span>
+                   </label>
+                   <div class="image-preview-list"></div>
+                 </div>
                </div>
              </div>
              <div class="review-form-card">
@@ -1973,6 +2108,47 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
 
     function attachVisitAndReviewHandlers() {
+      // 이미지 선택/미리보기 핸들러
+      const pendingImages = new Map<string, File[]>(); // visitId → File[]
+      for (const uploadArea of area.querySelectorAll<HTMLElement>('.image-upload-area')) {
+        const visitId = uploadArea.dataset.visitId || '';
+        const fileInput = uploadArea.querySelector<HTMLInputElement>('.new-review-images');
+        const previewList = uploadArea.querySelector<HTMLElement>('.image-preview-list');
+        if (!fileInput || !previewList) continue;
+
+        pendingImages.set(visitId, []);
+
+        fileInput.addEventListener('change', () => {
+          const files = pendingImages.get(visitId) || [];
+          const newFiles = Array.from(fileInput.files || []);
+          for (const f of newFiles) {
+            if (files.length >= 3) break;
+            if (!f.type.startsWith('image/')) continue;
+            files.push(f);
+
+            const item = document.createElement('div');
+            item.className = 'image-preview-item';
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(f);
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'image-preview-remove';
+            removeBtn.textContent = '×';
+            removeBtn.type = 'button';
+            removeBtn.addEventListener('click', () => {
+              const idx = files.indexOf(f);
+              if (idx >= 0) files.splice(idx, 1);
+              item.remove();
+              URL.revokeObjectURL(img.src);
+            });
+            item.appendChild(img);
+            item.appendChild(removeBtn);
+            previewList.appendChild(item);
+          }
+          pendingImages.set(visitId, files);
+          fileInput.value = '';
+        });
+      }
+
       // 방문 기록 수정
       for (const btn of area.querySelectorAll<HTMLButtonElement>('.edit-visit-btn')) {
         btn.addEventListener('click', () => {
@@ -2105,7 +2281,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           if (!rating) { showToast('평점을 선택해주세요.', 'info'); return; }
           const detailFields = collectDetailFields(visitCard as HTMLElement, 'new-review');
 
-          await createRoomReview(currentRoom.id, visitId, { rating, content, wouldRevisit, ...detailFields });
+          // 이미지 업로드
+          let imagesJson: string | undefined;
+          const files = pendingImages.get(visitId);
+          if (files && files.length > 0) {
+            try {
+              const results = await uploadImages(files, 'reviews');
+              imagesJson = JSON.stringify(results.map(r => r.imageUrl));
+            } catch { showToast('이미지 업로드에 실패했습니다.', 'info'); }
+          }
+
+          await createRoomReview(currentRoom.id, visitId, { rating, content, wouldRevisit, ...detailFields, ...(imagesJson && { images: imagesJson }) });
           currentRoom = await fetchRoom(currentRoom.id);
           await loadRestaurantDetail();
           showToast('리뷰가 작성되었습니다.', 'success');

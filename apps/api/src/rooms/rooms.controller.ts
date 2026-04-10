@@ -400,7 +400,7 @@ export class RoomsController {
       visitId, user.id, dto.rating, dto.content, dto.wouldRevisit,
       dto.tasteRating, dto.valueRating, dto.serviceRating,
       dto.cleanlinessRating, dto.accessibilityRating,
-      dto.favoriteMenu, dto.tryNextMenu,
+      dto.favoriteMenu, dto.tryNextMenu, dto.images,
     );
   }
 

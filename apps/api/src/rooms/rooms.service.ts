@@ -580,6 +580,7 @@ export class RoomsService {
     accessibilityRating?: number,
     favoriteMenu?: string,
     tryNextMenu?: string,
+    images?: string,
   ) {
     const [visit, existing] = await Promise.all([
       this.prisma.read.roomVisit.findUnique({
@@ -600,7 +601,7 @@ export class RoomsService {
         data: {
           visitId, userId, rating, content: content ?? '', wouldRevisit,
           tasteRating, valueRating, serviceRating, cleanlinessRating, accessibilityRating,
-          favoriteMenu, tryNextMenu,
+          favoriteMenu, tryNextMenu, images,
         },
       }),
     );

@@ -65,4 +65,10 @@ export class CreateRoomReviewDto {
   @IsString()
   @MaxLength(200)
   tryNextMenu?: string;
+
+  @ApiPropertyOptional({ description: '리뷰 이미지 URL (JSON 배열)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  images?: string;
 }
