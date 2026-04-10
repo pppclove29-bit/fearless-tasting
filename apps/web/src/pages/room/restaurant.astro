@@ -2051,7 +2051,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             try {
               showToast('사진 업로드 중...', 'info');
               const { imageUrl } = await uploadImage(file, 'restaurants', restaurantId);
-              await updateRoomRestaurant(currentRoom.id, restaurantId, { imageUrl } as Parameters<typeof updateRoomRestaurant>[2]);
+              await updateRoomRestaurant(currentRoom.id, restaurantId, { imageUrl });
               currentRoom = await fetchRoom(currentRoom.id);
               await loadRestaurantDetail();
               showToast('식당 사진이 변경되었습니다.', 'success');
