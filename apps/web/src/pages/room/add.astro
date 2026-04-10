@@ -416,7 +416,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   function renderWizard(_user: AuthUser, room: RoomDetailResponse) {
-    const hasKakaoMap = typeof window !== 'undefined' && 'kakao' in window;
+    // 카카오 SDK가 defer로 로드되므로 아직 없을 수 있음 — 설정만 있으면 true
+    const kakaoMapKey = document.querySelector<HTMLMetaElement>('meta[name="kakao-app-key"]')?.content;
+    const hasKakaoMap = !!kakaoMapKey;
     const categories = ['한식','중식','일식','양식','카페','분식','치킨','피자','고기','해산물','술집','베이커리','기타'];
     const waitOptions = ['없음','~10분','~30분','~1시간','1시간+'];
     const today = new Date().toISOString().split('T')[0];
@@ -651,9 +653,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       function loadMaps(): Promise<void> {
         if (kakaoLoaded) return Promise.resolve();
         return new Promise((resolve) => {
-          const k = (window as Record<string, unknown>).kakao as Record<string, unknown>;
-          const m = k.maps as Record<string, unknown>;
-          (m.load as (cb: () => void) => void)(() => { kakaoLoaded = true; resolve(); });
+          // SDK defer 로드가 아직 안 끝났으면 대기
+          function tryLoad() {
+            const k = (window as Record<string, unknown>).kakao as Record<string, unknown> | undefined;
+            if (!k || !k.maps) { setTimeout(tryLoad, 100); return; }
+            const m = k.maps as Record<string, unknown>;
+            (m.load as (cb: () => void) => void)(() => { kakaoLoaded = true; resolve(); });
+          }
+          tryLoad();
         });
       }
 
