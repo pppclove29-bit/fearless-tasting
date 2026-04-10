@@ -28,8 +28,8 @@ export class UsersService {
     return user;
   }
 
-  /** 닉네임 수정 */
-  async updateNickname(userId: string, nickname: string) {
+  /** 프로필 수정 (닉네임 + 프로필 이미지) */
+  async updateProfile(userId: string, nickname: string, profileImageUrl?: string) {
     const existing = await this.prisma.read.user.findFirst({
       where: { nickname, NOT: { id: userId } },
     });
@@ -37,9 +37,14 @@ export class UsersService {
       throw new ConflictException('이미 사용 중인 닉네임입니다');
     }
 
+    const data: { nickname: string; profileImageUrl?: string } = { nickname };
+    if (profileImageUrl !== undefined) {
+      data.profileImageUrl = profileImageUrl;
+    }
+
     return this.prisma.write.user.update({
       where: { id: userId },
-      data: { nickname },
+      data,
       select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true },
     });
   }

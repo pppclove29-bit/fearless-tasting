@@ -13,7 +13,13 @@ export const prerender = false;
 
     <section class="profile-card">
       <div class="profile-header">
-        <div class="profile-avatar" id="profile-avatar"></div>
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar" id="profile-avatar"></div>
+          <label class="profile-avatar-edit" title="프로필 사진 변경">
+            <input type="file" id="avatar-file-input" accept="image/*" hidden />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </label>
+        </div>
         <div class="profile-name-area">
           <h1 class="profile-name" id="profile-name"></h1>
           <button type="button" class="edit-name-btn" id="edit-name-btn" title="닉네임 수정">
@@ -135,13 +141,37 @@ export const prerender = false;
     text-align: center;
   }
 
+  .profile-avatar-wrap {
+    position: relative;
+    display: inline-block;
+    margin: 0 auto 0.85rem;
+  }
+
+  .profile-avatar-edit {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 28px;
+    height: 28px;
+    background: var(--text-heading);
+    color: var(--bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px solid var(--bg-card);
+    transition: opacity 0.15s;
+  }
+
+  .profile-avatar-edit:hover { opacity: 0.85; }
+
   .profile-avatar {
     width: 72px;
     height: 72px;
     border-radius: 50%;
     background: var(--bg-hover);
     border: 2px solid var(--border);
-    margin: 0 auto 0.85rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -396,6 +426,7 @@ export const prerender = false;
 
 <script>
   import { fetchCurrentUser, updateNickname, updatePushEnabled, deleteAccount, logout, clearTokens, showToast, showDangerConfirm } from '@/lib/api';
+  import { uploadImage } from '@/lib/image-upload';
 
   async function initProfilePage() {
     const profilePage = document.getElementById('profile-page');
@@ -424,6 +455,25 @@ export const prerender = false;
     }
     nameEl.textContent = user.nickname;
     emailEl.textContent = user.email;
+
+    // 프로필 사진 변경
+    const avatarFileInput = document.getElementById('avatar-file-input') as HTMLInputElement | null;
+    if (avatarFileInput) {
+      avatarFileInput.addEventListener('change', async () => {
+        const file = avatarFileInput.files?.[0];
+        if (!file) return;
+        try {
+          showToast('프로필 사진 업로드 중...', 'info');
+          const { imageUrl } = await uploadImage(file, 'profiles');
+          await updateNickname(user.nickname, imageUrl);
+          avatarEl.innerHTML = `<img src="${imageUrl}" alt="프로필" />`;
+          showToast('프로필 사진이 변경되었습니다.', 'success');
+        } catch {
+          showToast('프로필 사진 변경에 실패했습니다.');
+        }
+        avatarFileInput.value = '';
+      });
+    }
 
     // 닉네임 수정
     const editBtn = document.getElementById('edit-name-btn');

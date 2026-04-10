@@ -30,7 +30,7 @@ export class UsersController {
     @CurrentUser() user: { id: string },
     @Body() dto: UpdateUserDto,
   ) {
-    return this.usersService.updateNickname(user.id, dto.nickname);
+    return this.usersService.updateProfile(user.id, dto.nickname, dto.profileImageUrl);
   }
 
   /** 회원 탈퇴 */

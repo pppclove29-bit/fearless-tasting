@@ -168,13 +168,15 @@ async function refreshTokens(): Promise<boolean> {
 }
 
 /** 닉네임 수정 */
-export async function updateNickname(nickname: string): Promise<AuthUser> {
+export async function updateNickname(nickname: string, profileImageUrl?: string): Promise<AuthUser> {
+  const body: Record<string, string> = { nickname };
+  if (profileImageUrl !== undefined) body.profileImageUrl = profileImageUrl;
   const res = await apiFetch(`${API_BASE}/users/me`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nickname }),
+    body: JSON.stringify(body),
   });
-  await throwIfNotOk(res, '닉네임 변경에 실패했습니다.');
+  await throwIfNotOk(res, '프로필 변경에 실패했습니다.');
   return res.json();
 }
 
