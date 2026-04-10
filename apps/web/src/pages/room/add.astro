@@ -669,6 +669,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const kw = searchInput.value.trim();
         if (kw.length < 2) { resultsDiv.hidden = true; return; }
         timer = setTimeout(async () => {
+          try {
           await loadMaps();
           const k = (window as Record<string, unknown>).kakao as Record<string, unknown>;
           const m = k.maps as Record<string, unknown>;
@@ -737,6 +738,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               });
             }
           }, { category_group_code: 'FD6' });
+          } catch (err) { console.error('[kakao search]', err); }
         }, 300);
       });
 
