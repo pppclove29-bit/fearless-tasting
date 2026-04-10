@@ -2544,10 +2544,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       // 초대 링크 복사
       document.getElementById('copy-invite-btn')?.addEventListener('click', () => {
-        navigator.clipboard.writeText(getInviteLink());
+        const shareText = `🍽️ "${currentRoom.name}" 맛집 리스트에 초대합니다!\n우리만의 맛집을 함께 기록해요\n\n${getInviteLink()}`;
+        navigator.clipboard.writeText(shareText);
         const btn = document.getElementById('copy-invite-btn');
         if (btn) { btn.textContent = '복사됨!'; setTimeout(() => { btn.textContent = '복사'; }, 1500); }
-        showToast('초대 링크가 복사되었습니다!', 'success');
+        showToast('초대 메시지가 복사되었습니다!', 'success');
       });
 
       // 초대 코드 재생성

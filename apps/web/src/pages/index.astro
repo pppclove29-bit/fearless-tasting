@@ -97,27 +97,27 @@ import AdSlot from '@/components/AdSlot.astro';
     <section class="recommend">
       <h2 class="section-title">이런 분들에게 추천해요</h2>
       <div class="recommend-list">
-        <div class="recommend-item">
+        <a href="/use/couples" class="recommend-item">
           <div class="recommend-icon-wrap">👫</div>
           <div>
             <h4>연인과 맛집을 기록하고 싶은 커플</h4>
             <p>함께 다녀온 맛집을 하나의 리스트로 관리해보세요.</p>
           </div>
-        </div>
-        <div class="recommend-item">
+        </a>
+        <a href="/use/friends" class="recommend-item">
           <div class="recommend-icon-wrap">👨‍👩‍👧‍👦</div>
           <div>
-            <h4>가족끼리 맛집을 공유하고 싶은 분</h4>
-            <p>부모님, 형제와 함께 우리 가족만의 맛집 지도를 만들어보세요.</p>
+            <h4>친구끼리 맛집을 공유하고 싶은 분</h4>
+            <p>카톡에 묻히는 맛집, 한곳에 모아 함께 기록하세요.</p>
           </div>
-        </div>
-        <div class="recommend-item">
+        </a>
+        <a href="/use/team" class="recommend-item">
           <div class="recommend-icon-wrap">🍽️</div>
           <div>
-            <h4>맛집 기록을 체계적으로 남기고 싶은 분</h4>
-            <p>별점과 리뷰로 다녀온 식당을 깔끔하게 정리해보세요.</p>
+            <h4>회사 점심 맛집을 팀원들과 공유하고 싶은 분</h4>
+            <p>팀 맛집 리스트를 만들어 점심 고민을 끝내보세요.</p>
           </div>
-        </div>
+        </a>
       </div>
     </section>
 
@@ -442,6 +442,13 @@ import AdSlot from '@/components/AdSlot.astro';
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 1.25rem;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s;
+  }
+
+  .recommend-item:hover {
+    border-color: var(--accent);
   }
 
   .recommend-icon-wrap {
