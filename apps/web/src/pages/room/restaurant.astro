@@ -67,6 +67,63 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     min-width: 0;
   }
 
+  /* 식당 사진 */
+  .rest-photo {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    max-height: 250px;
+  }
+
+  .rest-photo img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .rest-photo-edit {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    padding: 0.3rem 0.7rem;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .rest-photo-edit:hover { background: rgba(0,0,0,0.8); }
+
+  .rest-photo-empty {
+    margin-bottom: 1rem;
+  }
+
+  .rest-photo-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 1.5rem;
+    border: 1.5px dashed var(--border-mid);
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    transition: border-color 0.15s;
+  }
+
+  .rest-photo-add:hover { border-color: var(--accent); color: var(--accent); }
+
+  .rest-photo-add-icon {
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+
   /* 식당 지도 */
   .rest-map-container {
     border-radius: 10px;
@@ -1536,7 +1593,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import type { AuthUser, RoomDetailResponse, ReviewData } from '@/lib/api';
   import type { RoomReviewWithUser, RoomVisitWithDetails } from '@repo/types';
   import { formatRating, formatDate } from '@repo/utils';
-  import { uploadImages } from '@/lib/image-upload';
+  import { uploadImage } from '@/lib/image-upload';
 
   function initRestaurantPage() {
     const loadingMsg = document.getElementById('loading-msg');
@@ -1772,19 +1829,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                </div>
              </div>
              <div class="review-form-card">
-               <div class="review-form-card-header">사진 <span class="optional-hint">(선택 · 최대 3장)</span></div>
-               <div class="review-form-card-body">
-                 <div class="image-upload-area" data-visit-id="${visit.id}">
-                   <label class="image-upload-btn">
-                     <input type="file" class="new-review-images" accept="image/*" multiple hidden />
-                     <span class="image-upload-icon">+</span>
-                     <span class="image-upload-text">사진 추가</span>
-                   </label>
-                   <div class="image-preview-list"></div>
-                 </div>
-               </div>
-             </div>
-             <div class="review-form-card">
                <div class="review-form-card-body">
                  <div class="review-form-toggles">
                    <label class="review-form-toggle-item"><input type="checkbox" class="new-review-revisit" checked /><span class="review-form-toggle-text">또 가고 싶어요</span></label>
@@ -1957,6 +2001,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <span class="category-badge">${escapeHtml(detail.category)}</span>
               <span class="detail-actions">${restMenuHtml}</span>
             </div>
+            ${detail.imageUrl
+              ? `<div class="rest-photo"><img src="${escapeHtml(detail.imageUrl)}" alt="${escapeHtml(detail.name)}" loading="lazy" />${canEditRest ? '<label class="rest-photo-edit"><input type="file" id="rest-photo-input" accept="image/*" hidden />변경</label>' : ''}</div>`
+              : (canEditRest ? `<div class="rest-photo-empty"><label class="rest-photo-add"><input type="file" id="rest-photo-input" accept="image/*" hidden /><span class="rest-photo-add-icon">+</span><span>식당 사진 추가</span></label></div>` : '')}
             ${showMap ? '<div class="rest-map-container"><div id="rest-kakao-map"></div></div>' : ''}
             ${sortedVisits.length > 0 ? `
             <div class="visits-heading-row">
@@ -1994,6 +2041,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             }
             tryInitMap();
           }
+        }
+
+        // 식당 사진 업로드
+        const restPhotoInput = document.getElementById('rest-photo-input') as HTMLInputElement | null;
+        if (restPhotoInput) {
+          restPhotoInput.addEventListener('change', async () => {
+            const file = restPhotoInput.files?.[0];
+            if (!file) return;
+            try {
+              showToast('사진 업로드 중...', 'info');
+              const { imageUrl } = await uploadImage(file, 'restaurants', restaurantId);
+              await updateRoomRestaurant(currentRoom.id, restaurantId, { imageUrl } as Parameters<typeof updateRoomRestaurant>[2]);
+              currentRoom = await fetchRoom(currentRoom.id);
+              await loadRestaurantDetail();
+              showToast('식당 사진이 변경되었습니다.', 'success');
+            } catch {
+              showToast('사진 업로드에 실패했습니다.');
+            }
+            restPhotoInput.value = '';
+          });
         }
 
         // 식당 수정
@@ -2105,47 +2172,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
 
     function attachVisitAndReviewHandlers() {
-      // 이미지 선택/미리보기 핸들러
-      const pendingImages = new Map<string, File[]>(); // visitId → File[]
-      for (const uploadArea of area.querySelectorAll<HTMLElement>('.image-upload-area')) {
-        const visitId = uploadArea.dataset.visitId || '';
-        const fileInput = uploadArea.querySelector<HTMLInputElement>('.new-review-images');
-        const previewList = uploadArea.querySelector<HTMLElement>('.image-preview-list');
-        if (!fileInput || !previewList) continue;
-
-        pendingImages.set(visitId, []);
-
-        fileInput.addEventListener('change', () => {
-          const files = pendingImages.get(visitId) || [];
-          const newFiles = Array.from(fileInput.files || []);
-          for (const f of newFiles) {
-            if (files.length >= 3) break;
-            if (!f.type.startsWith('image/')) continue;
-            files.push(f);
-
-            const item = document.createElement('div');
-            item.className = 'image-preview-item';
-            const img = document.createElement('img');
-            img.src = URL.createObjectURL(f);
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'image-preview-remove';
-            removeBtn.textContent = '×';
-            removeBtn.type = 'button';
-            removeBtn.addEventListener('click', () => {
-              const idx = files.indexOf(f);
-              if (idx >= 0) files.splice(idx, 1);
-              item.remove();
-              URL.revokeObjectURL(img.src);
-            });
-            item.appendChild(img);
-            item.appendChild(removeBtn);
-            previewList.appendChild(item);
-          }
-          pendingImages.set(visitId, files);
-          fileInput.value = '';
-        });
-      }
-
       // 방문 기록 수정
       for (const btn of area.querySelectorAll<HTMLButtonElement>('.edit-visit-btn')) {
         btn.addEventListener('click', () => {
@@ -2278,17 +2304,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           if (!rating) { showToast('평점을 선택해주세요.', 'info'); return; }
           const detailFields = collectDetailFields(visitCard as HTMLElement, 'new-review');
 
-          // 이미지 업로드
-          let imagesJson: string | undefined;
-          const files = pendingImages.get(visitId);
-          if (files && files.length > 0) {
-            try {
-              const results = await uploadImages(files, 'reviews');
-              imagesJson = JSON.stringify(results.map(r => r.imageUrl));
-            } catch { showToast('이미지 업로드에 실패했습니다.', 'info'); }
-          }
-
-          await createRoomReview(currentRoom.id, visitId, { rating, content, wouldRevisit, ...detailFields, ...(imagesJson && { images: imagesJson }) });
+          await createRoomReview(currentRoom.id, visitId, { rating, content, wouldRevisit, ...detailFields });
           currentRoom = await fetchRoom(currentRoom.id);
           await loadRestaurantDetail();
           showToast('리뷰가 작성되었습니다.', 'success');

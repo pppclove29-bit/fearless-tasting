@@ -402,7 +402,7 @@ export class RoomsService {
     restaurantId: string,
     userId: string,
     memberRole: 'owner' | 'manager' | 'member',
-    data: { name?: string; category?: string; address?: string; latitude?: number; longitude?: number; isClosed?: boolean },
+    data: { name?: string; category?: string; address?: string; latitude?: number; longitude?: number; isClosed?: boolean; imageUrl?: string },
   ) {
     const restaurant = await this.prisma.read.roomRestaurant.findUnique({ where: { id: restaurantId } });
     if (!restaurant || restaurant.roomId !== roomId) {
@@ -427,6 +427,7 @@ export class RoomsService {
     if (data.latitude !== undefined) updateData.latitude = data.latitude;
     if (data.longitude !== undefined) updateData.longitude = data.longitude;
     if (data.isClosed !== undefined) updateData.isClosed = data.isClosed;
+    if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
 
     return this.prisma.write.roomRestaurant.update({
       where: { id: restaurantId },
