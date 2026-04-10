@@ -85,6 +85,7 @@ export interface RoomReview {
   accessibilityRating?: number | null;
   favoriteMenu?: string | null;
   tryNextMenu?: string | null;
+  images?: string | null;
   visitId: string;
   userId: string;
   createdAt: string;
@@ -217,6 +218,7 @@ export interface ReviewData {
   accessibilityRating?: number | null;
   favoriteMenu?: string | null;
   tryNextMenu?: string | null;
+  images?: string | null;
 }
 
 export interface ReviewComparison {

@@ -250,6 +250,8 @@ model RoomReview {
   favoriteMenu        String?   @db.VarChar(200)
   /// 다음에 먹어볼 메뉴
   tryNextMenu         String?   @db.VarChar(200)
+  /// 리뷰 이미지 URL (JSON 배열, 최대 3장)
+  images              String?   @db.Text
   /// 소속 방문 기록
   visit               RoomVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
   /// 방문 ID (FK)

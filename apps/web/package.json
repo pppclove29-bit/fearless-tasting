@@ -17,6 +17,7 @@
     "@repo/types": "workspace:*",
     "@repo/utils": "workspace:*",
     "astro": "^5.18.0",
+    "browser-image-compression": "^2.0.2",
     "chart.js": "^4.5.1",
     "firebase": "^12.11.0"
   },

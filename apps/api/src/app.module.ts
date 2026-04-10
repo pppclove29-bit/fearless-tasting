@@ -11,6 +11,7 @@ import { RoomsModule } from './rooms/rooms.module';
 import { NoticesModule } from './notices/notices.module';
 import { HealthModule } from './health/health.module';
 import { FcmModule } from './fcm/fcm.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { FcmModule } from './fcm/fcm.module';
     }),
     PrismaModule,
     FcmModule,
+    StorageModule,
     AuthModule,
     UsersModule,
     InquiriesModule,
