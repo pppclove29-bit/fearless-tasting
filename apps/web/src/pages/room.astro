@@ -2962,12 +2962,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </div>`).join('')}
       </div>` : '';
 
-    // ── 카테고리 + 지역 분포 (Chart.js) ──
+    // ── 카테고리 + 지역 분포 ──
     const catHtml = categoryStats.length > 0 ? `
       <div class="stats-chart-row">
         <div class="stat-section">
           <h3 class="stat-section-title">카테고리별 분포</h3>
-          <div class="chart-container"><canvas id="chart-category"></canvas></div>
+          ${renderBarChart(categoryStats.slice(0, 10).map((c) => [c.category, c.count]))}
         </div>
         ${regionStats.length > 1 ? `
         <div class="stat-section">
@@ -3158,8 +3158,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     // Chart.js 렌더링
     try {
-      const { Chart, BarController, BarElement, CategoryScale, LinearScale, DoughnutController, ArcElement, Tooltip, Legend } = await import('chart.js');
-      Chart.register(BarController, BarElement, CategoryScale, LinearScale, DoughnutController, ArcElement, Tooltip, Legend);
+      const { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend } = await import('chart.js');
+      Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
       const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
       const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
@@ -3178,20 +3178,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           type: 'bar',
           data: { labels, datasets: [{ data, backgroundColor: '#10b981', borderRadius: 4, barPercentage: 0.6 }] },
           options: { responsive: true, maintainAspectRatio: true, aspectRatio: 2, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } }, x: { ticks: { color: textColor }, grid: { display: false } } } },
-        });
-      }
-
-      // 카테고리 도넛 차트
-      const catCanvas = panel.querySelector('#chart-category') as HTMLCanvasElement | null;
-      if (catCanvas && categoryStats.length > 0) {
-        const catColors = ['#10b981','#06b6d4','#8b5cf6','#f59e0b','#ef4444','#ec4899','#6366f1','#14b8a6','#f97316','#84cc16'];
-        new Chart(catCanvas, {
-          type: 'doughnut',
-          data: {
-            labels: categoryStats.map((c) => c.category),
-            datasets: [{ data: categoryStats.map((c) => c.count), backgroundColor: catColors.slice(0, categoryStats.length), borderWidth: 0 }],
-          },
-          options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: textColor, font: { size: 11 }, padding: 8, usePointStyle: true, pointStyle: 'circle' } } } },
         });
       }
     } catch (chartErr) {

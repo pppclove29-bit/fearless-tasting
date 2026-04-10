@@ -36,7 +36,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-bottom: 1rem;
     font-size: 0.82rem;
     color: var(--text-muted);
-    flex-wrap: wrap;
+    overflow: hidden;
   }
 
   .breadcrumb a {
@@ -45,6 +45,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-weight: 500;
     transition: color 0.15s;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    min-width: 0;
   }
 
   .breadcrumb a:hover { color: var(--text-heading); }
@@ -53,6 +57,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--border-mid);
     font-size: 0.7rem;
     user-select: none;
+    flex-shrink: 0;
   }
 
   .breadcrumb .bc-current {
@@ -61,7 +66,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px;
+    min-width: 0;
+    flex-shrink: 1;
   }
 
   /* 평점 요약 히어로 (망고플레이트 스타일) */
