@@ -349,6 +349,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     overflow: hidden;
   }
 
+  .review-form-card--highlight {
+    border-color: var(--accent, #0d9488);
+  }
+
+  .review-form-card summary::-webkit-details-marker { display: none; }
+
   .review-form-card-header {
     padding: 0.5rem 0.75rem;
     font-size: 0.78rem;
@@ -1805,14 +1811,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         ? ''
         : `<button type="button" class="btn-outline-sm toggle-review-form-btn" data-visit-id="${visit.id}">리뷰 작성</button>
            <div class="review-form" id="${reviewFormId}" style="display:none;">
-             <div class="review-form-card">
-               <div class="review-form-card-header">종합 평점</div>
+             <div class="review-form-card review-form-card--highlight">
+               <div class="review-form-card-header">⭐ 종합 평점</div>
                <div class="review-form-card-body" style="text-align:center;">
                  ${starRatingHtml('new-review-rating', 3)}
+                 <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem;">별을 눌러 평가하세요</div>
                </div>
              </div>
              <div class="review-form-card">
-               <div class="review-form-card-header">세부 평점 <span class="optional-hint">(선택 · 같은 별 재클릭 시 취소)</span></div>
+               <div class="review-form-card-header">💬 한줄 리뷰 <span class="optional-hint">(선택)</span></div>
+               <div class="review-form-card-body">
+                 <textarea class="new-review-content" placeholder="이 식당을 한마디로 표현한다면?"></textarea>
+               </div>
+             </div>
+             <details class="review-form-card">
+               <summary class="review-form-card-header" style="cursor:pointer;list-style:none;">🔍 세부 평점 <span class="optional-hint">(선택 · 펼쳐서 입력)</span></summary>
                <div class="review-form-card-body">
                  ${detailSliderHtml('맛', 'new-review-taste', 0)}
                  ${detailSliderHtml('가성비', 'new-review-value', 0)}
@@ -1820,14 +1833,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                  ${detailSliderHtml('청결', 'new-review-cleanliness', 0)}
                  ${detailSliderHtml('접근성', 'new-review-accessibility', 0)}
                </div>
-             </div>
+             </details>
              <div class="review-form-card">
-               <div class="review-form-card-header">한줄 리뷰 <span class="optional-hint">(선택)</span></div>
-               <div class="review-form-card-body">
-                 <textarea class="new-review-content" placeholder="이 식당에 대한 한줄 평을 남겨주세요"></textarea>
-               </div>
-             </div>
-             <div class="review-form-card">
+               <div class="review-form-card-header">🔄 재방문 의사</div>
                <div class="review-form-card-body">
                  <div class="review-form-toggles">
                    <label class="review-form-toggle-item"><input type="checkbox" class="new-review-revisit" checked /><span class="review-form-toggle-text">또 가고 싶어요</span></label>

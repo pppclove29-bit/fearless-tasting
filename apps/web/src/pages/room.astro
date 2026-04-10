@@ -2465,7 +2465,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <button type="button" class="room-tab-btn active" data-tab="restaurants">🍽️ 식당</button>
         <button type="button" class="room-tab-btn" data-tab="region">📍 지역</button>
         <button type="button" class="room-tab-btn" data-tab="timeline">📋 활동</button>
-        <button type="button" class="room-tab-btn" data-tab="stats">📊 통계</button>
+        <!-- <button type="button" class="room-tab-btn" data-tab="stats">📊 통계</button> -->
         <button type="button" class="room-tab-btn" data-tab="members">👥 멤버 (${currentRoom.members.length})</button>
       </div>
 
@@ -3513,8 +3513,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     panel.innerHTML = addFormHtml
       + `<div class="rest-list-header"><h3 class="section-subtitle">식당 목록 <span class="section-count" id="rest-total-count">-</span></h3><a href="/room/add?roomId=${currentRoom.id}" class="add-rest-fab">+ 식당 등록</a></div>`
-      + `<input type="text" id="rest-search" class="rest-search" placeholder="식당 이름, 주소, 카테고리 검색" value="${escapeHtml(searchQuery)}" />`
-      + '<div class="category-filter-row" id="category-filter-row"></div>'
       + `<div class="review-sort-row">
           <button type="button" class="sort-trigger-btn" id="rest-sort-trigger">
             ${restSortLabels[sortOrder] || '최신순'}

@@ -356,6 +356,60 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .mode-toggle-btn.active { background: #10b981; color: #fff; }
 
   [hidden] { display: none !important; }
+
+  /* 리뷰 섹션 카드 */
+  .review-section-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.15rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .review-section-highlight {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+  }
+
+  .review-section-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 0.75rem;
+  }
+
+  .optional-hint {
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--text-muted);
+  }
+
+  .main-rating-area {
+    text-align: center;
+    padding: 0.5rem 0;
+  }
+
+  .main-rating-hint {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+  }
+
+  .review-details-toggle {
+    cursor: pointer;
+  }
+
+  .review-details-toggle summary {
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .review-details-toggle summary::-webkit-details-marker { display: none; }
+
+  .review-details-body {
+    padding-top: 0.5rem;
+  }
 </style>
 
 <script>
@@ -501,66 +555,72 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="step-title">어땠나요?</div>
         <div class="step-desc">방문 정보와 별점을 남겨주세요</div>
 
-        <div class="form-group">
-          <label class="form-label">방문일</label>
-          <input type="date" class="form-input" id="visit-date" value="${today}" max="${today}" />
-          <label class="check-row" style="margin-top:0.4rem">
-            <input type="checkbox" id="visit-date-unknown" /> 날짜 모름
-          </label>
-        </div>
+        <div class="review-section-card">
+          <div class="review-section-title">📅 방문 정보</div>
+          <div class="form-group">
+            <label class="form-label">방문일</label>
+            <input type="date" class="form-input" id="visit-date" value="${today}" max="${today}" />
+            <label class="check-row" style="margin-top:0.4rem">
+              <input type="checkbox" id="visit-date-unknown" /> 날짜 모름
+            </label>
+          </div>
 
-        <div class="form-group">
-          <label class="form-label">웨이팅</label>
-          <div class="wait-chips" id="wait-chips">
-            ${waitOptions.map((w) => `<button type="button" class="wait-chip" data-wait="${w}">${w}</button>`).join('')}
+          <div class="form-group">
+            <label class="form-label">웨이팅</label>
+            <div class="wait-chips" id="wait-chips">
+              ${waitOptions.map((w) => `<button type="button" class="wait-chip" data-wait="${w}">${w}</button>`).join('')}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">메모 <span class="optional-hint">(선택)</span></label>
+            <textarea class="form-textarea" id="visit-memo" placeholder="예: 친구 3명과 방문, 창가석 앉음" maxlength="500"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="check-row">
+              <input type="checkbox" id="visit-delivery" /> 배달 주문
+            </label>
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">메모 (선택)</label>
-          <textarea class="form-textarea" id="visit-memo" placeholder="함께 간 사람, 특이사항 등" maxlength="500"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label class="check-row">
-            <input type="checkbox" id="visit-delivery" /> 배달 주문
-          </label>
-        </div>
-
-        <hr class="form-divider" />
-
-        <div class="form-group">
-          <label class="form-label">총점</label>
-          <div class="star-rating" id="main-stars">
-            ${[1,2,3,4,5].map((n) => `<button type="button" class="star-btn" data-star="${n}">★</button>`).join('')}
+        <div class="review-section-card review-section-highlight">
+          <div class="review-section-title">⭐ 총점</div>
+          <div class="main-rating-area">
+            <div class="star-rating" id="main-stars">
+              ${[1,2,3,4,5].map((n) => `<button type="button" class="star-btn" data-star="${n}">★</button>`).join('')}
+            </div>
+            <span class="main-rating-hint">별을 눌러 평가하세요</span>
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">한줄평 (선택)</label>
-          <textarea class="form-textarea" id="review-content" placeholder="이 식당의 한마디" maxlength="500"></textarea>
+        <div class="review-section-card">
+          <div class="review-section-title">💬 한줄 리뷰 <span class="optional-hint">(선택)</span></div>
+          <textarea class="form-textarea" id="review-content" placeholder="이 식당을 한마디로 표현한다면?" maxlength="500"></textarea>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">세부 평점 (선택)</label>
-          <div id="detail-ratings">
-            ${[
-              ['taste','맛'],
-              ['value','가성비'],
-              ['service','서비스'],
-              ['cleanliness','청결'],
-              ['accessibility','접근성'],
-            ].map(([key, label]) => `
-              <div class="detail-slider" data-key="${key}" data-value="0">
-                <span class="detail-slider-label">${label}</span>
-                <span class="detail-stars">${Array.from({ length: 5 }, (_, i) => `<span class="detail-star" data-value="${i + 1}">★</span>`).join('')}</span>
-              </div>
-            `).join('')}
+        <details class="review-section-card review-details-toggle">
+          <summary class="review-section-title">🔍 세부 평점 <span class="optional-hint">(선택 · 펼쳐서 입력)</span></summary>
+          <div class="review-details-body">
+            <div id="detail-ratings">
+              ${[
+                ['taste','맛'],
+                ['value','가성비'],
+                ['service','서비스'],
+                ['cleanliness','청결'],
+                ['accessibility','접근성'],
+              ].map(([key, label]) => `
+                <div class="detail-slider" data-key="${key}" data-value="0">
+                  <span class="detail-slider-label">${label}</span>
+                  <span class="detail-stars">${Array.from({ length: 5 }, (_, i) => `<span class="detail-star" data-value="${i + 1}">★</span>`).join('')}</span>
+                </div>
+              `).join('')}
+            </div>
           </div>
-        </div>
+        </details>
 
-        <div class="form-group">
-          <label class="form-label">재방문 의사</label>
+        <div class="review-section-card">
+          <div class="review-section-title">🔄 재방문 의사</div>
           <div class="revisit-btns" id="revisit-btns">
             <button type="button" class="revisit-btn" data-val="yes">또 가고 싶어요</button>
             <button type="button" class="revisit-btn" data-val="no">글쎄요</button>
