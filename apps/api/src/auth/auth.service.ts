@@ -86,7 +86,8 @@ export class AuthService {
     const providerId = String(kakaoUser.id);
     const email = kakaoUser.kakao_account?.email || `kakao_${providerId}@kakao.user`;
     const nickname = kakaoUser.kakao_account?.profile?.nickname || `user_${providerId}`;
-    const profileImageUrl = kakaoUser.kakao_account?.profile?.profile_image_url;
+    const rawProfileImage = kakaoUser.kakao_account?.profile?.profile_image_url;
+    const profileImageUrl = rawProfileImage?.replace(/^http:\/\//, 'https://') ?? rawProfileImage;
 
     const existingAccount = await this.prisma.read.account.findUnique({
       where: { provider_providerId: { provider: 'kakao', providerId } },
