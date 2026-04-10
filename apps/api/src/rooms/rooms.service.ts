@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException, ForbiddenException } 
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { FcmService } from '../fcm/fcm.service';
+import { StorageService } from '../storage/storage.service';
 import { measure } from '../common/perf';
 
 /** 평균 평점 계산 (소수점 1자리 반올림). 빈 배열이면 null 반환. */
@@ -20,6 +21,7 @@ export class RoomsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly fcmService: FcmService,
+    private readonly storageService: StorageService,
   ) {}
 
   private isOwnerOrManager(role: string): boolean {
@@ -653,7 +655,7 @@ export class RoomsService {
     });
   }
 
-  /** 리뷰 삭제 (본인 or manager+) */
+  /** 리뷰 삭제 (본인 or manager+) — R2 이미지도 정리 */
   async removeReview(reviewId: string, userId: string, memberRole: 'owner' | 'manager' | 'member') {
     const review = await this.prisma.read.roomReview.findUnique({ where: { id: reviewId } });
     if (!review) throw new NotFoundException('리뷰를 찾을 수 없습니다');
@@ -661,6 +663,18 @@ export class RoomsService {
     const isOwnerOrManager = this.isOwnerOrManager(memberRole);
     if (review.userId !== userId && !isOwnerOrManager) {
       throw new ForbiddenException('본인의 리뷰이거나 매니저 이상만 삭제할 수 있습니다');
+    }
+
+    // R2 이미지 정리 (fire-and-forget)
+    if (review.images) {
+      try {
+        const urls = JSON.parse(review.images) as string[];
+        for (const url of urls) {
+          // URL에서 key 추출: https://pub-xxx.r2.dev/reviews/userId/xxx.webp → reviews/userId/xxx.webp
+          const key = url.split('/').slice(3).join('/');
+          if (key) this.storageService.deleteImage(key).catch(() => {});
+        }
+      } catch { /* 파싱 실패 무시 */ }
     }
 
     return this.prisma.write.roomReview.delete({ where: { id: reviewId } });

@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageService: StorageService,
+  ) {}
 
   /** 사용자 목록 조회 */
   async findAll() {
@@ -68,6 +72,26 @@ export class UsersService {
       throw new ForbiddenException(
         `방장인 방(${ownedRoom.name})이 있습니다. 방장을 위임하거나 방을 삭제한 후 탈퇴해주세요.`,
       );
+    }
+
+    // R2 이미지 정리: 프로필 + 리뷰 이미지 (fire-and-forget)
+    this.storageService.deleteImage(`profiles/${userId}.webp`).catch(() => {});
+    this.storageService.deleteImage(`profiles/${userId}.jpg`).catch(() => {});
+    this.storageService.deleteImage(`profiles/${userId}.png`).catch(() => {});
+    // 리뷰 이미지는 cascade 삭제로 DB에서 사라지지만 R2에는 남으므로 정리
+    const reviews = await this.prisma.read.roomReview.findMany({
+      where: { userId },
+      select: { images: true },
+    });
+    for (const rev of reviews) {
+      if (!rev.images) continue;
+      try {
+        const urls = JSON.parse(rev.images) as string[];
+        for (const url of urls) {
+          const key = url.split('/').slice(3).join('/');
+          if (key) this.storageService.deleteImage(key).catch(() => {});
+        }
+      } catch { /* ignore */ }
     }
 
     await this.prisma.write.user.delete({ where: { id: userId } });
