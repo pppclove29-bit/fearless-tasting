@@ -2263,7 +2263,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   if (!loadingMsg || !errorMsg || !content) return;
 
   // 카카오맵 SDK 로드 여부
-  const hasKakaoMap = typeof window !== 'undefined' && 'kakao' in window;
+  const hasKakaoMap = !!document.querySelector<HTMLMetaElement>('meta[name="kakao-app-key"]')?.content;
 
   // 카카오 공유 SDK 초기화
   interface KakaoSDK {
@@ -3853,12 +3853,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   function loadKakaoMaps(): Promise<void> {
     if (kakaoMapsLoaded) return Promise.resolve();
     return new Promise((resolve) => {
-      const kakao = (window as Record<string, unknown>).kakao as Record<string, unknown>;
-      const maps = kakao.maps as Record<string, unknown>;
-      (maps.load as (cb: () => void) => void)(() => {
-        kakaoMapsLoaded = true;
-        resolve();
-      });
+      function tryLoad() {
+        const kakao = (window as Record<string, unknown>).kakao as Record<string, unknown> | undefined;
+        if (!kakao || !kakao.maps) { setTimeout(tryLoad, 100); return; }
+        const maps = kakao.maps as Record<string, unknown>;
+        (maps.load as (cb: () => void) => void)(() => {
+          kakaoMapsLoaded = true;
+          resolve();
+        });
+      }
+      tryLoad();
     });
   }
 
