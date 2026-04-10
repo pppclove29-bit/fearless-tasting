@@ -32,10 +32,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .breadcrumb {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.4rem;
     margin-bottom: 1rem;
     font-size: 0.82rem;
     color: var(--text-muted);
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .breadcrumb a {
@@ -44,7 +46,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-weight: 500;
     transition: color 0.15s;
     white-space: nowrap;
-    flex-shrink: 0;
   }
 
   .breadcrumb a:hover { color: var(--text-heading); }
@@ -53,7 +54,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--border-mid);
     font-size: 0.7rem;
     user-select: none;
-    flex-shrink: 0;
   }
 
   .breadcrumb .bc-current {
@@ -62,8 +62,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 160px;
-    flex-shrink: 1;
+    max-width: 200px;
     min-width: 0;
   }
 
