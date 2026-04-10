@@ -25,3 +25,9 @@
 
 /robots.txt
   Cache-Control: public, max-age=3600
+
+/manifest.json
+  Cache-Control: public, max-age=3600
+
+/sw.js
+  Cache-Control: public, max-age=3600

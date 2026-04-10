@@ -3,10 +3,12 @@
   "short_name": "무모한 시식가",
   "description": "우리만의 맛집 리스트를 만들고 공유하세요",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f7f8fa",
   "theme_color": "#111111",
   "orientation": "portrait",
+  "categories": ["food", "lifestyle"],
   "icons": [
     {
       "src": "/favicon.svg",
@@ -23,6 +25,12 @@
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
