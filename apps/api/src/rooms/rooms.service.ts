@@ -439,16 +439,24 @@ export class RoomsService {
     // 이미지는 트랜잭션으로 delete-all + insert 패턴
     if (data.images !== undefined) {
       const newImages = data.images.slice(0, 3);
-      return this.prisma.write.$transaction(async (tx) => {
-        await tx.roomRestaurant.update({ where: { id: restaurantId }, data: updateData });
+      const result = await this.prisma.write.$transaction(async (tx) => {
+        if (Object.keys(updateData).length > 0) {
+          await tx.roomRestaurant.update({ where: { id: restaurantId }, data: updateData });
+        }
         await tx.roomRestaurantImage.deleteMany({ where: { restaurantId } });
         if (newImages.length > 0) {
           await tx.roomRestaurantImage.createMany({
             data: newImages.map((url, i) => ({ restaurantId, url, sortOrder: i })),
           });
         }
-        return tx.roomRestaurant.findUnique({ where: { id: restaurantId } });
+        return tx.roomRestaurant.findUnique({
+          where: { id: restaurantId },
+          include: { images: { select: { url: true }, orderBy: { sortOrder: 'asc' } } },
+        });
       });
+      if (!result) return null;
+      const { images, ...rest } = result;
+      return { ...rest, images: images.map((img) => img.url) };
     }
 
     return this.prisma.write.roomRestaurant.update({
