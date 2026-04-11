@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUrl, IsNumber, MaxLength, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsNumber, MaxLength, Min, Max, IsArray, ArrayMaxSize } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateRoomRestaurantDto {
@@ -32,11 +32,12 @@ export class CreateRoomRestaurantDto {
   @MaxLength(100)
   category!: string;
 
-  @ApiPropertyOptional({ description: '이미지 URL' })
+  @ApiPropertyOptional({ description: '식당 이미지 URL 배열 (최대 3개)' })
   @IsOptional()
-  @IsUrl()
-  @MaxLength(500)
-  imageUrl?: string;
+  @IsArray()
+  @ArrayMaxSize(3)
+  @IsString({ each: true })
+  images?: string[];
 
   @ApiPropertyOptional({ description: '위도' })
   @IsOptional()

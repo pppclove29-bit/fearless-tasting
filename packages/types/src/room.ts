@@ -33,7 +33,7 @@ export interface RoomRestaurant {
   city: string;
   neighborhood: string;
   category: string;
-  imageUrl?: string;
+  images?: string[];
   latitude?: number | null;
   longitude?: number | null;
   isClosed: boolean;
@@ -118,7 +118,7 @@ export interface SharedRoomRestaurant {
   city: string;
   neighborhood: string;
   category: string;
-  imageUrl?: string;
+  images?: string[];
   latitude?: number | null;
   longitude?: number | null;
   reviewCount: number;
@@ -190,7 +190,7 @@ export interface RoomRestaurantDetailResponse {
   city: string;
   neighborhood: string;
   category: string;
-  imageUrl?: string;
+  images?: string[];
   latitude?: number | null;
   longitude?: number | null;
   roomId: string;

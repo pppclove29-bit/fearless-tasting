@@ -66,62 +66,70 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     min-width: 0;
   }
 
-  /* 식당 사진 */
-  .rest-photo {
+  /* 식당 사진 갤러리 */
+  .rest-photo-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .rest-photo-item {
     position: relative;
     border-radius: 10px;
     overflow: hidden;
-    margin-bottom: 1rem;
-    max-height: 250px;
+    aspect-ratio: 1;
+    background: var(--bg-hover);
   }
 
-  .rest-photo img {
+  .rest-photo-item img {
     width: 100%;
-    height: 250px;
+    height: 100%;
     object-fit: cover;
     display: block;
   }
 
-  .rest-photo-edit {
+  .rest-photo-delete {
     position: absolute;
-    bottom: 8px;
-    right: 8px;
-    padding: 0.3rem 0.7rem;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
     background: rgba(0,0,0,0.6);
     color: #fff;
-    border-radius: 6px;
-    font-size: 0.72rem;
-    font-weight: 600;
+    border: none;
+    border-radius: 50%;
+    font-size: 1rem;
+    line-height: 1;
     cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .rest-photo-edit:hover { background: rgba(0,0,0,0.8); }
-
-  .rest-photo-empty {
-    margin-bottom: 1rem;
-  }
-
-  .rest-photo-add {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
-    padding: 1.5rem;
+    transition: background 0.15s;
+  }
+  .rest-photo-delete:hover { background: rgba(220, 38, 38, 0.9); }
+
+  .rest-photo-add {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
     border: 1.5px dashed var(--border-mid);
-    border-radius: 10px;
     cursor: pointer;
     color: var(--text-muted);
-    font-size: 0.82rem;
-    transition: border-color 0.15s;
+    font-size: 0.72rem;
+    transition: border-color 0.15s, color 0.15s;
   }
 
   .rest-photo-add:hover { border-color: var(--accent); color: var(--accent); }
 
   .rest-photo-add-icon {
-    font-size: 1.2rem;
+    font-size: 1.4rem;
     font-weight: 700;
   }
+  .rest-photo-add-text { font-size: 0.7rem; }
 
   /* 식당 지도 */
   .rest-map-container {
@@ -2021,9 +2029,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <span class="category-badge">${escapeHtml(detail.category)}</span>
               <span class="detail-actions">${restMenuHtml}</span>
             </div>
-            ${detail.imageUrl
-              ? `<div class="rest-photo"><img src="${escapeHtml(detail.imageUrl)}" alt="${escapeHtml(detail.name)}" loading="lazy" />${canEditRest ? '<label class="rest-photo-edit"><input type="file" id="rest-photo-input" accept="image/*" hidden />변경</label>' : ''}</div>`
-              : (canEditRest ? `<div class="rest-photo-empty"><label class="rest-photo-add"><input type="file" id="rest-photo-input" accept="image/*" hidden /><span class="rest-photo-add-icon">+</span><span>식당 사진 추가</span></label></div>` : '')}
+            ${(() => {
+              const imgs = detail.images || [];
+              const canAdd = canEditRest && imgs.length < 3;
+              const items = imgs.map((url, idx) =>
+                `<div class="rest-photo-item"><img src="${escapeHtml(url)}" alt="${escapeHtml(detail.name)} ${idx + 1}" loading="lazy" />${canEditRest ? `<button type="button" class="rest-photo-delete" data-idx="${idx}" title="삭제">&times;</button>` : ''}</div>`
+              ).join('');
+              const addBtn = canAdd
+                ? `<label class="rest-photo-item rest-photo-add"><input type="file" id="rest-photo-input" accept="image/*" hidden /><span class="rest-photo-add-icon">+</span><span class="rest-photo-add-text">사진 추가</span></label>`
+                : '';
+              return imgs.length > 0 || canAdd ? `<div class="rest-photo-gallery">${items}${addBtn}</div>` : '';
+            })()}
             ${showMap ? '<div class="rest-map-container"><div id="rest-kakao-map"></div></div>' : ''}
             ${sortedVisits.length > 0 ? `
             <div class="visits-heading-row">
@@ -2063,23 +2079,48 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           }
         }
 
-        // 식당 사진 업로드
+        // 식당 사진 업로드 (최대 3개)
         const restPhotoInput = document.getElementById('rest-photo-input') as HTMLInputElement | null;
         if (restPhotoInput) {
           restPhotoInput.addEventListener('change', async () => {
             const file = restPhotoInput.files?.[0];
             if (!file) return;
+            const currentImgs = detail.images || [];
+            if (currentImgs.length >= 3) {
+              showToast('이미지는 식당당 최대 3개까지 등록할 수 있습니다.', 'info');
+              return;
+            }
             try {
               showToast('사진 업로드 중...', 'info');
               const { imageUrl } = await uploadImage(file, 'restaurants', restaurantId);
-              await updateRoomRestaurant(currentRoom.id, restaurantId, { imageUrl });
+              const newImages = [...currentImgs, imageUrl];
+              await updateRoomRestaurant(currentRoom.id, restaurantId, { images: newImages });
               currentRoom = await fetchRoom(currentRoom.id);
               await loadRestaurantDetail();
-              showToast('식당 사진이 변경되었습니다.', 'success');
+              showToast('사진이 추가되었습니다.', 'success');
             } catch {
               showToast('사진 업로드에 실패했습니다.');
             }
             restPhotoInput.value = '';
+          });
+        }
+
+        // 식당 사진 삭제
+        for (const btn of area.querySelectorAll<HTMLButtonElement>('.rest-photo-delete')) {
+          btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const idx = Number(btn.dataset.idx);
+            const currentImgs = detail.images || [];
+            const newImages = currentImgs.filter((_, i) => i !== idx);
+            try {
+              await updateRoomRestaurant(currentRoom.id, restaurantId, { images: newImages });
+              currentRoom = await fetchRoom(currentRoom.id);
+              await loadRestaurantDetail();
+              showToast('사진이 삭제되었습니다.', 'success');
+            } catch {
+              showToast('사진 삭제에 실패했습니다.');
+            }
           });
         }
 

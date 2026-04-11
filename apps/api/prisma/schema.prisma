@@ -151,8 +151,8 @@ model RoomRestaurant {
   neighborhood String      @db.VarChar(100)
   /// 카테고리
   category     String      @db.VarChar(100)
-  /// 대표 이미지 URL
-  imageUrl     String?     @db.VarChar(500)
+  /// 식당 이미지들 (JSON 배열, 최대 3개)
+  images       String?     @db.Text
   /// 위도 (카카오맵 좌표)
   latitude     Float?
   /// 경도 (카카오맵 좌표)

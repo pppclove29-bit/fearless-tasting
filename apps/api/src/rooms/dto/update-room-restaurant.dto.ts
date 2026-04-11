@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, MaxLength, IsArray, ArrayMaxSize } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateRoomRestaurantDto {
@@ -34,4 +34,11 @@ export class UpdateRoomRestaurantDto {
   @IsOptional()
   @IsBoolean()
   isClosed?: boolean;
+
+  @ApiPropertyOptional({ description: '식당 이미지 URL 배열 (최대 3개)' })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(3)
+  @IsString({ each: true })
+  images?: string[];
 }

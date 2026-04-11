@@ -379,12 +379,13 @@ export class RoomsService {
     city: string,
     neighborhood: string,
     category: string,
-    imageUrl?: string,
+    images?: string[],
     latitude?: number,
     longitude?: number,
   ) {
+    const imagesJson = images && images.length > 0 ? JSON.stringify(images.slice(0, 3)) : null;
     const restaurant = await this.prisma.write.roomRestaurant.create({
-      data: { roomId, addedById, name, address, province, city, neighborhood, category, imageUrl, latitude, longitude },
+      data: { roomId, addedById, name, address, province, city, neighborhood, category, images: imagesJson, latitude, longitude },
     });
 
     // 알림: 식당 등록
@@ -402,7 +403,7 @@ export class RoomsService {
     restaurantId: string,
     userId: string,
     memberRole: 'owner' | 'manager' | 'member',
-    data: { name?: string; category?: string; address?: string; latitude?: number; longitude?: number; isClosed?: boolean; imageUrl?: string },
+    data: { name?: string; category?: string; address?: string; latitude?: number; longitude?: number; isClosed?: boolean; images?: string[] },
   ) {
     const restaurant = await this.prisma.read.roomRestaurant.findUnique({ where: { id: restaurantId } });
     if (!restaurant || restaurant.roomId !== roomId) {
@@ -427,7 +428,9 @@ export class RoomsService {
     if (data.latitude !== undefined) updateData.latitude = data.latitude;
     if (data.longitude !== undefined) updateData.longitude = data.longitude;
     if (data.isClosed !== undefined) updateData.isClosed = data.isClosed;
-    if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
+    if (data.images !== undefined) {
+      updateData.images = data.images.length > 0 ? JSON.stringify(data.images.slice(0, 3)) : null;
+    }
 
     return this.prisma.write.roomRestaurant.update({
       where: { id: restaurantId },
@@ -1098,7 +1101,7 @@ export class RoomsService {
             city: true,
             neighborhood: true,
             category: true,
-            imageUrl: true,
+            images: true,
             latitude: true,
             longitude: true,
             visits: {
@@ -1139,7 +1142,7 @@ export class RoomsService {
         city: true,
         neighborhood: true,
         category: true,
-        imageUrl: true,
+        images: true,
         latitude: true,
         longitude: true,
         roomId: true,
@@ -1176,7 +1179,7 @@ export class RoomsService {
       city: restaurant.city,
       neighborhood: restaurant.neighborhood,
       category: restaurant.category,
-      imageUrl: restaurant.imageUrl,
+      images: restaurant.images ? (JSON.parse(restaurant.images) as string[]) : [],
       latitude: restaurant.latitude,
       longitude: restaurant.longitude,
       reviewCount: allReviews.length,
