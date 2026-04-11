@@ -108,6 +108,7 @@ export class RoomsService {
           restaurants: {
             include: {
               addedBy: { select: { id: true, nickname: true } },
+              images: { select: { url: true }, orderBy: { sortOrder: 'asc' } },
               visits: {
                 include: {
                   reviews: { select: { rating: true } },
@@ -125,10 +126,11 @@ export class RoomsService {
 
     return {
       ...room,
-      restaurants: room.restaurants.map(({ visits, ...rest }) => {
+      restaurants: room.restaurants.map(({ visits, images, ...rest }) => {
         const allRatings = visits.flatMap((v) => v.reviews.map((r) => r.rating));
         return {
           ...rest,
+          images: images.map((img) => img.url),
           avgRating: calcAvgRating(allRatings),
           _count: { ...rest._count, reviews: allRatings.length },
         };
@@ -336,6 +338,7 @@ export class RoomsService {
           where,
           include: {
             addedBy: { select: { id: true, nickname: true } },
+            images: { select: { url: true }, orderBy: { sortOrder: 'asc' } },
             visits: { include: { reviews: { select: { rating: true } } } },
             _count: { select: { visits: true } },
           },
@@ -346,10 +349,11 @@ export class RoomsService {
       ]),
     );
 
-    let data = restaurants.map(({ visits, ...rest }) => {
+    let data = restaurants.map(({ visits, images, ...rest }) => {
       const allRatings = visits.flatMap((v) => v.reviews.map((r) => r.rating));
       return {
         ...rest,
+        images: images.map((img) => img.url),
         avgRating: calcAvgRating(allRatings),
         _count: { ...rest._count, reviews: allRatings.length },
       };
@@ -383,9 +387,12 @@ export class RoomsService {
     latitude?: number,
     longitude?: number,
   ) {
-    const imagesJson = images && images.length > 0 ? JSON.stringify(images.slice(0, 3)) : null;
+    const imageList = (images ?? []).slice(0, 3);
     const restaurant = await this.prisma.write.roomRestaurant.create({
-      data: { roomId, addedById, name, address, province, city, neighborhood, category, images: imagesJson, latitude, longitude },
+      data: {
+        roomId, addedById, name, address, province, city, neighborhood, category, latitude, longitude,
+        images: imageList.length > 0 ? { create: imageList.map((url, i) => ({ url, sortOrder: i })) } : undefined,
+      },
     });
 
     // 알림: 식당 등록
@@ -428,8 +435,20 @@ export class RoomsService {
     if (data.latitude !== undefined) updateData.latitude = data.latitude;
     if (data.longitude !== undefined) updateData.longitude = data.longitude;
     if (data.isClosed !== undefined) updateData.isClosed = data.isClosed;
+
+    // 이미지는 트랜잭션으로 delete-all + insert 패턴
     if (data.images !== undefined) {
-      updateData.images = data.images.length > 0 ? JSON.stringify(data.images.slice(0, 3)) : null;
+      const newImages = data.images.slice(0, 3);
+      return this.prisma.write.$transaction(async (tx) => {
+        await tx.roomRestaurant.update({ where: { id: restaurantId }, data: updateData });
+        await tx.roomRestaurantImage.deleteMany({ where: { restaurantId } });
+        if (newImages.length > 0) {
+          await tx.roomRestaurantImage.createMany({
+            data: newImages.map((url, i) => ({ restaurantId, url, sortOrder: i })),
+          });
+        }
+        return tx.roomRestaurant.findUnique({ where: { id: restaurantId } });
+      });
     }
 
     return this.prisma.write.roomRestaurant.update({
@@ -463,6 +482,7 @@ export class RoomsService {
         where: { id: restaurantId },
         include: {
           addedBy: { select: { id: true, nickname: true } },
+          images: { select: { url: true }, orderBy: { sortOrder: 'asc' } },
           visits: {
             include: {
               createdBy: { select: { id: true, nickname: true } },
@@ -485,7 +505,8 @@ export class RoomsService {
       throw new NotFoundException('식당을 찾을 수 없습니다');
     }
 
-    return restaurant;
+    const { images, ...rest } = restaurant;
+    return { ...rest, images: images.map((img) => img.url) };
   }
 
   // ─── 방문 기록 ───
@@ -1101,7 +1122,7 @@ export class RoomsService {
             city: true,
             neighborhood: true,
             category: true,
-            images: true,
+            images: { select: { url: true }, orderBy: { sortOrder: 'asc' } },
             latitude: true,
             longitude: true,
             visits: {
@@ -1117,8 +1138,9 @@ export class RoomsService {
 
     return {
       ...room,
-      restaurants: room.restaurants.map(({ visits, ...r }) => ({
+      restaurants: room.restaurants.map(({ visits, images, ...r }) => ({
         ...r,
+        images: images.map((img) => img.url),
         reviewCount: visits.reduce((sum, v) => sum + v.reviews.length, 0),
       })),
     };
@@ -1142,7 +1164,7 @@ export class RoomsService {
         city: true,
         neighborhood: true,
         category: true,
-        images: true,
+        images: { select: { url: true }, orderBy: { sortOrder: 'asc' } },
         latitude: true,
         longitude: true,
         roomId: true,
@@ -1179,7 +1201,7 @@ export class RoomsService {
       city: restaurant.city,
       neighborhood: restaurant.neighborhood,
       category: restaurant.category,
-      images: restaurant.images ? (JSON.parse(restaurant.images) as string[]) : [],
+      images: restaurant.images.map((img) => img.url),
       latitude: restaurant.latitude,
       longitude: restaurant.longitude,
       reviewCount: allReviews.length,

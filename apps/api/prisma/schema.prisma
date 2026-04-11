@@ -151,8 +151,6 @@ model RoomRestaurant {
   neighborhood String      @db.VarChar(100)
   /// 카테고리
   category     String      @db.VarChar(100)
-  /// 식당 이미지들 (JSON 배열, 최대 3개)
-  images       String?     @db.Text
   /// 위도 (카카오맵 좌표)
   latitude     Float?
   /// 경도 (카카오맵 좌표)
@@ -171,11 +169,31 @@ model RoomRestaurant {
   visits       RoomVisit[]
   /// 투표 선택지 연결
   pollOptions  RoomPollOption[]
+  /// 식당 이미지 (최대 3개)
+  images       RoomRestaurantImage[]
   /// 등록일
   createdAt    DateTime    @default(now())
 
   @@index([roomId])
   @@index([addedById])
+}
+
+/// 식당 이미지 (1:N, 식당당 최대 3개)
+model RoomRestaurantImage {
+  /// 고유 식별자
+  id           String         @id @default(cuid())
+  /// 소속 식당
+  restaurant   RoomRestaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  /// 식당 ID (FK)
+  restaurantId String
+  /// 이미지 URL
+  url          String         @db.VarChar(500)
+  /// 표시 순서
+  sortOrder    Int            @default(0)
+  /// 등록일
+  createdAt    DateTime       @default(now())
+
+  @@index([restaurantId])
 }
 
 /// 방문 기록 (식당에 언제, 누구와 갔는지)
