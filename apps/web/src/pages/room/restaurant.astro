@@ -131,6 +131,34 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
   .rest-photo-add-text { font-size: 0.7rem; }
 
+  .photo-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.7);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  [data-theme="dark"] .photo-loading-overlay {
+    background: rgba(0,0,0,0.5);
+  }
+
+  .photo-loading-spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent, #0d9488);
+    border-radius: 50%;
+    animation: photo-spin 0.6s linear infinite;
+  }
+
+  @keyframes photo-spin {
+    to { transform: rotate(360deg); }
+  }
+
   /* 식당 지도 */
   .rest-map-container {
     border-radius: 10px;
@@ -2079,10 +2107,29 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           }
         }
 
+        // 갤러리 로딩 오버레이
+        const gallery = area.querySelector<HTMLElement>('.rest-photo-gallery');
+        let photoLock = false;
+        function setPhotoLoading(on: boolean) {
+          photoLock = on;
+          if (!gallery) return;
+          let overlay = gallery.querySelector<HTMLElement>('.photo-loading-overlay');
+          if (on && !overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'photo-loading-overlay';
+            overlay.innerHTML = '<span class="photo-loading-spinner"></span>';
+            gallery.style.position = 'relative';
+            gallery.appendChild(overlay);
+          } else if (!on && overlay) {
+            overlay.remove();
+          }
+        }
+
         // 식당 사진 업로드 (최대 3개)
         const restPhotoInput = document.getElementById('rest-photo-input') as HTMLInputElement | null;
         if (restPhotoInput) {
           restPhotoInput.addEventListener('change', async () => {
+            if (photoLock) return;
             const file = restPhotoInput.files?.[0];
             if (!file) return;
             const currentImgs = detail.images || [];
@@ -2090,8 +2137,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               showToast('이미지는 식당당 최대 3개까지 등록할 수 있습니다.', 'info');
               return;
             }
+            setPhotoLoading(true);
             try {
-              showToast('사진 업로드 중...', 'info');
               const { imageUrl } = await uploadImage(file, 'restaurants', restaurantId);
               const newImages = [...currentImgs, imageUrl];
               await updateRoomRestaurant(currentRoom.id, restaurantId, { images: newImages });
@@ -2100,6 +2147,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               showToast('사진이 추가되었습니다.', 'success');
             } catch {
               showToast('사진 업로드에 실패했습니다.');
+              setPhotoLoading(false);
             }
             restPhotoInput.value = '';
           });
@@ -2110,9 +2158,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           btn.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
+            if (photoLock) return;
             const idx = Number(btn.dataset.idx);
             const currentImgs = detail.images || [];
             const newImages = currentImgs.filter((_, i) => i !== idx);
+            setPhotoLoading(true);
             try {
               await updateRoomRestaurant(currentRoom.id, restaurantId, { images: newImages });
               currentRoom = await fetchRoom(currentRoom.id);
@@ -2120,6 +2170,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               showToast('사진이 삭제되었습니다.', 'success');
             } catch {
               showToast('사진 삭제에 실패했습니다.');
+              setPhotoLoading(false);
             }
           });
         }
