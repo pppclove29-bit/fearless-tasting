@@ -93,8 +93,7 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'" />
     {import.meta.env.PUBLIC_KAKAO_MAP_KEY && (
       <script defer type="text/javascript" src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.PUBLIC_KAKAO_MAP_KEY}&libraries=services&autoload=false`}></script>
     )}
