@@ -131,6 +131,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
   .rest-photo-add-text { font-size: 0.7rem; }
 
+  .rest-photo-count {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+  }
+
   .photo-loading-overlay {
     position: absolute;
     inset: 0;
@@ -2066,7 +2073,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               const addBtn = canAdd
                 ? `<label class="rest-photo-item rest-photo-add"><input type="file" id="rest-photo-input" accept="image/*" hidden /><span class="rest-photo-add-icon">+</span><span class="rest-photo-add-text">사진 추가</span></label>`
                 : '';
-              return imgs.length > 0 || canAdd ? `<div class="rest-photo-gallery">${items}${addBtn}</div>` : '';
+              const countLabel = `<div class="rest-photo-count">사진 (${imgs.length}/3)</div>`;
+              return imgs.length > 0 || canAdd ? `${countLabel}<div class="rest-photo-gallery">${items}${addBtn}</div>` : '';
             })()}
             ${showMap ? '<div class="rest-map-container"><div id="rest-kakao-map"></div></div>' : ''}
             ${sortedVisits.length > 0 ? `
