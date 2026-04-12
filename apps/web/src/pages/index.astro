@@ -75,21 +75,21 @@ import AdSlot from '@/components/AdSlot.astro';
         <div class="feature-icon-wrap">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </div>
-        <h3>프라이빗 맛집 방</h3>
+        <h2 class="feature-heading">프라이빗 맛집 방</h2>
         <p>비공개 맛집 방을 만들고 친구, 연인, 가족을 초대하세요.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon-wrap">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </div>
-        <h3>솔직한 맛집 리뷰</h3>
+        <h2 class="feature-heading">솔직한 맛집 리뷰</h2>
         <p>다녀온 식당을 등록하고 별점 하나로 간편하게 솔직한 리뷰를 남겨보세요.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon-wrap">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
         </div>
-        <h3>통계 & 분석</h3>
+        <h2 class="feature-heading">통계 & 분석</h2>
         <p>방문 통계, 카테고리 분포, 멤버 활동 분석으로 맛집 취향을 파악하세요.</p>
       </div>
     </section>
@@ -100,21 +100,21 @@ import AdSlot from '@/components/AdSlot.astro';
         <a href="/use/couples" class="recommend-item">
           <div class="recommend-icon-wrap">👫</div>
           <div>
-            <h4>연인과 맛집을 기록하고 싶은 커플</h4>
+            <h3>연인과 맛집을 기록하고 싶은 커플</h3>
             <p>함께 다녀온 맛집을 하나의 리스트로 관리해보세요.</p>
           </div>
         </a>
         <a href="/use/friends" class="recommend-item">
           <div class="recommend-icon-wrap">👨‍👩‍👧‍👦</div>
           <div>
-            <h4>친구끼리 맛집을 공유하고 싶은 분</h4>
+            <h3>친구끼리 맛집을 공유하고 싶은 분</h3>
             <p>카톡에 묻히는 맛집, 한곳에 모아 함께 기록하세요.</p>
           </div>
         </a>
         <a href="/use/team" class="recommend-item">
           <div class="recommend-icon-wrap">🍽️</div>
           <div>
-            <h4>회사 점심 맛집을 팀원들과 공유하고 싶은 분</h4>
+            <h3>회사 점심 맛집을 팀원들과 공유하고 싶은 분</h3>
             <p>팀 맛집 리스트를 만들어 점심 고민을 끝내보세요.</p>
           </div>
         </a>
@@ -127,28 +127,28 @@ import AdSlot from '@/components/AdSlot.astro';
         <div class="step">
           <span class="step-num">1</span>
           <div>
-            <h4>카카오 로그인</h4>
+            <h3>카카오 로그인</h3>
             <p>카카오 계정으로 3초 만에 가입해보세요.</p>
           </div>
         </div>
         <div class="step">
           <span class="step-num">2</span>
           <div>
-            <h4>방 만들기 또는 참여</h4>
+            <h3>방 만들기 또는 참여</h3>
             <p>새 방을 만들거나, 기존 방에 참여해보세요.</p>
           </div>
         </div>
         <div class="step">
           <span class="step-num">3</span>
           <div>
-            <h4>맛집 등록 & 리뷰</h4>
+            <h3>맛집 등록 & 리뷰</h3>
             <p>방문한 식당을 등록하고 별점과 리뷰를 남겨보세요.</p>
           </div>
         </div>
         <div class="step">
           <span class="step-num">4</span>
           <div>
-            <h4>통계 확인</h4>
+            <h3>통계 확인</h3>
             <p>방문 통계와 멤버 분석으로 맛집 취향을 파악해보세요.</p>
           </div>
         </div>
@@ -401,7 +401,7 @@ import AdSlot from '@/components/AdSlot.astro';
     border-radius: 12px;
   }
 
-  .feature-card h3 {
+  .feature-heading {
     font-size: 0.95rem;
     font-weight: 700;
     margin-bottom: 0.2rem;
@@ -465,7 +465,7 @@ import AdSlot from '@/components/AdSlot.astro';
     font-size: 1.3rem;
   }
 
-  .recommend-item h4 {
+  .recommend-item h3 {
     font-size: 0.925rem;
     font-weight: 700;
     margin-bottom: 0.2rem;
@@ -515,7 +515,7 @@ import AdSlot from '@/components/AdSlot.astro';
     border-radius: 50%;
   }
 
-  .step h4 {
+  .step h3 {
     font-size: 0.925rem;
     font-weight: 700;
     margin-bottom: 0.2rem;
