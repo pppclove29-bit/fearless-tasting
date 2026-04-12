@@ -312,6 +312,7 @@ export class RoomsController {
       latitude: dto.latitude,
       longitude: dto.longitude,
       isClosed: dto.isClosed,
+      images: dto.images,
     });
   }
 
