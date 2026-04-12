@@ -71,7 +71,8 @@ export class StorageService implements OnModuleInit {
     });
 
     const uploadUrl = await getSignedUrl(this.client, command, { expiresIn: 300 });
-    const imageUrl = `${this.publicUrl}/${key}`;
+    // DB에는 상대 경로만 저장, 프론트에서 조합
+    const imageUrl = key;
 
     return { uploadUrl, imageUrl, key };
   }

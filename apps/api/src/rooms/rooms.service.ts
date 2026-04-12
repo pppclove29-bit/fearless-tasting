@@ -15,6 +15,14 @@ const MAX_ROOM_MEMBERS = 4;
 const MAX_ROOMS_PER_USER = 30;
 const CODE_GEN_MAX_RETRIES = 10;
 
+/** 이미지 상대 경로에 R2_PUBLIC_URL prefix 붙이기 */
+function toImageUrl(path: string): string {
+  if (!path) return path;
+  if (path.startsWith('http')) return path; // 이미 절대 URL이면 그대로
+  const base = (process.env.R2_PUBLIC_URL || '').replace(/\/$/, '');
+  return base ? `${base}/${path}` : path;
+}
+
 
 @Injectable()
 export class RoomsService {
@@ -130,7 +138,7 @@ export class RoomsService {
         const allRatings = visits.flatMap((v) => v.reviews.map((r) => r.rating));
         return {
           ...rest,
-          images: images.map((img) => img.url),
+          images: images.map((img) => toImageUrl(img.url)),
           avgRating: calcAvgRating(allRatings),
           _count: { ...rest._count, reviews: allRatings.length },
         };
@@ -353,7 +361,7 @@ export class RoomsService {
       const allRatings = visits.flatMap((v) => v.reviews.map((r) => r.rating));
       return {
         ...rest,
-        images: images.map((img) => img.url),
+        images: images.map((img) => toImageUrl(img.url)),
         avgRating: calcAvgRating(allRatings),
         _count: { ...rest._count, reviews: allRatings.length },
       };
@@ -1148,7 +1156,7 @@ export class RoomsService {
       ...room,
       restaurants: room.restaurants.map(({ visits, images, ...r }) => ({
         ...r,
-        images: images.map((img) => img.url),
+        images: images.map((img) => toImageUrl(img.url)),
         reviewCount: visits.reduce((sum, v) => sum + v.reviews.length, 0),
       })),
     };
@@ -1209,7 +1217,7 @@ export class RoomsService {
       city: restaurant.city,
       neighborhood: restaurant.neighborhood,
       category: restaurant.category,
-      images: restaurant.images.map((img) => img.url),
+      images: restaurant.images.map((img) => toImageUrl(img.url)),
       latitude: restaurant.latitude,
       longitude: restaurant.longitude,
       reviewCount: allReviews.length,
