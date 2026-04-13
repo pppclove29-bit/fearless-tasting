@@ -19,7 +19,7 @@ const CODE_GEN_MAX_RETRIES = 10;
 function toImageUrl(path: string): string {
   if (!path) return path;
   if (path.startsWith('http')) return path; // 이미 절대 URL이면 그대로
-  const base = (process.env.R2_PUBLIC_URL || '').replace(/\/$/, '');
+  const base = (process.env.R2_PUBLIC_URL || 'https://media.musikga.kr').replace(/\/$/, '');
   return base ? `${base}/${path}` : path;
 }
 
