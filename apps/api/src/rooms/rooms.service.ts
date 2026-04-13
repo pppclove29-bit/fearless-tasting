@@ -464,7 +464,7 @@ export class RoomsService {
       });
       if (!result) return null;
       const { images, ...rest } = result;
-      return { ...rest, images: images.map((img) => img.url) };
+      return { ...rest, images: images.map((img) => toImageUrl(img.url)) };
     }
 
     return this.prisma.write.roomRestaurant.update({
@@ -522,7 +522,7 @@ export class RoomsService {
     }
 
     const { images, ...rest } = restaurant;
-    return { ...rest, images: images.map((img) => img.url) };
+    return { ...rest, images: images.map((img) => toImageUrl(img.url)) };
   }
 
   // ─── 방문 기록 ───
