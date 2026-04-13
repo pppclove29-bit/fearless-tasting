@@ -677,21 +677,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     align-items: center;
     gap: 0.3rem;
     padding: 0.4rem 0.85rem;
-    background: var(--accent);
-    color: #fff;
+    background: var(--text-heading);
+    color: var(--bg);
     border: none;
     border-radius: 100px;
     font-size: 0.78rem;
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
-    transition: background 0.15s;
+    transition: opacity 0.15s;
     text-decoration: none;
     white-space: nowrap;
     flex-shrink: 0;
   }
 
-  .add-rest-fab:hover { background: color-mix(in srgb, var(--accent) 85%, #000); color: #fff; }
+  .add-rest-fab:hover { opacity: 0.85; }
 
   /* 식당 등록 폼 */
   .add-restaurant-form {
@@ -997,12 +997,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-family: inherit;
   }
 
-  .category-filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .category-filter-btn:hover { border-color: var(--text-heading); color: var(--text-heading); }
 
   .category-filter-btn.active {
     background: var(--accent-bg);
-    color: var(--accent);
-    border-color: var(--accent);
+    color: var(--text-heading);
+    border-color: var(--text-heading);
     font-weight: 600;
   }
 
@@ -1440,7 +1440,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-bottom: 0.75rem;
     color: var(--text-heading);
     padding-bottom: 0.4rem;
-    border-bottom: 2px solid var(--accent);
+    border-bottom: 2px solid var(--text-heading);
     display: inline-block;
   }
 
@@ -1482,7 +1482,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .stat-bar-fill {
     height: 100%;
-    background: var(--accent);
+    background: var(--text-heading);
     border-radius: 7px;
     transition: width 0.3s;
     min-width: 4px;
@@ -1571,7 +1571,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-family: inherit;
     transition: all 0.15s;
   }
-  .month-year-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .month-year-btn.active { background: var(--text-heading); color: var(--bg); border-color: var(--text-heading); }
 
   .month-chart-year { display: none; }
   .month-chart-year.active { display: block; }
@@ -2996,7 +2996,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${reorderedDays.map((count, i) => `
             <div class="day-bar-col">
               <div class="day-bar-count">${count || ''}</div>
-              <div class="day-bar" style="height:${Math.max(count / maxDay * 70, 2)}px;background:${i >= 5 ? '#f87171' : 'var(--accent)'};"></div>
+              <div class="day-bar" style="height:${Math.max(count / maxDay * 70, 2)}px;background:${i >= 5 ? '#f87171' : 'var(--text-heading)'};"></div>
               <div class="day-bar-label">${dayLabels[i]}</div>
             </div>`).join('')}
         </div>
