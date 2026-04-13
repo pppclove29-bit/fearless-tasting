@@ -404,12 +404,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     const createPublicCheckbox = document.getElementById('create-public') as HTMLInputElement | null;
 
+    let creating = false;
     createForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (creating) return;
       if (formError) formError.hidden = true;
       const name = createNameInput?.value.trim();
       if (!name) return;
       const isPublic = createPublicCheckbox?.checked ?? false;
+
+      creating = true;
+      const submitBtn = createForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '생성 중...'; }
+
       try {
         await createRoom(name, isPublic);
         if (createNameInput) createNameInput.value = '';
@@ -422,6 +429,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           formError.textContent = err instanceof Error ? err.message : '방 생성에 실패했습니다.';
           formError.hidden = false;
         }
+      } finally {
+        creating = false;
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '만들기'; }
       }
     });
 

@@ -42,15 +42,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <input type="text" id="name" name="name" required placeholder="홍길동" />
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="email">이메일 *</label>
-            <input type="email" id="email" name="email" required placeholder="example@email.com" />
-          </div>
-          <div class="form-group">
-            <label for="phone">연락처</label>
-            <input type="tel" id="phone" name="phone" placeholder="010-1234-5678" />
-          </div>
+        <div class="form-group">
+          <label for="email">이메일 *</label>
+          <input type="email" id="email" name="email" required placeholder="example@email.com" />
         </div>
 
         <div class="form-group">
@@ -293,9 +287,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const subject = formData.get('subject') as string;
       const content = formData.get('content') as string;
       const name = formData.get('name') as string;
-      const phone = formData.get('phone') as string;
-
-      const fullContent = `[이름: ${name}]${phone ? ` [연락처: ${phone}]` : ''}\n\n${content}`;
+      const fullContent = `[이름: ${name}]\n\n${content}`;
 
       try {
         await createInquiry({ category: 'feedback', email, subject, content: fullContent });
