@@ -69,45 +69,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   <!-- 랜딩 (기본 표시, 로그인 시 숨김) -->
   <div id="landing">
     <section class="hero">
-      <h1 class="hero-title">친구들과 함께하는<br/>맛집 탐방 여정</h1>
-      <p class="hero-sub">방을 만들고, 맛집을 공유하고, 추억을 기록하세요</p>
-      <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`} class="hero-cta login-only-cta">시작하기</a>
+      <h1 class="hero-title">우리끼리 솔직한<br/>맛집 리뷰</h1>
+      <p class="hero-sub">방 만들고, 같이 기록하고, 비교하세요</p>
+      <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`} class="hero-cta login-only-cta">카카오로 시작하기</a>
+      <p class="hero-free">무료 · 3초 가입</p>
     </section>
 
-    <section class="features">
-      <div class="feature-card">
-        <div class="feature-icon-wrap">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-        </div>
-        <div>
-          <h2 class="feature-heading">함께 만드는 맛집 리스트</h2>
-          <p>친구, 동료와 방을 만들어 맛집을 함께 기록하고 공유하세요</p>
-        </div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon-wrap">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        </div>
-        <div>
-          <h2 class="feature-heading">지역별 맛집 탐방</h2>
-          <p>지역별로 맛집을 정리하고 방문 기록을 남겨보세요</p>
-        </div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon-wrap">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        </div>
-        <div>
-          <h2 class="feature-heading">랭킹과 통계</h2>
-          <p>인기 맛집과 활동 통계를 확인하고 새로운 맛집을 발견하세요</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="bottom-cta login-only-cta">
-      <h2 class="bottom-cta-title">지금 바로 시작해보세요</h2>
-      <p class="bottom-cta-desc">무료로 가입하고 친구들과 맛집 여정을 시작하세요</p>
-      <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`} class="bottom-cta-btn">로그인하기</a>
+    <section class="how-it-works">
+      <div class="step"><span class="step-num">1</span><span>방 만들기</span></div>
+      <div class="step-arrow"></div>
+      <div class="step"><span class="step-num">2</span><span>친구 초대</span></div>
+      <div class="step-arrow"></div>
+      <div class="step"><span class="step-num">3</span><span>맛집 등록 & 리뷰</span></div>
     </section>
   </div>
 
@@ -214,11 +187,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .hero-cta {
     display: inline-flex;
     align-items: center;
-    padding: 0.8rem 2rem;
-    background: var(--text-heading);
-    color: var(--bg);
+    padding: 0.85rem 2.5rem;
+    background: #FEE500;
+    color: #191919;
     font-size: 0.95rem;
-    font-weight: 600;
+    font-weight: 700;
     border-radius: 10px;
     text-decoration: none;
     transition: opacity 0.15s, transform 0.1s;
@@ -228,64 +201,49 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .hero-cta:active { transform: scale(0.98); }
   .hero-cta[hidden] { display: none; }
 
-  /* ─── 기능 소개 ─── */
-  .features {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    padding: 0 0 3rem;
-    text-align: center;
+  .hero-free {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.6rem;
   }
 
-  .feature-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1.5rem 1rem;
-  }
-
-  .feature-icon-wrap {
+  /* ─── 사용 흐름 ─── */
+  .how-it-works {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
-    background: var(--bg-hover);
-    color: var(--text-heading);
-    border-radius: 50%;
+    gap: 0.75rem;
+    padding: 2rem 1rem 3rem;
   }
 
-  .feature-heading {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--text-heading);
-  }
-
-  .feature-card p {
-    font-size: 0.82rem;
-    color: var(--text-sub);
-    line-height: 1.55;
-  }
-
-  /* ─── 하단 CTA ─── */
-  .bottom-cta {
-    text-align: center;
-    padding: 2.5rem 1rem;
-    border-top: 1px solid var(--border);
-  }
-
-  .bottom-cta-title {
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: var(--text-heading);
-    margin-bottom: 0.5rem;
-  }
-
-  .bottom-cta-desc {
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-size: 0.88rem;
-    color: var(--text-sub);
-    margin-bottom: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .step-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: var(--text-heading);
+    color: var(--bg);
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .step-arrow {
+    width: 20px;
+    height: 2px;
+    background: var(--border);
+    flex-shrink: 0;
   }
 
   .bottom-cta-btn {
