@@ -157,7 +157,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     width: 28px;
     height: 28px;
     border: 3px solid var(--border);
-    border-top-color: var(--accent, #0d9488);
+    border-top-color: var(--accent, #333);
     border-radius: 50%;
     animation: photo-spin 0.6s linear infinite;
   }
@@ -306,7 +306,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-heading);
   }
 
-  .rating-meta-value.positive { color: #16a34a; }
+  .rating-meta-value.positive { color: var(--text-heading); }
   .rating-meta-value.negative { color: #dc2626; }
 
   .rating-meta-label {
@@ -393,7 +393,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .review-form-card--highlight {
-    border-color: var(--accent, #0d9488);
+    border-color: var(--accent, #333);
   }
 
   .review-form-card summary::-webkit-details-marker { display: none; }
@@ -405,7 +405,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     background: var(--bg-card); color: var(--text-sub); text-align: center; transition: all 0.15s;
   }
   .revisit-btn:hover { border-color: var(--border-mid); }
-  .revisit-btn.active[data-val="yes"] { background: var(--accent, #0d9488); color: #fff; border-color: var(--accent, #0d9488); }
+  .revisit-btn.active[data-val="yes"] { background: var(--accent, #333); color: #fff; border-color: var(--accent, #333); }
   .revisit-btn.active[data-val="maybe"] { background: #f59e0b; color: #fff; border-color: #f59e0b; }
   .revisit-btn.active[data-val="no"] { background: var(--bg-hover); color: var(--text-muted); border-color: var(--border-mid); }
 
@@ -438,7 +438,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .review-form-toggle-item input[type="checkbox"] {
-    accent-color: #16a34a;
+    accent-color: var(--text-heading);
     width: 16px;
     height: 16px;
   }
@@ -943,7 +943,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-weight: 500;
   }
 
-  .revisit-badge.yes { background: #dcfce7; color: #166534; }
+  .revisit-badge.yes { background: var(--bg-hover); color: var(--text-heading); }
   .revisit-badge.no { background: #fee2e2; color: #991b1b; }
 
   .revisit-toggle {

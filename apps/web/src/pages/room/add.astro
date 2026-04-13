@@ -61,7 +61,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     transition: all 0.3s;
   }
   .step-dot.active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
-  .step-dot.done { border-color: #22c55e; color: #22c55e; background: rgba(34,197,94,0.08); }
+  .step-dot.done { border-color: var(--text-heading); color: var(--text-heading); background: rgba(0,0,0,0.04); }
 
   .step-label {
     font-size: 0.72rem;
@@ -69,7 +69,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
   }
   .step-label.active { color: var(--accent); font-weight: 700; }
-  .step-label.done { color: #22c55e; font-weight: 700; }
+  .step-label.done { color: var(--text-heading); font-weight: 700; }
 
   .step-line {
     flex: 1;
@@ -78,7 +78,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     transition: background 0.3s;
     margin-top: 17px;
   }
-  .step-line.done { background: #22c55e; }
+  .step-line.done { background: var(--text-heading); }
 
   /* 스텝 컨텐츠 */
   .step-panel { display: none; }
@@ -354,7 +354,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     transition: all 0.15s;
   }
   .mode-toggle-btn:first-child { border-right: 1px solid var(--border); }
-  .mode-toggle-btn.active { background: #10b981; color: #fff; }
+  .mode-toggle-btn.active { background: var(--text-heading); color: #fff; }
 
   [hidden] { display: none !important; }
 

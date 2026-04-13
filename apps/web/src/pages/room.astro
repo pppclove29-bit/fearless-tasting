@@ -172,14 +172,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .room-action-chip--active {
-    color: #16a34a;
-    border-color: rgba(22, 163, 74, 0.3);
-    background: rgba(22, 163, 74, 0.06);
+    color: var(--text-heading);
+    border-color: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.03);
   }
 
   .room-action-chip--active:hover {
-    border-color: rgba(22, 163, 74, 0.5);
-    background: rgba(22, 163, 74, 0.1);
+    border-color: rgba(0, 0, 0, 0.25);
+    background: rgba(0, 0, 0, 0.06);
   }
 
   .room-action-chip--right {
@@ -236,7 +236,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-sub);
   }
   .invite-btn--public:hover { border-color: var(--border-mid); color: var(--text-heading); }
-  .invite-btn--public.active { border-color: #22c55e; color: #16a34a; background: rgba(34,197,94,0.06); }
+  .invite-btn--public.active { border-color: var(--text-heading); color: var(--text-heading); background: var(--accent-bg); }
 
   .invite-btn-sub {
     font-size: 0.65rem;
@@ -361,7 +361,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     align-items: center;
     gap: 0.3rem;
     padding: 0.5rem 0.85rem;
-    background: #10b981;
+    background: var(--text-heading);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -394,7 +394,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: #10b981;
+    background: var(--text-heading);
     color: #fff;
     display: flex;
     align-items: center;
@@ -444,17 +444,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-radius: 4px;
     font-size: 0.6rem;
     font-weight: 700;
-    background: #10b981;
+    background: var(--text-heading);
     color: #fff;
   }
 
   .member-item.is-me {
-    border-color: #10b981;
-    background: rgba(16, 185, 129, 0.04);
+    border-color: var(--text-heading);
+    background: rgba(0, 0, 0, 0.03);
   }
 
   [data-theme="dark"] .member-item.is-me {
-    background: rgba(16, 185, 129, 0.08);
+    background: rgba(0, 0, 0, 0.05);
   }
 
   .member-stats {
@@ -1096,7 +1096,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     white-space: nowrap;
   }
 
-  .poll-status-badge.active { background: #dcfce7; color: #166534; }
+  .poll-status-badge.active { background: var(--bg-hover); color: var(--text-heading); }
   .poll-status-badge.closed { background: var(--bg-hover); color: var(--text-muted); }
 
   .poll-card-meta {
@@ -1185,7 +1185,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-top: 1px;
   }
 
-  .timeline-icon--restaurant { background: #dcfce7; color: #16a34a; }
+  .timeline-icon--restaurant { background: var(--bg-hover); color: var(--text-heading); }
   .timeline-icon--visit { background: #fef3c7; color: #d97706; }
   .timeline-icon--review { background: #f3e8ff; color: #9333ea; }
   .timeline-icon--member { background: #dbeafe; color: #2563eb; }
@@ -1529,10 +1529,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
   .behavior-tag.explorer { background: #dbeafe; color: #1e40af; }
   .behavior-tag.regular { background: #fef3c7; color: #92400e; }
-  .behavior-tag.balanced { background: #f0fdf4; color: #166534; }
+  .behavior-tag.balanced { background: var(--bg-hover); color: var(--text-heading); }
   .behavior-tag.picky { background: #fce7f3; color: #9d174d; }
   .behavior-tag.diverse { background: #ede9fe; color: #5b21b6; }
-  .behavior-tag.tendency { background: #dcfce7; color: #166534; }
+  .behavior-tag.tendency { background: var(--bg-hover); color: var(--text-heading); }
   .behavior-tag.tendency-strict { background: #fee2e2; color: #991b1b; }
   .behavior-tag.diligent { background: #dbeafe; color: #1e40af; }
   .behavior-tag.lazy { background: #fef3c7; color: #92400e; }
@@ -1816,7 +1816,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .share-toggle-label input:checked + .share-toggle-track {
-    background: #22c55e;
+    background: var(--text-heading);
   }
 
   .share-toggle-label input:checked + .share-toggle-track::after {
@@ -2785,7 +2785,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   // ─── 통계 탭 ───
 
-  const barColors = ['#0d9488','#14b8a6','#2dd4bf','#5eead4','#99f6e4','#ccfbf1','#f0fdfa','#06b6d4','#22d3ee','#67e8f9'];
+  const barColors = ['#1a1a1a','#333333','#4d4d4d','#666666','#808080','#999999','#b3b3b3','#cccccc','#e0e0e0','#f0f0f0'];
 
   function renderBarChart(entries: [string, number][]): string {
     if (entries.length === 0) return '';
@@ -2820,9 +2820,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const isDark = document.documentElement.classList.contains('dark');
     const gridColor = isDark ? 'rgba(255,255,255,0.15)' : '#e8e8e8';
     const labelColor = isDark ? 'rgba(255,255,255,0.6)' : '#666';
-    const polyStroke = isDark ? '#2dd4bf' : '#0d9488';
-    const polyFill = isDark ? 'rgba(45,212,191,0.2)' : 'rgba(13,148,136,0.12)';
-    const dotColor = isDark ? '#5eead4' : '#0d9488';
+    const polyStroke = isDark ? '#cccccc' : '#333333';
+    const polyFill = isDark ? 'rgba(204,204,204,0.2)' : 'rgba(51,51,51,0.12)';
+    const dotColor = isDark ? '#e0e0e0' : '#333333';
 
     // 그리드 원
     const gridCircles = [1, 2, 3, 4, 5].map((lv) => {
@@ -3176,7 +3176,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         });
         new Chart(monthCanvas, {
           type: 'bar',
-          data: { labels, datasets: [{ data, backgroundColor: '#10b981', borderRadius: 4, barPercentage: 0.6 }] },
+          data: { labels, datasets: [{ data, backgroundColor: isDark ? '#f4f4f5' : '#1a1a1a', borderRadius: 4, barPercentage: 0.6 }] },
           options: { responsive: true, maintainAspectRatio: true, aspectRatio: 2, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } }, x: { ticks: { color: textColor }, grid: { display: false } } } },
         });
       }

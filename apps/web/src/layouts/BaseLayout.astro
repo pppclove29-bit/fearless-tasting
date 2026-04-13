@@ -218,9 +218,9 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     --border-light: #f0f0f0;
     --border-mid: #d0d0d0;
     --shadow: rgba(0,0,0,0.08);
-    --accent: #0d9488;
-    --accent-light: #ccfbf1;
-    --accent-bg: rgba(13, 148, 136, 0.08);
+    --accent: #333;
+    --accent-light: #f0f0f0;
+    --accent-bg: rgba(0, 0, 0, 0.04);
     color-scheme: light;
   }
 
@@ -238,9 +238,9 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     --border-light: #252528;
     --border-mid: #3f3f46;
     --shadow: rgba(0,0,0,0.3);
-    --accent: #2dd4bf;
-    --accent-light: #134e4a;
-    --accent-bg: rgba(45, 212, 191, 0.1);
+    --accent: #d1d5db;
+    --accent-light: #2a2a2e;
+    --accent-bg: rgba(255, 255, 255, 0.06);
     color-scheme: dark;
   }
 
@@ -479,7 +479,7 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
   }
 
   .notif-icon--member { background: #dbeafe; color: #2563eb; }
-  .notif-icon--restaurant { background: #dcfce7; color: #16a34a; }
+  .notif-icon--restaurant { background: var(--bg-hover); color: var(--text-heading); }
   .notif-icon--visit { background: #f3e8ff; color: #9333ea; }
   .notif-icon--review { background: #fef3c7; color: #d97706; }
 

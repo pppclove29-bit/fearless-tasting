@@ -16,7 +16,7 @@ export function showToast(
   duration = 4000,
 ) {
   const el = document.createElement('div');
-  const bg = type === 'error' ? '#dc2626' : type === 'success' ? '#16a34a' : '#333';
+  const bg = type === 'error' ? '#dc2626' : type === 'success' ? '#333' : '#333';
   el.style.cssText = `
     background:${bg};color:#fff;padding:0.7rem 1.25rem;border-radius:8px;
     font-size:0.875rem;font-family:inherit;box-shadow:0 4px 12px rgba(0,0,0,0.15);
