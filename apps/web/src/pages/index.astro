@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import AdSlot from '@/components/AdSlot.astro';
 ---
 
 <BaseLayout
@@ -21,12 +20,10 @@ import AdSlot from '@/components/AdSlot.astro';
 
   <!-- 내 방 목록 (로그인 시) -->
   <div id="dashboard" hidden>
-    <div class="dashboard-hero">
-      <h1>내 방</h1>
-      <p class="page-desc">방을 만들어 함께 맛집 리스트를 공유하세요.</p>
-    </div>
+    <h1 class="dashboard-title">내 방</h1>
+    <p class="dashboard-desc">방을 만들어 함께 맛집 리스트를 공유하세요.</p>
 
-    <div class="rooms-actions">
+    <div class="create-card">
       <form id="create-form" class="action-form">
         <div class="input-group">
           <input type="text" id="create-name" placeholder="방 이름을 입력하세요" required maxlength="100" />
@@ -44,8 +41,21 @@ import AdSlot from '@/components/AdSlot.astro';
 
     <div class="form-error" id="form-error" hidden></div>
 
+    <div class="search-card">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="room-search" class="search-input" placeholder="방 이름 검색" />
+    </div>
+
     <div class="rooms-toolbar" id="rooms-toolbar" hidden>
       <span class="rooms-count" id="rooms-count"></span>
+      <div class="sort-select-wrap">
+        <select id="rooms-sort" class="sort-select">
+          <option value="recent">최근 만든순</option>
+          <option value="name">이름순</option>
+          <option value="members">멤버 많은순</option>
+          <option value="restaurants">식당 많은순</option>
+        </select>
+      </div>
     </div>
 
     <div id="rooms-list"></div>
@@ -59,177 +69,45 @@ import AdSlot from '@/components/AdSlot.astro';
   <!-- 랜딩 (기본 표시, 로그인 시 숨김) -->
   <div id="landing">
     <section class="hero">
-      <p class="hero-badge">프라이빗 맛집 리뷰 공유 플랫폼</p>
-      <h1 class="hero-title">우리만의<br/>맛집 리스트</h1>
-      <p class="hero-sub">친구, 연인, 가족끼리 맛집을 기록하고 링크 하나로 공유하세요</p>
-      <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`} class="hero-cta login-only-cta">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="vertical-align: -3px; margin-right: 6px;">
-          <path d="M9 1C4.58 1 1 3.8 1 7.2c0 2.2 1.47 4.13 3.68 5.22-.16.6-.59 2.17-.67 2.51-.1.42.15.41.32.3.13-.09 2.1-1.43 2.95-2.01.55.08 1.12.12 1.72.12 4.42 0 8-2.8 8-6.14S13.42 1 9 1z" fill="currentColor"/>
-        </svg>
-        카카오로 시작하기
-      </a>
+      <h1 class="hero-title">친구들과 함께하는<br/>맛집 탐방 여정</h1>
+      <p class="hero-sub">방을 만들고, 맛집을 공유하고, 추억을 기록하세요</p>
+      <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`} class="hero-cta login-only-cta">시작하기</a>
     </section>
 
     <section class="features">
       <div class="feature-card">
         <div class="feature-icon-wrap">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
         </div>
-        <h2 class="feature-heading">프라이빗 맛집 방</h2>
-        <p>비공개 맛집 방을 만들고 친구, 연인, 가족을 초대하세요.</p>
+        <div>
+          <h2 class="feature-heading">함께 만드는 맛집 리스트</h2>
+          <p>친구, 동료와 방을 만들어 맛집을 함께 기록하고 공유하세요</p>
+        </div>
       </div>
       <div class="feature-card">
         <div class="feature-icon-wrap">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </div>
-        <h2 class="feature-heading">솔직한 맛집 리뷰</h2>
-        <p>다녀온 식당을 등록하고 별점 하나로 간편하게 솔직한 리뷰를 남겨보세요.</p>
+        <div>
+          <h2 class="feature-heading">지역별 맛집 탐방</h2>
+          <p>지역별로 맛집을 정리하고 방문 기록을 남겨보세요</p>
+        </div>
       </div>
       <div class="feature-card">
         <div class="feature-icon-wrap">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
-        <h2 class="feature-heading">통계 & 분석</h2>
-        <p>방문 통계, 카테고리 분포, 멤버 활동 분석으로 맛집 취향을 파악하세요.</p>
-      </div>
-    </section>
-
-    <section class="recommend">
-      <h2 class="section-title">이런 분들에게 추천해요</h2>
-      <div class="recommend-list">
-        <a href="/use/couples" class="recommend-item">
-          <div class="recommend-icon-wrap">👫</div>
-          <div>
-            <h3>연인과 맛집을 기록하고 싶은 커플</h3>
-            <p>함께 다녀온 맛집을 하나의 리스트로 관리해보세요.</p>
-          </div>
-        </a>
-        <a href="/use/friends" class="recommend-item">
-          <div class="recommend-icon-wrap">👨‍👩‍👧‍👦</div>
-          <div>
-            <h3>친구끼리 맛집을 공유하고 싶은 분</h3>
-            <p>카톡에 묻히는 맛집, 한곳에 모아 함께 기록하세요.</p>
-          </div>
-        </a>
-        <a href="/use/team" class="recommend-item">
-          <div class="recommend-icon-wrap">🍽️</div>
-          <div>
-            <h3>회사 점심 맛집을 팀원들과 공유하고 싶은 분</h3>
-            <p>팀 맛집 리스트를 만들어 점심 고민을 끝내보세요.</p>
-          </div>
-        </a>
-      </div>
-    </section>
-
-    <section class="steps">
-      <h2 class="section-title">이렇게 시작해보세요</h2>
-      <div class="steps-list">
-        <div class="step">
-          <span class="step-num">1</span>
-          <div>
-            <h3>카카오 로그인</h3>
-            <p>카카오 계정으로 3초 만에 가입해보세요.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">2</span>
-          <div>
-            <h3>방 만들기 또는 참여</h3>
-            <p>새 방을 만들거나, 기존 방에 참여해보세요.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">3</span>
-          <div>
-            <h3>맛집 등록 & 리뷰</h3>
-            <p>방문한 식당을 등록하고 별점과 리뷰를 남겨보세요.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">4</span>
-          <div>
-            <h3>통계 확인</h3>
-            <p>방문 통계와 멤버 분석으로 맛집 취향을 파악해보세요.</p>
-          </div>
+        <div>
+          <h2 class="feature-heading">랭킹과 통계</h2>
+          <p>인기 맛집과 활동 통계를 확인하고 새로운 맛집을 발견하세요</p>
         </div>
       </div>
-    </section>
-
-    <section class="faq">
-      <h2 class="section-title">자주 묻는 질문</h2>
-      <div class="faq-list">
-        <details class="faq-item">
-          <summary>한 방에 몇 명까지 참여할 수 있나요?</summary>
-          <p>현재 한 방에 최대 4명까지 참여할 수 있습니다.</p>
-        </details>
-        <details class="faq-item">
-          <summary>친구를 어떻게 초대하나요?</summary>
-          <p>방 상세 페이지에서 공유 버튼을 누르면 초대할 수 있습니다.</p>
-        </details>
-        <details class="faq-item">
-          <summary>무모한 시식가는 무료인가요?</summary>
-          <p>네, 무모한 시식가의 모든 기능은 무료로 이용할 수 있습니다. 카카오 계정으로 간편하게 가입하세요.</p>
-        </details>
-        <details class="faq-item">
-          <summary>맛집 리뷰에 어떤 정보를 남길 수 있나요?</summary>
-          <p>종합 별점(1~5점)만으로 간편하게 리뷰할 수 있습니다. 원하면 맛·가성비 세부 평점, 한줄평, 재방문 의사, 또 먹고 싶은 메뉴도 추가할 수 있습니다.</p>
-        </details>
-        <details class="faq-item">
-          <summary>프라이빗 맛집 리뷰란 무엇인가요?</summary>
-          <p>프라이빗 맛집 리뷰는 친구, 연인, 가족 등 가까운 사람들끼리만 비공개로 공유하는 맛집 리뷰입니다. 광고나 협찬 없이 신뢰할 수 있는 솔직한 후기를 기록할 수 있습니다.</p>
-        </details>
-        <details class="faq-item">
-          <summary>커플 맛집 기록은 어떻게 하나요?</summary>
-          <p>방을 만들고 연인을 초대하세요. 함께 다녀온 맛집을 등록하고 각자 리뷰를 남기면, 커플만의 맛집 리스트가 완성됩니다. 카카오맵 연동으로 식당을 쉽게 검색할 수 있습니다.</p>
-        </details>
-      </div>
-    </section>
-
-    <AdSlot slot="home-mid" position="middle" format="horizontal" />
-
-    <section class="platform-stats" id="platform-stats" hidden>
-      <h2 class="section-title">지금까지의 기록</h2>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <span class="stat-number" id="stat-rooms">-</span>
-          <span class="stat-label">개의 방</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-number" id="stat-users">-</span>
-          <span class="stat-label">명의 시식가</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-number" id="stat-restaurants">-</span>
-          <span class="stat-label">곳의 맛집</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-number" id="stat-reviews">-</span>
-          <span class="stat-label">개의 리뷰</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="seo-detail">
-      <h2>프라이빗 맛집 리뷰란?</h2>
-      <p>
-        맛집 리뷰 앱은 많지만, 광고나 협찬 리뷰가 섞여 신뢰하기 어렵습니다.
-        무모한 시식가는 <strong>가까운 사람들끼리만 공유하는 프라이빗 맛집 리뷰 플랫폼</strong>입니다.
-        커플 맛집 기록, 가족 맛집 공유, 친구끼리 맛집 리스트 관리에 최적화되어 있습니다.
-      </p>
-      <h3>이런 용도로 사용하세요</h3>
-      <ul>
-        <li><a href="/use/couples"><strong>커플 맛집 리스트 정리하는 방법</strong></a> — 연인과 함께 다녀온 맛집을 하나의 리스트로 관리</li>
-        <li><a href="/use/friends"><strong>친구랑 맛집 공유 방법</strong></a> — 카톡에 묻히는 맛집 추천, 한곳에 모아 솔직한 리뷰 기록</li>
-        <li><a href="/use/team"><strong>회사 점심 맛집 팀원들과 공유하기</strong></a> — 팀 맛집 리스트를 만들어 점심 고민 끝내기</li>
-        <li><strong>맛집 기록 & 관리</strong> — 방문 기록, 별점, 세부 평점으로 체계적 관리</li>
-        <li><strong>공개 방</strong> — 방을 공개로 설정하면 누구나 맛집 리스트를 열람 가능</li>
-      </ul>
     </section>
 
     <section class="bottom-cta login-only-cta">
-      <p>지금 바로 시작해보세요.</p>
-      <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`} class="hero-cta">카카오로 시작하기</a>
-      <a href="/cs" class="bottom-cta-link">문의하기</a>
+      <h2 class="bottom-cta-title">지금 바로 시작해보세요</h2>
+      <p class="bottom-cta-desc">무료로 가입하고 친구들과 맛집 여정을 시작하세요</p>
+      <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`} class="bottom-cta-btn">로그인하기</a>
     </section>
   </div>
 
@@ -317,412 +195,204 @@ import AdSlot from '@/components/AdSlot.astro';
     margin-bottom: 2rem;
   }
 
-  .hero-badge {
-    display: inline-block;
-    padding: 0.35rem 1rem;
-    background: var(--text-heading);
-    color: var(--bg);
-    border-radius: 100px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    margin-bottom: 1.25rem;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-  }
-
   .hero-title {
-    font-size: 2.8rem;
+    font-size: 2.4rem;
     font-weight: 900;
     letter-spacing: -0.04em;
-    line-height: 1.15;
+    line-height: 1.2;
     margin-bottom: 1rem;
     color: var(--text-heading);
   }
 
   .hero-sub {
-    font-size: 1.05rem;
+    font-size: 1rem;
     color: var(--text-sub);
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
     line-height: 1.7;
   }
 
   .hero-cta {
     display: inline-flex;
     align-items: center;
-    padding: 0.9rem 2rem;
-    background: #FEE500;
-    color: #191919;
+    padding: 0.8rem 2rem;
+    background: var(--text-heading);
+    color: var(--bg);
     font-size: 0.95rem;
     font-weight: 600;
-    border-radius: 12px;
+    border-radius: 10px;
     text-decoration: none;
-    transition: background 0.15s, transform 0.1s;
+    transition: opacity 0.15s, transform 0.1s;
   }
 
-  .hero-cta:hover {
-    background: #F5DC00;
-  }
-
-  .hero-cta:active {
-    transform: scale(0.98);
-  }
-
-  .hero-cta[hidden] {
-    display: none;
-  }
+  .hero-cta:hover { opacity: 0.85; }
+  .hero-cta:active { transform: scale(0.98); }
+  .hero-cta[hidden] { display: none; }
 
   /* ─── 기능 소개 ─── */
   .features {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 0 0 3.5rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 0 0 3rem;
+    text-align: center;
   }
 
   .feature-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.25rem 1.5rem;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
+    padding: 1.5rem 1rem;
   }
 
   .feature-icon-wrap {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    background: var(--text-heading);
-    color: var(--bg);
-    border-radius: 12px;
+    width: 48px;
+    height: 48px;
+    background: var(--bg-hover);
+    color: var(--text-heading);
+    border-radius: 50%;
   }
 
   .feature-heading {
     font-size: 0.95rem;
     font-weight: 700;
-    margin-bottom: 0.2rem;
     color: var(--text-heading);
   }
 
   .feature-card p {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     color: var(--text-sub);
     line-height: 1.55;
-  }
-
-  .section-title {
-    text-align: center;
-    font-size: 1.35rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    margin-bottom: 1.5rem;
-    color: var(--text-heading);
-  }
-
-  /* ─── 추천 대상 ─── */
-  .recommend {
-    padding: 0 0 3.5rem;
-  }
-
-  .recommend-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    max-width: 520px;
-    margin: 0 auto;
-  }
-
-  .recommend-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.25rem;
-    text-decoration: none;
-    color: inherit;
-    transition: border-color 0.15s;
-  }
-
-  .recommend-item:hover {
-    border-color: var(--accent);
-  }
-
-  .recommend-icon-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    background: var(--bg-hover);
-    border-radius: 12px;
-    font-size: 1.3rem;
-  }
-
-  .recommend-item h3 {
-    font-size: 0.925rem;
-    font-weight: 700;
-    margin-bottom: 0.2rem;
-    color: var(--text-heading);
-  }
-
-  .recommend-item p {
-    font-size: 0.825rem;
-    color: var(--text-sub);
-    line-height: 1.5;
-  }
-
-  /* ─── 시작 스텝 ─── */
-  .steps {
-    padding: 0 0 3.5rem;
-  }
-
-  .steps-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    max-width: 480px;
-    margin: 0 auto;
-  }
-
-  .step {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.25rem;
-  }
-
-  .step-num {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    background: var(--text-heading);
-    color: var(--bg);
-    font-size: 0.85rem;
-    font-weight: 700;
-    border-radius: 50%;
-  }
-
-  .step h3 {
-    font-size: 0.925rem;
-    font-weight: 700;
-    margin-bottom: 0.2rem;
-    color: var(--text-heading);
-  }
-
-  .step p {
-    font-size: 0.825rem;
-    color: var(--text-sub);
-    line-height: 1.5;
-  }
-
-  /* ─── FAQ ─── */
-  .faq {
-    padding: 0 0 3.5rem;
-  }
-
-  .faq-list {
-    max-width: 520px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .faq-item {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-  }
-
-  .faq-item summary {
-    padding: 1rem 1.25rem;
-    font-size: 0.925rem;
-    font-weight: 600;
-    cursor: pointer;
-    list-style: none;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--text-heading);
-  }
-
-  .faq-item summary::after {
-    content: '+';
-    font-size: 1.2rem;
-    font-weight: 400;
-    color: var(--text-muted);
-    transition: transform 0.2s;
-  }
-
-  .faq-item[open] summary::after {
-    content: '−';
-  }
-
-  .faq-item summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .faq-item p {
-    padding: 0 1.25rem 1.1rem;
-    font-size: 0.85rem;
-    color: var(--text-sub);
-    line-height: 1.65;
-  }
-
-  /* ─── 플랫폼 통계 ─── */
-  .platform-stats {
-    padding: 0 0 3.5rem;
-  }
-
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
-    max-width: 520px;
-    margin: 0 auto;
-  }
-
-  .stat-item {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.25rem 0.5rem;
-    text-align: center;
-  }
-
-  .stat-number {
-    display: block;
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: var(--text-heading);
-    margin-bottom: 0.2rem;
-  }
-
-  .stat-label {
-    font-size: 0.75rem;
-    color: var(--text-sub);
-  }
-
-  @media (max-width: 600px) {
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-
-  /* ─── SEO 상세 ─── */
-  .seo-detail {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 2rem 0;
-    border-top: 1px solid var(--border-light);
-  }
-
-  .seo-detail h2 {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--text-heading);
-    margin-bottom: 0.75rem;
-  }
-
-  .seo-detail h3 {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-heading);
-    margin: 1.25rem 0 0.5rem;
-  }
-
-  .seo-detail p {
-    font-size: 0.88rem;
-    color: var(--text-sub);
-    line-height: 1.7;
-  }
-
-  .seo-detail ul {
-    list-style: none;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .seo-detail li {
-    font-size: 0.85rem;
-    color: var(--text-sub);
-    line-height: 1.5;
-    padding-left: 1.1rem;
-    position: relative;
-  }
-
-  .seo-detail li::before {
-    content: "•";
-    position: absolute;
-    left: 0;
-    color: var(--text-muted);
   }
 
   /* ─── 하단 CTA ─── */
   .bottom-cta {
     text-align: center;
-    padding: 2rem 0 3rem;
+    padding: 2.5rem 1rem;
+    border-top: 1px solid var(--border);
   }
 
-  .bottom-cta p {
-    font-size: 1.05rem;
+  .bottom-cta-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    margin-bottom: 0.5rem;
+  }
+
+  .bottom-cta-desc {
+    font-size: 0.88rem;
+    color: var(--text-sub);
+    margin-bottom: 1.5rem;
+  }
+
+  .bottom-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.75rem 2rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    font-size: 0.9rem;
     font-weight: 600;
-    color: var(--text-heading);
-    margin-bottom: 1.25rem;
-  }
-
-  .bottom-cta-link {
-    display: block;
-    margin-top: 0.75rem;
-    font-size: 0.85rem;
-    color: var(--text-muted);
+    border-radius: 10px;
     text-decoration: none;
+    transition: opacity 0.15s, transform 0.1s;
   }
 
-  .bottom-cta-link:hover {
-    color: var(--text-heading);
-  }
+  .bottom-cta-btn:hover { opacity: 0.85; }
+  .bottom-cta-btn:active { transform: scale(0.98); }
 
   @media (max-width: 600px) {
     .hero { padding: 2.5rem 1rem 2rem; }
-    .hero-title { font-size: 2rem; }
+    .hero-title { font-size: 1.8rem; }
     .hero-sub { font-size: 0.9rem; }
-    .feature-card { padding: 1rem 1.25rem; }
+    .features { grid-template-columns: 1fr; gap: 0.5rem; }
   }
 
   /* ─── 대시보드 (방 목록) ─── */
-  .dashboard-hero {
-    background: var(--bg-hover);
-    border-radius: 16px;
-    padding: 2rem 1.5rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .dashboard-hero h1 {
-    margin-bottom: 0.25rem;
+  .dashboard-title {
     font-size: 1.5rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     color: var(--text-heading);
+    margin-bottom: 0.25rem;
   }
 
-  .page-desc {
+  .dashboard-desc {
     color: var(--text-muted);
     font-size: 0.875rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .create-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .search-card {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .search-icon {
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    flex: 1;
+    border: none;
+    background: none;
+    font-size: 0.875rem;
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+  }
+
+  .search-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .sort-select-wrap {
+    position: relative;
+  }
+
+  .sort-select {
+    appearance: none;
+    background: none;
+    border: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-sub);
+    cursor: pointer;
+    font-family: inherit;
+    padding-right: 1rem;
+    outline: none;
+  }
+
+  .sort-select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid var(--text-muted);
+    pointer-events: none;
   }
 
   .status-msg {
@@ -732,15 +402,8 @@ import AdSlot from '@/components/AdSlot.astro';
     font-size: 0.9rem;
   }
 
-  .rooms-actions {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-  }
-
   .action-form {
-    flex: 1;
-    min-width: 0;
+    width: 100%;
   }
 
   .input-group {
@@ -899,11 +562,6 @@ import AdSlot from '@/components/AdSlot.astro';
     cursor: help;
   }
 
-  @media (max-width: 600px) {
-    .rooms-actions {
-      flex-direction: column;
-    }
-  }
 </style>
 
 <style is:global>
@@ -979,7 +637,7 @@ import AdSlot from '@/components/AdSlot.astro';
 </style>
 
 <script>
-  import { fetchCurrentUser, getCachedUser, fetchMyRooms, createRoom, fetchPlatformStats, fetchNotices, showToast } from '@/lib/api';
+  import { fetchCurrentUser, getCachedUser, fetchMyRooms, createRoom, fetchNotices, showToast } from '@/lib/api';
   import type { RoomListItem } from '@/lib/api';
   import { formatDate } from '@repo/utils';
 
@@ -1011,6 +669,8 @@ import AdSlot from '@/components/AdSlot.astro';
     const createNameInput = document.getElementById('create-name') as HTMLInputElement | null;
     const roomsToolbar = document.getElementById('rooms-toolbar');
     const roomsCount = document.getElementById('rooms-count');
+    const roomSearch = document.getElementById('room-search') as HTMLInputElement | null;
+    const roomsSort = document.getElementById('rooms-sort') as HTMLSelectElement | null;
 
     function escapeHtml(text: string): string {
       const div = document.createElement('div');
@@ -1026,9 +686,33 @@ import AdSlot from '@/components/AdSlot.astro';
 
     let allRooms: RoomListItem[] = [];
 
-    function applyAndRenderHome() {
-      renderRooms(allRooms);
+    function getFilteredAndSortedRooms(): RoomListItem[] {
+      const query = (roomSearch?.value ?? '').trim().toLowerCase();
+      let rooms = allRooms;
+      if (query) {
+        rooms = rooms.filter((r) => r.name.toLowerCase().includes(query));
+      }
+      const sort = roomsSort?.value ?? 'recent';
+      switch (sort) {
+        case 'name':
+          rooms = [...rooms].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+          break;
+        case 'members':
+          rooms = [...rooms].sort((a, b) => b.memberCount - a.memberCount);
+          break;
+        case 'restaurants':
+          rooms = [...rooms].sort((a, b) => b.restaurantCount - a.restaurantCount);
+          break;
+      }
+      return rooms;
     }
+
+    function applyAndRenderHome() {
+      renderRooms(getFilteredAndSortedRooms());
+    }
+
+    roomSearch?.addEventListener('input', applyAndRenderHome);
+    roomsSort?.addEventListener('change', applyAndRenderHome);
 
     function renderRooms(rooms: RoomListItem[]) {
       if (rooms.length === 0) {
@@ -1086,27 +770,11 @@ import AdSlot from '@/components/AdSlot.astro';
       }
     });
 
-    // 유저/통계/공지 병렬 로드
-    const [user, statsResult, noticesResult] = await Promise.all([
+    // 유저/공지 병렬 로드
+    const [user, noticesResult] = await Promise.all([
       fetchCurrentUser().catch(() => null),
-      fetchPlatformStats().catch(() => null),
       fetchNotices().catch(() => null),
     ]);
-
-    // 플랫폼 통계 렌더링
-    if (statsResult) {
-      const fmt = (n: number) => n.toLocaleString('ko-KR');
-      const statRooms = document.getElementById('stat-rooms');
-      const statUsers = document.getElementById('stat-users');
-      const statRestaurants = document.getElementById('stat-restaurants');
-      const statReviews = document.getElementById('stat-reviews');
-      const platformStats = document.getElementById('platform-stats');
-      if (statRooms) statRooms.textContent = fmt(statsResult.roomCount);
-      if (statUsers) statUsers.textContent = fmt(statsResult.userCount);
-      if (statRestaurants) statRestaurants.textContent = fmt(statsResult.restaurantCount);
-      if (statReviews) statReviews.textContent = fmt(statsResult.reviewCount);
-      if (platformStats) platformStats.hidden = false;
-    }
 
     // 공지 리스트 렌더링
     if (noticesResult && noticesResult.length > 0) {
