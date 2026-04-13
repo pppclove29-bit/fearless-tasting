@@ -34,6 +34,8 @@
 - 삭제 시 cascade 관계 확인 (Prisma `onDelete: Cascade`)
 - 정수 검증은 `@IsInt()` 사용 (`@IsNumber()` 금지 — 소수점 허용 방지)
 - API 에러 처리: `throwIfNotOk(res, fallback)` 헬퍼 사용 (api.ts)
+- **패턴 일괄 변경 시 전체 검증 필수**: 동일 패턴을 여러 곳 수정할 때(예: `img.url` → `toImageUrl(img.url)`) 반드시 `grep`으로 변경 전 패턴이 남아있는지 확인. 수정 후에도 누락 검증
+- **DTO ↔ Controller ↔ Service 필드 동기화**: DTO에 필드 추가 시 Controller에서 Service로 전달하는 객체에도 반드시 포함. whitelist: true가 DTO에 없는 필드를 제거하므로 DTO-Controller-Service 3곳이 항상 일치해야 함
 
 ## API 모듈 구조
 
