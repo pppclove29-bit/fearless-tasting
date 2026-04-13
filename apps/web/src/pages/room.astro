@@ -2592,9 +2592,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     document.getElementById('help-btn')?.addEventListener('click', showHelpModal);
 
     document.getElementById('delete-room-btn')?.addEventListener('click', async () => {
-      if (!await showDangerConfirm('정말 이 방을 삭제하시겠습니까? 모든 식당과 리뷰가 삭제됩니다.')) return;
+      const roomName = currentRoom.name;
+      const input = prompt(`방을 삭제하면 모든 식당과 리뷰가 삭제됩니다.\n\n확인을 위해 방 이름 "${roomName}"을(를) 입력하세요.`);
+      if (input === null) return;
+      if (input.trim() !== roomName) {
+        showToast('방 이름이 일치하지 않습니다.', 'info');
+        return;
+      }
       try {
         await deleteRoom(currentRoom.id);
+        showToast('방이 삭제되었습니다.', 'success');
         location.href = '/';
       } catch { showToast('방 삭제에 실패했습니다.'); }
     });
