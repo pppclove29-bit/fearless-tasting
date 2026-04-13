@@ -4,12 +4,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
 <BaseLayout title="내 방" description="참여 중인 방 목록을 확인하고 새 방을 만드세요" noindex>
   <div class="rooms-page">
-    <div class="rooms-header">
-      <div>
-        <h1>내 방</h1>
-        <p class="page-desc">방을 만들어 함께 맛집 리스트를 공유하세요.</p>
-      </div>
-    </div>
+    <h1 class="rooms-title">내 방</h1>
+    <p class="rooms-desc">방을 만들어 함께 맛집 리스트를 공유하세요.</p>
 
     <p id="loading-msg" class="status-msg">로딩 중...</p>
     <p id="login-msg" class="status-msg" hidden>
@@ -17,7 +13,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     </p>
 
     <div id="rooms-content" hidden>
-      <div class="rooms-actions">
+      <div class="create-card">
         <form id="create-form" class="action-form">
           <div class="input-group">
             <input type="text" id="create-name" placeholder="방 이름을 입력하세요" required maxlength="100" />
@@ -35,8 +31,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       <div class="form-error" id="form-error" hidden></div>
 
-      <div id="rooms-search-wrap" hidden>
-        <input type="text" id="rooms-search" class="rooms-search" placeholder="방 이름 검색" />
+      <div class="search-card" id="rooms-search-wrap" hidden>
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="rooms-search" class="search-input" placeholder="방 이름 검색" />
       </div>
 
       <div class="rooms-toolbar" id="rooms-toolbar" hidden>
@@ -77,12 +74,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     padding: 1.5rem 1rem;
   }
 
-  .rooms-header h1 {
+  .rooms-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text-heading);
     margin-bottom: 0.25rem;
-    font-size: 1.4rem;
   }
 
-  .page-desc {
+  .rooms-desc {
     color: var(--text-muted);
     font-size: 0.875rem;
     margin-bottom: 1.25rem;
@@ -94,11 +94,48 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
     font-size: 0.9rem;
   }
+
+  .create-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .search-card {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .search-icon {
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    flex: 1;
+    border: none;
+    background: none;
+    font-size: 0.875rem;
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+  }
+
+  .search-input::placeholder {
+    color: var(--text-muted);
+  }
 </style>
 
 <style is:global>
-  .rooms-actions { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
-  .action-form { flex: 1; }
+  .action-form { width: 100%; }
   .input-group { display: flex; gap: 0.5rem; }
 
   .input-group input {
@@ -127,19 +164,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-family: inherit;
   }
 
-  .rooms-search {
-    width: 100%;
-    padding: 0.6rem 0.85rem;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    font-size: 0.85rem;
-    background: var(--bg-card);
-    color: var(--text);
-    font-family: inherit;
-    margin-bottom: 0.75rem;
-    transition: border-color 0.15s;
-  }
-  .rooms-search:focus { outline: none; border-color: var(--text-heading); }
 
   .rooms-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
   .rooms-count { font-size: 0.8rem; color: var(--text-muted); }
