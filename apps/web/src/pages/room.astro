@@ -117,60 +117,84 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
   .btn-settings:hover { color: var(--text-sub); }
 
-  .settings-modal-content {
+  .stg {
     background: var(--bg-card);
-    border-radius: 16px;
-    padding: 1.5rem;
+    border-radius: 14px;
+    padding: 1.2rem;
     width: 100%;
-    max-width: 380px;
+    max-width: 340px;
   }
-  .settings-modal-header {
+  .stg-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.8rem;
   }
-  .settings-modal-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-heading);
+  .stg-title { font-size: 0.95rem; font-weight: 700; color: var(--text-heading); }
+  .stg-close {
+    background: none; border: none; font-size: 1.3rem;
+    color: var(--text-muted); cursor: pointer; line-height: 1; padding: 0;
   }
-  .settings-field { margin-bottom: 1rem; }
-  .settings-label {
-    display: block;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text-sub);
-    margin-bottom: 0.35rem;
+  .stg-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--border-light, var(--border));
   }
-  .settings-input {
-    width: 100%;
-    padding: 0.6rem 0.75rem;
-    border: 1.5px solid var(--border);
+  .stg-row:last-of-type { border-bottom: none; }
+  .stg-lbl { font-size: 0.82rem; font-weight: 500; color: var(--text); }
+  .stg-lbl-wrap { display: flex; flex-direction: column; gap: 0.1rem; }
+  .stg-sub { font-size: 0.7rem; color: var(--text-muted); }
+  .stg-input {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
     border-radius: 8px;
-    font-size: 0.88rem;
+    font-size: 0.82rem;
     color: var(--text);
     background: var(--bg);
     font-family: inherit;
     outline: none;
+    width: 140px;
     box-sizing: border-box;
   }
-  .settings-input:focus { border-color: var(--text-heading); }
-  .settings-input-short { width: 80px; }
-  .settings-hint {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-left: 0.5rem;
+  .stg-input:focus { border-color: var(--text-heading); }
+  .stg-input-num { width: 56px; text-align: center; }
+  /* 토글 스위치 */
+  .stg-toggle { position: relative; display: inline-block; width: 36px; height: 20px; cursor: pointer; }
+  .stg-toggle input { opacity: 0; width: 0; height: 0; }
+  .stg-toggle-track {
+    position: absolute; inset: 0;
+    background: var(--border);
+    border-radius: 10px;
+    transition: background 0.2s;
   }
-  .settings-checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
+  .stg-toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .stg-toggle input:checked + .stg-toggle-track { background: var(--text-heading); }
+  .stg-toggle input:checked + .stg-toggle-track::after { transform: translateX(16px); }
+  .stg-save {
+    width: 100%;
+    padding: 0.55rem;
+    margin-top: 0.6rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
     font-size: 0.82rem;
-    color: var(--text-sub);
+    font-weight: 600;
     cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
   }
-  .settings-save { width: 100%; padding: 0.7rem; margin-top: 0.5rem; }
+  .stg-save:hover { opacity: 0.85; }
 
   .room-name-input {
     font-size: 1.3rem;
@@ -2504,27 +2528,30 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${isOwner() ? `<button type="button" class="btn-settings" id="room-settings-btn" title="방 설정">⚙</button>` : ''}
           ${isOwner() ? `
           <div id="settings-modal" class="modal-overlay" hidden>
-            <div class="settings-modal-content">
-              <div class="settings-modal-header">
-                <h3 class="settings-modal-title">방 설정</h3>
-                <button type="button" class="modal-close" id="settings-modal-close">&times;</button>
+            <div class="stg">
+              <div class="stg-header">
+                <span class="stg-title">방 설정</span>
+                <button type="button" class="stg-close" id="settings-modal-close">&times;</button>
               </div>
-              <div class="settings-field">
-                <label class="settings-label">방 이름</label>
-                <input type="text" id="settings-name" class="settings-input" value="${escapeHtml(currentRoom.name)}" maxlength="100" />
+              <div class="stg-row">
+                <span class="stg-lbl">방 이름</span>
+                <input type="text" id="settings-name" class="stg-input" value="${escapeHtml(currentRoom.name)}" maxlength="100" />
               </div>
-              <div class="settings-field">
-                <label class="settings-label">최대 인원</label>
-                <input type="number" id="settings-max-members" class="settings-input settings-input-short" min="${currentRoom.members.length}" max="20" value="${currentRoom.maxMembers}" />
-                <span class="settings-hint">현재 ${currentRoom.members.length}명 참여 중</span>
+              <div class="stg-row">
+                <div class="stg-lbl-wrap">
+                  <span class="stg-lbl">최대 인원</span>
+                  <span class="stg-sub">${currentRoom.members.length}명 참여 중</span>
+                </div>
+                <input type="number" id="settings-max-members" class="stg-input stg-input-num" min="${currentRoom.members.length}" max="20" value="${currentRoom.maxMembers}" />
               </div>
-              <div class="settings-field">
-                <label class="settings-checkbox-label">
+              <div class="stg-row">
+                <span class="stg-lbl">공개 방</span>
+                <label class="stg-toggle">
                   <input type="checkbox" id="settings-public" ${currentRoom.isPublic ? 'checked' : ''} />
-                  <span>공개 방</span>
+                  <span class="stg-toggle-track"></span>
                 </label>
               </div>
-              <button type="button" class="btn-primary settings-save" id="settings-save-btn">저장</button>
+              <button type="button" class="stg-save" id="settings-save-btn">저장</button>
             </div>
           </div>` : ''}
         </div>
