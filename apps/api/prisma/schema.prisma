@@ -91,6 +91,8 @@ model Room {
   inviteCodeExpiresAt DateTime?
   /// 공개 방 여부 (맛집 탐색 페이지 노출)
   isPublic            Boolean          @default(false)
+  /// 최대 멤버 수 (2~20, 기본 4)
+  maxMembers          Int              @default(4)
   /// 방장 (User FK)
   owner               User             @relation("RoomOwner", fields: [ownerId], references: [id])
   /// 방장 ID

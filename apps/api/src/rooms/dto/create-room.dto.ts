@@ -1,4 +1,4 @@
-import { IsString, MaxLength, MinLength, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, MaxLength, MinLength, IsOptional, IsBoolean, IsInt, Min, Max } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateRoomDto {
@@ -12,4 +12,11 @@ export class CreateRoomDto {
   @IsOptional()
   @IsBoolean()
   isPublic?: boolean;
+
+  @ApiProperty({ description: '최대 인원 (2~20)', required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(2)
+  @Max(20)
+  maxMembers?: number;
 }

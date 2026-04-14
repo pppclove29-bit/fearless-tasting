@@ -11,7 +11,6 @@ function calcAvgRating(ratings: number[]): number | null {
   return Math.round((ratings.reduce((sum, r) => sum + r, 0) / ratings.length) * 10) / 10;
 }
 
-const MAX_ROOM_MEMBERS = 4;
 const MAX_ROOMS_PER_USER = 30;
 const CODE_GEN_MAX_RETRIES = 10;
 
@@ -47,7 +46,7 @@ export class RoomsService {
   }
 
   /** 방 생성 (생성자 = owner) */
-  async create(name: string, ownerId: string, isPublic?: boolean) {
+  async create(name: string, ownerId: string, isPublic?: boolean, maxMembers?: number) {
     const joinedCount = await measure('room.create.countRooms', () =>
       this.prisma.read.roomMember.count({ where: { userId: ownerId } }),
     );
@@ -65,6 +64,7 @@ export class RoomsService {
             inviteCode,
             ownerId,
             ...(isPublic !== undefined && { isPublic }),
+            ...(maxMembers !== undefined && { maxMembers }),
           },
         });
 
@@ -168,8 +168,8 @@ export class RoomsService {
     if (userRoomCount >= MAX_ROOMS_PER_USER) {
       throw new ForbiddenException(`참여할 수 있는 방은 최대 ${MAX_ROOMS_PER_USER}개입니다.`);
     }
-    if (memberCount >= MAX_ROOM_MEMBERS) {
-      throw new ForbiddenException(`방 인원이 가득 찼습니다 (최대 ${MAX_ROOM_MEMBERS}명)`);
+    if (memberCount >= room.maxMembers) {
+      throw new ForbiddenException(`방 인원이 가득 찼습니다 (최대 ${room.maxMembers}명)`);
     }
 
     await this.prisma.write.roomMember.create({
@@ -185,15 +185,28 @@ export class RoomsService {
     return room;
   }
 
-  /** 방 이름 수정 (owner만) */
-  async updateRoom(roomId: string, name: string, userId: string) {
+  /** 방 설정 수정 (owner만) */
+  async updateRoom(roomId: string, userId: string, updates: { name?: string; maxMembers?: number; isPublic?: boolean }) {
     const room = await this.prisma.read.room.findUnique({ where: { id: roomId } });
     if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
-    if (room.ownerId !== userId) throw new ForbiddenException('방장만 방 이름을 변경할 수 있습니다');
+    if (room.ownerId !== userId) throw new ForbiddenException('방장만 방 설정을 변경할 수 있습니다');
+
+    // maxMembers 변경 시 현재 멤버 수보다 작게 설정할 수 없음
+    if (updates.maxMembers !== undefined) {
+      const currentMemberCount = await this.prisma.read.roomMember.count({ where: { roomId } });
+      if (updates.maxMembers < currentMemberCount) {
+        throw new ForbiddenException(`현재 멤버 수(${currentMemberCount}명)보다 작게 설정할 수 없습니다`);
+      }
+    }
+
+    const data: { name?: string; maxMembers?: number; isPublic?: boolean } = {};
+    if (updates.name !== undefined) data.name = updates.name;
+    if (updates.maxMembers !== undefined) data.maxMembers = updates.maxMembers;
+    if (updates.isPublic !== undefined) data.isPublic = updates.isPublic;
 
     return this.prisma.write.room.update({
       where: { id: roomId },
-      data: { name },
+      data,
     });
   }
 

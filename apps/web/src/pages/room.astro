@@ -1823,6 +1823,35 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     transform: translateX(16px);
   }
 
+  .share-max-members-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .max-members-select {
+    appearance: none;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.35rem 1.8rem 0.35rem 0.6rem;
+    font-size: 0.8rem;
+    color: var(--text);
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    flex-shrink: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    transition: border-color 0.15s;
+  }
+
+  .max-members-select:focus {
+    border-color: var(--text-heading);
+  }
+
   .share-member-avatars {
     display: flex;
     gap: 0.25rem;
@@ -2443,9 +2472,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                   <span class="share-toggle-track"></span>
                 </label>
               </div>
+            </div>
+            <div class="share-section">
+              <div class="share-max-members-row">
+                <div>
+                  <div class="share-section-label">최대 인원</div>
+                  <div class="share-section-desc">현재 ${currentRoom.members.length}/${currentRoom.maxMembers}명</div>
+                </div>
+                <select id="max-members-select" class="max-members-select">
+                  ${[2,3,4,5,10,15,20].map(n =>
+                    `<option value="${n}" ${n === currentRoom.maxMembers ? 'selected' : ''} ${n < currentRoom.members.length ? 'disabled' : ''}>${n}명</option>`
+                  ).join('')}
+                </select>
+              </div>
             </div>` : ''}
             <div class="share-section share-members-preview">
-              <div class="share-section-label">멤버 (${currentRoom.members.length}명)</div>
+              <div class="share-section-label">멤버 (${currentRoom.members.length}/${currentRoom.maxMembers}명)</div>
               <div class="share-member-avatars">
                 ${currentRoom.members.slice(0, 6).map(m => {
                   const nick = escapeHtml(m.user.nickname);
@@ -2466,7 +2508,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <button type="button" class="room-tab-btn" data-tab="region">📍 지역</button>
         <button type="button" class="room-tab-btn" data-tab="timeline">📋 활동</button>
         <!-- <button type="button" class="room-tab-btn" data-tab="stats">📊 통계</button> -->
-        <button type="button" class="room-tab-btn" data-tab="members">👥 멤버 (${currentRoom.members.length})</button>
+        <button type="button" class="room-tab-btn" data-tab="members">👥 멤버 (${currentRoom.members.length}/${currentRoom.maxMembers})</button>
       </div>
 
       <div id="tab-restaurants" class="room-tab-panel"></div>
@@ -2577,6 +2619,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           } catch {
             togglePublicCb.checked = !newValue;
             showToast('공개 설정 변경에 실패했습니다.');
+          }
+        });
+      }
+
+      // 최대 인원 변경
+      const maxMembersSelect = document.getElementById('max-members-select') as HTMLSelectElement | null;
+      if (maxMembersSelect) {
+        maxMembersSelect.addEventListener('change', async () => {
+          const newMax = parseInt(maxMembersSelect.value, 10);
+          const prevMax = currentRoom.maxMembers;
+          try {
+            await updateRoom(currentRoom.id, { maxMembers: newMax });
+            currentRoom.maxMembers = newMax;
+            showToast(`최대 인원이 ${newMax}명으로 변경되었습니다.`, 'success');
+          } catch {
+            maxMembersSelect.value = String(prevMax);
+            showToast('최대 인원 변경에 실패했습니다.');
           }
         });
       }
@@ -2701,7 +2760,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     panel.innerHTML = `
       <div class="member-header">
-        <span class="member-count">멤버 ${currentRoom.members.length}</span>
+        <span class="member-count">멤버 ${currentRoom.members.length}/${currentRoom.maxMembers}</span>
         ${isOwner() ? '<button type="button" class="btn-invite" id="member-invite-btn">+ 멤버 초대</button>' : ''}
       </div>
       <div class="member-list">${sortedMembers

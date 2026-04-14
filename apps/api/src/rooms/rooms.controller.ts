@@ -41,7 +41,7 @@ export class RoomsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '방 생성' })
   create(@CurrentUser() user: { id: string }, @Body() dto: CreateRoomDto) {
-    return this.roomsService.create(dto.name, user.id, dto.isPublic);
+    return this.roomsService.create(dto.name, user.id, dto.isPublic, dto.maxMembers);
   }
 
   /** 내 방 목록 */
@@ -137,17 +137,21 @@ export class RoomsController {
     return this.roomsService.findOne(id, user.id);
   }
 
-  /** 방 이름 수정 */
+  /** 방 설정 수정 */
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '방 이름 수정 (방장만)' })
+  @ApiOperation({ summary: '방 설정 수정 (방장만)' })
   @ApiParam({ name: 'id', description: '방 ID' })
   updateRoom(
     @Param('id') id: string,
     @CurrentUser() user: { id: string },
     @Body() dto: UpdateRoomDto,
   ) {
-    return this.roomsService.updateRoom(id, dto.name, user.id);
+    return this.roomsService.updateRoom(id, user.id, {
+      name: dto.name,
+      maxMembers: dto.maxMembers,
+      isPublic: dto.isPublic,
+    });
   }
 
   /** 방 삭제 */

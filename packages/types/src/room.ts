@@ -7,6 +7,7 @@ export interface Room {
   inviteCodeExpiresAt?: string | null;
   ownerId: string;
   isPublic: boolean;
+  maxMembers: number;
   createdAt: string;
   updatedAt: string;
 }
