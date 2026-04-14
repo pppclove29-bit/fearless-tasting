@@ -926,12 +926,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         ? accounts.map((acc) => `
           <div class="demo-card" data-id="${acc.id}">
             <div class="demo-avatar">
-              ${acc.user.profileImageUrl
-                ? `<img src="${escapeHtml(acc.user.profileImageUrl)}" alt="" />`
-                : escapeHtml(acc.user.nickname.charAt(0))}
+              ${acc.profileImageUrl
+                ? `<img src="${escapeHtml(acc.profileImageUrl)}" alt="" />`
+                : escapeHtml(acc.nickname.charAt(0))}
             </div>
             <div class="demo-info">
-              <div class="demo-nickname">${escapeHtml(acc.user.nickname)}</div>
+              <div class="demo-nickname">${escapeHtml(acc.nickname)}</div>
               ${acc.memo ? `<div class="demo-memo">${escapeHtml(acc.memo)}</div>` : ''}
               <div class="demo-date">${formatDate(acc.createdAt)}</div>
             </div>
@@ -1001,7 +1001,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           card.innerHTML = `
             ${avatar}
             <div class="demo-edit-fields">
-              <input type="text" class="demo-edit-nickname" value="${escapeHtml(acc.user.nickname)}" placeholder="닉네임" maxlength="20" />
+              <input type="text" class="demo-edit-nickname" value="${escapeHtml(acc.nickname)}" placeholder="닉네임" maxlength="20" />
               <input type="text" class="demo-edit-memo" value="${acc.memo ? escapeHtml(acc.memo) : ''}" placeholder="관리용 메모" maxlength="200" />
             </div>
             <div class="demo-actions">
