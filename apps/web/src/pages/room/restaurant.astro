@@ -87,6 +87,38 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     height: 100%;
     object-fit: cover;
     display: block;
+    cursor: zoom-in;
+  }
+
+  /* 이미지 라이트박스 */
+  .lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+  }
+
+  .lightbox-overlay img {
+    max-width: 92vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+
+  .lightbox-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
   }
 
   .rest-photo-delete {
@@ -2114,6 +2146,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             tryInitMap();
           }
         }
+
+        // 이미지 클릭 → 라이트박스 확대
+        area.querySelectorAll<HTMLImageElement>('.rest-photo-item img').forEach((img) => {
+          img.addEventListener('click', () => {
+            const overlay = document.createElement('div');
+            overlay.className = 'lightbox-overlay';
+            overlay.innerHTML = `<button type="button" class="lightbox-close">&times;</button><img src="${img.src}" alt="${img.alt}" />`;
+            overlay.addEventListener('click', () => overlay.remove());
+            document.addEventListener('keydown', function onKey(e) {
+              if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onKey); }
+            });
+            document.body.appendChild(overlay);
+          });
+        });
 
         // 갤러리 로딩 오버레이
         const gallery = area.querySelector<HTMLElement>('.rest-photo-gallery');
