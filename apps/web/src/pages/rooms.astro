@@ -22,15 +22,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="max-members-row">
             <label class="max-members-label">
               <span>최대 인원</span>
-              <select id="create-max-members">
-                <option value="2">2명</option>
-                <option value="3">3명</option>
-                <option value="4" selected>4명</option>
-                <option value="5">5명</option>
-                <option value="10">10명</option>
-                <option value="15">15명</option>
-                <option value="20">20명</option>
-              </select>
+              <input type="number" id="create-max-members" min="2" max="20" value="4" />
             </label>
           </div>
           <div class="public-toggle-row">
@@ -450,7 +442,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
 
     const createPublicCheckbox = document.getElementById('create-public') as HTMLInputElement | null;
-    const createMaxMembersSelect = document.getElementById('create-max-members') as HTMLSelectElement | null;
+    const createMaxMembersInput = document.getElementById('create-max-members') as HTMLInputElement | null;
 
     let creating = false;
     createForm?.addEventListener('submit', async (e) => {
@@ -460,7 +452,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const name = createNameInput?.value.trim();
       if (!name) return;
       const isPublic = createPublicCheckbox?.checked ?? false;
-      const maxMembers = createMaxMembersSelect ? parseInt(createMaxMembersSelect.value, 10) : undefined;
+      const maxMembers = createMaxMembersInput ? parseInt(createMaxMembersInput.value, 10) : undefined;
 
       creating = true;
       const submitBtn = createForm.querySelector<HTMLButtonElement>('button[type="submit"]');
@@ -470,7 +462,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         await createRoom(name, isPublic, maxMembers);
         if (createNameInput) createNameInput.value = '';
         if (createPublicCheckbox) createPublicCheckbox.checked = false;
-        if (createMaxMembersSelect) createMaxMembersSelect.value = '4';
+        if (createMaxMembersInput) createMaxMembersInput.value = '4';
         allRooms = await fetchMyRooms();
         updateSearchVisibility();
         applyAndRender();
