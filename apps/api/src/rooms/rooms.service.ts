@@ -181,7 +181,7 @@ export class RoomsService {
   }
 
   /** 방 설정 수정 (owner만) */
-  async updateRoom(roomId: string, userId: string, updates: { name?: string; maxMembers?: number; isPublic?: boolean }) {
+  async updateRoom(roomId: string, userId: string, updates: { name?: string; maxMembers?: number; isPublic?: boolean; announcement?: string | null }) {
     const room = await this.prisma.read.room.findUnique({ where: { id: roomId } });
     if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
     if (room.ownerId !== userId) throw new ForbiddenException('방장만 방 설정을 변경할 수 있습니다');
@@ -194,10 +194,11 @@ export class RoomsService {
       }
     }
 
-    const data: { name?: string; maxMembers?: number; isPublic?: boolean } = {};
+    const data: Record<string, unknown> = {};
     if (updates.name !== undefined) data.name = updates.name;
     if (updates.maxMembers !== undefined) data.maxMembers = updates.maxMembers;
     if (updates.isPublic !== undefined) data.isPublic = updates.isPublic;
+    if (updates.announcement !== undefined) data.announcement = updates.announcement;
 
     return this.prisma.write.room.update({
       where: { id: roomId },

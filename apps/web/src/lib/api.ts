@@ -198,7 +198,7 @@ export async function deleteAccount(): Promise<void> {
 }
 
 /** 방 수정 (이름, 최대 인원 등) */
-export async function updateRoom(id: string, data: string | { name?: string; maxMembers?: number }): Promise<void> {
+export async function updateRoom(id: string, data: string | { name?: string; maxMembers?: number; announcement?: string | null }): Promise<void> {
   const body = typeof data === 'string' ? { name: data } : data;
   const res = await apiFetch(`${API_BASE}/rooms/${id}`, {
     method: 'PATCH',

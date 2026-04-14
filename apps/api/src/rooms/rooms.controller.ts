@@ -151,6 +151,7 @@ export class RoomsController {
       name: dto.name,
       maxMembers: dto.maxMembers,
       isPublic: dto.isPublic,
+      announcement: dto.announcement,
     });
   }
 

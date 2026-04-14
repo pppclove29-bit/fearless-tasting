@@ -95,6 +95,8 @@ model Room {
   isPublic            Boolean          @default(false)
   /// 최대 멤버 수 (2~20, 기본 4)
   maxMembers          Int              @default(4)
+  /// 방 공지사항 (방장만 설정 가능)
+  announcement        String?          @db.VarChar(500)
   /// 방장 (User FK)
   owner               User             @relation("RoomOwner", fields: [ownerId], references: [id])
   /// 방장 ID

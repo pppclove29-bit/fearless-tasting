@@ -20,4 +20,10 @@ export class UpdateRoomDto {
   @IsOptional()
   @IsBoolean()
   isPublic?: boolean;
+
+  @ApiProperty({ description: '방 공지사항 (null = 삭제)', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  announcement?: string | null;
 }

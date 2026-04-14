@@ -8,6 +8,7 @@ export interface Room {
   ownerId: string;
   isPublic: boolean;
   maxMembers: number;
+  announcement?: string | null;
   createdAt: string;
   updatedAt: string;
 }
