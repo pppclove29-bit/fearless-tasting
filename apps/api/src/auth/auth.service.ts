@@ -87,8 +87,6 @@ export class AuthService {
     const providerId = String(kakaoUser.id);
     const email = kakaoUser.kakao_account?.email || `kakao_${providerId}@kakao.user`;
     const nickname = kakaoUser.kakao_account?.profile?.nickname || `user_${providerId}`;
-    const rawProfileImage = kakaoUser.kakao_account?.profile?.profile_image_url;
-    const profileImageUrl = rawProfileImage?.replace(/^http:\/\//, 'https://') ?? rawProfileImage;
 
     const existingAccount = await this.prisma.read.account.findUnique({
       where: { provider_providerId: { provider: 'kakao', providerId } },
@@ -96,13 +94,6 @@ export class AuthService {
     });
 
     if (existingAccount) {
-      // 카카오 프로필 이미지가 변경된 경우 갱신
-      if (profileImageUrl && existingAccount.user.profileImageUrl !== profileImageUrl) {
-        return this.prisma.write.user.update({
-          where: { id: existingAccount.user.id },
-          data: { profileImageUrl },
-        });
-      }
       return existingAccount.user;
     }
 
@@ -110,7 +101,6 @@ export class AuthService {
       data: {
         email,
         nickname: await this.ensureUniqueNickname(nickname),
-        profileImageUrl,
         accounts: {
           create: { provider: 'kakao', providerId },
         },

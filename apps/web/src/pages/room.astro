@@ -2501,9 +2501,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <div class="room-header">
         <div class="room-name-row">
           <h1 id="room-name-display">${escapeHtml(currentRoom.name)}</h1>
-          ${isOwner() ? `<button type="button" class="btn-edit-name" id="edit-name-btn" title="방 이름 변경">✎</button>
-          <button type="button" class="btn-settings" id="room-settings-btn" title="방 설정">⚙</button>` : ''}
-          <input type="text" id="room-name-input" class="room-name-input" maxlength="100" hidden />
+          ${isOwner() ? `<button type="button" class="btn-settings" id="room-settings-btn" title="방 설정">⚙</button>` : ''}
           ${isOwner() ? `
           <div id="settings-modal" class="modal-overlay" hidden>
             <div class="settings-modal-content">
@@ -2617,50 +2615,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   function attachHeaderHandlers() {
-    // 방 이름 수정 (owner만)
-    const editNameBtn = document.getElementById('edit-name-btn');
-    const nameDisplay = document.getElementById('room-name-display');
-    const nameInput = document.getElementById('room-name-input') as HTMLInputElement | null;
-
-    if (editNameBtn && nameDisplay && nameInput) {
-      editNameBtn.addEventListener('click', () => {
-        nameInput.value = currentRoom.name;
-        nameDisplay.hidden = true;
-        editNameBtn.hidden = true;
-        nameInput.hidden = false;
-        nameInput.focus();
-        nameInput.select();
-      });
-
-      async function saveName() {
-        if (!nameInput || !nameDisplay || !editNameBtn) return;
-        const newName = nameInput.value.trim();
-        nameInput.hidden = true;
-        nameDisplay.hidden = false;
-        editNameBtn.hidden = false;
-
-        if (!newName || newName === currentRoom.name) return;
-
-        try {
-          await updateRoom(currentRoom.id, newName);
-          currentRoom.name = newName;
-          nameDisplay.textContent = newName;
-        } catch {
-          showToast('방 이름 변경에 실패했습니다.');
-        }
-      }
-
-      nameInput.addEventListener('blur', saveName);
-      nameInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); nameInput.blur(); }
-        if (e.key === 'Escape') {
-          nameInput.hidden = true;
-          nameDisplay!.hidden = false;
-          editNameBtn!.hidden = false;
-        }
-      });
-    }
-
     // 방 설정 모달
     const settingsBtn = document.getElementById('room-settings-btn');
     const settingsModal = document.getElementById('settings-modal');
