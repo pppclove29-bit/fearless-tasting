@@ -4,39 +4,48 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
 <BaseLayout title="내 방" description="참여 중인 방 목록을 확인하고 새 방을 만드세요" noindex>
   <div class="rooms-page">
-    <h1 class="rooms-title">내 방</h1>
-    <p class="rooms-desc">방을 만들어 함께 맛집 리스트를 공유하세요.</p>
+    <div class="dashboard-header">
+      <div>
+        <h1 class="rooms-title">내 방</h1>
+        <p class="rooms-desc">방을 만들어 함께 맛집 리스트를 공유하세요.</p>
+      </div>
+      <button type="button" id="create-room-btn" class="btn-create-room">+ 방 만들기</button>
+    </div>
 
     <p id="loading-msg" class="status-msg">로딩 중...</p>
     <p id="login-msg" class="status-msg" hidden>
       로그인 후 이용할 수 있습니다.
     </p>
 
-    <div id="rooms-content" hidden>
-      <div class="create-card">
-        <form id="create-form" class="action-form">
-          <div class="input-group">
-            <input type="text" id="create-name" placeholder="방 이름을 입력하세요" required maxlength="100" />
-            <button type="submit" class="btn-primary">만들기</button>
+    <!-- 방 만들기 모달 -->
+    <div id="create-modal" class="modal-overlay" hidden>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">방 만들기</h3>
+          <button type="button" id="create-modal-close" class="modal-close">&times;</button>
+        </div>
+        <form id="create-form">
+          <div class="modal-field">
+            <label class="modal-label" for="create-name">방 이름</label>
+            <input type="text" id="create-name" class="modal-input" placeholder="예: 우리 동네 맛집" required maxlength="100" />
           </div>
-          <div class="max-members-row">
-            <label class="max-members-label">
-              <span>최대 인원</span>
-              <input type="number" id="create-max-members" min="2" max="20" value="4" />
-            </label>
+          <div class="modal-field">
+            <label class="modal-label" for="create-max-members">최대 인원</label>
+            <input type="number" id="create-max-members" class="modal-input modal-input-short" min="2" max="20" value="4" />
           </div>
-          <div class="public-toggle-row">
-            <label class="public-toggle-label">
+          <div class="modal-field">
+            <label class="modal-checkbox-label">
               <input type="checkbox" id="create-public" />
               <span>공개 방으로 만들기</span>
             </label>
-            <span class="public-help-trigger" title="공개 방은 누구나 초대 코드 없이 식당 목록과 리뷰를 열람할 수 있는 방입니다. 방 멤버만 작성/수정할 수 있습니다.">?</span>
           </div>
+          <button type="submit" class="btn-primary modal-submit">만들기</button>
         </form>
+        <div class="form-error" id="form-error" hidden></div>
       </div>
+    </div>
 
-      <div class="form-error" id="form-error" hidden></div>
-
+    <div id="rooms-content" hidden>
       <div class="search-card" id="rooms-search-wrap" hidden>
         <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="rooms-search" class="search-input" placeholder="방 이름 검색" />
@@ -54,7 +63,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <p id="empty-msg" class="empty-state" hidden>
         <span class="empty-icon">🏠</span>
         <span class="empty-text">참여 중인 방이 없습니다</span>
-        <span class="empty-sub">위에서 방을 만들거나 초대 링크로 입장하세요</span>
+        <span class="empty-sub">우측 상단 "+ 방 만들기" 버튼으로 방을 만들거나 초대받은 방에 입장하세요</span>
       </p>
     </div>
   </div>
@@ -92,6 +101,114 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
     font-size: 0.875rem;
     margin-bottom: 1.25rem;
+  }
+
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  .btn-create-room {
+    padding: 0.5rem 1rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .btn-create-room:hover { opacity: 0.85; }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .modal-overlay[hidden] { display: none; }
+
+  .modal-content {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 380px;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+
+  .modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .modal-field {
+    margin-bottom: 1rem;
+  }
+
+  .modal-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-sub);
+    margin-bottom: 0.35rem;
+  }
+
+  .modal-input {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    color: var(--text);
+    background: var(--bg);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+  }
+  .modal-input:focus { border-color: var(--text-heading); }
+  .modal-input::placeholder { color: var(--text-muted); }
+  .modal-input-short { width: 80px; }
+
+  .modal-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    cursor: pointer;
+  }
+
+  .modal-submit {
+    width: 100%;
+    padding: 0.7rem;
+    margin-top: 0.5rem;
   }
 
   .status-msg {
@@ -332,6 +449,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const formError = document.getElementById('form-error');
     const createForm = document.getElementById('create-form') as HTMLFormElement | null;
     const createNameInput = document.getElementById('create-name') as HTMLInputElement | null;
+    const createModal = document.getElementById('create-modal');
+    const createModalBtn = document.getElementById('create-room-btn');
+    const createModalClose = document.getElementById('create-modal-close');
+
+    // 모달 열기/닫기
+    createModalBtn?.addEventListener('click', () => {
+      if (createModal) createModal.hidden = false;
+      createNameInput?.focus();
+    });
+    createModalClose?.addEventListener('click', () => {
+      if (createModal) createModal.hidden = true;
+    });
+    createModal?.addEventListener('click', (e) => {
+      if (e.target === createModal) createModal.hidden = true;
+    });
     const roomsToolbar = document.getElementById('rooms-toolbar');
     const roomsCount = document.getElementById('rooms-count');
     const sortTrigger = document.getElementById('sort-trigger');
@@ -463,6 +595,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         if (createNameInput) createNameInput.value = '';
         if (createPublicCheckbox) createPublicCheckbox.checked = false;
         if (createMaxMembersInput) createMaxMembersInput.value = '4';
+        if (createModal) createModal.hidden = true;
         allRooms = await fetchMyRooms();
         updateSearchVisibility();
         applyAndRender();
