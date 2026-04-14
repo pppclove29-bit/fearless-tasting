@@ -16,12 +16,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <button type="button" class="tab-btn" data-tab="notices">공지 관리</button>
         <button type="button" class="tab-btn" data-tab="inquiries">문의 관리</button>
         <button type="button" class="tab-btn" data-tab="demo">가계정</button>
+        <button type="button" class="tab-btn" data-tab="users">유저</button>
       </div>
 
       <div id="tab-stats" class="tab-panel"></div>
       <div id="tab-notices" class="tab-panel" hidden></div>
       <div id="tab-inquiries" class="tab-panel" hidden></div>
       <div id="tab-demo" class="tab-panel" hidden></div>
+      <div id="tab-users" class="tab-panel" hidden></div>
     </div>
   </div>
 </BaseLayout>
@@ -503,11 +505,140 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
     margin-top: 0.25rem;
   }
+
+  /* 유저 관리 */
+  .user-search-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .user-search-form input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: var(--bg-input, var(--bg));
+    color: var(--text);
+  }
+
+  .user-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .user-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--bg-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .user-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .user-nickname {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-heading);
+  }
+
+  .user-email {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+    word-break: break-all;
+  }
+
+  .user-role-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-top: 0.25rem;
+  }
+
+  .user-role-badge.admin {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+
+  .user-role-badge.user {
+    background: var(--bg-hover);
+    color: var(--text-sub);
+  }
+
+  .user-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+
+  .user-actions {
+    flex-shrink: 0;
+  }
+
+  .btn-admin-toggle {
+    padding: 0.4rem 0.85rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-admin-toggle.grant {
+    background: #2563eb;
+    color: #fff;
+  }
+
+  .btn-admin-toggle.grant:hover {
+    background: #1d4ed8;
+  }
+
+  .btn-admin-toggle.revoke {
+    background: #dc2626;
+    color: #fff;
+  }
+
+  .btn-admin-toggle.revoke:hover {
+    background: #b91c1c;
+  }
 </style>
 
 <script>
-  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice, fetchDemoAccounts, createDemoAccount, updateDemoAccount, deleteDemoAccount, loginAsDemoAccount, saveTokens } from '@/lib/api';
-  import type { Notice, DemoAccount } from '@/lib/api';
+  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice, fetchDemoAccounts, createDemoAccount, updateDemoAccount, deleteDemoAccount, loginAsDemoAccount, saveTokens, searchUserByEmail, updateUserRole } from '@/lib/api';
+  import type { Notice, DemoAccount, AdminUserInfo } from '@/lib/api';
   import { formatDate } from '@repo/utils';
 
   function initAdminPage() {
@@ -520,7 +651,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const noticesPanel = document.getElementById('tab-notices');
     const inquiriesPanel = document.getElementById('tab-inquiries');
     const demoPanel = document.getElementById('tab-demo');
-    if (!loadingMsg || !accessDenied || !adminTabs || !statsPanel || !noticesPanel || !inquiriesPanel || !demoPanel) return;
+    const usersPanel = document.getElementById('tab-users');
+    if (!loadingMsg || !accessDenied || !adminTabs || !statsPanel || !noticesPanel || !inquiriesPanel || !demoPanel || !usersPanel) return;
 
     function escapeHtml(text: string): string {
       const div = document.createElement('div');
@@ -536,7 +668,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     };
 
     // 탭 전환
-    const panels: Record<string, HTMLElement> = { stats: statsPanel, notices: noticesPanel, inquiries: inquiriesPanel, demo: demoPanel };
+    const panels: Record<string, HTMLElement> = { stats: statsPanel, notices: noticesPanel, inquiries: inquiriesPanel, demo: demoPanel, users: usersPanel };
     for (const btn of document.querySelectorAll<HTMLButtonElement>('.tab-btn')) {
       btn.addEventListener('click', () => {
         for (const b of document.querySelectorAll('.tab-btn')) b.classList.remove('active');
@@ -546,6 +678,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         if (tab === 'inquiries' && inquiriesPanel.innerHTML === '') loadInquiries();
         if (tab === 'notices' && noticesPanel.innerHTML === '') loadNotices();
         if (tab === 'demo' && demoPanel.innerHTML === '') loadDemoAccounts();
+        if (tab === 'users' && usersPanel.innerHTML === '') initUsersTab();
       });
     }
 
@@ -890,6 +1023,95 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           card.querySelector('.demo-cancel-btn')!.addEventListener('click', () => {
             loadDemoAccounts();
           });
+        });
+      }
+    }
+
+    // ─── 유저 관리 ───
+
+    function renderUserCard(user: AdminUserInfo) {
+      const isAdmin = user.role === 'admin';
+      const roleLabel = isAdmin ? '어드민' : '일반 유저';
+      const roleClass = isAdmin ? 'admin' : 'user';
+      const btnClass = isAdmin ? 'revoke' : 'grant';
+      const btnLabel = isAdmin ? '어드민 해제' : '어드민 지정';
+
+      return `
+        <div class="user-card" id="user-result-card">
+          <div class="user-avatar">
+            ${user.profileImageUrl
+              ? `<img src="${escapeHtml(user.profileImageUrl)}" alt="" />`
+              : escapeHtml(user.nickname.charAt(0))}
+          </div>
+          <div class="user-info">
+            <div class="user-nickname">${escapeHtml(user.nickname)}</div>
+            <div class="user-email">${escapeHtml(user.email)}</div>
+            <span class="user-role-badge ${roleClass}">${roleLabel}</span>
+            <div class="user-date">가입일: ${formatDate(user.createdAt)}</div>
+          </div>
+          <div class="user-actions">
+            <button type="button" class="btn-admin-toggle ${btnClass}" id="user-role-toggle-btn"
+              data-user-id="${user.id}" data-current-role="${user.role}">
+              ${btnLabel}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function initUsersTab() {
+      usersPanel.innerHTML = `
+        <div class="user-search-form">
+          <input type="email" id="user-search-email" placeholder="이메일 주소를 정확히 입력하세요" />
+          <button type="button" class="btn-primary-sm" id="user-search-btn">검색</button>
+        </div>
+        <div id="user-search-result"></div>
+      `;
+
+      const searchInput = document.getElementById('user-search-email') as HTMLInputElement;
+      const searchBtn = document.getElementById('user-search-btn') as HTMLButtonElement;
+      const resultArea = document.getElementById('user-search-result')!;
+
+      async function doSearch() {
+        const email = searchInput.value.trim();
+        if (!email) {
+          resultArea.innerHTML = '<p class="empty-msg">이메일을 입력해주세요.</p>';
+          return;
+        }
+
+        resultArea.innerHTML = '<p class="empty-msg">검색 중...</p>';
+        try {
+          const user = await searchUserByEmail(email);
+          resultArea.innerHTML = renderUserCard(user);
+          attachRoleToggle(user);
+        } catch (e) {
+          resultArea.innerHTML = `<p class="empty-msg">${e instanceof Error ? escapeHtml(e.message) : '유저를 찾을 수 없습니다.'}</p>`;
+        }
+      }
+
+      searchBtn.addEventListener('click', doSearch);
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') doSearch();
+      });
+
+      function attachRoleToggle(user: AdminUserInfo) {
+        const toggleBtn = document.getElementById('user-role-toggle-btn');
+        if (!toggleBtn) return;
+
+        toggleBtn.addEventListener('click', async () => {
+          const currentRole = toggleBtn.dataset.currentRole!;
+          const newRole = currentRole === 'admin' ? 'user' : 'admin';
+          const actionLabel = newRole === 'admin' ? '어드민으로 지정' : '어드민에서 해제';
+
+          if (!confirm(`${escapeHtml(user.nickname)} 님을 ${actionLabel}하시겠습니까?`)) return;
+
+          try {
+            const updated = await updateUserRole(user.id, newRole);
+            resultArea.innerHTML = renderUserCard(updated);
+            attachRoleToggle(updated);
+          } catch (e) {
+            alert(e instanceof Error ? e.message : '권한 변경에 실패했습니다.');
+          }
         });
       }
     }

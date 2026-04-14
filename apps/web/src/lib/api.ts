@@ -777,6 +777,33 @@ export async function loginAsDemoAccount(id: string): Promise<{ accessToken: str
   return res.json();
 }
 
+// ─── 유저 관리 (관리자) ───
+
+export interface AdminUserInfo {
+  id: string;
+  email: string;
+  nickname: string;
+  role: string;
+  profileImageUrl: string | null;
+  createdAt: string;
+}
+
+export async function searchUserByEmail(email: string): Promise<AdminUserInfo> {
+  const res = await apiFetch(`${API_BASE}/admin/users/search?email=${encodeURIComponent(email)}`);
+  await throwIfNotOk(res, '유저를 찾을 수 없습니다.');
+  return res.json();
+}
+
+export async function updateUserRole(userId: string, role: string): Promise<AdminUserInfo> {
+  const res = await apiFetch(`${API_BASE}/admin/users/${userId}/role`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role }),
+  });
+  await throwIfNotOk(res, '권한 변경에 실패했습니다.');
+  return res.json();
+}
+
 // ─── 리뷰 비교 ───
 
 /** 식당별 멤버 리뷰 비교 */
