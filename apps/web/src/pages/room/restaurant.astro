@@ -890,6 +890,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     min-height: 60px;
   }
 
+  .review-form textarea.auto-grow {
+    resize: none;
+    overflow: hidden;
+    min-height: 50px;
+  }
+
   /* 리뷰 카드 */
   .room-review-card {
     border-bottom: 1px solid var(--border-light);
@@ -1743,6 +1749,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
 
     /** 컨테이너 내 별점 클릭 이벤트 바인딩 */
+    /** 텍스트영역 자동 높이 조절 */
+    function attachAutoGrow(container: HTMLElement) {
+      for (const ta of container.querySelectorAll<HTMLTextAreaElement>('textarea.auto-grow')) {
+        const adjust = () => {
+          ta.style.height = 'auto';
+          ta.style.height = `${ta.scrollHeight}px`;
+        };
+        ta.addEventListener('input', adjust);
+        // 초기값 있으면 즉시 조절
+        requestAnimationFrame(adjust);
+      }
+    }
+
     function attachStarRatingHandlers(container: HTMLElement) {
       for (const ratingEl of container.querySelectorAll<HTMLElement>('.star-rating')) {
         for (const star of ratingEl.querySelectorAll<HTMLElement>('.star')) {
@@ -1907,7 +1926,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
              <div class="review-form-card">
                <div class="review-form-card-header">💬 한줄 리뷰 <span class="optional-hint">(선택)</span></div>
                <div class="review-form-card-body">
-                 <textarea class="new-review-content" placeholder="이 식당을 한마디로 표현한다면?"></textarea>
+                 <textarea class="new-review-content auto-grow" placeholder="이 식당을 한마디로 표현한다면?" rows="2"></textarea>
                </div>
              </div>
              <details class="review-form-card">
@@ -2453,7 +2472,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       for (const btn of area.querySelectorAll<HTMLButtonElement>('.toggle-review-form-btn')) {
         btn.addEventListener('click', () => {
           const form = document.getElementById(`review-form-${btn.dataset.visitId || ''}`);
-          if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+          if (!form) return;
+          form.style.display = form.style.display === 'none' ? 'block' : 'none';
+          if (form.style.display === 'block') attachAutoGrow(form);
         });
       }
 
@@ -2524,7 +2545,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <div class="review-form-card">
                 <div class="review-form-card-header">💬 한줄 리뷰 <span class="optional-hint">(선택)</span></div>
                 <div class="review-form-card-body">
-                  <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
+                  <textarea class="edit-content auto-grow" rows="2">${escapeHtml(origContent)}</textarea>
                 </div>
               </div>
               <details class="review-form-card">
@@ -2554,6 +2575,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             </div>
           `);
           attachStarRatingHandlers(card);
+          attachAutoGrow(card);
 
           // 수정 폼 revisit 버튼
           for (const group of card.querySelectorAll<HTMLElement>('.edit-revisit-btns')) {
