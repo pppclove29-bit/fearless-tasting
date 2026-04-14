@@ -106,6 +106,72 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .btn-edit-name:hover { color: var(--text-sub); }
 
+  .btn-settings {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--text-muted);
+    padding: 0.2rem;
+    transition: color 0.15s;
+  }
+  .btn-settings:hover { color: var(--text-sub); }
+
+  .settings-modal-content {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 380px;
+  }
+  .settings-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+  .settings-modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+  .settings-field { margin-bottom: 1rem; }
+  .settings-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-sub);
+    margin-bottom: 0.35rem;
+  }
+  .settings-input {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    color: var(--text);
+    background: var(--bg);
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .settings-input:focus { border-color: var(--text-heading); }
+  .settings-input-short { width: 80px; }
+  .settings-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-left: 0.5rem;
+  }
+  .settings-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    cursor: pointer;
+  }
+  .settings-save { width: 100%; padding: 0.7rem; margin-top: 0.5rem; }
+
   .room-name-input {
     font-size: 1.3rem;
     font-weight: 700;
@@ -2435,8 +2501,34 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <div class="room-header">
         <div class="room-name-row">
           <h1 id="room-name-display">${escapeHtml(currentRoom.name)}</h1>
-          ${isOwner() ? '<button type="button" class="btn-edit-name" id="edit-name-btn" title="방 이름 변경">✎</button>' : ''}
+          ${isOwner() ? `<button type="button" class="btn-edit-name" id="edit-name-btn" title="방 이름 변경">✎</button>
+          <button type="button" class="btn-settings" id="room-settings-btn" title="방 설정">⚙</button>` : ''}
           <input type="text" id="room-name-input" class="room-name-input" maxlength="100" hidden />
+          ${isOwner() ? `
+          <div id="settings-modal" class="modal-overlay" hidden>
+            <div class="settings-modal-content">
+              <div class="settings-modal-header">
+                <h3 class="settings-modal-title">방 설정</h3>
+                <button type="button" class="modal-close" id="settings-modal-close">&times;</button>
+              </div>
+              <div class="settings-field">
+                <label class="settings-label">방 이름</label>
+                <input type="text" id="settings-name" class="settings-input" value="${escapeHtml(currentRoom.name)}" maxlength="100" />
+              </div>
+              <div class="settings-field">
+                <label class="settings-label">최대 인원</label>
+                <input type="number" id="settings-max-members" class="settings-input settings-input-short" min="${currentRoom.members.length}" max="20" value="${currentRoom.maxMembers}" />
+                <span class="settings-hint">현재 ${currentRoom.members.length}명 참여 중</span>
+              </div>
+              <div class="settings-field">
+                <label class="settings-checkbox-label">
+                  <input type="checkbox" id="settings-public" ${currentRoom.isPublic ? 'checked' : ''} />
+                  <span>공개 방</span>
+                </label>
+              </div>
+              <button type="button" class="btn-primary settings-save" id="settings-save-btn">저장</button>
+            </div>
+          </div>` : ''}
         </div>
         <div class="room-header-actions">
           <button type="button" class="room-action-chip" id="share-popover-btn">${svgLink} 공유</button>
@@ -2568,6 +2660,50 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         }
       });
     }
+
+    // 방 설정 모달
+    const settingsBtn = document.getElementById('room-settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const settingsClose = document.getElementById('settings-modal-close');
+    const settingsSave = document.getElementById('settings-save-btn');
+
+    settingsBtn?.addEventListener('click', () => {
+      if (settingsModal) settingsModal.hidden = false;
+    });
+    settingsClose?.addEventListener('click', () => {
+      if (settingsModal) settingsModal.hidden = true;
+    });
+    settingsModal?.addEventListener('click', (e) => {
+      if (e.target === settingsModal) settingsModal.hidden = true;
+    });
+    settingsSave?.addEventListener('click', async () => {
+      const nameInput = document.getElementById('settings-name') as HTMLInputElement | null;
+      const maxInput = document.getElementById('settings-max-members') as HTMLInputElement | null;
+      const publicCb = document.getElementById('settings-public') as HTMLInputElement | null;
+      const newName = nameInput?.value.trim();
+      const newMax = maxInput ? parseInt(maxInput.value, 10) : undefined;
+      const newPublic = publicCb?.checked;
+
+      const updates: Record<string, unknown> = {};
+      if (newName && newName !== currentRoom.name) updates.name = newName;
+      if (newMax && newMax !== currentRoom.maxMembers) updates.maxMembers = newMax;
+      if (newPublic !== undefined && newPublic !== currentRoom.isPublic) updates.isPublic = newPublic;
+
+      if (Object.keys(updates).length === 0) {
+        if (settingsModal) settingsModal.hidden = true;
+        return;
+      }
+
+      try {
+        await updateRoom(currentRoom.id, updates as { name?: string; maxMembers?: number; isPublic?: boolean });
+        currentRoom = await fetchRoom(currentRoom.id);
+        if (settingsModal) settingsModal.hidden = true;
+        renderPage();
+        showToast('방 설정이 변경되었습니다.', 'success');
+      } catch {
+        showToast('방 설정 변경에 실패했습니다.');
+      }
+    });
 
     // 공유 팝오버
     const sharePopoverBtn = document.getElementById('share-popover-btn');
