@@ -2516,37 +2516,62 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
           bubbleBody.insertAdjacentHTML('beforeend', `
             <div class="review-form">
-              <div class="review-form-section">
-                <span class="review-form-label">종합 평점</span>
-                ${starRatingHtml('edit-rating', Number(origRating))}
+              <div class="review-form-card review-form-card--highlight">
+                <div class="review-form-card-header">⭐ 종합 평점</div>
+                <div class="review-form-card-body" style="text-align:center;">
+                  ${starRatingHtml('edit-rating', Number(origRating))}
+                </div>
               </div>
-              <div class="review-form-section">
-                <span class="review-form-label">세부 평점 <span class="optional-hint">(선택)</span></span>
-                <div class="detail-rating-inline">
+              <div class="review-form-card">
+                <div class="review-form-card-header">💬 한줄 리뷰 <span class="optional-hint">(선택)</span></div>
+                <div class="review-form-card-body">
+                  <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
+                </div>
+              </div>
+              <details class="review-form-card">
+                <summary class="review-form-card-header" style="cursor:pointer;list-style:none;">🔍 세부 평점 <span class="optional-hint">(선택 · 펼쳐서 입력)</span></summary>
+                <div class="review-form-card-body">
                   ${detailSliderHtml('맛', 'edit-taste', btn.dataset.taste || '')}
                   ${detailSliderHtml('가성비', 'edit-value', btn.dataset.value || '')}
                   ${detailSliderHtml('서비스', 'edit-service', btn.dataset.service || '')}
                   ${detailSliderHtml('청결', 'edit-cleanliness', btn.dataset.cleanliness || '')}
                   ${detailSliderHtml('접근성', 'edit-accessibility', btn.dataset.accessibility || '')}
                 </div>
-              </div>
-              <textarea class="edit-content">${escapeHtml(origContent)}</textarea>
-              <div class="review-form-extras">
-                <label class="revisit-toggle"><input type="checkbox" class="edit-revisit" ${origRevisit ? 'checked' : ''} /> 재방문 의사</label>
-                <input type="text" class="edit-fav-menu" placeholder="또 먹고 싶은 메뉴 (선택)" maxlength="200" value="${escapeHtml(btn.dataset.favMenu || '')}" />
+              </details>
+              <div class="review-form-card">
+                <div class="review-form-card-header">🔄 재방문 의사</div>
+                <div class="review-form-card-body">
+                  <div class="revisit-btns edit-revisit-btns">
+                    <button type="button" class="revisit-btn ${origRevisit ? 'active' : ''}" data-val="yes">또 가고 싶어요</button>
+                    <button type="button" class="revisit-btn" data-val="maybe">사주면 갈게요</button>
+                    <button type="button" class="revisit-btn ${!origRevisit ? 'active' : ''}" data-val="no">글쎄요</button>
+                  </div>
+                  <input type="text" class="edit-fav-menu" placeholder="또 먹고 싶은 메뉴 (선택)" maxlength="200" value="${escapeHtml(btn.dataset.favMenu || '')}" style="margin-top:0.5rem;" />
+                </div>
               </div>
               <div style="display:flex;gap:0.5rem;">
-                <button type="button" class="btn-primary-sm save-edit-btn">저장</button>
-                <button type="button" class="btn-outline-sm cancel-edit-btn">취소</button>
+                <button type="button" class="btn-primary-sm save-edit-btn" style="flex:1;padding:0.65rem;">저장</button>
+                <button type="button" class="btn-outline-sm cancel-edit-btn" style="padding:0.65rem;">취소</button>
               </div>
             </div>
           `);
           attachStarRatingHandlers(card);
 
+          // 수정 폼 revisit 버튼
+          for (const group of card.querySelectorAll<HTMLElement>('.edit-revisit-btns')) {
+            for (const rb of group.querySelectorAll<HTMLButtonElement>('.revisit-btn')) {
+              rb.addEventListener('click', () => {
+                group.querySelectorAll('.revisit-btn').forEach((b) => b.classList.remove('active'));
+                rb.classList.add('active');
+              });
+            }
+          }
+
           card.querySelector('.save-edit-btn')?.addEventListener('click', async () => {
             const newRating = getStarValue(card, 'edit-rating');
             const newContent = card.querySelector<HTMLTextAreaElement>('.edit-content')?.value.trim() || '';
-            const newRevisit = card.querySelector<HTMLInputElement>('.edit-revisit')?.checked ?? true;
+            const editRevisitVal = card.querySelector<HTMLButtonElement>('.edit-revisit-btns .revisit-btn.active')?.dataset.val ?? 'yes';
+            const newRevisit = editRevisitVal !== 'no';
             const detailFields = collectDetailFields(card, 'edit', true);
 
             try {
