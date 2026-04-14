@@ -45,6 +45,8 @@ model User {
   fcmTokens           FcmToken[]
   /// 푸시 알림 수신 여부
   pushEnabled         Boolean                @default(true)
+  /// 데모 계정 정보 (관리자 생성 계정)
+  demoAccount         DemoAccount?
   /// 마지막 활동 시각 (DAU 추적용)
   lastActiveAt        DateTime?
   /// 가입일
@@ -441,6 +443,20 @@ model FcmToken {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+/// 데모 계정 (관리자가 생성한 테스트용 계정 인덱스)
+model DemoAccount {
+  /// 고유 식별자
+  id        String   @id @default(cuid())
+  /// 연결된 사용자
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// 사용자 ID (FK, 1:1)
+  userId    String   @unique
+  /// 관리자 메모
+  memo      String?  @db.VarChar(200)
+  /// 생성일
+  createdAt DateTime @default(now())
 }
 
 /// 고객 문의 (지역 추가 요청, 버그 신고, 기타 피드백)

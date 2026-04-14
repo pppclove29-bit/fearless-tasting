@@ -12,6 +12,7 @@ import { NoticesModule } from './notices/notices.module';
 import { HealthModule } from './health/health.module';
 import { FcmModule } from './fcm/fcm.module';
 import { StorageModule } from './storage/storage.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { StorageModule } from './storage/storage.module';
     RoomsModule,
     NoticesModule,
     HealthModule,
+    AdminModule,
   ],
   providers: [
     {

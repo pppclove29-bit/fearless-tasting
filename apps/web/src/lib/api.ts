@@ -730,6 +730,53 @@ export async function toggleRoomPublic(roomId: string, isPublic: boolean): Promi
   return res.json();
 }
 
+// ─── 가계정 관리 (관리자) ───
+
+export interface DemoAccount {
+  id: string;
+  userId: string;
+  memo: string | null;
+  createdAt: string;
+  user: { id: string; nickname: string; profileImageUrl: string | null };
+}
+
+export async function fetchDemoAccounts(): Promise<DemoAccount[]> {
+  const res = await apiFetch(`${API_BASE}/admin/demo-accounts`);
+  await throwIfNotOk(res, '가계정 목록을 불러올 수 없습니다.');
+  return res.json();
+}
+
+export async function createDemoAccount(nickname: string, memo?: string): Promise<unknown> {
+  const res = await apiFetch(`${API_BASE}/admin/demo-accounts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nickname, memo }),
+  });
+  await throwIfNotOk(res, '가계정 생성에 실패했습니다.');
+  return res.json();
+}
+
+export async function updateDemoAccount(id: string, data: { nickname?: string; memo?: string; profileImageUrl?: string }): Promise<unknown> {
+  const res = await apiFetch(`${API_BASE}/admin/demo-accounts/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  await throwIfNotOk(res, '가계정 수정에 실패했습니다.');
+  return res.json();
+}
+
+export async function deleteDemoAccount(id: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/admin/demo-accounts/${id}`, { method: 'DELETE' });
+  await throwIfNotOk(res, '가계정 삭제에 실패했습니다.');
+}
+
+export async function loginAsDemoAccount(id: string): Promise<{ accessToken: string; refreshToken: string }> {
+  const res = await apiFetch(`${API_BASE}/admin/demo-accounts/${id}/login`, { method: 'POST' });
+  await throwIfNotOk(res, '로그인에 실패했습니다.');
+  return res.json();
+}
+
 // ─── 리뷰 비교 ───
 
 /** 식당별 멤버 리뷰 비교 */

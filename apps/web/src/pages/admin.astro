@@ -15,11 +15,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <button type="button" class="tab-btn active" data-tab="stats">통계</button>
         <button type="button" class="tab-btn" data-tab="notices">공지 관리</button>
         <button type="button" class="tab-btn" data-tab="inquiries">문의 관리</button>
+        <button type="button" class="tab-btn" data-tab="demo">가계정</button>
       </div>
 
       <div id="tab-stats" class="tab-panel"></div>
       <div id="tab-notices" class="tab-panel" hidden></div>
       <div id="tab-inquiries" class="tab-panel" hidden></div>
+      <div id="tab-demo" class="tab-panel" hidden></div>
     </div>
   </div>
 </BaseLayout>
@@ -358,6 +360,123 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     cursor: pointer;
   }
 
+  /* 가계정 관리 */
+  .demo-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .demo-form input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    margin-bottom: 0.5rem;
+    background: var(--bg-input, var(--bg));
+    color: var(--text);
+  }
+
+  .demo-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .demo-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--bg-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .demo-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .demo-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .demo-nickname {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-heading);
+  }
+
+  .demo-memo {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+
+  .demo-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+
+  .demo-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  .demo-edit-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .demo-edit-fields input {
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-family: inherit;
+    background: var(--bg-input, var(--bg));
+    color: var(--text);
+  }
+
+  .btn-login-sm {
+    padding: 0.3rem 0.65rem;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-login-sm:hover {
+    background: #1d4ed8;
+  }
+
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -387,8 +506,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <script>
-  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice } from '@/lib/api';
-  import type { Notice } from '@/lib/api';
+  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice, fetchDemoAccounts, createDemoAccount, updateDemoAccount, deleteDemoAccount, loginAsDemoAccount, saveTokens } from '@/lib/api';
+  import type { Notice, DemoAccount } from '@/lib/api';
   import { formatDate } from '@repo/utils';
 
   function initAdminPage() {
@@ -400,7 +519,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const statsPanel = document.getElementById('tab-stats');
     const noticesPanel = document.getElementById('tab-notices');
     const inquiriesPanel = document.getElementById('tab-inquiries');
-    if (!loadingMsg || !accessDenied || !adminTabs || !statsPanel || !noticesPanel || !inquiriesPanel) return;
+    const demoPanel = document.getElementById('tab-demo');
+    if (!loadingMsg || !accessDenied || !adminTabs || !statsPanel || !noticesPanel || !inquiriesPanel || !demoPanel) return;
 
     function escapeHtml(text: string): string {
       const div = document.createElement('div');
@@ -416,7 +536,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     };
 
     // 탭 전환
-    const panels: Record<string, HTMLElement> = { stats: statsPanel, notices: noticesPanel, inquiries: inquiriesPanel };
+    const panels: Record<string, HTMLElement> = { stats: statsPanel, notices: noticesPanel, inquiries: inquiriesPanel, demo: demoPanel };
     for (const btn of document.querySelectorAll<HTMLButtonElement>('.tab-btn')) {
       btn.addEventListener('click', () => {
         for (const b of document.querySelectorAll('.tab-btn')) b.classList.remove('active');
@@ -425,6 +545,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         for (const [key, panel] of Object.entries(panels)) panel.hidden = key !== tab;
         if (tab === 'inquiries' && inquiriesPanel.innerHTML === '') loadInquiries();
         if (tab === 'notices' && noticesPanel.innerHTML === '') loadNotices();
+        if (tab === 'demo' && demoPanel.innerHTML === '') loadDemoAccounts();
       });
     }
 
@@ -654,6 +775,123 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           await loadNotices();
         } catch { alert('저장에 실패했습니다.'); }
       });
+    }
+
+    // ─── 가계정 관리 ───
+
+    async function loadDemoAccounts() {
+      demoPanel.innerHTML = '<p class="empty-msg">로딩 중...</p>';
+      let accounts: DemoAccount[];
+      try {
+        accounts = await fetchDemoAccounts();
+      } catch {
+        demoPanel.innerHTML = '<p class="empty-msg">가계정 목록을 불러올 수 없습니다.</p>';
+        return;
+      }
+
+      const listHtml = accounts.length > 0
+        ? accounts.map((acc) => `
+          <div class="demo-card" data-id="${acc.id}">
+            <div class="demo-avatar">
+              ${acc.user.profileImageUrl
+                ? `<img src="${escapeHtml(acc.user.profileImageUrl)}" alt="" />`
+                : escapeHtml(acc.user.nickname.charAt(0))}
+            </div>
+            <div class="demo-info">
+              <div class="demo-nickname">${escapeHtml(acc.user.nickname)}</div>
+              ${acc.memo ? `<div class="demo-memo">${escapeHtml(acc.memo)}</div>` : ''}
+              <div class="demo-date">${formatDate(acc.createdAt)}</div>
+            </div>
+            <div class="demo-actions">
+              <button type="button" class="btn-outline-sm demo-edit-btn" data-id="${acc.id}">수정</button>
+              <button type="button" class="btn-danger-sm demo-delete-btn" data-id="${acc.id}">삭제</button>
+              <button type="button" class="btn-login-sm demo-login-btn" data-id="${acc.id}">이 계정으로 로그인</button>
+            </div>
+          </div>
+        `).join('')
+        : '<p class="empty-msg">등록된 가계정이 없습니다.</p>';
+
+      demoPanel.innerHTML = `
+        <div class="demo-form">
+          <input type="text" id="demo-nickname" placeholder="닉네임 (필수)" maxlength="20" />
+          <input type="text" id="demo-memo" placeholder="관리용 메모" maxlength="200" />
+          <button type="button" class="btn-primary-sm" id="demo-create-btn">생성</button>
+        </div>
+        <div id="demo-list">${listHtml}</div>
+      `;
+
+      // 생성
+      document.getElementById('demo-create-btn')!.addEventListener('click', async () => {
+        const nickname = (document.getElementById('demo-nickname') as HTMLInputElement).value.trim();
+        const memo = (document.getElementById('demo-memo') as HTMLInputElement).value.trim();
+        if (!nickname) { alert('닉네임을 입력해주세요.'); return; }
+        try {
+          await createDemoAccount(nickname, memo || undefined);
+          await loadDemoAccounts();
+        } catch (e) { alert(e instanceof Error ? e.message : '생성에 실패했습니다.'); }
+      });
+
+      // 삭제
+      for (const btn of demoPanel.querySelectorAll<HTMLButtonElement>('.demo-delete-btn')) {
+        btn.addEventListener('click', async () => {
+          if (!confirm('이 가계정을 삭제하시겠습니까?')) return;
+          try {
+            await deleteDemoAccount(btn.dataset.id!);
+            await loadDemoAccounts();
+          } catch (e) { alert(e instanceof Error ? e.message : '삭제에 실패했습니다.'); }
+        });
+      }
+
+      // 로그인
+      for (const btn of demoPanel.querySelectorAll<HTMLButtonElement>('.demo-login-btn')) {
+        btn.addEventListener('click', async () => {
+          if (!confirm('이 가계정으로 로그인하시겠습니까? 현재 세션이 교체됩니다.')) return;
+          try {
+            const tokens = await loginAsDemoAccount(btn.dataset.id!);
+            saveTokens(tokens.accessToken, tokens.refreshToken);
+            location.href = '/';
+          } catch (e) { alert(e instanceof Error ? e.message : '로그인에 실패했습니다.'); }
+        });
+      }
+
+      // 수정 (인라인 편집)
+      for (const btn of demoPanel.querySelectorAll<HTMLButtonElement>('.demo-edit-btn')) {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id!;
+          const acc = accounts.find((a) => a.id === id);
+          if (!acc) return;
+          const card = demoPanel.querySelector<HTMLElement>(`.demo-card[data-id="${id}"]`);
+          if (!card) return;
+
+          // Replace info + actions with edit fields
+          const avatar = card.querySelector('.demo-avatar')!.outerHTML;
+          card.innerHTML = `
+            ${avatar}
+            <div class="demo-edit-fields">
+              <input type="text" class="demo-edit-nickname" value="${escapeHtml(acc.user.nickname)}" placeholder="닉네임" maxlength="20" />
+              <input type="text" class="demo-edit-memo" value="${acc.memo ? escapeHtml(acc.memo) : ''}" placeholder="관리용 메모" maxlength="200" />
+            </div>
+            <div class="demo-actions">
+              <button type="button" class="btn-primary-sm demo-save-btn">저장</button>
+              <button type="button" class="btn-outline-sm demo-cancel-btn">취소</button>
+            </div>
+          `;
+
+          card.querySelector('.demo-save-btn')!.addEventListener('click', async () => {
+            const nickname = (card.querySelector('.demo-edit-nickname') as HTMLInputElement).value.trim();
+            const memo = (card.querySelector('.demo-edit-memo') as HTMLInputElement).value.trim();
+            if (!nickname) { alert('닉네임을 입력해주세요.'); return; }
+            try {
+              await updateDemoAccount(id, { nickname, memo: memo || undefined });
+              await loadDemoAccounts();
+            } catch (e) { alert(e instanceof Error ? e.message : '수정에 실패했습니다.'); }
+          });
+
+          card.querySelector('.demo-cancel-btn')!.addEventListener('click', () => {
+            loadDemoAccounts();
+          });
+        });
+      }
     }
 
     async function init() {
