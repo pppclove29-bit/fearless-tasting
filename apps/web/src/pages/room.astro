@@ -2806,8 +2806,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     // 멤버 초대 버튼 → 공유 팝오버 열기
     document.getElementById('member-invite-btn')?.addEventListener('click', () => {
-      const shareBtn = document.getElementById('share-popover-btn');
-      if (shareBtn) shareBtn.click();
+      const popover = document.getElementById('share-popover');
+      if (popover) popover.hidden = false;
     });
 
     // 역할 변경
