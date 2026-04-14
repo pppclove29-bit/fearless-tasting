@@ -1928,7 +1928,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                    <button type="button" class="revisit-btn" data-val="maybe">사주면 갈게요</button>
                    <button type="button" class="revisit-btn" data-val="no">글쎄요</button>
                  </div>
-                 <input type="text" class="new-review-fav-menu" placeholder="또 먹고 싶은 메뉴 (선택)" maxlength="200" style="margin-top:0.5rem;" />
                </div>
              </div>
              <button type="button" class="btn-primary-sm submit-visit-review-btn" data-visit-id="${visit.id}" style="width:100%;padding:0.65rem;">리뷰 등록</button>
@@ -2546,7 +2545,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                     <button type="button" class="revisit-btn" data-val="maybe">사주면 갈게요</button>
                     <button type="button" class="revisit-btn ${!origRevisit ? 'active' : ''}" data-val="no">글쎄요</button>
                   </div>
-                  <input type="text" class="edit-fav-menu" placeholder="또 먹고 싶은 메뉴 (선택)" maxlength="200" value="${escapeHtml(btn.dataset.favMenu || '')}" style="margin-top:0.5rem;" />
                 </div>
               </div>
               <div style="display:flex;gap:0.5rem;">

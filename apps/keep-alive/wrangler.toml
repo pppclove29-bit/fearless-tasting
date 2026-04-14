@@ -2,9 +2,9 @@ name = "fearless-tasting-keep-alive"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
-# 14분마다 실행 (Render 무료 플랜 15분 슬립 방지)
+# 7분마다 실행 (Render 무료 플랜 슬립 방지, 호출 실패 대비)
 [triggers]
-crons = ["*/14 * * * *"]
+crons = ["*/7 * * * *"]
 
 [vars]
 PUBLIC_API_URL = "https://api.musikga.kr"
