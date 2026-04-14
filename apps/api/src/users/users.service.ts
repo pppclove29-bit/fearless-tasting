@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { withProfileImage } from '../common/image-url';
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -46,11 +47,12 @@ export class UsersService {
       data.profileImageUrl = profileImageUrl;
     }
 
-    return this.prisma.write.user.update({
+    const user = await this.prisma.write.user.update({
       where: { id: userId },
       data,
       select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true },
     });
+    return withProfileImage(user);
   }
 
   /** 푸시 알림 수신 설정 토글 */

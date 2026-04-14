@@ -14,13 +14,7 @@ function calcAvgRating(ratings: number[]): number | null {
 const MAX_ROOMS_PER_USER = 30;
 const CODE_GEN_MAX_RETRIES = 10;
 
-/** 이미지 상대 경로에 R2_PUBLIC_URL prefix 붙이기 */
-function toImageUrl(path: string): string {
-  if (!path) return path;
-  if (path.startsWith('http')) return path; // 이미 절대 URL이면 그대로
-  const base = (process.env.R2_PUBLIC_URL || 'https://media.musikga.kr').replace(/\/$/, '');
-  return base ? `${base}/${path}` : path;
-}
+import { toImageUrl, withProfileImage } from '../common/image-url';
 
 
 @Injectable()
@@ -134,6 +128,7 @@ export class RoomsService {
 
     return {
       ...room,
+      members: room.members.map((m) => ({ ...m, user: withProfileImage(m.user) })),
       restaurants: room.restaurants.map(({ visits, images, ...rest }) => {
         const allRatings = visits.flatMap((v) => v.reviews.map((r) => r.rating));
         return {
@@ -535,7 +530,15 @@ export class RoomsService {
     }
 
     const { images, ...rest } = restaurant;
-    return { ...rest, images: images.map((img) => toImageUrl(img.url)) };
+    return {
+      ...rest,
+      images: images.map((img) => toImageUrl(img.url)),
+      visits: rest.visits.map((v) => ({
+        ...v,
+        participants: v.participants.map((p) => ({ ...p, user: withProfileImage(p.user) })),
+        reviews: v.reviews.map((r) => ({ ...r, user: withProfileImage(r.user) })),
+      })),
+    };
   }
 
   // ─── 방문 기록 ───
