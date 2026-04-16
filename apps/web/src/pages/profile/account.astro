@@ -1,0 +1,141 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="계정 관리" description="계정 관리 - 회원 탈퇴" noindex>
+  <div class="account-page" id="account-page" hidden>
+    <a href="/profile" class="back-link">&larr; 프로필로 돌아가기</a>
+
+    <h1 class="account-title">계정 관리</h1>
+
+    <section class="account-section">
+      <h2 class="account-section-title">회원 탈퇴</h2>
+      <p class="account-warn">계정을 삭제하면 모든 리뷰, 참여 중인 방 등 개인 데이터가 즉시 삭제되며 복구할 수 없습니다.</p>
+      <button type="button" class="btn-delete-account" id="delete-account-btn">회원 탈퇴</button>
+    </section>
+  </div>
+
+  <p id="loading-msg" class="status-msg">로딩 중...</p>
+</BaseLayout>
+
+<style>
+  .account-page {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+  }
+
+  .back-link {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+  }
+  .back-link:hover { color: var(--text); }
+
+  .account-title {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    margin-bottom: 2rem;
+  }
+
+  .account-section {
+    padding: 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+
+  .account-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 0.75rem;
+  }
+
+  .account-warn {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .btn-delete-account {
+    width: 100%;
+    padding: 0.65rem;
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    font-family: inherit;
+  }
+
+  .btn-delete-account:hover {
+    background: #fef2f2;
+    border-color: #dc2626;
+    color: #dc2626;
+  }
+
+  [data-theme="dark"] .btn-delete-account:hover {
+    background: #451a1a;
+    border-color: #dc2626;
+    color: #fca5a5;
+  }
+
+  .status-msg {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+</style>
+
+<script>
+  import { fetchCurrentUser, deleteAccount, clearTokens, showToast, showDangerConfirm } from '@/lib/api';
+
+  function initAccountPage() {
+    const page = document.getElementById('account-page');
+    const loadingMsg = document.getElementById('loading-msg');
+    if (!page || !loadingMsg) return;
+
+    async function init() {
+      try {
+        const user = await fetchCurrentUser();
+        if (!user) { location.href = '/login'; return; }
+        loadingMsg.hidden = true;
+        page.hidden = false;
+      } catch {
+        loadingMsg.textContent = '페이지를 불러올 수 없습니다.';
+      }
+    }
+
+    init();
+
+    const deleteBtn = document.getElementById('delete-account-btn');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', async () => {
+        const confirmed = await showDangerConfirm(
+          '정말 탈퇴하시겠습니까?\n\n계정, 리뷰, 참여 중인 방 등 모든 개인 데이터가 즉시 삭제되며 복구할 수 없습니다.',
+          '탈퇴',
+        );
+        if (!confirmed) return;
+
+        try {
+          await deleteAccount();
+          clearTokens();
+          location.href = '/';
+        } catch (err) {
+          showToast(err instanceof Error ? err.message : '탈퇴에 실패했습니다.');
+        }
+      });
+    }
+  }
+
+  document.addEventListener('astro:page-load', initAccountPage);
+</script>

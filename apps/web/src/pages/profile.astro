@@ -70,13 +70,10 @@ export const prerender = false;
     </section>
 
     <section class="profile-section">
-      <h2>계정 관리</h2>
+      <h2>계정</h2>
       <div class="account-actions">
         <button type="button" class="btn-logout" id="profile-logout">로그아웃</button>
-        <div class="danger-zone">
-          <p class="danger-desc">계정을 삭제하면 모든 리뷰, 참여 중인 방 등 개인 데이터가 즉시 삭제되며 복구할 수 없습니다.</p>
-          <button type="button" class="btn-delete-account" id="delete-account-btn">회원 탈퇴</button>
-        </div>
+        <a href="/profile/account" class="btn-account-manage">계정 관리</a>
       </div>
     </section>
   </div>
@@ -325,6 +322,28 @@ export const prerender = false;
     border-color: var(--text-heading);
   }
 
+  .btn-account-manage {
+    display: block;
+    width: 100%;
+    padding: 0.7rem;
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-muted);
+    text-align: center;
+    text-decoration: none;
+    transition: border-color 0.15s;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+  .btn-account-manage:hover {
+    border-color: var(--text-heading);
+    color: var(--text-sub);
+  }
+
   .danger-zone {
     padding-top: 1rem;
     border-top: 1px solid var(--border-light);
@@ -425,7 +444,7 @@ export const prerender = false;
 </style>
 
 <script>
-  import { fetchCurrentUser, updateNickname, updatePushEnabled, deleteAccount, logout, clearTokens, showToast, showDangerConfirm } from '@/lib/api';
+  import { fetchCurrentUser, updateNickname, updatePushEnabled, logout, clearTokens, showToast } from '@/lib/api';
   import { uploadImage } from '@/lib/image-upload';
 
   async function initProfilePage() {
@@ -588,25 +607,6 @@ export const prerender = false;
       });
     }
 
-    // 회원 탈퇴
-    const deleteBtn = document.getElementById('delete-account-btn');
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', async () => {
-        const confirmed = await showDangerConfirm(
-          '정말 탈퇴하시겠습니까?\n\n계정, 리뷰, 참여 중인 방 등 모든 개인 데이터가 즉시 삭제되며 복구할 수 없습니다.',
-          '탈퇴',
-        );
-        if (!confirmed) return;
-
-        try {
-          await deleteAccount();
-          clearTokens();
-          location.href = '/';
-        } catch (err) {
-          showToast(err instanceof Error ? err.message : '탈퇴에 실패했습니다.');
-        }
-      });
-    }
   }
 
   document.addEventListener('astro:page-load', initProfilePage);
