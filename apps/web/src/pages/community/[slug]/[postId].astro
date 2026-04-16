@@ -5,10 +5,38 @@ export const prerender = false;
 
 <BaseLayout title="게시글 — 커뮤니티">
   <div class="post-page">
-    <a href="#" class="post-back" id="post-back">&larr; 목록으로</a>
+    <div class="post-top-bar">
+      <button type="button" class="back-btn" id="post-back" aria-label="뒤로가기">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <span class="top-bar-title">게시글</span>
+      <button type="button" class="more-btn" id="post-more-btn" hidden aria-label="더보기">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="5" r="1.5"></circle>
+          <circle cx="12" cy="12" r="1.5"></circle>
+          <circle cx="12" cy="19" r="1.5"></circle>
+        </svg>
+      </button>
+    </div>
+
+    <div class="post-more-dropdown" id="post-more-dropdown" hidden>
+      <button type="button" class="dropdown-item" id="edit-post-btn">수정</button>
+      <button type="button" class="dropdown-item dropdown-danger" id="delete-post-btn">삭제</button>
+    </div>
 
     <div id="post-content">
       <p class="loading-msg">불러오는 중...</p>
+    </div>
+
+    <div class="comment-input-bar" id="comment-bar" hidden>
+      <input type="text" class="comment-input" id="comment-input" placeholder="댓글을 입력하세요" maxlength="1000" />
+      <button type="button" class="comment-send-btn" id="comment-send-btn" aria-label="댓글 작성">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+        </svg>
+      </button>
     </div>
   </div>
 </BaseLayout>
@@ -17,149 +45,349 @@ export const prerender = false;
   .post-page {
     max-width: 480px;
     margin: 0 auto;
-    padding-top: 1rem;
+    padding-bottom: 72px;
+    position: relative;
   }
 
-  .post-back {
-    font-size: 0.82rem;
+  .post-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+
+  .back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: none;
+    color: var(--text-heading);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.15s;
+  }
+
+  .back-btn:hover {
+    background: var(--bg-hover);
+  }
+
+  .top-bar-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-heading);
+  }
+
+  .more-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: none;
     color: var(--text-muted);
-    text-decoration: none;
-    display: inline-block;
-    margin-bottom: 1rem;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.15s;
   }
 
-  .post-back:hover {
+  .more-btn:hover {
+    background: var(--bg-hover);
+  }
+
+  .post-more-dropdown {
+    position: absolute;
+    top: 52px;
+    right: 0.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    z-index: 20;
+    overflow: hidden;
+    min-width: 100px;
+  }
+
+  .dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.6rem 1rem;
+    border: none;
+    background: none;
+    font-size: 0.85rem;
+    font-family: inherit;
     color: var(--text-sub);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.1s;
+  }
+
+  .dropdown-item:hover {
+    background: var(--bg-hover);
+  }
+
+  .dropdown-danger {
+    color: #dc2626;
   }
 
   .loading-msg {
     text-align: center;
     color: var(--text-muted);
-    font-size: 0.9rem;
-    padding: 2rem;
+    font-size: 0.85rem;
+    padding: 3rem 1rem;
+  }
+
+  .comment-input-bar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    box-sizing: border-box;
+    z-index: 20;
+  }
+
+  .comment-input {
+    flex: 1;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .comment-input:focus {
+    border-color: var(--text-heading);
+  }
+
+  .comment-send-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: var(--text-heading);
+    color: var(--bg);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+  }
+
+  .comment-send-btn:hover {
+    opacity: 0.85;
   }
 </style>
 
 <style is:global>
-  .post-detail-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
+  .post-detail-section {
+    padding: 1.25rem 0.75rem;
+  }
+
+  .post-board-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--bg-hover);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.6rem;
   }
 
   .post-detail-title {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: var(--text-heading);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
     word-break: break-word;
+    line-height: 1.4;
   }
 
-  .post-detail-meta {
+  .post-author-row {
     display: flex;
-    gap: 0.75rem;
-    font-size: 0.8rem;
-    color: var(--text-muted);
+    align-items: center;
+    gap: 0.6rem;
     margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-light);
+  }
+
+  .post-author-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg-hover);
+    color: var(--text-sub);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .post-author-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .post-author-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-heading);
+  }
+
+  .post-author-time {
+    font-size: 0.72rem;
+    color: var(--text-muted);
   }
 
   .post-detail-content {
     font-size: 0.9rem;
     color: var(--text-sub);
-    line-height: 1.7;
+    line-height: 1.75;
     white-space: pre-wrap;
     word-break: break-word;
   }
 
-  .post-bottom-actions {
+  .post-like-row {
     display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 1.25rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-light);
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0.75rem;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
   }
 
-  .post-bottom-btn {
-    padding: 0.45rem 1rem;
-    border-radius: 6px;
-    font-size: 0.82rem;
-    font-weight: 500;
+  .post-like-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--bg);
+    color: var(--text-sub);
+    font-size: 0.8rem;
+    font-family: inherit;
     cursor: pointer;
     transition: all 0.15s;
-    font-family: inherit;
-    border: 1px solid var(--border);
-    background: var(--bg-card);
-    color: var(--text-sub);
   }
 
-  .post-bottom-btn:hover { background: var(--bg-hover); }
+  .post-like-btn:hover {
+    background: var(--bg-hover);
+  }
 
-  .post-like-btn { color: #dc2626; border-color: #fecaca; }
-  .post-like-btn:hover { background: #fef2f2; }
-  .post-like-btn.liked { background: #dc2626; color: #fff; border-color: #dc2626; }
-  [data-theme="dark"] .post-like-btn:hover { background: #451a1a; }
-  [data-theme="dark"] .post-like-btn.liked { background: #dc2626; color: #fff; }
+  .post-like-btn.liked {
+    background: #dc2626;
+    color: #fff;
+    border-color: #dc2626;
+  }
 
-  .post-like-static { color: var(--text-muted); cursor: default; }
-
-  .post-delete-btn { color: #dc2626; border-color: #fecaca; }
-  .post-delete-btn:hover { background: #fef2f2; }
+  .post-like-static {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
 
   /* Comments */
   .comments-section {
-    margin-top: 1.5rem;
+    padding: 0.75rem 0.75rem;
   }
 
   .comments-title {
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-heading);
     margin-bottom: 0.75rem;
   }
 
   .comment-item {
-    padding: 0.85rem 0;
-    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--border);
   }
 
   .comment-item:last-of-type {
     border-bottom: none;
   }
 
-  .comment-header {
+  .comment-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg-hover);
+    color: var(--text-sub);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.3rem;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .comment-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .comment-top {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.15rem;
   }
 
   .comment-author {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-heading);
   }
 
-  .comment-header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  .comment-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
   }
 
-  .comment-date {
-    font-size: 0.72rem;
-    color: var(--text-muted);
+  .comment-content {
+    font-size: 0.85rem;
+    color: var(--text-sub);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .comment-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
   }
 
   .comment-action-btn {
     padding: 0;
     background: none;
     border: none;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
     cursor: pointer;
     font-family: inherit;
@@ -169,76 +397,17 @@ export const prerender = false;
   .comment-action-btn:hover { color: var(--text-heading); }
   .comment-delete-btn:hover { color: #dc2626; }
 
-  .comment-likes-badge {
-    display: inline-block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #dc2626;
-    margin-bottom: 0.25rem;
-  }
-
-  .comment-content {
-    font-size: 0.88rem;
-    color: var(--text);
-    line-height: 1.65;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  .comment-form {
-    margin-top: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .comment-textarea {
-    width: 100%;
-    padding: 0.65rem;
-    border: 1px solid var(--border-mid);
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-family: inherit;
-    min-height: 80px;
-    resize: vertical;
-    background: var(--bg-input, var(--bg));
-    color: var(--text);
-    box-sizing: border-box;
-  }
-
-  .comment-submit-btn {
-    align-self: flex-end;
-    padding: 0.45rem 1rem;
-    background: var(--text-heading);
-    color: var(--bg);
-    border: none;
-    border-radius: 6px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s;
-  }
-
-  .comment-submit-btn:hover {
-    opacity: 0.85;
-  }
-
-  .comment-submit-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
   .comments-empty {
     text-align: center;
     color: var(--text-muted);
-    font-size: 0.85rem;
-    padding: 1.5rem;
+    font-size: 0.82rem;
+    padding: 1.5rem 0;
   }
 
   .post-error {
     text-align: center;
     color: var(--text-muted);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     padding: 3rem 1rem;
   }
 
@@ -248,31 +417,71 @@ export const prerender = false;
     text-align: center;
     padding: 1rem;
   }
-
 </style>
 
 <script>
-  import { fetchPost, deletePost, createComment, deleteComment, togglePostLike, toggleCommentLike, fetchCurrentUser, showToast, showDangerConfirm } from '@/lib/api';
-  import type { PostDetail } from '@/lib/api';
-  import { formatDate } from '@repo/utils';
+  import { fetchBoards, fetchPost, deletePost, createComment, deleteComment, togglePostLike, toggleCommentLike, fetchCurrentUser, showToast, showDangerConfirm } from '@/lib/api';
+  import type { PostDetail, BoardListItem } from '@/lib/api';
 
   function initPostDetailPage() {
     const postContent = document.getElementById('post-content');
-    const postBack = document.getElementById('post-back') as HTMLAnchorElement | null;
-    if (!postContent || !postBack) return;
+    const postBack = document.getElementById('post-back');
+    const postMoreBtn = document.getElementById('post-more-btn');
+    const postMoreDropdown = document.getElementById('post-more-dropdown');
+    const editPostBtn = document.getElementById('edit-post-btn');
+    const deletePostBtn = document.getElementById('delete-post-btn');
+    const commentBar = document.getElementById('comment-bar');
+    const commentInput = document.getElementById('comment-input') as HTMLInputElement | null;
+    const commentSendBtn = document.getElementById('comment-send-btn');
+    if (!postContent || !postBack || !postMoreBtn || !postMoreDropdown || !editPostBtn || !deletePostBtn || !commentBar || !commentInput || !commentSendBtn) return;
 
     const pathParts = location.pathname.split('/').filter(Boolean);
-    // /community/slug/postId
     const slug = decodeURIComponent(pathParts[1] || '');
     const postId = pathParts[2] || '';
     if (!slug || !postId) return;
 
-    postBack.href = `/community/${encodeURIComponent(slug)}`;
+    postBack.addEventListener('click', () => {
+      if (history.length > 1) {
+        history.back();
+      } else {
+        location.href = `/community/${encodeURIComponent(slug)}`;
+      }
+    });
+
+    let dropdownOpen = false;
+    postMoreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdownOpen = !dropdownOpen;
+      postMoreDropdown.hidden = !dropdownOpen;
+    });
+
+    document.addEventListener('click', () => {
+      if (dropdownOpen) {
+        dropdownOpen = false;
+        postMoreDropdown.hidden = true;
+      }
+    });
 
     function escapeHtml(text: string): string {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    function relativeTime(dateStr: string): string {
+      const now = Date.now();
+      const then = new Date(dateStr).getTime();
+      const diff = Math.floor((now - then) / 1000);
+      if (diff < 60) return '방금 전';
+      if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+      if (diff < 2592000) return `${Math.floor(diff / 86400)}일 전`;
+      const d = new Date(dateStr);
+      return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function getInitial(nickname: string): string {
+      return nickname.charAt(0).toUpperCase();
     }
 
     async function loadPost() {
@@ -287,47 +496,69 @@ export const prerender = false;
 
       document.title = `${post.title} — 커뮤니티 | 무모한 시식가`;
 
+      // Find board name
+      let boardName = '';
+      try {
+        const boards: BoardListItem[] = await fetchBoards();
+        const board = boards.find(b => b.slug === slug);
+        if (board) boardName = board.name;
+      } catch { /* ignore */ }
+
       const isAuthor = user && user.id === post.author.id;
       const isAdmin = user && user.role === 'admin';
       const canModify = isAuthor || isAdmin;
+      const likeCount = post._count?.likes ?? 0;
 
-      let html = `
-        <div class="post-detail-card">
-          <div class="post-detail-title">${escapeHtml(post.title)}</div>
-          <div class="post-detail-meta">
-            <span>${escapeHtml(post.author.nickname)}</span>
-            <span>${formatDate(post.createdAt)}</span>
-            ${post.updatedAt !== post.createdAt ? `<span>(수정됨)</span>` : ''}
-          </div>
-          <div class="post-detail-content">${escapeHtml(post.content)}</div>
-          <div class="post-bottom-actions">
-            ${user ? `<button type="button" class="post-bottom-btn post-like-btn" id="post-like-btn">♥ 공감 <span id="post-like-count">${(post as Record<string, unknown>)._count?.likes ?? 0}</span>명</button>` : `<span class="post-bottom-btn post-like-static">♥ 공감 ${(post as Record<string, unknown>)._count?.likes ?? 0}명</span>`}
-            ${canModify ? `<button type="button" class="post-bottom-btn post-edit-btn" id="edit-post-btn">수정</button>` : ''}
-            ${canModify ? `<button type="button" class="post-bottom-btn post-delete-btn" id="delete-post-btn">삭제</button>` : ''}
+      if (canModify) {
+        postMoreBtn.hidden = false;
+      }
+
+      let html = `<div class="post-detail-section">`;
+      if (boardName) {
+        html += `<span class="post-board-badge">${escapeHtml(boardName)}</span>`;
+      }
+      html += `
+        <div class="post-detail-title">${escapeHtml(post.title)}</div>
+        <div class="post-author-row">
+          <div class="post-author-avatar">${escapeHtml(getInitial(post.author.nickname))}</div>
+          <div class="post-author-info">
+            <span class="post-author-name">${escapeHtml(post.author.nickname)}</span>
+            <span class="post-author-time">${relativeTime(post.createdAt)}${post.updatedAt !== post.createdAt ? ' (수정됨)' : ''}</span>
           </div>
         </div>
-      `;
+        <div class="post-detail-content">${escapeHtml(post.content)}</div>
+      </div>`;
 
-      // Comments section
-      html += '<div class="comments-section">';
+      // Like row
+      html += `<div class="post-like-row">`;
+      if (user) {
+        html += `<button type="button" class="post-like-btn" id="post-like-btn">&#9829; 공감 <span id="post-like-count">${likeCount}</span></button>`;
+      } else {
+        html += `<span class="post-like-static">&#9829; 공감 ${likeCount}</span>`;
+      }
+      html += `</div>`;
+
+      // Comments
+      html += `<div class="comments-section">`;
       html += `<div class="comments-title">댓글 ${post.comments.length}개</div>`;
 
       if (post.comments.length > 0) {
         html += post.comments.map((comment) => {
           const canDeleteComment = user && (user.id === comment.author.id || user.role === 'admin');
-          const cLikes = (comment as Record<string, unknown>)._count?.likes ?? 0;
           return `
             <div class="comment-item">
-              <div class="comment-header">
-                <span class="comment-author">${escapeHtml(comment.author.nickname)}님</span>
-                <div class="comment-header-right">
-                  <span class="comment-date">${formatDate(comment.createdAt)}</span>
+              <div class="comment-avatar">${escapeHtml(getInitial(comment.author.nickname))}</div>
+              <div class="comment-body">
+                <div class="comment-top">
+                  <span class="comment-author">${escapeHtml(comment.author.nickname)}</span>
+                  <span class="comment-time">${relativeTime(comment.createdAt)}</span>
+                </div>
+                <div class="comment-content">${escapeHtml(comment.content)}</div>
+                <div class="comment-actions">
                   ${user ? `<button type="button" class="comment-action-btn comment-like-btn" data-comment-id="${comment.id}">공감</button>` : ''}
                   ${canDeleteComment ? `<button type="button" class="comment-action-btn comment-delete-btn" data-comment-id="${comment.id}">삭제</button>` : ''}
                 </div>
               </div>
-              ${cLikes > 0 ? `<div class="comment-likes-badge">♥${cLikes}</div>` : ''}
-              <div class="comment-content">${escapeHtml(comment.content)}</div>
             </div>
           `;
         }).join('');
@@ -335,27 +566,26 @@ export const prerender = false;
         html += '<p class="comments-empty">아직 댓글이 없습니다.</p>';
       }
 
-      // Comment form
-      if (user) {
-        html += `
-          <div class="comment-form" id="comment-form">
-            <textarea class="comment-textarea" id="comment-input" placeholder="댓글을 입력하세요" maxlength="1000"></textarea>
-            <button type="button" class="comment-submit-btn" id="comment-submit-btn">댓글 작성</button>
-          </div>
-        `;
-      } else {
+      if (!user) {
         html += '<p class="comment-login-msg">댓글을 작성하려면 로그인이 필요합니다.</p>';
       }
 
       html += '</div>';
       postContent.innerHTML = html;
 
-      // Attach event listeners
+      // Show comment bar for logged-in users
+      if (user) {
+        commentBar.hidden = false;
+      }
+
+      // Edit/Delete handlers
       if (canModify) {
-        document.getElementById('edit-post-btn')?.addEventListener('click', () => {
+        editPostBtn.addEventListener('click', () => {
+          postMoreDropdown.hidden = true;
           location.href = `/community/${encodeURIComponent(slug)}/write?edit=${postId}`;
         });
-        document.getElementById('delete-post-btn')?.addEventListener('click', async () => {
+        deletePostBtn.addEventListener('click', async () => {
+          postMoreDropdown.hidden = true;
           const confirmed = await showDangerConfirm('이 게시글을 삭제하시겠습니까?');
           if (!confirmed) return;
           try {
@@ -388,8 +618,6 @@ export const prerender = false;
           if (!commentId) return;
           try {
             const result = await toggleCommentLike(slug, postId, commentId);
-            const countEl = btn.querySelector('.comment-like-count');
-            if (countEl) countEl.textContent = String(result.likeCount);
             btn.classList.toggle('liked', result.liked);
           } catch (e) {
             showToast(e instanceof Error ? e.message : '추천에 실패했습니다.');
@@ -414,28 +642,39 @@ export const prerender = false;
         });
       }
 
-      // Comment submit
-      const commentInput = document.getElementById('comment-input') as HTMLTextAreaElement | null;
-      const commentSubmitBtn = document.getElementById('comment-submit-btn') as HTMLButtonElement | null;
-      if (commentInput && commentSubmitBtn) {
-        commentSubmitBtn.addEventListener('click', async () => {
-          const commentText = commentInput.value.trim();
-          if (!commentText) {
-            showToast('댓글 내용을 입력해주세요.');
-            return;
-          }
-          commentSubmitBtn.disabled = true;
-          try {
-            await createComment(slug, postId, commentText);
-            showToast('댓글이 작성되었습니다.');
-            await loadPost();
-          } catch (e) {
-            showToast(e instanceof Error ? e.message : '댓글 작성에 실패했습니다.');
-          } finally {
-            commentSubmitBtn.disabled = false;
-          }
-        });
-      }
+      // Comment submit via bar
+      const sendHandler = async () => {
+        const text = commentInput.value.trim();
+        if (!text) {
+          showToast('댓글 내용을 입력해주세요.');
+          return;
+        }
+        commentSendBtn.setAttribute('disabled', 'true');
+        try {
+          await createComment(slug, postId, text);
+          commentInput.value = '';
+          showToast('댓글이 작성되었습니다.');
+          await loadPost();
+        } catch (e) {
+          showToast(e instanceof Error ? e.message : '댓글 작성에 실패했습니다.');
+        } finally {
+          commentSendBtn.removeAttribute('disabled');
+        }
+      };
+
+      const newSendBtn = commentSendBtn.cloneNode(true) as HTMLButtonElement;
+      commentSendBtn.replaceWith(newSendBtn);
+      newSendBtn.addEventListener('click', sendHandler);
+
+      // Enter key to submit
+      const newInput = commentInput.cloneNode(true) as HTMLInputElement;
+      commentInput.replaceWith(newInput);
+      newInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          newSendBtn.click();
+        }
+      });
     }
 
     loadPost();

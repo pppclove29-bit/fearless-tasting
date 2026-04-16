@@ -5,24 +5,28 @@ export const prerender = false;
 
 <BaseLayout title="글쓰기 — 커뮤니티" noindex>
   <div class="write-page">
-    <a href="#" class="write-back" id="write-back">&larr; 돌아가기</a>
-
-    <h1 id="write-title">글쓰기</h1>
+    <div class="write-top-bar">
+      <button type="button" class="back-btn" id="write-back" aria-label="뒤로가기">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <span class="top-bar-title" id="write-title">글쓰기</span>
+      <button type="button" class="submit-btn" id="submit-btn" disabled>등록</button>
+    </div>
 
     <div id="write-content">
       <p class="loading-msg" id="write-loading">로딩 중...</p>
 
-      <form id="write-form" class="write-form" hidden>
-        <div class="form-group">
-          <label for="post-title">제목</label>
-          <input type="text" id="post-title" placeholder="제목을 입력하세요" maxlength="200" required />
+      <div id="write-form" class="write-form" hidden>
+        <div class="board-selector" id="board-selector" hidden>
+          <label class="selector-label">게시판</label>
+          <select id="board-select" class="board-select"></select>
         </div>
-        <div class="form-group">
-          <label for="post-content-input">내용</label>
-          <textarea id="post-content-input" placeholder="내용을 입력하세요" maxlength="10000" required></textarea>
-        </div>
-        <button type="submit" class="submit-btn" id="submit-btn">등록</button>
-      </form>
+        <input type="text" class="title-input" id="post-title" placeholder="제목을 입력하세요" maxlength="200" />
+        <div class="divider"></div>
+        <textarea class="content-textarea" id="post-content-input" placeholder="내용을 입력하세요" maxlength="10000"></textarea>
+      </div>
 
       <p id="write-login-msg" class="login-msg" hidden>로그인이 필요합니다.</p>
     </div>
@@ -33,80 +37,53 @@ export const prerender = false;
   .write-page {
     max-width: 480px;
     margin: 0 auto;
-    padding-top: 1rem;
   }
 
-  .write-back {
-    font-size: 0.82rem;
-    color: var(--text-muted);
-    text-decoration: none;
-    display: inline-block;
-    margin-bottom: 1rem;
+  .write-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
   }
 
-  .write-back:hover {
-    color: var(--text-sub);
-  }
-
-  h1 {
-    font-size: 1.3rem;
-    font-weight: 700;
+  .back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: none;
     color: var(--text-heading);
-    margin-bottom: 1.25rem;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.15s;
   }
 
-  .loading-msg {
-    text-align: center;
-    color: var(--text-muted);
+  .back-btn:hover {
+    background: var(--bg-hover);
+  }
+
+  .top-bar-title {
     font-size: 0.9rem;
-    padding: 2rem;
-  }
-
-  .write-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
-
-  .form-group label {
-    font-size: 0.82rem;
     font-weight: 600;
-    color: var(--text-sub);
-  }
-
-  .form-group input,
-  .form-group textarea {
-    width: 100%;
-    padding: 0.6rem 0.75rem;
-    border: 1px solid var(--border-mid);
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-family: inherit;
-    background: var(--bg-input, var(--bg));
-    color: var(--text);
-    box-sizing: border-box;
-  }
-
-  .form-group textarea {
-    min-height: 200px;
-    resize: vertical;
-    line-height: 1.6;
+    color: var(--text-heading);
   }
 
   .submit-btn {
-    padding: 0.65rem;
+    padding: 0.4rem 0.85rem;
+    border: none;
+    border-radius: 16px;
     background: var(--text-heading);
     color: var(--bg);
-    border: none;
-    border-radius: 8px;
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     font-weight: 600;
+    font-family: inherit;
     cursor: pointer;
     transition: opacity 0.15s;
   }
@@ -116,38 +93,126 @@ export const prerender = false;
   }
 
   .submit-btn:disabled {
-    opacity: 0.5;
+    opacity: 0.35;
     cursor: not-allowed;
+  }
+
+  .loading-msg {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding: 3rem 1rem;
+  }
+
+  .write-form {
+    padding: 0 0.75rem;
+  }
+
+  .board-selector {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .selector-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+
+  .board-select {
+    width: 100%;
+    padding: 0.45rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-heading);
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .title-input {
+    width: 100%;
+    padding: 1rem 0;
+    border: none;
+    background: none;
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--text-heading);
+    outline: none;
+    box-sizing: border-box;
+  }
+
+  .title-input::placeholder {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+  }
+
+  .content-textarea {
+    width: 100%;
+    padding: 1rem 0;
+    border: none;
+    background: none;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: var(--text-sub);
+    line-height: 1.7;
+    outline: none;
+    resize: none;
+    min-height: 300px;
+    box-sizing: border-box;
+  }
+
+  .content-textarea::placeholder {
+    color: var(--text-muted);
   }
 
   .login-msg {
     text-align: center;
     color: var(--text-muted);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     padding: 3rem 1rem;
   }
 </style>
 
 <script>
-  import { fetchCurrentUser, fetchPost, createPost, updatePost, showToast } from '@/lib/api';
+  import { fetchCurrentUser, fetchBoards, fetchPost, createPost, updatePost, showToast } from '@/lib/api';
+  import type { BoardListItem } from '@/lib/api';
 
   function initWritePage() {
-    const writeBack = document.getElementById('write-back') as HTMLAnchorElement | null;
+    const writeBack = document.getElementById('write-back');
     const writeTitle = document.getElementById('write-title');
     const writeLoading = document.getElementById('write-loading');
-    const writeForm = document.getElementById('write-form') as HTMLFormElement | null;
+    const writeForm = document.getElementById('write-form');
     const writeLoginMsg = document.getElementById('write-login-msg');
     const titleInput = document.getElementById('post-title') as HTMLInputElement | null;
     const contentInput = document.getElementById('post-content-input') as HTMLTextAreaElement | null;
     const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement | null;
-    if (!writeBack || !writeTitle || !writeLoading || !writeForm || !writeLoginMsg || !titleInput || !contentInput || !submitBtn) return;
+    const boardSelector = document.getElementById('board-selector');
+    const boardSelect = document.getElementById('board-select') as HTMLSelectElement | null;
+    if (!writeBack || !writeTitle || !writeLoading || !writeForm || !writeLoginMsg || !titleInput || !contentInput || !submitBtn || !boardSelector || !boardSelect) return;
 
     const pathParts = location.pathname.split('/').filter(Boolean);
-    // /community/slug/write
-    const slug = decodeURIComponent(pathParts[1] || '');
-    if (!slug) return;
+    const slugFromUrl = decodeURIComponent(pathParts[1] || '');
+    if (!slugFromUrl) return;
 
-    writeBack.href = `/community/${encodeURIComponent(slug)}`;
+    let currentSlug = slugFromUrl;
+
+    writeBack.addEventListener('click', () => {
+      if (history.length > 1) {
+        history.back();
+      } else {
+        location.href = `/community/${encodeURIComponent(currentSlug)}`;
+      }
+    });
 
     const params = new URLSearchParams(location.search);
     const editPostId = params.get('edit');
@@ -158,6 +223,22 @@ export const prerender = false;
       submitBtn.textContent = '수정';
     }
 
+    // Auto-grow textarea
+    contentInput.addEventListener('input', () => {
+      contentInput.style.height = 'auto';
+      contentInput.style.height = contentInput.scrollHeight + 'px';
+    });
+
+    // Enable submit when both fields have content
+    function checkFormValid() {
+      const hasTitle = titleInput.value.trim().length > 0;
+      const hasContent = contentInput.value.trim().length > 0;
+      submitBtn.disabled = !(hasTitle && hasContent);
+    }
+
+    titleInput.addEventListener('input', checkFormValid);
+    contentInput.addEventListener('input', checkFormValid);
+
     async function init() {
       const user = await fetchCurrentUser();
       if (!user) {
@@ -166,24 +247,47 @@ export const prerender = false;
         return;
       }
 
+      // Load boards for selector (only show for new posts, not edit)
+      if (!isEdit) {
+        try {
+          const boards: BoardListItem[] = await fetchBoards();
+          if (boards.length > 1) {
+            boardSelector.hidden = false;
+            boards.forEach((board) => {
+              const option = document.createElement('option');
+              option.value = board.slug;
+              option.textContent = board.name;
+              if (board.slug === currentSlug) option.selected = true;
+              boardSelect.appendChild(option);
+            });
+            boardSelect.addEventListener('change', () => {
+              currentSlug = boardSelect.value;
+            });
+          }
+        } catch { /* ignore, use URL slug */ }
+      }
+
       if (isEdit && editPostId) {
         try {
-          const post = await fetchPost(slug, editPostId);
+          const post = await fetchPost(slugFromUrl, editPostId);
           titleInput.value = post.title;
           contentInput.value = post.content;
+          checkFormValid();
+          // Trigger auto-grow
+          contentInput.dispatchEvent(new Event('input'));
         } catch {
           showToast('게시글을 불러올 수 없습니다.');
-          location.href = `/community/${encodeURIComponent(slug)}`;
+          location.href = `/community/${encodeURIComponent(slugFromUrl)}`;
           return;
         }
       }
 
       writeLoading.hidden = true;
       writeForm.hidden = false;
+      titleInput.focus();
     }
 
-    writeForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    submitBtn.addEventListener('click', async () => {
       const title = titleInput.value.trim();
       const content = contentInput.value.trim();
       if (!title || !content) {
@@ -194,13 +298,13 @@ export const prerender = false;
       submitBtn.disabled = true;
       try {
         if (isEdit && editPostId) {
-          const updated = await updatePost(slug, editPostId, { title, content });
+          const updated = await updatePost(slugFromUrl, editPostId, { title, content });
           showToast('게시글이 수정되었습니다.');
-          location.href = `/community/${encodeURIComponent(slug)}/${updated.id}`;
+          location.href = `/community/${encodeURIComponent(slugFromUrl)}/${updated.id}`;
         } else {
-          const created = await createPost(slug, title, content);
+          const created = await createPost(currentSlug, title, content);
           showToast('게시글이 작성되었습니다.');
-          location.href = `/community/${encodeURIComponent(slug)}/${created.id}`;
+          location.href = `/community/${encodeURIComponent(currentSlug)}/${created.id}`;
         }
       } catch (e) {
         showToast(e instanceof Error ? e.message : '저장에 실패했습니다.');

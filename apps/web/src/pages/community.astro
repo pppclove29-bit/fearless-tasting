@@ -4,14 +4,24 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
 <BaseLayout title="커뮤니티" description="무모한 시식가 커뮤니티 게시판. 맛집 정보와 리뷰를 자유롭게 나눠보세요.">
   <div class="community-page">
-    <section class="community-hero">
-      <h1>커뮤니티</h1>
-      <p class="community-desc">맛집 이야기를 자유롭게 나눠보세요</p>
-    </section>
+    <div class="board-tabs" id="board-tabs">
+      <div class="tabs-scroll" id="tabs-scroll"></div>
+    </div>
 
-    <div id="boards-content">
+    <div id="feed-content">
       <p class="loading-msg">불러오는 중...</p>
     </div>
+
+    <div id="load-more-wrap" class="load-more-wrap" hidden>
+      <button type="button" class="load-more-btn" id="load-more-btn">더보기</button>
+    </div>
+
+    <button type="button" class="fab" id="fab-write" hidden aria-label="글쓰기">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    </button>
   </div>
 </BaseLayout>
 
@@ -19,92 +29,203 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .community-page {
     max-width: 480px;
     margin: 0 auto;
+    padding-bottom: 80px;
   }
 
-  .community-hero {
-    text-align: center;
-    padding: 2rem 0 1.5rem;
+  .board-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0;
   }
 
-  .community-hero h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-heading);
-    margin-bottom: 0.25rem;
+  .tabs-scroll {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.75rem 0.75rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
 
-  .community-desc {
-    color: var(--text-muted);
-    font-size: 0.9rem;
+  .tabs-scroll::-webkit-scrollbar {
+    display: none;
   }
 
   .loading-msg {
     text-align: center;
     color: var(--text-muted);
-    font-size: 0.9rem;
-    padding: 2rem;
+    font-size: 0.85rem;
+    padding: 3rem 1rem;
+  }
+
+  .load-more-wrap {
+    text-align: center;
+    padding: 1rem 0 2rem;
+  }
+
+  .load-more-btn {
+    padding: 0.55rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--bg);
+    color: var(--text-sub);
+    font-size: 0.82rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .load-more-btn:hover {
+    background: var(--bg-hover);
+  }
+
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: var(--text-heading);
+    color: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    transition: transform 0.15s, box-shadow 0.15s;
+    z-index: 100;
+  }
+
+  .fab:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  .fab:active {
+    transform: scale(0.95);
   }
 </style>
 
 <style is:global>
-  .board-card {
-    display: block;
-    background: var(--bg-card);
+  .tab-chip {
+    flex-shrink: 0;
+    padding: 0.4rem 0.85rem;
+    border-radius: 16px;
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.25rem;
-    margin-bottom: 0.75rem;
+    background: var(--bg);
+    color: var(--text-sub);
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .tab-chip:hover {
+    background: var(--bg-hover);
+  }
+
+  .tab-chip.active {
+    background: var(--text-heading);
+    color: var(--bg);
+    border-color: var(--text-heading);
+    font-weight: 600;
+  }
+
+  .feed-item {
+    display: block;
+    padding: 0.85rem 0.75rem;
+    border-bottom: 1px solid var(--border);
     text-decoration: none;
     color: inherit;
-    transition: border-color 0.15s;
+    transition: background 0.1s;
   }
 
-  .board-card:hover {
-    border-color: var(--border-mid);
+  .feed-item:hover {
+    background: var(--bg-hover);
   }
 
-  .board-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.35rem;
-  }
-
-  .board-card-name {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-heading);
-  }
-
-  .board-card-count {
-    font-size: 0.75rem;
+  .feed-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 500;
     color: var(--text-muted);
     background: var(--bg-hover);
-    padding: 0.15rem 0.5rem;
-    border-radius: 10px;
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+    margin-bottom: 0.3rem;
   }
 
-  .board-card-desc {
-    font-size: 0.85rem;
+  .feed-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .feed-preview {
+    font-size: 0.82rem;
     color: var(--text-sub);
-    line-height: 1.5;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 0.4rem;
+    word-break: break-word;
   }
 
-  .boards-empty {
+  .feed-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .feed-meta-dot {
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .feed-empty {
     text-align: center;
     color: var(--text-muted);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     padding: 3rem 1rem;
   }
 </style>
 
 <script>
-  import { fetchBoards } from '@/lib/api';
-  import type { BoardListItem } from '@/lib/api';
+  import { fetchBoards, fetchPosts, fetchCurrentUser } from '@/lib/api';
+  import type { BoardListItem, PostListItem, PaginatedPosts } from '@/lib/api';
 
   function initCommunityPage() {
-    const content = document.getElementById('boards-content');
-    if (!content) return;
+    const tabsScroll = document.getElementById('tabs-scroll');
+    const feedContent = document.getElementById('feed-content');
+    const loadMoreWrap = document.getElementById('load-more-wrap');
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    const fabWrite = document.getElementById('fab-write');
+    if (!tabsScroll || !feedContent || !loadMoreWrap || !loadMoreBtn || !fabWrite) return;
+
+    let boards: BoardListItem[] = [];
+    let activeSlug = '';
+    let currentPage = 1;
+    let totalPages = 1;
+    let posts: PostListItem[] = [];
+    let isLoggedIn = false;
 
     function escapeHtml(text: string): string {
       const div = document.createElement('div');
@@ -112,35 +233,172 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return div.innerHTML;
     }
 
-    async function loadBoards() {
-      let boards: BoardListItem[];
+    function relativeTime(dateStr: string): string {
+      const now = Date.now();
+      const then = new Date(dateStr).getTime();
+      const diff = Math.floor((now - then) / 1000);
+      if (diff < 60) return '방금 전';
+      if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+      if (diff < 2592000) return `${Math.floor(diff / 86400)}일 전`;
+      const d = new Date(dateStr);
+      return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function renderTabs() {
+      tabsScroll.innerHTML = '';
+      // "전체" chip - selects first board
+      const allChip = document.createElement('button');
+      allChip.type = 'button';
+      allChip.className = `tab-chip${!activeSlug || activeSlug === boards[0]?.slug ? ' active' : ''}`;
+      allChip.textContent = '전체';
+      allChip.addEventListener('click', () => {
+        if (boards.length > 0) selectBoard(boards[0].slug);
+      });
+      tabsScroll.appendChild(allChip);
+
+      boards.forEach((board) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = `tab-chip${activeSlug === board.slug && activeSlug !== boards[0]?.slug ? '' : activeSlug === board.slug ? '' : ''}`;
+        // Simpler active logic: active if this board is selected and it's not the first (handled by 전체)
+        if (activeSlug === board.slug) {
+          // Already handled by 전체 for first board
+        }
+        chip.textContent = board.name;
+        chip.addEventListener('click', () => selectBoard(board.slug));
+        tabsScroll.appendChild(chip);
+      });
+
+      updateActiveChip();
+    }
+
+    function updateActiveChip() {
+      const chips = tabsScroll.querySelectorAll('.tab-chip');
+      chips.forEach((chip, index) => {
+        if (index === 0) {
+          // "전체" chip is active when first board is selected
+          chip.classList.toggle('active', activeSlug === boards[0]?.slug);
+        } else {
+          const board = boards[index - 1];
+          // Board chips: active only if selected AND not the first board (since 전체 covers that)
+          chip.classList.toggle('active', activeSlug === board?.slug && activeSlug !== boards[0]?.slug);
+        }
+      });
+    }
+
+    function selectBoard(slug: string) {
+      if (slug === activeSlug) return;
+      activeSlug = slug;
+      currentPage = 1;
+      posts = [];
+      updateActiveChip();
+      loadPosts(true);
+    }
+
+    function renderFeed(reset: boolean) {
+      if (reset) {
+        feedContent.innerHTML = '';
+      }
+
+      if (posts.length === 0 && reset) {
+        feedContent.innerHTML = '<p class="feed-empty">아직 작성된 글이 없습니다.</p>';
+        loadMoreWrap.hidden = true;
+        return;
+      }
+
+      const startIndex = reset ? 0 : (currentPage - 2) * 20;
+      const newPosts = reset ? posts : posts.slice(startIndex);
+
+      if (reset) feedContent.innerHTML = '';
+
+      newPosts.forEach((post) => {
+        const contentPreview = post.content ? post.content.replace(/\n/g, ' ').slice(0, 100) : '';
+        const commentCount = post._count?.comments ?? 0;
+        const a = document.createElement('a');
+        a.href = `/community/${encodeURIComponent(post.boardSlug || activeSlug)}/${post.id}`;
+        a.className = 'feed-item';
+        a.innerHTML = `
+          ${post.boardName ? `<span class="feed-badge">${escapeHtml(post.boardName)}</span>` : ''}
+          <div class="feed-title">${escapeHtml(post.title)}</div>
+          ${contentPreview ? `<div class="feed-preview">${escapeHtml(contentPreview)}</div>` : ''}
+          <div class="feed-meta">
+            <span>${escapeHtml(post.author.nickname)}</span>
+            <span class="feed-meta-dot"></span>
+            <span>${relativeTime(post.createdAt)}</span>
+            ${commentCount > 0 ? `<span class="feed-meta-dot"></span><span>댓글 ${commentCount}</span>` : ''}
+          </div>
+        `;
+        feedContent.appendChild(a);
+      });
+
+      loadMoreWrap.hidden = currentPage >= totalPages;
+    }
+
+    async function loadPosts(reset: boolean) {
+      if (reset) {
+        feedContent.innerHTML = '<p class="loading-msg">불러오는 중...</p>';
+      }
+
+      let result: PaginatedPosts;
+      try {
+        result = await fetchPosts(activeSlug, currentPage, 20);
+      } catch {
+        feedContent.innerHTML = '<p class="feed-empty">게시글을 불러올 수 없습니다.</p>';
+        loadMoreWrap.hidden = true;
+        return;
+      }
+
+      totalPages = result.totalPages;
+
+      if (reset) {
+        posts = result.items;
+      } else {
+        posts = [...posts, ...result.items];
+      }
+
+      renderFeed(reset);
+    }
+
+    loadMoreBtn.addEventListener('click', () => {
+      currentPage++;
+      loadPosts(false);
+    });
+
+    async function init() {
       try {
         boards = await fetchBoards();
       } catch {
-        content.innerHTML = '<p class="boards-empty">게시판을 불러올 수 없습니다.</p>';
+        feedContent.innerHTML = '<p class="feed-empty">게시판을 불러올 수 없습니다.</p>';
         return;
       }
 
       if (boards.length === 0) {
-        content.innerHTML = '<p class="boards-empty">아직 개설된 게시판이 없습니다.</p>';
+        feedContent.innerHTML = '<p class="feed-empty">아직 개설된 게시판이 없습니다.</p>';
         return;
       }
 
-      content.innerHTML = boards.map((board) => {
-        const postCount = board._count?.posts ?? 0;
-        return `
-          <a href="/community/${encodeURIComponent(board.slug)}" class="board-card">
-            <div class="board-card-header">
-              <span class="board-card-name">${escapeHtml(board.name)}</span>
-              <span class="board-card-count">${postCount}개 글</span>
-            </div>
-            ${board.description ? `<p class="board-card-desc">${escapeHtml(board.description)}</p>` : ''}
-          </a>
-        `;
-      }).join('');
+      // Check URL for pre-selected board
+      const params = new URLSearchParams(location.search);
+      const preSelectedSlug = params.get('board');
+      const matchedBoard = preSelectedSlug ? boards.find(b => b.slug === preSelectedSlug) : null;
+      activeSlug = matchedBoard ? matchedBoard.slug : boards[0].slug;
+
+      renderTabs();
+
+      const user = await fetchCurrentUser();
+      isLoggedIn = !!user;
+      if (isLoggedIn) {
+        fabWrite.hidden = false;
+        fabWrite.addEventListener('click', () => {
+          location.href = `/community/${encodeURIComponent(activeSlug)}/write`;
+        });
+      }
+
+      await loadPosts(true);
     }
 
-    loadBoards();
+    init();
   }
 
   document.addEventListener('astro:page-load', initCommunityPage);

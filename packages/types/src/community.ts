@@ -31,10 +31,13 @@ export interface PostAuthor {
 export interface PostListItem {
   id: string;
   title: string;
+  content: string;
+  boardSlug: string;
+  boardName: string;
   author: PostAuthor;
   createdAt: string;
   updatedAt: string;
-  _count: { comments: number };
+  _count: { comments: number; likes: number };
 }
 
 /** 페이지네이션된 게시글 목록 */
@@ -62,6 +65,7 @@ export interface PostDetail {
   boardId: string;
   author: PostAuthor;
   comments: PostComment[];
+  _count?: { likes?: number };
   createdAt: string;
   updatedAt: string;
 }

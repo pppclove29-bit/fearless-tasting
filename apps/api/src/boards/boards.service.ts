@@ -85,8 +85,10 @@ export class BoardsService {
         select: {
           id: true,
           title: true,
+          content: true,
           createdAt: true,
           updatedAt: true,
+          board: { select: { slug: true, name: true } },
           author: {
             select: { id: true, nickname: true, profileImageUrl: true },
           },
@@ -96,8 +98,14 @@ export class BoardsService {
       this.prisma.read.post.count({ where: { boardId } }),
     ]);
 
+    const mapped = items.map(({ board, ...rest }) => ({
+      ...rest,
+      boardSlug: board.slug,
+      boardName: board.name,
+    }));
+
     return {
-      items,
+      items: mapped,
       total,
       page,
       limit,
