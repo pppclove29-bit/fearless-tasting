@@ -851,7 +851,11 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
 
       const myRoomsLink = document.getElementById('my-rooms-link');
       if (myRoomsLink) myRoomsLink.hidden = false;
-      // footer-rooms-link removed in footer redesign
+
+      // 로그인 시 카카오 로그인 CTA 전체 숨김
+      for (const cta of document.querySelectorAll<HTMLElement>('.login-only-cta')) {
+        cta.hidden = true;
+      }
 
       if (user.role === 'admin') {
         const adminLink = document.getElementById('admin-link');

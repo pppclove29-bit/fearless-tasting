@@ -34,7 +34,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
       <span class="use-badge">커플 맛집 기록</span>
       <h1>데이트 맛집,<br/>둘만의 리스트로 기록하세요</h1>
       <p class="use-sub">다녀온 맛집, 가고 싶은 맛집을 함께 정리하고 솔직한 리뷰를 남겨보세요</p>
-      <a href={`${apiUrl}/auth/kakao`} class="use-cta">카카오로 시작하기</a>
+      <a href={`${apiUrl}/auth/kakao`} class="use-cta login-only-cta">카카오로 시작하기</a>
     </section>
 
     <section class="use-section">
@@ -119,7 +119,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
       </div>
     </section>
 
-    <section class="use-cta-section">
+    <section class="use-cta-section login-only-cta">
       <h2>우리 커플 맛집 리스트,<br/>지금 시작하세요</h2>
       <p>카카오 로그인 한 번이면 바로 방을 만들 수 있어요</p>
       <a href={`${apiUrl}/auth/kakao`} class="use-cta">무료로 시작하기</a>
