@@ -95,42 +95,65 @@ export const prerender = false;
 </style>
 
 <style is:global>
+  .post-list {
+    border-top: 2px solid var(--text-heading);
+  }
+
   .post-item {
-    display: block;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1rem 1.25rem;
-    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 0.5rem;
+    border-bottom: 1px solid var(--border-light);
     text-decoration: none;
     color: inherit;
-    transition: border-color 0.15s;
+    transition: background 0.1s;
   }
 
   .post-item:hover {
-    border-color: var(--border-mid);
+    background: var(--bg-hover);
+  }
+
+  .post-item-likes {
+    min-width: 28px;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .post-item-likes.has-likes {
+    color: #dc2626;
+  }
+
+  .post-item-body {
+    flex: 1;
+    min-width: 0;
   }
 
   .post-item-title {
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: 0.9rem;
+    font-weight: 500;
     color: var(--text-heading);
-    margin-bottom: 0.3rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .post-item-meta {
-    display: flex;
-    gap: 0.75rem;
-    font-size: 0.75rem;
-    color: var(--text-muted);
+  .post-item-title .comment-count {
+    color: #dc2626;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-left: 0.3rem;
   }
 
-  .post-item-comments {
-    color: var(--text-sub);
-    font-weight: 500;
+  .post-item-meta {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
   }
 
   .posts-empty {
@@ -230,19 +253,22 @@ export const prerender = false;
         return;
       }
 
-      content.innerHTML = posts.map((post) => {
+      content.innerHTML = `<div class="post-list">${posts.map((post) => {
         const commentCount = post._count?.comments ?? 0;
+        const likeCount = post._count?.likes ?? 0;
         return `
           <a href="/community/${encodeURIComponent(slug)}/${post.id}" class="post-item">
-            <div class="post-item-title">${escapeHtml(post.title)}</div>
-            <div class="post-item-meta">
-              <span>${escapeHtml(post.author.nickname)}</span>
-              ${commentCount > 0 ? `<span class="post-item-comments">댓글 ${commentCount}</span>` : ''}
-              <span>${formatDate(post.createdAt)}</span>
+            <span class="post-item-likes${likeCount > 0 ? ' has-likes' : ''}">${likeCount || '0'}</span>
+            <div class="post-item-body">
+              <div class="post-item-title">${escapeHtml(post.title)}${commentCount > 0 ? `<span class="comment-count">${commentCount}</span>` : ''}</div>
+              <div class="post-item-meta">
+                <span>${escapeHtml(post.author.nickname)}</span>
+                <span>${formatDate(post.createdAt)}</span>
+              </div>
             </div>
           </a>
         `;
-      }).join('');
+      }).join('')}</div>`;
 
       // Render pagination
       const totalPages = result.totalPages;

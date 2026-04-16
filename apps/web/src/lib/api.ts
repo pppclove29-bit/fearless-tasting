@@ -882,6 +882,20 @@ export async function deleteComment(slug: string, postId: string, commentId: str
   await throwIfNotOk(res, '댓글 삭제에 실패했습니다.');
 }
 
+/** 게시글 추천 토글 */
+export async function togglePostLike(slug: string, postId: string): Promise<{ liked: boolean; likeCount: number }> {
+  const res = await apiFetch(`${API_BASE}/boards/${slug}/posts/${postId}/like`, { method: 'POST' });
+  await throwIfNotOk(res, '추천에 실패했습니다.');
+  return res.json();
+}
+
+/** 댓글 추천 토글 */
+export async function toggleCommentLike(slug: string, postId: string, commentId: string): Promise<{ liked: boolean; likeCount: number }> {
+  const res = await apiFetch(`${API_BASE}/boards/${slug}/posts/${postId}/comments/${commentId}/like`, { method: 'POST' });
+  await throwIfNotOk(res, '추천에 실패했습니다.');
+  return res.json();
+}
+
 // ─── 게시판 관리 (관리자) ───
 
 /** 전체 게시판 목록 (관리자, 비활성 포함) */

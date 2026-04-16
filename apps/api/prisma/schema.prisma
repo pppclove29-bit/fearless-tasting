@@ -51,6 +51,10 @@ model User {
   posts               Post[]
   /// 커뮤니티 댓글
   comments            Comment[]
+  /// 게시글 추천
+  postLikes           PostLike[]    @relation("PostLikes")
+  /// 댓글 추천
+  commentLikes        CommentLike[] @relation("CommentLikes")
   /// 마지막 활동 시각 (DAU 추적용)
   lastActiveAt        DateTime?
   /// 가입일
@@ -490,48 +494,90 @@ model Board {
 /// 커뮤니티 게시글
 model Post {
   /// 고유 식별자
-  id        String    @id @default(cuid())
+  id        String     @id @default(cuid())
   /// 게시글 제목
-  title     String    @db.VarChar(200)
+  title     String     @db.VarChar(200)
   /// 게시글 본문
-  content   String    @db.Text
+  content   String     @db.Text
   /// 소속 게시판
-  board     Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  board     Board      @relation(fields: [boardId], references: [id], onDelete: Cascade)
   /// 게시판 ID (FK)
   boardId   String
   /// 작성자
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   /// 작성자 ID (FK)
   authorId  String
   /// 댓글 목록
   comments  Comment[]
+  /// 추천 목록
+  likes     PostLike[]
   /// 작성일
-  createdAt DateTime  @default(now())
+  createdAt DateTime   @default(now())
   /// 최종 수정일
-  updatedAt DateTime  @updatedAt
+  updatedAt DateTime   @updatedAt
 
   @@index([boardId, createdAt])
   @@index([authorId])
 }
 
-/// 커뮤니티 댓글
-model Comment {
+/// 게시글 추천 (유저당 1회)
+model PostLike {
   /// 고유 식별자
   id        String   @id @default(cuid())
-  /// 댓글 내용
-  content   String   @db.Text
-  /// 소속 게시글
+  /// 대상 게시글
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   /// 게시글 ID (FK)
   postId    String
-  /// 작성자
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  /// 작성자 ID (FK)
-  authorId  String
-  /// 작성일
+  /// 추천한 유저
+  user      User     @relation("PostLikes", fields: [userId], references: [id], onDelete: Cascade)
+  /// 유저 ID (FK)
+  userId    String
+  /// 추천일
   createdAt DateTime @default(now())
 
+  @@unique([postId, userId])
+  @@index([postId])
+}
+
+/// 커뮤니티 댓글
+model Comment {
+  /// 고유 식별자
+  id           String        @id @default(cuid())
+  /// 댓글 내용
+  content      String        @db.Text
+  /// 소속 게시글
+  post         Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  /// 게시글 ID (FK)
+  postId       String
+  /// 작성자
+  author       User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  /// 작성자 ID (FK)
+  authorId     String
+  /// 추천 목록
+  likes        CommentLike[]
+  /// 작성일
+  createdAt    DateTime      @default(now())
+
   @@index([postId, createdAt])
+}
+
+/// 댓글 추천 (유저당 1회)
+model CommentLike {
+  /// 고유 식별자
+  id        String   @id @default(cuid())
+  /// 대상 댓글
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  /// 댓글 ID (FK)
+  commentId String
+  /// 추천한 유저
+  user      User     @relation("CommentLikes", fields: [userId], references: [id], onDelete: Cascade)
+  /// 유저 ID (FK)
+  userId    String
+  /// 추천일
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId])
+  @@index([commentId])
 }
 
 /// 고객 문의 (지역 추가 요청, 버그 신고, 기타 피드백)

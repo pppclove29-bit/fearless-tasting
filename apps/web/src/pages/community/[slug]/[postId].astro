@@ -75,42 +75,40 @@ export const prerender = false;
     word-break: break-word;
   }
 
-  .post-detail-actions {
+  .post-bottom-actions {
     display: flex;
+    justify-content: center;
     gap: 0.5rem;
-    margin-top: 1rem;
+    margin-top: 1.25rem;
     padding-top: 1rem;
     border-top: 1px solid var(--border-light);
   }
 
-  .post-action-btn {
-    padding: 0.35rem 0.75rem;
+  .post-bottom-btn {
+    padding: 0.45rem 1rem;
     border-radius: 6px;
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .post-edit-btn {
-    background: none;
+    transition: all 0.15s;
+    font-family: inherit;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
     color: var(--text-sub);
-    border: 1px solid var(--border-mid);
   }
 
-  .post-edit-btn:hover {
-    background: var(--bg-hover);
-  }
+  .post-bottom-btn:hover { background: var(--bg-hover); }
 
-  .post-delete-btn {
-    background: #dc2626;
-    color: #fff;
-    border: none;
-  }
+  .post-like-btn { color: #dc2626; border-color: #fecaca; }
+  .post-like-btn:hover { background: #fef2f2; }
+  .post-like-btn.liked { background: #dc2626; color: #fff; border-color: #dc2626; }
+  [data-theme="dark"] .post-like-btn:hover { background: #451a1a; }
+  [data-theme="dark"] .post-like-btn.liked { background: #dc2626; color: #fff; }
 
-  .post-delete-btn:hover {
-    background: #b91c1c;
-  }
+  .post-like-static { color: var(--text-muted); cursor: default; }
+
+  .post-delete-btn { color: #dc2626; border-color: #fecaca; }
+  .post-delete-btn:hover { background: #fef2f2; }
 
   /* Comments */
   .comments-section {
@@ -125,18 +123,19 @@ export const prerender = false;
   }
 
   .comment-item {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.85rem 1rem;
-    margin-bottom: 0.5rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .comment-item:last-of-type {
+    border-bottom: none;
   }
 
   .comment-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.3rem;
   }
 
   .comment-author {
@@ -145,33 +144,45 @@ export const prerender = false;
     color: var(--text-heading);
   }
 
+  .comment-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   .comment-date {
     font-size: 0.72rem;
     color: var(--text-muted);
   }
 
+  .comment-action-btn {
+    padding: 0;
+    background: none;
+    border: none;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 0.15s;
+  }
+
+  .comment-action-btn:hover { color: var(--text-heading); }
+  .comment-delete-btn:hover { color: #dc2626; }
+
+  .comment-likes-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #dc2626;
+    margin-bottom: 0.25rem;
+  }
+
   .comment-content {
-    font-size: 0.85rem;
-    color: var(--text-sub);
-    line-height: 1.6;
+    font-size: 0.88rem;
+    color: var(--text);
+    line-height: 1.65;
     white-space: pre-wrap;
     word-break: break-word;
-  }
-
-  .comment-delete-btn {
-    padding: 0.2rem 0.5rem;
-    background: none;
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 0.7rem;
-    cursor: pointer;
-    transition: color 0.15s, border-color 0.15s;
-  }
-
-  .comment-delete-btn:hover {
-    color: #dc2626;
-    border-color: #dc2626;
   }
 
   .comment-form {
@@ -237,10 +248,11 @@ export const prerender = false;
     text-align: center;
     padding: 1rem;
   }
+
 </style>
 
 <script>
-  import { fetchPost, deletePost, createComment, deleteComment, fetchCurrentUser, showToast, showDangerConfirm } from '@/lib/api';
+  import { fetchPost, deletePost, createComment, deleteComment, togglePostLike, toggleCommentLike, fetchCurrentUser, showToast, showDangerConfirm } from '@/lib/api';
   import type { PostDetail } from '@/lib/api';
   import { formatDate } from '@repo/utils';
 
@@ -288,12 +300,11 @@ export const prerender = false;
             ${post.updatedAt !== post.createdAt ? `<span>(수정됨)</span>` : ''}
           </div>
           <div class="post-detail-content">${escapeHtml(post.content)}</div>
-          ${canModify ? `
-            <div class="post-detail-actions">
-              <button type="button" class="post-action-btn post-edit-btn" id="edit-post-btn">수정</button>
-              <button type="button" class="post-action-btn post-delete-btn" id="delete-post-btn">삭제</button>
-            </div>
-          ` : ''}
+          <div class="post-bottom-actions">
+            ${user ? `<button type="button" class="post-bottom-btn post-like-btn" id="post-like-btn">♥ 공감 <span id="post-like-count">${(post as Record<string, unknown>)._count?.likes ?? 0}</span>명</button>` : `<span class="post-bottom-btn post-like-static">♥ 공감 ${(post as Record<string, unknown>)._count?.likes ?? 0}명</span>`}
+            ${canModify ? `<button type="button" class="post-bottom-btn post-edit-btn" id="edit-post-btn">수정</button>` : ''}
+            ${canModify ? `<button type="button" class="post-bottom-btn post-delete-btn" id="delete-post-btn">삭제</button>` : ''}
+          </div>
         </div>
       `;
 
@@ -304,15 +315,18 @@ export const prerender = false;
       if (post.comments.length > 0) {
         html += post.comments.map((comment) => {
           const canDeleteComment = user && (user.id === comment.author.id || user.role === 'admin');
+          const cLikes = (comment as Record<string, unknown>)._count?.likes ?? 0;
           return `
             <div class="comment-item">
               <div class="comment-header">
-                <div>
-                  <span class="comment-author">${escapeHtml(comment.author.nickname)}</span>
+                <span class="comment-author">${escapeHtml(comment.author.nickname)}님</span>
+                <div class="comment-header-right">
                   <span class="comment-date">${formatDate(comment.createdAt)}</span>
+                  ${user ? `<button type="button" class="comment-action-btn comment-like-btn" data-comment-id="${comment.id}">공감</button>` : ''}
+                  ${canDeleteComment ? `<button type="button" class="comment-action-btn comment-delete-btn" data-comment-id="${comment.id}">삭제</button>` : ''}
                 </div>
-                ${canDeleteComment ? `<button type="button" class="comment-delete-btn" data-comment-id="${comment.id}">삭제</button>` : ''}
               </div>
+              ${cLikes > 0 ? `<div class="comment-likes-badge">♥${cLikes}</div>` : ''}
               <div class="comment-content">${escapeHtml(comment.content)}</div>
             </div>
           `;
@@ -350,6 +364,35 @@ export const prerender = false;
             location.href = `/community/${encodeURIComponent(slug)}`;
           } catch (e) {
             showToast(e instanceof Error ? e.message : '삭제에 실패했습니다.');
+          }
+        });
+      }
+
+      // Post like
+      document.getElementById('post-like-btn')?.addEventListener('click', async () => {
+        try {
+          const result = await togglePostLike(slug, postId);
+          const countEl = document.getElementById('post-like-count');
+          if (countEl) countEl.textContent = String(result.likeCount);
+          const likeBtn = document.getElementById('post-like-btn');
+          if (likeBtn) likeBtn.classList.toggle('liked', result.liked);
+        } catch (e) {
+          showToast(e instanceof Error ? e.message : '추천에 실패했습니다.');
+        }
+      });
+
+      // Comment likes
+      for (const btn of postContent.querySelectorAll<HTMLButtonElement>('.comment-like-btn')) {
+        btn.addEventListener('click', async () => {
+          const commentId = btn.dataset.commentId;
+          if (!commentId) return;
+          try {
+            const result = await toggleCommentLike(slug, postId, commentId);
+            const countEl = btn.querySelector('.comment-like-count');
+            if (countEl) countEl.textContent = String(result.likeCount);
+            btn.classList.toggle('liked', result.liked);
+          } catch (e) {
+            showToast(e instanceof Error ? e.message : '추천에 실패했습니다.');
           }
         });
       }

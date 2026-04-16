@@ -109,4 +109,26 @@ export class BoardsController {
   ) {
     return this.boardsService.deleteComment(commentId, req.user.id);
   }
+
+  /** 게시글 추천 토글 */
+  @Post(':slug/posts/:postId/like')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '게시글 추천/취소', description: '게시글을 추천하거나 추천을 취소합니다.' })
+  togglePostLike(
+    @Param('postId') postId: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.boardsService.togglePostLike(postId, req.user.id);
+  }
+
+  /** 댓글 추천 토글 */
+  @Post(':slug/posts/:postId/comments/:commentId/like')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '댓글 추천/취소', description: '댓글을 추천하거나 추천을 취소합니다.' })
+  toggleCommentLike(
+    @Param('commentId') commentId: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.boardsService.toggleCommentLike(commentId, req.user.id);
+  }
 }

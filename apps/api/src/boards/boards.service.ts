@@ -90,7 +90,7 @@ export class BoardsService {
           author: {
             select: { id: true, nickname: true, profileImageUrl: true },
           },
-          _count: { select: { comments: true } },
+          _count: { select: { comments: true, likes: true } },
         },
       }),
       this.prisma.read.post.count({ where: { boardId } }),
@@ -128,8 +128,10 @@ export class BoardsService {
             author: {
               select: { id: true, nickname: true, profileImageUrl: true },
             },
+            _count: { select: { likes: true } },
           },
         },
+        _count: { select: { likes: true, comments: true } },
       },
     });
 
@@ -213,6 +215,38 @@ export class BoardsService {
     return this.prisma.write.comment.create({
       data: { postId, authorId, content },
     });
+  }
+
+  // ── Likes ──
+
+  /** 게시글 추천 토글 */
+  async togglePostLike(postId: string, userId: string) {
+    const existing = await this.prisma.read.postLike.findUnique({
+      where: { postId_userId: { postId, userId } },
+    });
+    if (existing) {
+      await this.prisma.write.postLike.delete({ where: { id: existing.id } });
+      const count = await this.prisma.read.postLike.count({ where: { postId } });
+      return { liked: false, likeCount: count };
+    }
+    await this.prisma.write.postLike.create({ data: { postId, userId } });
+    const count = await this.prisma.read.postLike.count({ where: { postId } });
+    return { liked: true, likeCount: count };
+  }
+
+  /** 댓글 추천 토글 */
+  async toggleCommentLike(commentId: string, userId: string) {
+    const existing = await this.prisma.read.commentLike.findUnique({
+      where: { commentId_userId: { commentId, userId } },
+    });
+    if (existing) {
+      await this.prisma.write.commentLike.delete({ where: { id: existing.id } });
+      const count = await this.prisma.read.commentLike.count({ where: { commentId } });
+      return { liked: false, likeCount: count };
+    }
+    await this.prisma.write.commentLike.create({ data: { commentId, userId } });
+    const count = await this.prisma.read.commentLike.count({ where: { commentId } });
+    return { liked: true, likeCount: count };
   }
 
   /** 댓글 삭제 (작성자 또는 관리자) */
