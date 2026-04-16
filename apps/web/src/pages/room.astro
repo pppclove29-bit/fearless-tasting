@@ -2885,9 +2885,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         for (const [key, panel] of Object.entries(panels)) {
           panel.hidden = key !== tab;
         }
-        if (tab === 'region' && _regionMapRef) {
+        if (tab === 'region') {
           setTimeout(() => {
-            (_regionMapRef as Record<string, () => void>).relayout?.();
+            if (_regionMapRef) {
+              (_regionMapRef as Record<string, () => void>).relayout?.();
+            } else {
+              // 지도가 아직 초기화 안 됐으면 renderRegionTab 내부에서 초기화 트리거
+              const evt = new CustomEvent('region-tab-visible');
+              document.dispatchEvent(evt);
+            }
           }, 50);
         }
       });
@@ -4438,14 +4444,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         });
       }
 
-      // 지도 초기화/업데이트
-      if (hasKakaoMap && !mapInitialized) {
+      // 지도는 탭이 visible일 때만 초기화 (hidden 상태에서는 크기 0이라 렌더링 깨짐)
+      const regionPanelEl = document.getElementById('tab-region');
+      if (hasKakaoMap && !mapInitialized && regionPanelEl && !regionPanelEl.hidden) {
         mapInitialized = true;
         initRegionMap();
       } else if (hasKakaoMap && mapInitialized) {
         updateRegionMapFilter();
       }
     }
+
+    // 탭 visible 이벤트로 지도 lazy init
+    document.addEventListener('region-tab-visible', () => {
+      if (hasKakaoMap && !mapInitialized) {
+        mapInitialized = true;
+        initRegionMap();
+      }
+    });
 
     // ── 지도 통합 ──
     let regionMap: Record<string, unknown> | null = null;
