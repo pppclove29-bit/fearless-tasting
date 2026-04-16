@@ -47,6 +47,10 @@ model User {
   pushEnabled         Boolean                @default(true)
   /// 데모 계정 정보 (관리자 생성 계정)
   demoAccount         DemoAccount?
+  /// 커뮤니티 게시글
+  posts               Post[]
+  /// 커뮤니티 댓글
+  comments            Comment[]
   /// 마지막 활동 시각 (DAU 추적용)
   lastActiveAt        DateTime?
   /// 가입일
@@ -459,6 +463,75 @@ model DemoAccount {
   memo      String?  @db.VarChar(200)
   /// 생성일
   createdAt DateTime @default(now())
+}
+
+/// 커뮤니티 게시판
+model Board {
+  /// 고유 식별자
+  id          String   @id @default(cuid())
+  /// 게시판 이름
+  name        String   @db.VarChar(50)
+  /// URL 슬러그
+  slug        String   @unique @db.VarChar(50)
+  /// 게시판 설명
+  description String?  @db.VarChar(200)
+  /// 정렬 순서 (작을수록 위)
+  sortOrder   Int      @default(0)
+  /// 활성 여부
+  enabled     Boolean  @default(true)
+  /// 게시글 목록
+  posts       Post[]
+  /// 생성일
+  createdAt   DateTime @default(now())
+  /// 최종 수정일
+  updatedAt   DateTime @updatedAt
+}
+
+/// 커뮤니티 게시글
+model Post {
+  /// 고유 식별자
+  id        String    @id @default(cuid())
+  /// 게시글 제목
+  title     String    @db.VarChar(200)
+  /// 게시글 본문
+  content   String    @db.Text
+  /// 소속 게시판
+  board     Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  /// 게시판 ID (FK)
+  boardId   String
+  /// 작성자
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  /// 작성자 ID (FK)
+  authorId  String
+  /// 댓글 목록
+  comments  Comment[]
+  /// 작성일
+  createdAt DateTime  @default(now())
+  /// 최종 수정일
+  updatedAt DateTime  @updatedAt
+
+  @@index([boardId, createdAt])
+  @@index([authorId])
+}
+
+/// 커뮤니티 댓글
+model Comment {
+  /// 고유 식별자
+  id        String   @id @default(cuid())
+  /// 댓글 내용
+  content   String   @db.Text
+  /// 소속 게시글
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  /// 게시글 ID (FK)
+  postId    String
+  /// 작성자
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  /// 작성자 ID (FK)
+  authorId  String
+  /// 작성일
+  createdAt DateTime @default(now())
+
+  @@index([postId, createdAt])
 }
 
 /// 고객 문의 (지역 추가 요청, 버그 신고, 기타 피드백)

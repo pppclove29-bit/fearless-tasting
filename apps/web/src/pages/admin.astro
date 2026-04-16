@@ -17,6 +17,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <button type="button" class="tab-btn" data-tab="inquiries">문의 관리</button>
         <button type="button" class="tab-btn" data-tab="demo">가계정</button>
         <button type="button" class="tab-btn" data-tab="users">유저</button>
+        <button type="button" class="tab-btn" data-tab="boards">게시판</button>
       </div>
 
       <div id="tab-stats" class="tab-panel"></div>
@@ -24,6 +25,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <div id="tab-inquiries" class="tab-panel" hidden></div>
       <div id="tab-demo" class="tab-panel" hidden></div>
       <div id="tab-users" class="tab-panel" hidden></div>
+      <div id="tab-boards" class="tab-panel" hidden></div>
     </div>
   </div>
 </BaseLayout>
@@ -634,11 +636,93 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .btn-admin-toggle.revoke:hover {
     background: #b91c1c;
   }
+
+  /* 게시판 관리 */
+  .board-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .board-form input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    margin-bottom: 0.5rem;
+    background: var(--bg-input, var(--bg));
+    color: var(--text);
+  }
+
+  .board-form-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .board-card-admin {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .board-card-admin.disabled {
+    opacity: 0.5;
+  }
+
+  .board-admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.35rem;
+  }
+
+  .board-admin-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-heading);
+  }
+
+  .board-admin-slug {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-family: monospace;
+  }
+
+  .board-admin-desc {
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    margin-bottom: 0.35rem;
+  }
+
+  .board-admin-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+  }
+
+  .board-admin-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .board-admin-actions {
+    display: flex;
+    gap: 0.4rem;
+  }
 </style>
 
 <script>
-  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice, fetchDemoAccounts, createDemoAccount, updateDemoAccount, deleteDemoAccount, loginAsDemoAccount, saveTokens, searchUserByEmail, updateUserRole } from '@/lib/api';
-  import type { Notice, DemoAccount, AdminUserInfo } from '@/lib/api';
+  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice, fetchDemoAccounts, createDemoAccount, updateDemoAccount, deleteDemoAccount, loginAsDemoAccount, saveTokens, searchUserByEmail, updateUserRole, fetchAllBoards, createBoard, updateBoard, deleteBoard } from '@/lib/api';
+  import type { Notice, DemoAccount, AdminUserInfo, Board } from '@/lib/api';
   import { formatDate } from '@repo/utils';
 
   function initAdminPage() {
@@ -652,7 +736,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const inquiriesPanel = document.getElementById('tab-inquiries');
     const demoPanel = document.getElementById('tab-demo');
     const usersPanel = document.getElementById('tab-users');
-    if (!loadingMsg || !accessDenied || !adminTabs || !statsPanel || !noticesPanel || !inquiriesPanel || !demoPanel || !usersPanel) return;
+    const boardsPanel = document.getElementById('tab-boards');
+    if (!loadingMsg || !accessDenied || !adminTabs || !statsPanel || !noticesPanel || !inquiriesPanel || !demoPanel || !usersPanel || !boardsPanel) return;
 
     function escapeHtml(text: string): string {
       const div = document.createElement('div');
@@ -668,7 +753,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     };
 
     // 탭 전환
-    const panels: Record<string, HTMLElement> = { stats: statsPanel, notices: noticesPanel, inquiries: inquiriesPanel, demo: demoPanel, users: usersPanel };
+    const panels: Record<string, HTMLElement> = { stats: statsPanel, notices: noticesPanel, inquiries: inquiriesPanel, demo: demoPanel, users: usersPanel, boards: boardsPanel };
     for (const btn of document.querySelectorAll<HTMLButtonElement>('.tab-btn')) {
       btn.addEventListener('click', () => {
         for (const b of document.querySelectorAll('.tab-btn')) b.classList.remove('active');
@@ -679,6 +764,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         if (tab === 'notices' && noticesPanel.innerHTML === '') loadNotices();
         if (tab === 'demo' && demoPanel.innerHTML === '') loadDemoAccounts();
         if (tab === 'users' && usersPanel.innerHTML === '') initUsersTab();
+        if (tab === 'boards' && boardsPanel.innerHTML === '') loadBoardsAdmin();
       });
     }
 
@@ -1114,6 +1200,138 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           }
         });
       }
+    }
+
+    // ─── 게시판 관리 ───
+
+    function renderBoardForm(board?: Board) {
+      const isEdit = !!board;
+      return `
+        <div class="board-form" id="board-form">
+          <input type="text" id="bf-name" placeholder="게시판 이름" maxlength="100" value="${board ? escapeHtml(board.name) : ''}" />
+          <input type="text" id="bf-slug" placeholder="슬러그 (영문, 예: free)" maxlength="50" value="${board ? escapeHtml(board.slug) : ''}" ${isEdit ? 'readonly style="opacity:0.6;"' : ''} />
+          <input type="text" id="bf-desc" placeholder="설명 (선택)" maxlength="200" value="${board?.description ? escapeHtml(board.description) : ''}" />
+          <div class="board-form-row">
+            <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.4rem;">
+              <input type="checkbox" id="bf-enabled" ${!board || board.enabled ? 'checked' : ''} /> 활성화
+            </label>
+            <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.4rem;">
+              순서 <input type="number" id="bf-sort-order" value="${board?.sortOrder ?? 0}" min="0" style="width:60px;padding:0.25rem 0.4rem;border:1px solid var(--border-mid);border-radius:4px;font-size:0.82rem;background:var(--bg-input,var(--bg));color:var(--text);" />
+            </label>
+          </div>
+          <div class="notice-form-actions">
+            <button type="button" class="btn-primary-sm" id="bf-submit">${isEdit ? '수정' : '등록'}</button>
+            <button type="button" class="btn-outline-sm" id="bf-cancel">취소</button>
+          </div>
+        </div>
+      `;
+    }
+
+    async function loadBoardsAdmin() {
+      boardsPanel.innerHTML = '<p class="empty-msg">로딩 중...</p>';
+      let boards: Board[];
+      try {
+        boards = await fetchAllBoards();
+      } catch {
+        boardsPanel.innerHTML = '<p class="empty-msg">게시판 목록을 불러올 수 없습니다.</p>';
+        return;
+      }
+
+      const listHtml = boards.length > 0
+        ? boards.map((b) => `
+          <div class="board-card-admin ${b.enabled ? '' : 'disabled'}">
+            <div class="board-admin-header">
+              <span class="board-admin-name">${escapeHtml(b.name)}</span>
+              <span class="notice-badge ${b.enabled ? 'active' : 'inactive'}">${b.enabled ? '활성' : '비활성'}</span>
+            </div>
+            <div class="board-admin-slug">/${escapeHtml(b.slug)}</div>
+            ${b.description ? `<div class="board-admin-desc">${escapeHtml(b.description)}</div>` : ''}
+            <div class="board-admin-footer">
+              <span class="board-admin-meta">순서: ${b.sortOrder} | ${formatDate(b.createdAt)}</span>
+              <div class="board-admin-actions">
+                <button type="button" class="btn-toggle-sm board-toggle-btn" data-id="${b.id}" data-enabled="${b.enabled}">${b.enabled ? '비활성화' : '활성화'}</button>
+                <button type="button" class="btn-outline-sm board-edit-btn" data-id="${b.id}">수정</button>
+                <button type="button" class="btn-danger-sm board-delete-btn" data-id="${b.id}">삭제</button>
+              </div>
+            </div>
+          </div>
+        `).join('')
+        : '<p class="empty-msg">등록된 게시판이 없습니다.</p>';
+
+      boardsPanel.innerHTML = `
+        <button type="button" class="btn-primary-sm" id="new-board-btn" style="margin-bottom:1rem;">새 게시판</button>
+        <div id="board-form-area"></div>
+        <div id="board-list">${listHtml}</div>
+      `;
+
+      // 새 게시판
+      document.getElementById('new-board-btn')!.addEventListener('click', () => {
+        const area = document.getElementById('board-form-area')!;
+        if (area.querySelector('#board-form')) return;
+        area.innerHTML = renderBoardForm();
+        attachBoardFormHandlers();
+      });
+
+      // 활성/비활성 토글
+      for (const btn of boardsPanel.querySelectorAll<HTMLButtonElement>('.board-toggle-btn')) {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id!;
+          const enabled = btn.dataset.enabled === 'true';
+          try {
+            await updateBoard(id, { enabled: !enabled });
+            await loadBoardsAdmin();
+          } catch { alert('상태 변경에 실패했습니다.'); }
+        });
+      }
+
+      // 수정
+      for (const btn of boardsPanel.querySelectorAll<HTMLButtonElement>('.board-edit-btn')) {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id!;
+          const board = boards.find((b) => b.id === id);
+          if (!board) return;
+          const area = document.getElementById('board-form-area')!;
+          area.innerHTML = renderBoardForm(board);
+          attachBoardFormHandlers(board.id);
+        });
+      }
+
+      // 삭제
+      for (const btn of boardsPanel.querySelectorAll<HTMLButtonElement>('.board-delete-btn')) {
+        btn.addEventListener('click', async () => {
+          if (!confirm('이 게시판을 삭제하시겠습니까? 모든 게시글도 함께 삭제됩니다.')) return;
+          try {
+            await deleteBoard(btn.dataset.id!);
+            await loadBoardsAdmin();
+          } catch { alert('삭제에 실패했습니다.'); }
+        });
+      }
+    }
+
+    function attachBoardFormHandlers(editId?: string) {
+      document.getElementById('bf-cancel')!.addEventListener('click', () => {
+        document.getElementById('board-form-area')!.innerHTML = '';
+      });
+
+      document.getElementById('bf-submit')!.addEventListener('click', async () => {
+        const name = (document.getElementById('bf-name') as HTMLInputElement).value.trim();
+        const slug = (document.getElementById('bf-slug') as HTMLInputElement).value.trim();
+        const description = (document.getElementById('bf-desc') as HTMLInputElement).value.trim();
+        const enabled = (document.getElementById('bf-enabled') as HTMLInputElement).checked;
+        const sortOrder = parseInt((document.getElementById('bf-sort-order') as HTMLInputElement).value, 10) || 0;
+
+        if (!name) { alert('게시판 이름을 입력해주세요.'); return; }
+        if (!editId && !slug) { alert('슬러그를 입력해주세요.'); return; }
+
+        try {
+          if (editId) {
+            await updateBoard(editId, { name, description: description || undefined, enabled, sortOrder });
+          } else {
+            await createBoard({ name, slug, description: description || undefined, enabled, sortOrder });
+          }
+          await loadBoardsAdmin();
+        } catch (e) { alert(e instanceof Error ? e.message : '저장에 실패했습니다.'); }
+      });
     }
 
     async function init() {

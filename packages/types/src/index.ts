@@ -38,3 +38,12 @@ export type { TimelineItem } from './timeline';
 export type { RoomStats, PlatformStats } from './stats';
 export type { RankingUser, RankingsResponse } from './ranking';
 export type { DiscoverRestaurant, DiscoverResponse } from './discover';
+export type {
+  Board,
+  BoardListItem,
+  PostListItem,
+  PaginatedPosts,
+  PostAuthor,
+  PostComment,
+  PostDetail,
+} from './community';

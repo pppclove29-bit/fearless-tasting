@@ -8,6 +8,7 @@ import type {
   AppNotification, RoomStats, PlatformStats,
   RankingUser, RankingsResponse, DiscoverRestaurant, DiscoverResponse,
   PublicRoomListItem, PaginatedPublicRooms,
+  Board, BoardListItem, PostListItem, PaginatedPosts, PostDetail,
 } from '@repo/types';
 
 export type {
@@ -18,6 +19,7 @@ export type {
   RoomStats, PlatformStats, RankingUser, RankingsResponse,
   DiscoverRestaurant, DiscoverResponse,
   PublicRoomListItem, PaginatedPublicRooms,
+  Board, BoardListItem, PostListItem, PaginatedPosts, PostDetail,
 };
 export type { AppNotification as Notification } from '@repo/types';
 
@@ -109,7 +111,7 @@ export async function apiFetch(url: string, init?: RequestInit): Promise<Respons
   }
 
   if (res.status === 401) {
-    const isPublicUrl = url.includes('/rooms/public') || url.includes('/auth/kakao') || url.includes('/auth/refresh');
+    const isPublicUrl = url.includes('/rooms/public') || url.includes('/auth/kakao') || url.includes('/auth/refresh') || url.includes('/boards');
 
     if (getRefreshToken()) {
       const refreshed = await refreshTokens();
@@ -811,5 +813,109 @@ export async function fetchReviewComparison(roomId: string, restaurantId: string
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${restaurantId}/compare`);
   await throwIfNotOk(res, '리뷰 비교 조회에 실패했습니다.');
   return res.json();
+}
+
+// ─── 커뮤니티 (게시판) ───
+
+/** 게시판 목록 조회 */
+export async function fetchBoards(): Promise<BoardListItem[]> {
+  const res = await apiFetch(`${API_BASE}/boards`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+/** 게시판 게시글 목록 (페이지네이션) */
+export async function fetchPosts(slug: string, page = 1, pageSize = 20): Promise<PaginatedPosts> {
+  const res = await apiFetch(`${API_BASE}/boards/${slug}/posts?page=${page}&limit=${pageSize}`);
+  await throwIfNotOk(res, '게시글 목록을 불러올 수 없습니다.');
+  return res.json();
+}
+
+/** 게시글 상세 조회 */
+export async function fetchPost(slug: string, postId: string): Promise<PostDetail> {
+  const res = await apiFetch(`${API_BASE}/boards/${slug}/posts/${postId}`);
+  await throwIfNotOk(res, '게시글을 불러올 수 없습니다.');
+  return res.json();
+}
+
+/** 게시글 작성 */
+export async function createPost(slug: string, title: string, content: string): Promise<PostDetail> {
+  const res = await apiFetch(`${API_BASE}/boards/${slug}/posts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, content }),
+  });
+  await throwIfNotOk(res, '게시글 작성에 실패했습니다.');
+  return res.json();
+}
+
+/** 게시글 수정 */
+export async function updatePost(slug: string, postId: string, data: { title?: string; content?: string }): Promise<PostDetail> {
+  const res = await apiFetch(`${API_BASE}/boards/${slug}/posts/${postId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  await throwIfNotOk(res, '게시글 수정에 실패했습니다.');
+  return res.json();
+}
+
+/** 게시글 삭제 */
+export async function deletePost(slug: string, postId: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/boards/${slug}/posts/${postId}`, { method: 'DELETE' });
+  await throwIfNotOk(res, '게시글 삭제에 실패했습니다.');
+}
+
+/** 댓글 작성 */
+export async function createComment(slug: string, postId: string, content: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/boards/${slug}/posts/${postId}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  });
+  await throwIfNotOk(res, '댓글 작성에 실패했습니다.');
+}
+
+/** 댓글 삭제 */
+export async function deleteComment(slug: string, postId: string, commentId: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/boards/${slug}/posts/${postId}/comments/${commentId}`, { method: 'DELETE' });
+  await throwIfNotOk(res, '댓글 삭제에 실패했습니다.');
+}
+
+// ─── 게시판 관리 (관리자) ───
+
+/** 전체 게시판 목록 (관리자, 비활성 포함) */
+export async function fetchAllBoards(): Promise<Board[]> {
+  const res = await apiFetch(`${API_BASE}/admin/boards`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+/** 게시판 생성 (관리자) */
+export async function createBoard(data: { name: string; slug: string; description?: string; sortOrder?: number; enabled?: boolean }): Promise<Board> {
+  const res = await apiFetch(`${API_BASE}/admin/boards`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  await throwIfNotOk(res, '게시판 생성에 실패했습니다.');
+  return res.json();
+}
+
+/** 게시판 수정 (관리자) */
+export async function updateBoard(id: string, data: Partial<{ name: string; slug: string; description: string; sortOrder: number; enabled: boolean }>): Promise<Board> {
+  const res = await apiFetch(`${API_BASE}/admin/boards/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  await throwIfNotOk(res, '게시판 수정에 실패했습니다.');
+  return res.json();
+}
+
+/** 게시판 삭제 (관리자) */
+export async function deleteBoard(id: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/admin/boards/${id}`, { method: 'DELETE' });
+  await throwIfNotOk(res, '게시판 삭제에 실패했습니다.');
 }
 

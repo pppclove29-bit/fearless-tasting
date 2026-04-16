@@ -1,0 +1,402 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+export const prerender = false;
+---
+
+<BaseLayout title="게시글 — 커뮤니티">
+  <div class="post-page">
+    <a href="#" class="post-back" id="post-back">&larr; 목록으로</a>
+
+    <div id="post-content">
+      <p class="loading-msg">불러오는 중...</p>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .post-page {
+    max-width: 480px;
+    margin: 0 auto;
+    padding-top: 1rem;
+  }
+
+  .post-back {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 1rem;
+  }
+
+  .post-back:hover {
+    color: var(--text-sub);
+  }
+
+  .loading-msg {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    padding: 2rem;
+  }
+</style>
+
+<style is:global>
+  .post-detail-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .post-detail-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 0.5rem;
+    word-break: break-word;
+  }
+
+  .post-detail-meta {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .post-detail-content {
+    font-size: 0.9rem;
+    color: var(--text-sub);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .post-detail-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-light);
+  }
+
+  .post-action-btn {
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .post-edit-btn {
+    background: none;
+    color: var(--text-sub);
+    border: 1px solid var(--border-mid);
+  }
+
+  .post-edit-btn:hover {
+    background: var(--bg-hover);
+  }
+
+  .post-delete-btn {
+    background: #dc2626;
+    color: #fff;
+    border: none;
+  }
+
+  .post-delete-btn:hover {
+    background: #b91c1c;
+  }
+
+  /* Comments */
+  .comments-section {
+    margin-top: 1.5rem;
+  }
+
+  .comments-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin-bottom: 0.75rem;
+  }
+
+  .comment-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.35rem;
+  }
+
+  .comment-author {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-heading);
+  }
+
+  .comment-date {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  .comment-content {
+    font-size: 0.85rem;
+    color: var(--text-sub);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .comment-delete-btn {
+    padding: 0.2rem 0.5rem;
+    background: none;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .comment-delete-btn:hover {
+    color: #dc2626;
+    border-color: #dc2626;
+  }
+
+  .comment-form {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .comment-textarea {
+    width: 100%;
+    padding: 0.65rem;
+    border: 1px solid var(--border-mid);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    min-height: 80px;
+    resize: vertical;
+    background: var(--bg-input, var(--bg));
+    color: var(--text);
+    box-sizing: border-box;
+  }
+
+  .comment-submit-btn {
+    align-self: flex-end;
+    padding: 0.45rem 1rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .comment-submit-btn:hover {
+    opacity: 0.85;
+  }
+
+  .comment-submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .comments-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding: 1.5rem;
+  }
+
+  .post-error {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    padding: 3rem 1rem;
+  }
+
+  .comment-login-msg {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 1rem;
+  }
+</style>
+
+<script>
+  import { fetchPost, deletePost, createComment, deleteComment, fetchCurrentUser, showToast, showDangerConfirm } from '@/lib/api';
+  import type { PostDetail } from '@/lib/api';
+  import { formatDate } from '@repo/utils';
+
+  function initPostDetailPage() {
+    const postContent = document.getElementById('post-content');
+    const postBack = document.getElementById('post-back') as HTMLAnchorElement | null;
+    if (!postContent || !postBack) return;
+
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    // /community/slug/postId
+    const slug = decodeURIComponent(pathParts[1] || '');
+    const postId = pathParts[2] || '';
+    if (!slug || !postId) return;
+
+    postBack.href = `/community/${encodeURIComponent(slug)}`;
+
+    function escapeHtml(text: string): string {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function loadPost() {
+      const user = await fetchCurrentUser();
+      let post: PostDetail;
+      try {
+        post = await fetchPost(slug, postId);
+      } catch {
+        postContent.innerHTML = '<p class="post-error">게시글을 찾을 수 없습니다.</p>';
+        return;
+      }
+
+      document.title = `${post.title} — 커뮤니티 | 무모한 시식가`;
+
+      const isAuthor = user && user.id === post.author.id;
+      const isAdmin = user && user.role === 'admin';
+      const canModify = isAuthor || isAdmin;
+
+      let html = `
+        <div class="post-detail-card">
+          <div class="post-detail-title">${escapeHtml(post.title)}</div>
+          <div class="post-detail-meta">
+            <span>${escapeHtml(post.author.nickname)}</span>
+            <span>${formatDate(post.createdAt)}</span>
+            ${post.updatedAt !== post.createdAt ? `<span>(수정됨)</span>` : ''}
+          </div>
+          <div class="post-detail-content">${escapeHtml(post.content)}</div>
+          ${canModify ? `
+            <div class="post-detail-actions">
+              <button type="button" class="post-action-btn post-edit-btn" id="edit-post-btn">수정</button>
+              <button type="button" class="post-action-btn post-delete-btn" id="delete-post-btn">삭제</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      // Comments section
+      html += '<div class="comments-section">';
+      html += `<div class="comments-title">댓글 ${post.comments.length}개</div>`;
+
+      if (post.comments.length > 0) {
+        html += post.comments.map((comment) => {
+          const canDeleteComment = user && (user.id === comment.author.id || user.role === 'admin');
+          return `
+            <div class="comment-item">
+              <div class="comment-header">
+                <div>
+                  <span class="comment-author">${escapeHtml(comment.author.nickname)}</span>
+                  <span class="comment-date">${formatDate(comment.createdAt)}</span>
+                </div>
+                ${canDeleteComment ? `<button type="button" class="comment-delete-btn" data-comment-id="${comment.id}">삭제</button>` : ''}
+              </div>
+              <div class="comment-content">${escapeHtml(comment.content)}</div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        html += '<p class="comments-empty">아직 댓글이 없습니다.</p>';
+      }
+
+      // Comment form
+      if (user) {
+        html += `
+          <div class="comment-form" id="comment-form">
+            <textarea class="comment-textarea" id="comment-input" placeholder="댓글을 입력하세요" maxlength="1000"></textarea>
+            <button type="button" class="comment-submit-btn" id="comment-submit-btn">댓글 작성</button>
+          </div>
+        `;
+      } else {
+        html += '<p class="comment-login-msg">댓글을 작성하려면 로그인이 필요합니다.</p>';
+      }
+
+      html += '</div>';
+      postContent.innerHTML = html;
+
+      // Attach event listeners
+      if (canModify) {
+        document.getElementById('edit-post-btn')?.addEventListener('click', () => {
+          location.href = `/community/${encodeURIComponent(slug)}/write?edit=${postId}`;
+        });
+        document.getElementById('delete-post-btn')?.addEventListener('click', async () => {
+          const confirmed = await showDangerConfirm('이 게시글을 삭제하시겠습니까?');
+          if (!confirmed) return;
+          try {
+            await deletePost(slug, postId);
+            showToast('게시글이 삭제되었습니다.');
+            location.href = `/community/${encodeURIComponent(slug)}`;
+          } catch (e) {
+            showToast(e instanceof Error ? e.message : '삭제에 실패했습니다.');
+          }
+        });
+      }
+
+      // Comment delete
+      for (const btn of postContent.querySelectorAll<HTMLButtonElement>('.comment-delete-btn')) {
+        btn.addEventListener('click', async () => {
+          const commentId = btn.dataset.commentId;
+          if (!commentId) return;
+          const confirmed = await showDangerConfirm('이 댓글을 삭제하시겠습니까?');
+          if (!confirmed) return;
+          try {
+            await deleteComment(slug, postId, commentId);
+            showToast('댓글이 삭제되었습니다.');
+            await loadPost();
+          } catch (e) {
+            showToast(e instanceof Error ? e.message : '삭제에 실패했습니다.');
+          }
+        });
+      }
+
+      // Comment submit
+      const commentInput = document.getElementById('comment-input') as HTMLTextAreaElement | null;
+      const commentSubmitBtn = document.getElementById('comment-submit-btn') as HTMLButtonElement | null;
+      if (commentInput && commentSubmitBtn) {
+        commentSubmitBtn.addEventListener('click', async () => {
+          const commentText = commentInput.value.trim();
+          if (!commentText) {
+            showToast('댓글 내용을 입력해주세요.');
+            return;
+          }
+          commentSubmitBtn.disabled = true;
+          try {
+            await createComment(slug, postId, commentText);
+            showToast('댓글이 작성되었습니다.');
+            await loadPost();
+          } catch (e) {
+            showToast(e instanceof Error ? e.message : '댓글 작성에 실패했습니다.');
+          } finally {
+            commentSubmitBtn.disabled = false;
+          }
+        });
+      }
+    }
+
+    loadPost();
+  }
+
+  document.addEventListener('astro:page-load', initPostDetailPage);
+</script>

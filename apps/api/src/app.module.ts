@@ -13,6 +13,7 @@ import { HealthModule } from './health/health.module';
 import { FcmModule } from './fcm/fcm.module';
 import { StorageModule } from './storage/storage.module';
 import { AdminModule } from './admin/admin.module';
+import { BoardsModule } from './boards/boards.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AdminModule } from './admin/admin.module';
     NoticesModule,
     HealthModule,
     AdminModule,
+    BoardsModule,
   ],
   providers: [
     {
