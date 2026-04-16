@@ -4460,12 +4460,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const MarkerCtor = maps.Marker as new (opts: Record<string, unknown>) => Record<string, unknown>;
       const CustomOverlayCtor = maps.CustomOverlay as new (opts: Record<string, unknown>) => Record<string, unknown>;
 
+      const MarkerClustererCtor = maps.MarkerClusterer as new (opts: Record<string, unknown>) => Record<string, unknown>;
+
       const center = new LatLng(restaurantsWithCoords[0].latitude!, restaurantsWithCoords[0].longitude!);
       regionMap = new MapCtor(container, { center, level: 5 });
 
+      const allMarkers: Record<string, unknown>[] = [];
+
       for (const r of restaurantsWithCoords) {
         const position = new LatLng(r.latitude!, r.longitude!);
-        const marker = new MarkerCtor({ map: regionMap, position });
+        const marker = new MarkerCtor({ position });
 
         const ratingLine = r.avgRating !== null
           ? `<div style="color:#f59e0b;font-size:12px;">★ ${r.avgRating}</div>`
@@ -4490,8 +4494,28 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           regionActiveOverlay = overlay;
         });
 
+        allMarkers.push(marker);
         regionMarkerPairs.push({ marker, overlay, restaurant: r });
       }
+
+      // 클러스터러 등록
+      new MarkerClustererCtor({
+        map: regionMap,
+        markers: allMarkers,
+        gridSize: 60,
+        minLevel: 4,
+        minClusterSize: 2,
+        styles: [{
+          width: '36px', height: '36px',
+          background: 'var(--text-heading, #111)',
+          color: '#fff',
+          borderRadius: '50%',
+          textAlign: 'center',
+          lineHeight: '36px',
+          fontSize: '13px',
+          fontWeight: '700',
+        }],
+      });
 
       const mapEvents = maps.event as Record<string, (t: unknown, e: string, cb: () => void) => void>;
       mapEvents.addListener(regionMap, 'click', () => {
