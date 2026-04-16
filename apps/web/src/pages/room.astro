@@ -4529,6 +4529,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         }],
       });
 
+      // 모든 마커를 포함하도록 지도 범위 설정
+      const LatLngBounds = maps.LatLngBounds as new () => Record<string, (pos: unknown) => void>;
+      const initBounds = new LatLngBounds();
+      for (const r of restaurantsWithCoords) {
+        initBounds.extend(new LatLng(r.latitude!, r.longitude!));
+      }
+      if (restaurantsWithCoords.length > 1) {
+        (regionMap as Record<string, (b: unknown) => void>).setBounds(initBounds);
+      }
+
       const mapEvents = maps.event as Record<string, (t: unknown, e: string, cb: () => void) => void>;
       mapEvents.addListener(regionMap, 'click', () => {
         if (regionActiveOverlay) {
