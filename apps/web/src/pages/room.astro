@@ -2471,6 +2471,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   const renderStars = formatRating;
 
+  // 지역 탭 지도 객체 (탭 전환 시 relayout용)
+  let _regionMapRef: Record<string, unknown> | null = null;
+
   // ── 바텀시트 유틸 ──
   const roomSortBackdrop = document.getElementById('room-sort-backdrop');
   const roomSortSheet = document.getElementById('room-sort-sheet');
@@ -2881,6 +2884,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const tab = btn.dataset.tab!;
         for (const [key, panel] of Object.entries(panels)) {
           panel.hidden = key !== tab;
+        }
+        if (tab === 'region' && _regionMapRef) {
+          setTimeout(() => {
+            (_regionMapRef as Record<string, () => void>).relayout?.();
+          }, 50);
         }
       });
     }
@@ -4467,6 +4475,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       const center = new LatLng(restaurantsWithCoords[0].latitude!, restaurantsWithCoords[0].longitude!);
       regionMap = new MapCtor(container, { center, level: 5 });
+      _regionMapRef = regionMap;
 
       const allMarkers: Record<string, unknown>[] = [];
 
