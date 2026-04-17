@@ -214,12 +214,12 @@ import AdSlot from '@/components/AdSlot.astro';
     color: var(--text-sub);
   }
 
-  .col-no { width: 40px; text-align: center; flex-shrink: 0; }
-  .col-cat { width: 72px; text-align: center; flex-shrink: 0; }
-  .col-title { flex: 1; min-width: 0; padding-right: 0.5rem; }
-  .col-author { width: 72px; text-align: center; flex-shrink: 0; }
-  .col-views { width: 50px; text-align: center; flex-shrink: 0; }
-  .col-date { width: 80px; text-align: right; flex-shrink: 0; }
+  .col-no { width: 40px; text-align: center; flex: 0 0 40px; }
+  .col-cat { width: 72px; text-align: center; flex: 0 0 72px; }
+  .col-title { flex: 1 1 0; min-width: 0; overflow: hidden; padding-right: 0.5rem; }
+  .col-author { width: 72px; text-align: center; flex: 0 0 72px; }
+  .col-views { width: 50px; text-align: center; flex: 0 0 50px; }
+  .col-date { width: 80px; text-align: right; flex: 0 0 80px; }
 
   .loading-msg {
     text-align: center;
@@ -235,13 +235,46 @@ import AdSlot from '@/components/AdSlot.astro';
     padding: 1.5rem 0;
   }
 
-  /* 모바일: 조회 컬럼 숨김 */
+  /* 모바일: 카드형 레이아웃 */
   @media (max-width: 600px) {
-    .col-views { display: none; }
-    .col-author { width: 56px; font-size: 0.72rem; }
-    .col-date { width: 56px; font-size: 0.7rem; }
-    .col-no { width: 30px; }
-    .col-cat { width: 52px; }
+    .table-header { display: none; }
+    .post-row {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0.85rem 0.6rem;
+      gap: 0.35rem;
+    }
+    .post-row .col-no { display: none; }
+    .post-row .col-cat {
+      width: auto; flex: none; text-align: left;
+    }
+    .post-row .col-title {
+      padding-right: 0; width: 100%;
+    }
+    .post-row .col-title-row { flex-wrap: wrap; }
+    .post-row .post-title-text { font-size: 0.92rem; }
+    .post-row .col-author,
+    .post-row .col-views,
+    .post-row .col-date { display: none; }
+    .post-row .post-meta-mobile { display: flex; }
+  }
+
+  /* 모바일 메타 (데스크탑에선 숨김) */
+  .post-meta-mobile {
+    display: none;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+  }
+  .post-meta-mobile .meta-sep { color: var(--border-mid); }
+  .post-meta-mobile .meta-comments {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    color: var(--text-sub);
   }
 
   /* 글쓰기 모달 */
@@ -477,6 +510,7 @@ import AdSlot from '@/components/AdSlot.astro';
     flex-direction: column;
     gap: 0.2rem;
     min-width: 0;
+    overflow: hidden;
   }
   .post-row .col-title-row {
     display: flex;
@@ -649,6 +683,14 @@ import AdSlot from '@/components/AdSlot.astro';
           <span class="col-author">${escapeHtml(authorName)}</span>
           <span class="col-views"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> ${post._count?.views ?? 0}</span>
           <span class="col-date">${relativeTime(post.createdAt)}</span>
+          <span class="post-meta-mobile">
+            <span>${escapeHtml(authorName)}</span>
+            <span class="meta-sep">·</span>
+            <span>${relativeTime(post.createdAt)}</span>
+            <span class="meta-sep">·</span>
+            <span>조회 ${post._count?.views ?? 0}</span>
+            ${commentCount > 0 ? `<span class="meta-comments"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> ${commentCount}</span>` : ''}
+          </span>
         </a>`;
       }).join('');
 
