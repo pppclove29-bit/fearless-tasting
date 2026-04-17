@@ -2783,18 +2783,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         ? `<div style="color:#f59e0b;font-size:12px;">${svgStar} ${r.avgRating}</div>`
         : '';
       const overlayEl = document.createElement('div');
+      const restUrl = `/room/restaurant?roomId=${currentRoom.id}&id=${r.id}`;
       overlayEl.innerHTML = `
-        <div style="background:var(--bg-card,#fff);border-radius:8px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.25);min-width:100px;cursor:pointer;border:1px solid var(--border,#e8e8e8);">
+        <a href="${restUrl}" style="display:block;text-decoration:none;color:inherit;background:var(--bg-card,#fff);border-radius:8px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.25);min-width:100px;cursor:pointer;border:1px solid var(--border,#e8e8e8);">
           <div style="font-size:13px;font-weight:600;color:var(--text-heading,#111);margin-bottom:2px;">${escapeHtml(r.name)}</div>
           <div style="font-size:11px;color:var(--text-secondary,#888);">${escapeHtml(r.category || '')}</div>
           ${ratingLine}
-        </div>
+        </a>
         <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid var(--bg-card,#fff);margin:0 auto;"></div>`;
-      overlayEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        overlayClicked = true;
-        window.location.href = `/room/restaurant?roomId=${currentRoom.id}&id=${r.id}`;
-      });
       const overlay = new CustomOverlayCtor({ content: overlayEl, position, yAnchor: 1.3 });
 
       const events = maps.event as Record<string, (t: unknown, e: string, cb: () => void) => void>;
@@ -4719,20 +4715,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       const overlayContent = document.createElement('div');
       overlayContent.className = 'map-overlay-card';
+      const restUrl2 = `/room/restaurant?roomId=${currentRoom.id}&id=${r.id}`;
       overlayContent.innerHTML = `
-        <div style="background:var(--bg-card,#fff);border-radius:8px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.25);min-width:120px;cursor:pointer;border:1px solid var(--border,#e8e8e8);">
+        <a href="${restUrl2}" style="display:block;text-decoration:none;color:inherit;background:var(--bg-card,#fff);border-radius:8px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.25);min-width:120px;cursor:pointer;border:1px solid var(--border,#e8e8e8);">
           <div style="font-size:13px;font-weight:600;color:var(--text-heading,#111);margin-bottom:2px;">${escapeHtml(r.name)}</div>
           <div style="font-size:11px;color:var(--text-secondary,#888);margin-bottom:3px;">${escapeHtml(r.category || '')}</div>
           ${ratingLine}
-        </div>
+        </a>
         <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid var(--bg-card,#fff);margin:0 auto;"></div>
       `;
-
-      overlayContent.addEventListener('click', (e) => {
-        e.stopPropagation();
-        overlayClicked2 = true;
-        window.location.href = `/room/restaurant?roomId=${currentRoom.id}&id=${r.id}`;
-      });
 
       const overlay = new CustomOverlayConstructor({
         content: overlayContent,

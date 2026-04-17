@@ -235,47 +235,6 @@ import AdSlot from '@/components/AdSlot.astro';
     padding: 1.5rem 0;
   }
 
-  /* 모바일: 카드형 레이아웃 */
-  @media (max-width: 600px) {
-    .table-header { display: none; }
-    .post-row {
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 0.85rem 0.6rem;
-      gap: 0.35rem;
-    }
-    .post-row .col-no { display: none; }
-    .post-row .col-cat {
-      width: auto; flex: none; text-align: left;
-    }
-    .post-row .col-title {
-      padding-right: 0; width: 100%;
-    }
-    .post-row .col-title-row { flex-wrap: wrap; }
-    .post-row .post-title-text { font-size: 0.92rem; }
-    .post-row .col-author,
-    .post-row .col-views,
-    .post-row .col-date { display: none; }
-    .post-row .post-meta-mobile { display: flex; }
-  }
-
-  /* 모바일 메타 (데스크탑에선 숨김) */
-  .post-meta-mobile {
-    display: none;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    flex-wrap: wrap;
-  }
-  .post-meta-mobile .meta-sep { color: var(--border-mid); }
-  .post-meta-mobile .meta-comments {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 0.2rem;
-    color: var(--text-sub);
-  }
 
   /* 글쓰기 모달 */
   .modal-overlay {
@@ -557,6 +516,45 @@ import AdSlot from '@/components/AdSlot.astro';
   .post-row .col-author { color: var(--text-sub); font-size: 0.78rem; }
   .post-row .col-views { color: var(--text-muted); font-size: 0.78rem; }
   .post-row .col-date { color: var(--text-muted); font-size: 0.75rem; }
+
+  /* 모바일 메타 (데스크탑에선 숨김) */
+  .post-meta-mobile {
+    display: none;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .post-meta-mobile .meta-sep { color: var(--border-mid); }
+  .post-meta-mobile .meta-comments {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    color: var(--text-sub);
+  }
+
+  /* 모바일: 카드형 레이아웃 — 반드시 .post-row 정의 뒤에 위치해야 함 */
+  @media (max-width: 600px) {
+    .table-header { display: none; }
+    .post-row {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0.85rem 0.6rem;
+      gap: 0.35rem;
+    }
+    .post-row .col-no { display: none; }
+    .post-row .col-cat { width: auto; flex: none; text-align: left; }
+    .post-row .col-title { padding-right: 0; width: 100%; }
+    .post-row .col-title-row { flex-wrap: wrap; }
+    .post-row .post-title-text { font-size: 0.92rem; white-space: normal; }
+    .post-row .col-author,
+    .post-row .col-views,
+    .post-row .col-date { display: none; }
+    .post-row .post-meta-mobile { display: flex; }
+  }
 
   .page-btn {
     min-width: 32px;
