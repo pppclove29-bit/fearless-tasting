@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fearless-tasting-v6';
+const CACHE_NAME = 'fearless-tasting-v7';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(['/'])));
@@ -34,16 +34,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 네비게이션(HTML) 요청: network-first
+  // 네비게이션(HTML) 요청: 항상 네트워크, 오프라인일 때만 캐시 fallback
+  // (HTML 캐시하면 배포 후 이전 버전이 뜨는 문제 발생)
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        }
-        return response;
-      }).catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
+      fetch(request).catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
     );
     return;
   }

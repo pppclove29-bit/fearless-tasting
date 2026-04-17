@@ -1009,9 +1009,20 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
   // astro:page-load는 최초 로드에서도 발생
   document.addEventListener('astro:page-load', initPage);
 
-  // PWA Service Worker 등록 (1회만)
+  // PWA Service Worker 등록 + 업데이트 자동 적용
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.register('/sw.js').then((reg) => {
+      // 페이지 로드 시마다 업데이트 체크
+      reg.update().catch(() => {});
+    }).catch(() => {});
+
+    // 새 SW가 제어권을 잡으면 자동 새로고침 (새 배포 반영)
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloading) return;
+      reloading = true;
+      window.location.reload();
+    });
   }
 
   // 광고 초기화 (PUBLIC_AD_CLIENT 설정 시에만 동작)
