@@ -26,6 +26,10 @@ export interface PostAuthor {
   id: string;
   nickname: string;
   profileImageUrl: string | null;
+  /** 익명 번호 (게시글 단위, 1부터 순차) — 익명일 때만 존재 */
+  anonymousNumber?: number;
+  /** 익명 글쓴이 여부 — 익명 댓글이 게시글 작성자일 때 true */
+  isPostAuthor?: boolean;
 }
 
 /** 게시글 목록 항목 */

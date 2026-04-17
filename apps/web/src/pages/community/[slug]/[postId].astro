@@ -546,7 +546,7 @@ export const prerender = false;
 
 <script>
   import { fetchBoards, fetchPost, deletePost, createComment, deleteComment, togglePostLike, toggleCommentLike, fetchCurrentUser, fetchMyRooms, addRestaurantFromCommunity, showToast, showDangerConfirm } from '@/lib/api';
-  import type { PostDetail, BoardListItem, RoomListItem, PostRestaurant } from '@/lib/api';
+  import type { PostDetail, PostAuthor, BoardListItem, RoomListItem, PostRestaurant } from '@/lib/api';
 
   function initPostDetailPage() {
     const postContent = document.getElementById('post-content');
@@ -606,6 +606,13 @@ export const prerender = false;
       return nickname.charAt(0).toUpperCase();
     }
 
+    /** 익명 작성자 표시명 (예: "익명1", "익명2(글쓴이)") */
+    function formatAuthorName(author: PostAuthor): string {
+      if (author.id !== 'anonymous') return author.nickname;
+      const base = author.anonymousNumber ? `익명${author.anonymousNumber}` : '익명';
+      return author.isPostAuthor ? `${base}(글쓴이)` : base;
+    }
+
     async function loadPost() {
       const user = await fetchCurrentUser();
       let post: PostDetail;
@@ -650,7 +657,7 @@ export const prerender = false;
         <div class="post-meta-row">
           <div class="post-meta-left">
             <div class="post-author-avatar">${escapeHtml(getInitial(post.author.nickname))}</div>
-            <span class="post-author-name">${escapeHtml(post.author.nickname)}</span>
+            <span class="post-author-name">${escapeHtml(formatAuthorName(post.author))}</span>
             <span class="post-author-time">${relativeTime(post.createdAt)}${post.updatedAt !== post.createdAt ? ' (수정됨)' : ''}</span>
           </div>
           <div class="post-meta-right">
@@ -720,7 +727,7 @@ export const prerender = false;
               <div class="comment-avatar">${escapeHtml(getInitial(comment.author.nickname))}</div>
               <div class="comment-body">
                 <div class="comment-top">
-                  <span class="comment-author">${escapeHtml(comment.author.nickname)}</span>
+                  <span class="comment-author">${escapeHtml(formatAuthorName(comment.author))}</span>
                   <span class="comment-time">${relativeTime(comment.createdAt)}</span>
                 </div>
                 <div class="comment-content">${escapeHtml(comment.content)}</div>

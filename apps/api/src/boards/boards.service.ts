@@ -230,18 +230,44 @@ export class BoardsService {
       myCommentLikeSet = new Set(myCommentLikes.map((l) => l.commentId));
     }
 
+    // 게시글 단위 익명 번호 매기기 (글쓴이 → 1번, 이후 등장 순)
+    const anonymousNumberMap = new Map<string, number>();
+    let nextAnonymousNumber = 1;
+
+    if (post.isAnonymous) {
+      anonymousNumberMap.set(post.author.id, nextAnonymousNumber++);
+    }
+    for (const comment of post.comments) {
+      if (comment.isAnonymous && !anonymousNumberMap.has(comment.author.id)) {
+        anonymousNumberMap.set(comment.author.id, nextAnonymousNumber++);
+      }
+    }
+
+    const postAuthorId = post.author.id;
+
+    const toAnonymousAuthor = (authorId: string) => {
+      const num = anonymousNumberMap.get(authorId) ?? nextAnonymousNumber++;
+      return {
+        id: 'anonymous',
+        nickname: `익명${num}`,
+        profileImageUrl: null,
+        anonymousNumber: num,
+        isPostAuthor: authorId === postAuthorId && post.isAnonymous,
+      };
+    };
+
     return {
       ...post,
-      isAuthor: requestUserId ? post.author.id === requestUserId : false,
+      isAuthor: requestUserId ? postAuthorId === requestUserId : false,
       isLiked: postIsLiked,
       author: post.isAnonymous
-        ? { id: 'anonymous', nickname: '익명', profileImageUrl: null }
+        ? toAnonymousAuthor(postAuthorId)
         : post.author,
       comments: post.comments.map((comment) => ({
         ...comment,
         isLiked: myCommentLikeSet.has(comment.id),
         author: comment.isAnonymous
-          ? { id: 'anonymous', nickname: '익명', profileImageUrl: null }
+          ? toAnonymousAuthor(comment.author.id)
           : comment.author,
       })),
     };

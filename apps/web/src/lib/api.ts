@@ -8,7 +8,7 @@ import type {
   AppNotification, RoomStats, PlatformStats,
   RankingUser, RankingsResponse, DiscoverRestaurant, DiscoverResponse,
   PublicRoomListItem, PaginatedPublicRooms,
-  Board, BoardListItem, PostListItem, PaginatedPosts, PostDetail, PostRestaurant,
+  Board, BoardListItem, PostAuthor, PostListItem, PaginatedPosts, PostDetail, PostRestaurant,
 } from '@repo/types';
 
 export type {
@@ -19,7 +19,7 @@ export type {
   RoomStats, PlatformStats, RankingUser, RankingsResponse,
   DiscoverRestaurant, DiscoverResponse,
   PublicRoomListItem, PaginatedPublicRooms,
-  Board, BoardListItem, PostListItem, PaginatedPosts, PostDetail, PostRestaurant,
+  Board, BoardListItem, PostAuthor, PostListItem, PaginatedPosts, PostDetail, PostRestaurant,
 };
 export type { AppNotification as Notification } from '@repo/types';
 

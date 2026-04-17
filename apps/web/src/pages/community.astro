@@ -214,12 +214,12 @@ import AdSlot from '@/components/AdSlot.astro';
     color: var(--text-sub);
   }
 
-  .col-no { width: 50px; text-align: center; flex-shrink: 0; }
-  .col-cat { width: 70px; text-align: center; flex-shrink: 0; }
-  .col-title { flex: 1; min-width: 0; }
-  .col-author { width: 80px; text-align: center; flex-shrink: 0; }
-  .col-views { width: 60px; text-align: center; flex-shrink: 0; }
-  .col-date { width: 70px; text-align: right; flex-shrink: 0; }
+  .col-no { width: 40px; text-align: center; flex-shrink: 0; }
+  .col-cat { width: 72px; text-align: center; flex-shrink: 0; }
+  .col-title { flex: 1; min-width: 0; padding-right: 0.5rem; }
+  .col-author { width: 72px; text-align: center; flex-shrink: 0; }
+  .col-views { width: 50px; text-align: center; flex-shrink: 0; }
+  .col-date { width: 80px; text-align: right; flex-shrink: 0; }
 
   .loading-msg {
     text-align: center;
@@ -238,10 +238,10 @@ import AdSlot from '@/components/AdSlot.astro';
   /* 모바일: 조회 컬럼 숨김 */
   @media (max-width: 600px) {
     .col-views { display: none; }
-    .col-author { width: 60px; }
-    .col-date { width: 60px; }
-    .col-no { width: 36px; }
-    .col-cat { width: 56px; }
+    .col-author { width: 56px; font-size: 0.72rem; }
+    .col-date { width: 56px; font-size: 0.7rem; }
+    .col-no { width: 30px; }
+    .col-cat { width: 52px; }
   }
 
   /* 글쓰기 모달 */
@@ -452,8 +452,8 @@ import AdSlot from '@/components/AdSlot.astro';
 
   .post-row {
     display: flex;
-    align-items: flex-start;
-    padding: 1rem 0.5rem;
+    align-items: center;
+    padding: 0.75rem 0.5rem;
     border-bottom: 1px solid var(--border);
     text-decoration: none;
     color: inherit;
