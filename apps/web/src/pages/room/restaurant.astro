@@ -1768,7 +1768,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       value: ['돈 줘도 안 먹는다','좀 비싸다','적당하다','가격 대비 만족','사장님 남는 거 맞아요?'],
       service: ['손님이 죄인인 줄','좀 불친절','보통','친절하다','사장님이 내 팬인가보다'],
       cleanliness: ['나오면 안 될 게 나왔다','좀 지저분','보통','깨끗하다','수술실인가?'],
-      accessibility: ['등산인가 식사인가','찾기 어려움','보통','찾기 쉬움','나오자마자 바로 앞'],
+      accessibility: ['등산인가 식사인가','한참 헤맸다','무난하게 도착','찾기 쉬움','눈 감고도 감'],
     };
 
     /** 세부 평점 한 항목 (칩) */
@@ -1943,9 +1943,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         ? escapeHtml(rev.content)
         : '<span style="color:var(--text-muted);font-style:italic;">별점만 남긴 리뷰</span>';
 
-      const bigStars = Array.from({ length: 5 }, (_, i) =>
-        `<span class="${i < Math.round(rev.rating) ? '' : 'star-muted'}">★</span>`
-      ).join('');
+      const bigStars = formatRating(rev.rating);
 
       // 리뷰 이미지
       let imagesHtml = '';
@@ -2105,9 +2103,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </div>`;
       }).filter(Boolean).join('');
 
-      const starsHtml = Array.from({ length: 5 }, (_, i) =>
-        `<span class="${i < Math.round(avgRating) ? '' : 'star-muted'}">★</span>`
-      ).join('');
+      const starsHtml = formatRating(avgRating);
 
       // 재방문 의사 가중 평균: 1→0%, 2→25%, 3→50%, 4→75%, 5→100%
       const revisitWeights: Record<number, number> = { 1: 0, 2: 25, 3: 50, 4: 75, 5: 100 };

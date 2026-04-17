@@ -2499,6 +2499,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     return div.innerHTML;
   }
 
+  const svgStar = '<svg style="display:inline-block;vertical-align:middle" width="12" height="12" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#f59e0b" stroke="none"/></svg>';
+
   /** 버튼 중복 클릭 방지 래퍼 */
   async function withLoading(btn: HTMLButtonElement, fn: () => Promise<void>) {
     if (btn.disabled) return;
@@ -2565,7 +2567,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <div class="room-rest-address">${escapeHtml(r.address)}</div>
             <div class="room-rest-category">· ${escapeHtml(r.category)}</div>
           </div>
-          ${r.avgRating ? `<div class="room-rest-score"><span class="room-rest-star">★</span> ${r.avgRating}</div>` : ''}
+          ${r.avgRating ? `<div class="room-rest-score">${svgStar} ${r.avgRating}</div>` : ''}
         </div>
         <div class="room-rest-footer">
           <span class="room-rest-reviews-count">방문 ${r._count.visits}회 · 리뷰 ${r._count.reviews}개</span>
@@ -2777,7 +2779,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const marker = new MarkerCtor({ position });
 
       const ratingLine = r.avgRating !== null
-        ? `<div style="color:#f59e0b;font-size:12px;">★ ${r.avgRating}</div>`
+        ? `<div style="color:#f59e0b;font-size:12px;">${svgStar} ${r.avgRating}</div>`
         : '';
       const overlayEl = document.createElement('div');
       overlayEl.innerHTML = `
@@ -4529,7 +4531,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       html += '<div class="region-depth"><span class="region-depth-label">시/도</span><div class="region-btns">';
       for (const p of provinces) {
         const avg = calcRegionAvg(filterBy(p, null, null));
-        html += `<button type="button" class="region-btn ${selectedProvince === p ? 'active' : ''}" data-depth="province" data-val="${escapeHtml(p)}">${escapeHtml(p)}${avg ? ` <span class="region-avg">★${avg}</span>` : ''}</button>`;
+        html += `<button type="button" class="region-btn ${selectedProvince === p ? 'active' : ''}" data-depth="province" data-val="${escapeHtml(p)}">${escapeHtml(p)}${avg ? ` <span class="region-avg">${svgStar}${avg}</span>` : ''}</button>`;
       }
       html += '</div></div>';
 
@@ -4538,7 +4540,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         html += '<div class="region-depth"><span class="region-depth-label">시/군/구</span><div class="region-btns">';
         for (const c of cities) {
           const avg = calcRegionAvg(filterBy(selectedProvince, c, null));
-          html += `<button type="button" class="region-btn ${selectedCity === c ? 'active' : ''}" data-depth="city" data-val="${escapeHtml(c)}">${escapeHtml(c)}${avg ? ` <span class="region-avg">★${avg}</span>` : ''}</button>`;
+          html += `<button type="button" class="region-btn ${selectedCity === c ? 'active' : ''}" data-depth="city" data-val="${escapeHtml(c)}">${escapeHtml(c)}${avg ? ` <span class="region-avg">${svgStar}${avg}</span>` : ''}</button>`;
         }
         html += '</div></div>';
       }
@@ -4548,7 +4550,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         html += '<div class="region-depth"><span class="region-depth-label">읍/면/동</span><div class="region-btns">';
         for (const n of neighborhoods) {
           const avg = calcRegionAvg(filterBy(selectedProvince, selectedCity, n));
-          html += `<button type="button" class="region-btn ${selectedNeighborhood === n ? 'active' : ''}" data-depth="neighborhood" data-val="${escapeHtml(n)}">${escapeHtml(n)}${avg ? ` <span class="region-avg">★${avg}</span>` : ''}</button>`;
+          html += `<button type="button" class="region-btn ${selectedNeighborhood === n ? 'active' : ''}" data-depth="neighborhood" data-val="${escapeHtml(n)}">${escapeHtml(n)}${avg ? ` <span class="region-avg">${svgStar}${avg}</span>` : ''}</button>`;
         }
         html += '</div></div>';
       }
@@ -4708,7 +4710,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const marker = new MarkerConstructor({ map, position });
 
       const ratingLine = r.avgRating !== null
-        ? `<div style="color:#f59e0b;font-size:12px;">★ ${r.avgRating} <span style="color:#999;font-size:11px;">(${r._count.reviews})</span></div>`
+        ? `<div style="color:#f59e0b;font-size:12px;">${svgStar} ${r.avgRating} <span style="color:#999;font-size:11px;">(${r._count.reviews})</span></div>`
         : `<div style="color:#999;font-size:11px;">리뷰 없음</div>`;
 
       const overlayContent = document.createElement('div');
