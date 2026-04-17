@@ -187,9 +187,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .feed-meta {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    justify-content: space-between;
     font-size: 0.75rem;
     color: var(--text-muted);
+    margin-top: 0.35rem;
+  }
+
+  .feed-meta-left {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
   }
 
   .feed-meta-dot {
@@ -198,6 +205,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-radius: 50%;
     background: var(--text-muted);
     flex-shrink: 0;
+  }
+
+  .feed-meta-right {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .feed-meta-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+
+  .feed-meta-icon svg {
+    width: 14px;
+    height: 14px;
   }
 
   .feed-empty {
@@ -315,6 +339,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       newPosts.forEach((post) => {
         const contentPreview = post.content ? post.content.replace(/\n/g, ' ').slice(0, 100) : '';
         const commentCount = post._count?.comments ?? 0;
+        const likeCount = post._count?.likes ?? 0;
         const a = document.createElement('a');
         a.href = `/community/${encodeURIComponent(post.boardSlug || activeSlug)}/${post.id}`;
         a.className = 'feed-item';
@@ -323,10 +348,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="feed-title">${escapeHtml(post.title)}</div>
           ${contentPreview ? `<div class="feed-preview">${escapeHtml(contentPreview)}</div>` : ''}
           <div class="feed-meta">
-            <span>${escapeHtml(post.author.nickname)}</span>
-            <span class="feed-meta-dot"></span>
-            <span>${relativeTime(post.createdAt)}</span>
-            ${commentCount > 0 ? `<span class="feed-meta-dot"></span><span>댓글 ${commentCount}</span>` : ''}
+            <div class="feed-meta-left">
+              <span>${escapeHtml(post.author.nickname)}</span>
+              <span class="feed-meta-dot"></span>
+              <span>${relativeTime(post.createdAt)}</span>
+            </div>
+            <div class="feed-meta-right">
+              ${likeCount > 0 ? `<span class="feed-meta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-6 0v4"/><path d="M18.8 22H5.2A2.2 2.2 0 013 19.8V12h18v7.8a2.2 2.2 0 01-2.2 2.2z"/></svg>${likeCount}</span>` : ''}
+              ${commentCount > 0 ? `<span class="feed-meta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>${commentCount}</span>` : ''}
+            </div>
           </div>
         `;
         feedContent.appendChild(a);

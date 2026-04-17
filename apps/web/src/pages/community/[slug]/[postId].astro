@@ -269,6 +269,29 @@ export const prerender = false;
     word-break: break-word;
   }
 
+  .post-stats-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+  }
+
+  .post-stat-item {
+    display: flex;
+    align-items: center;
+  }
+
+  .post-stat-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
   .post-like-row {
     display: flex;
     align-items: center;
@@ -532,14 +555,17 @@ export const prerender = false;
         <div class="post-detail-content">${escapeHtml(post.content)}</div>
       </div>`;
 
-      // Like row
-      html += `<div class="post-like-row">`;
-      if (user) {
-        html += `<button type="button" class="post-like-btn" id="post-like-btn">&#9829; 공감 <span id="post-like-count">${likeCount}</span></button>`;
-      } else {
-        html += `<span class="post-like-static">&#9829; 공감 ${likeCount}</span>`;
-      }
-      html += `</div>`;
+      // 추천/댓글 카운트 픽토그램
+      html += `<div class="post-stats-row">
+        <div class="post-stat-item">
+          ${user
+            ? `<button type="button" class="post-like-btn" id="post-like-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-6 0v4"/><path d="M18.8 22H5.2A2.2 2.2 0 013 19.8V12h18v7.8a2.2 2.2 0 01-2.2 2.2z"/></svg> <span id="post-like-count">${likeCount}</span></button>`
+            : `<span class="post-stat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-6 0v4"/><path d="M18.8 22H5.2A2.2 2.2 0 013 19.8V12h18v7.8a2.2 2.2 0 01-2.2 2.2z"/></svg> ${likeCount}</span>`}
+        </div>
+        <div class="post-stat-item">
+          <span class="post-stat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> ${post.comments.length}</span>
+        </div>
+      </div>`;
 
       // Comments
       html += `<div class="comments-section">`;
