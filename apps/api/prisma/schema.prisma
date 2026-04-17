@@ -587,6 +587,8 @@ model Comment {
   author       User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
   /// 작성자 ID (FK)
   authorId     String
+  /// 익명 여부
+  isAnonymous  Boolean       @default(false)
   /// 추천 목록
   likes        CommentLike[]
   /// 작성일

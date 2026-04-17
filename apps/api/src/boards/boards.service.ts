@@ -184,6 +184,7 @@ export class BoardsService {
           select: {
             id: true,
             content: true,
+            isAnonymous: true,
             createdAt: true,
             author: {
               select: { id: true, nickname: true, profileImageUrl: true },
@@ -210,12 +211,39 @@ export class BoardsService {
       throw new NotFoundException('게시글을 찾을 수 없습니다');
     }
 
+    // 로그인 유저의 좋아요 여부 조회 (N+1 방지: 한 번에 조회)
+    let postIsLiked = false;
+    let myCommentLikeSet = new Set<string>();
+
+    if (requestUserId) {
+      const [postLike, myCommentLikes] = await Promise.all([
+        this.prisma.read.postLike.findUnique({
+          where: { postId_userId: { postId, userId: requestUserId } },
+        }),
+        this.prisma.read.commentLike.findMany({
+          where: { userId: requestUserId, comment: { postId } },
+          select: { commentId: true },
+        }),
+      ]);
+
+      postIsLiked = !!postLike;
+      myCommentLikeSet = new Set(myCommentLikes.map((l) => l.commentId));
+    }
+
     return {
       ...post,
       isAuthor: requestUserId ? post.author.id === requestUserId : false,
+      isLiked: postIsLiked,
       author: post.isAnonymous
         ? { id: 'anonymous', nickname: '익명', profileImageUrl: null }
         : post.author,
+      comments: post.comments.map((comment) => ({
+        ...comment,
+        isLiked: myCommentLikeSet.has(comment.id),
+        author: comment.isAnonymous
+          ? { id: 'anonymous', nickname: '익명', profileImageUrl: null }
+          : comment.author,
+      })),
     };
   }
 
@@ -346,7 +374,7 @@ export class BoardsService {
   // ── Comment ──
 
   /** 댓글 작성 */
-  async createComment(postId: string, authorId: string, content: string) {
+  async createComment(postId: string, authorId: string, content: string, isAnonymous?: boolean) {
     const post = await this.prisma.read.post.findUnique({
       where: { id: postId },
       select: { id: true },
@@ -356,7 +384,12 @@ export class BoardsService {
     }
 
     return this.prisma.write.comment.create({
-      data: { postId, authorId, content },
+      data: {
+        postId,
+        authorId,
+        content,
+        ...(isAnonymous !== undefined && { isAnonymous }),
+      },
     });
   }
 

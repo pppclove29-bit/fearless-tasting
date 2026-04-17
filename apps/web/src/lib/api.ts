@@ -900,11 +900,11 @@ export async function deletePost(slug: string, postId: string): Promise<void> {
 }
 
 /** 댓글 작성 */
-export async function createComment(slug: string, postId: string, content: string): Promise<void> {
+export async function createComment(slug: string, postId: string, content: string, isAnonymous?: boolean): Promise<void> {
   const res = await apiFetch(`${API_BASE}/boards/${slug}/posts/${postId}/comments`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, ...(isAnonymous !== undefined && { isAnonymous }) }),
   });
   await throwIfNotOk(res, '댓글 작성에 실패했습니다.');
 }

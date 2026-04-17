@@ -132,7 +132,7 @@ export class BoardsController {
     @Body() dto: CreateCommentDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.boardsService.createComment(postId, req.user.id, dto.content);
+    return this.boardsService.createComment(postId, req.user.id, dto.content, dto.isAnonymous);
   }
 
   /** 댓글 삭제 (작성자 또는 관리자) */

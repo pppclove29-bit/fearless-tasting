@@ -345,7 +345,24 @@ export const prerender = false;
   .comment-write-actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
     margin-top: 0.5rem;
+  }
+
+  .comment-anon-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .comment-anon-label input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
   }
 
   .comment-submit-btn {
@@ -387,6 +404,7 @@ export const prerender = false;
     transition: color 0.15s;
   }
   .comment-like-btn:hover { color: var(--text-heading); }
+  .comment-like-btn.active { color: var(--text-heading); }
 
   .comment-like-count {
     font-size: 0.7rem;
@@ -672,8 +690,9 @@ export const prerender = false;
 
       // 좋아요 버튼
       if (user) {
+        const postLikedClass = post.isLiked ? ' active' : '';
         html += `<div class="post-action-row">
-          <button type="button" class="post-action-btn" id="post-like-btn">${svgHeart} 좋아요 <span id="post-like-count">${likeCount}</span></button>
+          <button type="button" class="post-action-btn${postLikedClass}" id="post-like-btn">${svgHeart} 좋아요 <span id="post-like-count">${likeCount}</span></button>
         </div>`;
       }
 
@@ -686,6 +705,7 @@ export const prerender = false;
         html += `<div class="comment-write-area">
           <textarea class="comment-textarea" id="comment-textarea" placeholder="댓글을 입력하세요" maxlength="1000"></textarea>
           <div class="comment-write-actions">
+            <label class="comment-anon-label"><input type="checkbox" id="comment-anon-check" /> 익명</label>
             <button type="button" class="comment-submit-btn" id="comment-submit-btn">댓글 작성</button>
           </div>
         </div>`;
@@ -709,7 +729,7 @@ export const prerender = false;
                 </div>
               </div>
               <div class="comment-like-wrap">
-                ${user ? `<button type="button" class="comment-like-btn" data-comment-id="${comment.id}">${svgHeart}</button>` : ''}
+                ${user ? `<button type="button" class="comment-like-btn${comment.isLiked ? ' active' : ''}" data-comment-id="${comment.id}">${svgHeart}</button>` : ''}
                 ${commentLikeCount > 0 ? `<span class="comment-like-count">${commentLikeCount}</span>` : ''}
               </div>
             </div>
@@ -791,14 +811,17 @@ export const prerender = false;
       // 인라인 댓글 작성
       const commentSubmitBtn = document.getElementById('comment-submit-btn');
       const commentTextarea = document.getElementById('comment-textarea') as HTMLTextAreaElement | null;
+      const commentAnonCheck = document.getElementById('comment-anon-check') as HTMLInputElement | null;
       if (commentSubmitBtn && commentTextarea) {
         commentSubmitBtn.addEventListener('click', async () => {
           const text = commentTextarea.value.trim();
           if (!text) { showToast('댓글 내용을 입력해주세요.'); return; }
           commentSubmitBtn.setAttribute('disabled', 'true');
+          const isAnonymous = commentAnonCheck?.checked || false;
           try {
-            await createComment(slug, postId, text);
+            await createComment(slug, postId, text, isAnonymous || undefined);
             commentTextarea.value = '';
+            if (commentAnonCheck) commentAnonCheck.checked = false;
             showToast('댓글이 작성되었습니다.');
             await loadPost();
           } catch (e) {

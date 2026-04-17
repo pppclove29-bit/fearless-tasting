@@ -56,7 +56,9 @@ export interface PaginatedPosts {
 export interface PostComment {
   id: string;
   content: string;
+  isAnonymous?: boolean;
   author: PostAuthor;
+  isLiked?: boolean;
   _count?: { likes: number };
   createdAt: string;
 }
@@ -80,6 +82,7 @@ export interface PostDetail {
   isAnonymous: boolean;
   boardId: string;
   isAuthor?: boolean;
+  isLiked?: boolean;
   author: PostAuthor;
   comments: PostComment[];
   restaurants?: PostRestaurant[];
