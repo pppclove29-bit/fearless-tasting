@@ -2766,8 +2766,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       map: mainMap,
       markers,
       gridSize: 60,
-      minLevel: 4,
+      minLevel: 2,
       minClusterSize: 2,
+      disableClickZoom: true,
       styles: [{
         width: '36px', height: '36px',
         background: 'var(--text-heading, #111)',
