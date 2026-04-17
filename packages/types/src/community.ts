@@ -6,6 +6,7 @@ export interface Board {
   description: string | null;
   sortOrder: number;
   enabled: boolean;
+  popularThreshold: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,6 +37,7 @@ export interface PostListItem {
   boardSlug: string;
   boardName: string;
   author: PostAuthor;
+  isPopular: boolean;
   createdAt: string;
   updatedAt: string;
   _count: { comments: number; likes: number; bookmarks: number };

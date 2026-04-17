@@ -28,4 +28,9 @@ export class CreateBoardDto {
   @IsOptional()
   @IsBoolean()
   enabled?: boolean;
+
+  @ApiPropertyOptional({ description: '인기글 기준 좋아요 수', example: 5 })
+  @IsOptional()
+  @IsInt()
+  popularThreshold?: number;
 }

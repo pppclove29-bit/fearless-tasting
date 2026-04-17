@@ -25,6 +25,7 @@ import AdSlot from '@/components/AdSlot.astro';
 
     <div class="board-tabs" id="board-tabs">
       <div class="tabs-scroll" id="tabs-scroll"></div>
+      <button type="button" class="popular-toggle" id="popular-toggle" title="인기글만 보기">인기글</button>
     </div>
 
     <div class="table-header">
@@ -155,11 +156,15 @@ import AdSlot from '@/components/AdSlot.astro';
   .btn-write[hidden] { display: none; }
 
   .board-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     border-bottom: 1px solid var(--border);
     margin-bottom: 0;
   }
 
   .tabs-scroll {
+    flex: 1;
     display: flex;
     gap: 0.5rem;
     overflow-x: auto;
@@ -168,6 +173,28 @@ import AdSlot from '@/components/AdSlot.astro';
     scrollbar-width: none;
   }
   .tabs-scroll::-webkit-scrollbar { display: none; }
+
+  .popular-toggle {
+    flex-shrink: 0;
+    padding: 0.4rem 0.75rem;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-sub);
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .popular-toggle:hover { background: var(--bg-hover); }
+  .popular-toggle.active {
+    background: #f59e0b;
+    color: #fff;
+    border-color: #f59e0b;
+    font-weight: 600;
+  }
 
   .table-header {
     display: flex;
@@ -388,6 +415,11 @@ import AdSlot from '@/components/AdSlot.astro';
     gap: 0.4rem;
     min-width: 0;
   }
+  .post-row .popular-badge {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    line-height: 1;
+  }
   .post-row .post-title-text {
     font-weight: 600;
     color: var(--text-heading);
@@ -455,6 +487,7 @@ import AdSlot from '@/components/AdSlot.astro';
     const paginationWrap = document.getElementById('pagination-wrap');
     const btnWrite = document.getElementById('btn-write') as HTMLAnchorElement | null;
     const postSearch = document.getElementById('post-search') as HTMLInputElement | null;
+    const popularToggle = document.getElementById('popular-toggle') as HTMLButtonElement | null;
     if (!tabsScroll || !feedContent || !paginationWrap || !btnWrite || !postSearch) return;
 
     let boards: BoardListItem[] = [];
@@ -464,6 +497,7 @@ import AdSlot from '@/components/AdSlot.astro';
     let total = 0;
     let isLoggedIn = false;
     let searchQuery = '';
+    let popularOnly = false;
 
     function escapeHtml(text: string): string {
       const div = document.createElement('div');
@@ -527,6 +561,7 @@ import AdSlot from '@/components/AdSlot.astro';
           <span class="col-no">${no}</span>
           <span class="col-cat"><span class="cat-badge">${escapeHtml(boardName)}</span></span>
           <span class="col-title">
+            ${post.isPopular ? '<span class="popular-badge" title="인기글">&#11088;</span>' : ''}
             <span class="post-title-text">${escapeHtml(post.title)}</span>
             ${isNew(post.createdAt) ? '<span class="new-badge">N</span>' : ''}
             ${commentCount > 0 ? `<span class="comment-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> ${commentCount}</span>` : ''}
@@ -566,9 +601,9 @@ import AdSlot from '@/components/AdSlot.astro';
       try {
         let result: PaginatedPosts;
         if (activeSlug) {
-          result = await fetchPosts(activeSlug, currentPage, 20);
+          result = await fetchPosts(activeSlug, currentPage, 20, popularOnly);
         } else if (boards.length > 0) {
-          result = await fetchPosts(boards[0].slug, currentPage, 20);
+          result = await fetchPosts(boards[0].slug, currentPage, 20, popularOnly);
         } else {
           feedContent.innerHTML = '<p class="feed-empty">게시판이 없습니다.</p>';
           return;
@@ -588,6 +623,14 @@ import AdSlot from '@/components/AdSlot.astro';
         currentPage = 1;
         loadPosts();
       }, 300);
+    });
+
+    // 인기글 필터 토글
+    popularToggle?.addEventListener('click', () => {
+      popularOnly = !popularOnly;
+      popularToggle.classList.toggle('active', popularOnly);
+      currentPage = 1;
+      loadPosts();
     });
 
     async function init() {

@@ -30,4 +30,9 @@ export class UpdateBoardDto {
   @IsOptional()
   @IsBoolean()
   enabled?: boolean;
+
+  @ApiPropertyOptional({ description: '인기글 기준 좋아요 수' })
+  @IsOptional()
+  @IsInt()
+  popularThreshold?: number;
 }

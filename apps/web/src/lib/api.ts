@@ -826,8 +826,10 @@ export async function fetchBoards(search?: string): Promise<BoardListItem[]> {
 }
 
 /** 게시판 게시글 목록 (페이지네이션) */
-export async function fetchPosts(slug: string, page = 1, pageSize = 20): Promise<PaginatedPosts> {
-  const res = await apiFetch(`${API_BASE}/boards/${slug}/posts?page=${page}&limit=${pageSize}`);
+export async function fetchPosts(slug: string, page = 1, pageSize = 20, popularOnly = false): Promise<PaginatedPosts> {
+  const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
+  if (popularOnly) params.set('popular', 'true');
+  const res = await apiFetch(`${API_BASE}/boards/${slug}/posts?${params}`);
   await throwIfNotOk(res, '게시글 목록을 불러올 수 없습니다.');
   return res.json();
 }
@@ -923,7 +925,7 @@ export async function fetchAllBoards(): Promise<Board[]> {
 }
 
 /** 게시판 생성 (관리자) */
-export async function createBoard(data: { name: string; slug: string; description?: string; sortOrder?: number; enabled?: boolean }): Promise<Board> {
+export async function createBoard(data: { name: string; slug: string; description?: string; sortOrder?: number; enabled?: boolean; popularThreshold?: number }): Promise<Board> {
   const res = await apiFetch(`${API_BASE}/admin/boards`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -934,7 +936,7 @@ export async function createBoard(data: { name: string; slug: string; descriptio
 }
 
 /** 게시판 수정 (관리자) */
-export async function updateBoard(id: string, data: Partial<{ name: string; slug: string; description: string; sortOrder: number; enabled: boolean }>): Promise<Board> {
+export async function updateBoard(id: string, data: Partial<{ name: string; slug: string; description: string; sortOrder: number; enabled: boolean; popularThreshold: number }>): Promise<Board> {
   const res = await apiFetch(`${API_BASE}/admin/boards/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

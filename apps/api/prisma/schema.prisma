@@ -485,6 +485,8 @@ model Board {
   sortOrder   Int      @default(0)
   /// 활성 여부
   enabled     Boolean  @default(true)
+  /// 인기글 기준 좋아요 수
+  popularThreshold Int @default(5)
   /// 게시글 목록
   posts       Post[]
   /// 생성일

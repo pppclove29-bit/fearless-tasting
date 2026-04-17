@@ -1303,6 +1303,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.4rem;">
               순서 <input type="number" id="bf-sort-order" value="${board?.sortOrder ?? 0}" min="0" style="width:60px;padding:0.25rem 0.4rem;border:1px solid var(--border-mid);border-radius:4px;font-size:0.82rem;background:var(--bg-input,var(--bg));color:var(--text);" />
             </label>
+            <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.4rem;">
+              인기글 기준 <input type="number" id="bf-popular-threshold" value="${board?.popularThreshold ?? 5}" min="1" style="width:60px;padding:0.25rem 0.4rem;border:1px solid var(--border-mid);border-radius:4px;font-size:0.82rem;background:var(--bg-input,var(--bg));color:var(--text);" />
+            </label>
           </div>
           <div class="notice-form-actions">
             <button type="button" class="btn-primary-sm" id="bf-submit">${isEdit ? '수정' : '등록'}</button>
@@ -1404,15 +1407,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const description = (document.getElementById('bf-desc') as HTMLInputElement).value.trim();
         const enabled = (document.getElementById('bf-enabled') as HTMLInputElement).checked;
         const sortOrder = parseInt((document.getElementById('bf-sort-order') as HTMLInputElement).value, 10) || 0;
+        const popularThreshold = parseInt((document.getElementById('bf-popular-threshold') as HTMLInputElement).value, 10) || 5;
 
         if (!name) { alert('게시판 이름을 입력해주세요.'); return; }
         if (!editId && !slug) { alert('슬러그를 입력해주세요.'); return; }
 
         try {
           if (editId) {
-            await updateBoard(editId, { name, description: description || undefined, enabled, sortOrder });
+            await updateBoard(editId, { name, description: description || undefined, enabled, sortOrder, popularThreshold });
           } else {
-            await createBoard({ name, slug, description: description || undefined, enabled, sortOrder });
+            await createBoard({ name, slug, description: description || undefined, enabled, sortOrder, popularThreshold });
           }
           await loadBoardsAdmin();
         } catch (e) { alert(e instanceof Error ? e.message : '저장에 실패했습니다.'); }

@@ -22,7 +22,7 @@ export class AdminBoardsController {
   @Post()
   @ApiOperation({ summary: '게시판 생성', description: '새 게시판을 생성합니다.' })
   create(@Body() dto: CreateBoardDto) {
-    return this.boardsService.createBoard(dto.name, dto.slug, dto.description, dto.sortOrder, dto.enabled);
+    return this.boardsService.createBoard(dto.name, dto.slug, dto.description, dto.sortOrder, dto.enabled, dto.popularThreshold);
   }
 
   /** 게시판 수정 */
@@ -35,6 +35,7 @@ export class AdminBoardsController {
       ...(dto.description !== undefined && { description: dto.description }),
       ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
       ...(dto.enabled !== undefined && { enabled: dto.enabled }),
+      ...(dto.popularThreshold !== undefined && { popularThreshold: dto.popularThreshold }),
     });
   }
 

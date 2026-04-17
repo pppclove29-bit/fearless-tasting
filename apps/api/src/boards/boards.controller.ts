@@ -55,11 +55,13 @@ export class BoardsController {
     @Param('slug') slug: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('popular') popular?: string,
   ) {
     const board = await this.boardsService.findBoardBySlug(slug);
     const pageNum = Math.max(1, parseInt(page || '1', 10) || 1);
     const limitNum = Math.min(50, Math.max(1, parseInt(limit || '20', 10) || 20));
-    return this.boardsService.findPosts(board.id, pageNum, limitNum);
+    const popularOnly = popular === 'true';
+    return this.boardsService.findPosts(board.id, pageNum, limitNum, popularOnly);
   }
 
   /** 게시글 상세 (공개, 로그인 시 isAuthor 포함) */

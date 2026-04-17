@@ -8,7 +8,7 @@ export class BoardsService {
   // ── Board CRUD (Admin) ──
 
   /** 게시판 생성 */
-  async createBoard(name: string, slug: string, description?: string, sortOrder?: number, enabled?: boolean) {
+  async createBoard(name: string, slug: string, description?: string, sortOrder?: number, enabled?: boolean, popularThreshold?: number) {
     return this.prisma.write.board.create({
       data: {
         name,
@@ -16,6 +16,7 @@ export class BoardsService {
         ...(description !== undefined && { description }),
         ...(sortOrder !== undefined && { sortOrder }),
         ...(enabled !== undefined && { enabled }),
+        ...(popularThreshold !== undefined && { popularThreshold }),
       },
     });
   }
@@ -23,7 +24,7 @@ export class BoardsService {
   /** 게시판 수정 */
   async updateBoard(
     boardId: string,
-    data: { name?: string; slug?: string; description?: string; sortOrder?: number; enabled?: boolean },
+    data: { name?: string; slug?: string; description?: string; sortOrder?: number; enabled?: boolean; popularThreshold?: number },
   ) {
     const board = await this.prisma.write.board.findUnique({ where: { id: boardId } });
     if (!board) {
@@ -97,13 +98,24 @@ export class BoardsService {
   }
 
   /** 게시글 목록 (페이지네이션) */
-  async findPosts(boardId: string, page: number, limit: number) {
+  async findPosts(boardId: string, page: number, limit: number, popularOnly?: boolean) {
+    // 인기글 기준을 위해 게시판 정보 조회
+    const board = await this.prisma.read.board.findUnique({
+      where: { id: boardId },
+      select: { popularThreshold: true },
+    });
+    const threshold = board?.popularThreshold ?? 5;
+
+    const where = popularOnly
+      ? { boardId, likes: { some: {} } }
+      : { boardId };
+
     const [items, total] = await Promise.all([
       this.prisma.read.post.findMany({
-        where: { boardId },
+        where,
         orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
+        // popularOnly일 때 threshold 미만 게시글이 섞일 수 있으므로 여유분 조회
+        ...(popularOnly ? { take: limit * 3 } : { skip: (page - 1) * limit, take: limit }),
         select: {
           id: true,
           title: true,
@@ -118,25 +130,37 @@ export class BoardsService {
           _count: { select: { comments: true, likes: true, bookmarks: true } },
         },
       }),
-      this.prisma.read.post.count({ where: { boardId } }),
+      this.prisma.read.post.count({ where }),
     ]);
 
-    const mapped = items.map(({ board, author, isAnonymous, ...rest }) => ({
+    // popularOnly인 경우 threshold 이상만 필터 후 페이지네이션 적용
+    const filtered = popularOnly
+      ? items.filter((item) => item._count.likes >= threshold)
+      : items;
+
+    const pagedItems = popularOnly
+      ? filtered.slice((page - 1) * limit, page * limit)
+      : filtered;
+
+    const mapped = pagedItems.map(({ board: postBoard, author, isAnonymous, ...rest }) => ({
       ...rest,
       isAnonymous,
-      boardSlug: board.slug,
-      boardName: board.name,
+      boardSlug: postBoard.slug,
+      boardName: postBoard.name,
+      isPopular: rest._count.likes >= threshold,
       author: isAnonymous
         ? { id: 'anonymous', nickname: '익명', profileImageUrl: null }
         : author,
     }));
 
+    const filteredTotal = popularOnly ? filtered.length : total;
+
     return {
       items: mapped,
-      total,
+      total: filteredTotal,
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(filteredTotal / limit),
     };
   }
 
@@ -271,6 +295,7 @@ export class BoardsService {
       ...rest,
       boardSlug: board.slug,
       boardName: board.name,
+      isPopular: false,
     }));
 
     return {
