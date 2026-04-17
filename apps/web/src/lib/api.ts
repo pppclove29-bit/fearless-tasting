@@ -7,7 +7,7 @@ import type {
   Inquiry, Notice, PollOption, Poll, TimelineItem,
   AppNotification, RoomStats, PlatformStats,
   RankingUser, RankingsResponse, DiscoverRestaurant, DiscoverResponse,
-  PublicRoomListItem, PaginatedPublicRooms,
+  PublicRoomListItem, PaginatedPublicRooms, WishlistUser,
   Board, BoardListItem, PostAuthor, PostListItem, PaginatedPosts, PostDetail, PostRestaurant,
 } from '@repo/types';
 
@@ -18,7 +18,7 @@ export type {
   Inquiry, Notice, PollOption, Poll, TimelineItem,
   RoomStats, PlatformStats, RankingUser, RankingsResponse,
   DiscoverRestaurant, DiscoverResponse,
-  PublicRoomListItem, PaginatedPublicRooms,
+  PublicRoomListItem, PaginatedPublicRooms, WishlistUser,
   Board, BoardListItem, PostAuthor, PostListItem, PaginatedPosts, PostDetail, PostRestaurant,
 };
 export type { AppNotification as Notification } from '@repo/types';
@@ -434,7 +434,7 @@ export async function createRoomRestaurant(
 /** 방 내 식당 목록 (페이지네이션) */
 export async function fetchRoomRestaurants(
   roomId: string,
-  params: { page?: number; pageSize?: number; search?: string; category?: string; sort?: string } = {},
+  params: { page?: number; pageSize?: number; search?: string; category?: string; sort?: string; wishlist?: boolean } = {},
 ): Promise<PaginatedRestaurants> {
   const qs = new URLSearchParams();
   if (params.page) qs.set('page', String(params.page));
@@ -442,6 +442,7 @@ export async function fetchRoomRestaurants(
   if (params.search) qs.set('search', params.search);
   if (params.category) qs.set('category', params.category);
   if (params.sort) qs.set('sort', params.sort);
+  if (params.wishlist) qs.set('wishlist', 'true');
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants?${qs}`);
   await throwIfNotOk(res, '식당 목록 조회에 실패했습니다.');
   return res.json();
@@ -472,6 +473,18 @@ export async function updateRoomRestaurant(
     body: JSON.stringify(data),
   });
   await throwIfNotOk(res, '식당 수정에 실패했습니다.');
+}
+
+/** 식당 위시리스트 토글 (가고 싶은 식당) */
+export async function toggleRestaurantWishlist(
+  roomId: string,
+  rid: string,
+): Promise<{ wishlisted: boolean }> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}/wishlist`, {
+    method: 'POST',
+  });
+  await throwIfNotOk(res, '위시리스트 변경에 실패했습니다.');
+  return res.json();
 }
 
 // ─── 방문 기록 ───

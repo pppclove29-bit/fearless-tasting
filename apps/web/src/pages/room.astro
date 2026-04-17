@@ -721,6 +721,54 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
   }
 
+  .room-rest-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  .wishlist-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.2rem;
+    line-height: 1;
+    color: var(--text-muted);
+    transition: color 0.15s, transform 0.15s;
+  }
+  .wishlist-btn:hover { color: #ef4444; transform: scale(1.15); }
+  .wishlist-btn.active { color: #ef4444; }
+  .wishlist-btn svg { display: block; }
+
+  .wishlist-count {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
+  .wishlist-filter-btn {
+    font-size: 0.78rem;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .wishlist-filter-btn svg { width: 13px; height: 13px; }
+  .wishlist-filter-btn:hover { border-color: var(--border-mid); }
+  .wishlist-filter-btn.active {
+    background: #ef4444;
+    color: #fff;
+    border-color: #ef4444;
+  }
+
   .section-subtitle {
     font-size: 1.1rem;
     font-weight: 700;
@@ -2452,7 +2500,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import {
     fetchCurrentUser, fetchRoom, deleteRoom, leaveRoom,
     updateRoomMemberRole, kickRoomMember, transferOwnership,
-    createRoomRestaurant, fetchRoomRestaurants,
+    createRoomRestaurant, fetchRoomRestaurants, toggleRestaurantWishlist,
     toggleRoomPublic, updateRoom, regenerateInviteCode,
     fetchRoomStats,
     createPoll, fetchPolls, votePoll, closePoll,
@@ -2557,8 +2605,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   roomSortBackdrop.addEventListener('click', closeRoomSortSheet);
 
+  const svgHeartOutline = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+  const svgHeartFilled = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+
   function renderRestaurantCard(r: RoomRestaurantInfo): string {
     const closedBadge = r.isClosed ? '<span class="closed-badge">폐점</span> ' : '';
+    const heartIcon = r.isWishlisted ? svgHeartFilled : svgHeartOutline;
+    const wishlistCountText = r.wishlistCount > 0 ? `<span class="wishlist-count">${r.wishlistCount}</span>` : '';
     return `
       <div class="room-restaurant-card${r.isClosed ? ' is-closed' : ''}" data-rid="${r.id}">
         <div class="room-rest-top">
@@ -2567,7 +2620,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <div class="room-rest-address">${escapeHtml(r.address)}</div>
             <div class="room-rest-category">· ${escapeHtml(r.category)}</div>
           </div>
-          ${r.avgRating ? `<div class="room-rest-score">${svgStar} ${r.avgRating}</div>` : ''}
+          <div class="room-rest-right">
+            ${r.avgRating ? `<div class="room-rest-score">${svgStar} ${r.avgRating}</div>` : ''}
+            <button type="button" class="wishlist-btn${r.isWishlisted ? ' active' : ''}" data-rid="${r.id}" title="가고 싶은 식당">${heartIcon}${wishlistCountText}</button>
+          </div>
         </div>
         <div class="room-rest-footer">
           <span class="room-rest-reviews-count">방문 ${r._count.visits}회 · 리뷰 ${r._count.reviews}개</span>
@@ -3873,6 +3929,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   let activeCategory = '';
   let searchQuery = '';
   let sortOrder = 'latest'; // 'latest' | 'rating-high' | 'rating-low' | 'reviews' | 'visits' | 'name'
+  let wishlistFilter = false;
   const REST_PAGE_SIZE = 10;
   let restPage = 1;
   let restData: RoomRestaurantInfo[] = [];
@@ -3974,6 +4031,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     panel.innerHTML = addFormHtml
       + `<div class="rest-list-header"><h3 class="section-subtitle">식당 목록 <span class="section-count" id="rest-total-count">-</span></h3><a href="/room/add?roomId=${currentRoom.id}" class="add-rest-fab">+ 식당 등록</a></div>`
       + `<div class="review-sort-row">
+          <button type="button" class="wishlist-filter-btn${wishlistFilter ? ' active' : ''}" id="wishlist-filter-btn">${svgHeartFilled} 가고 싶은</button>
           <button type="button" class="sort-trigger-btn" id="rest-sort-trigger">
             ${restSortLabels[sortOrder] || '최신순'}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -3990,6 +4048,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     attachDrawerHandlers();
     attachSearchHandler();
     attachSortHandler();
+    attachWishlistFilterHandler();
 
     // 서버에서 식당 목록 로드
     await loadRestaurants();
@@ -4003,6 +4062,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         search: searchQuery || undefined,
         category: activeCategory || undefined,
         sort: sortOrder,
+        wishlist: wishlistFilter || undefined,
       });
       restData = result.data;
       restTotal = result.total;
@@ -4077,6 +4137,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           search: searchQuery || undefined,
           category: activeCategory || undefined,
           sort: sortOrder,
+          wishlist: wishlistFilter || undefined,
         });
         restData = [...restData, ...result.data];
         // currentRoom.restaurants도 업데이트 (다른 탭 호환)
@@ -4129,6 +4190,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         sortTrigger.innerHTML = `${label} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
         loadRestaurants();
       });
+    });
+  }
+
+  function attachWishlistFilterHandler() {
+    const btn = document.getElementById('wishlist-filter-btn');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      wishlistFilter = !wishlistFilter;
+      btn.classList.toggle('active', wishlistFilter);
+      restPage = 1;
+      loadRestaurants();
     });
   }
 
@@ -4804,6 +4876,34 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       card.addEventListener('click', (_e) => {
         const rid = card.dataset.rid!;
         location.href = `/room/restaurant?roomId=${currentRoom.id}&id=${rid}`;
+      });
+    }
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('.wishlist-btn')) {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const rid = btn.dataset.rid!;
+        const item = restData.find((r) => r.id === rid);
+        if (!item) return;
+
+        // Optimistic UI update
+        const wasWishlisted = item.isWishlisted;
+        item.isWishlisted = !wasWishlisted;
+        item.wishlistCount += wasWishlisted ? -1 : 1;
+        btn.classList.toggle('active', item.isWishlisted);
+        btn.innerHTML = (item.isWishlisted ? svgHeartFilled : svgHeartOutline)
+          + (item.wishlistCount > 0 ? `<span class="wishlist-count">${item.wishlistCount}</span>` : '');
+
+        try {
+          await toggleRestaurantWishlist(currentRoom.id, rid);
+        } catch {
+          // Revert on failure
+          item.isWishlisted = wasWishlisted;
+          item.wishlistCount += wasWishlisted ? 1 : -1;
+          btn.classList.toggle('active', item.isWishlisted);
+          btn.innerHTML = (item.isWishlisted ? svgHeartFilled : svgHeartOutline)
+            + (item.wishlistCount > 0 ? `<span class="wishlist-count">${item.wishlistCount}</span>` : '');
+          showToast('위시리스트 변경에 실패했습니다.');
+        }
       });
     }
   }

@@ -665,7 +665,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     gap: 0.5rem;
     align-items: center;
     margin-bottom: 0.5rem;
+    flex-wrap: wrap;
   }
+  .board-form-row label { white-space: nowrap; }
 
   .board-card-admin {
     background: var(--bg-card);
@@ -1380,9 +1382,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               순서 <input type="number" id="bf-sort-order" value="${board?.sortOrder ?? 0}" min="0" style="width:60px;padding:0.25rem 0.4rem;border:1px solid var(--border-mid);border-radius:4px;font-size:0.82rem;background:var(--bg-input,var(--bg));color:var(--text);" />
             </label>
             <label style="font-size:0.82rem;display:flex;align-items:center;gap:0.4rem;">
-              인기글 기준 <input type="number" id="bf-popular-threshold" value="${board?.popularThreshold ?? 5}" min="1" style="width:60px;padding:0.25rem 0.4rem;border:1px solid var(--border-mid);border-radius:4px;font-size:0.82rem;background:var(--bg-input,var(--bg));color:var(--text);" />
+              인기글 기준 <input type="number" id="bf-popular-threshold" value="${board?.popularThreshold ?? 5}" min="1" style="width:60px;padding:0.25rem 0.4rem;border:1px solid var(--border-mid);border-radius:4px;font-size:0.82rem;background:var(--bg-input,var(--bg));color:var(--text);" title="추천 N개 이상이면 인기글로 표시" />
             </label>
           </div>
+          <p style="font-size:0.72rem;color:var(--text-muted);margin:0 0 0.5rem;">인기글 기준: 추천 N개 이상 시 인기글 뱃지 표시</p>
           <div class="notice-form-actions">
             <button type="button" class="btn-primary-sm" id="bf-submit">${isEdit ? '수정' : '등록'}</button>
             <button type="button" class="btn-outline-sm" id="bf-cancel">취소</button>

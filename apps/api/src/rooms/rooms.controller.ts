@@ -257,6 +257,7 @@ export class RoomsController {
     @Query('search') search?: string,
     @Query('category') category?: string,
     @Query('sort') sort?: string,
+    @Query('wishlist') wishlist?: string,
   ) {
     return this.roomsService.findRestaurants(id, user.id, {
       page: page ? parseInt(page, 10) : undefined,
@@ -264,6 +265,7 @@ export class RoomsController {
       search,
       category,
       sort,
+      wishlist,
     });
   }
 
@@ -308,9 +310,10 @@ export class RoomsController {
   async findRestaurantDetail(
     @Param('id') id: string,
     @Param('rid') rid: string,
+    @CurrentUser() user: { id: string },
     @Req() req: RequestWithRoomMember,
   ) {
-    const detail = await this.roomsService.findRestaurantDetail(id, rid);
+    const detail = await this.roomsService.findRestaurantDetail(id, rid, user.id);
     return { ...detail, myRole: req.roomMember.role };
   }
 
@@ -351,6 +354,20 @@ export class RoomsController {
     @Req() req: RequestWithRoomMember,
   ) {
     return this.roomsService.removeRestaurant(id, rid, user.id, req.roomMember.role);
+  }
+
+  /** 식당 위시리스트 토글 (가고 싶은 식당) */
+  @Post(':id/restaurants/:rid/wishlist')
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '식당 위시리스트 토글 (가고 싶은 식당)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  @ApiParam({ name: 'rid', description: '식당 ID' })
+  toggleWishlist(
+    @Param('id') id: string,
+    @Param('rid') rid: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.roomsService.toggleWishlist(id, rid, user.id);
   }
 
   // ─── 방문 기록 ───

@@ -177,11 +177,19 @@ export interface RoomMemberInfo {
 export interface RoomRestaurantInfo extends RoomRestaurant {
   addedBy: { id: string; nickname: string } | null;
   avgRating: number | null;
+  wishlistCount: number;
+  isWishlisted: boolean;
 }
 
 export interface RoomDetailResponse extends Room {
   members: RoomMemberInfo[];
   restaurants: RoomRestaurantInfo[];
+}
+
+export interface WishlistUser {
+  id: string;
+  nickname: string;
+  profileImageUrl: string | null;
 }
 
 export interface RoomRestaurantDetailResponse {
@@ -200,6 +208,8 @@ export interface RoomRestaurantDetailResponse {
   createdAt: string;
   addedBy: { id: string; nickname: string } | null;
   visits: RoomVisitWithDetails[];
+  wishlistUsers: WishlistUser[];
+  isWishlisted: boolean;
 }
 
 export interface PaginatedRestaurants {
