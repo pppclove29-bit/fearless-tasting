@@ -484,13 +484,45 @@ export const prerender = false;
     padding: 1rem;
   }
 
-  .tagged-restaurants { margin: 1rem 0; }
-  .tagged-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-heading); }
-  .tagged-rest-card { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.5rem; }
+  .tagged-restaurants { margin: 1.5rem 0; padding-top: 1rem; border-top: 1px solid var(--border); }
+  .tagged-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-heading); }
+  .tagged-rest-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+  }
+  .tagged-rest-map {
+    width: 100%;
+    height: 150px;
+    background: var(--bg-hover);
+  }
+  .tagged-rest-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
   .tagged-rest-name { font-size: 0.88rem; font-weight: 600; color: var(--text-heading); }
-  .tagged-rest-address { font-size: 0.78rem; color: var(--text-muted); }
-  .tagged-rest-category { font-size: 0.72rem; color: var(--text-sub); }
-  .add-to-room-btn { padding: 0.35rem 0.7rem; border: 1px solid var(--border); border-radius: 6px; background: none; font-size: 0.78rem; color: var(--text-sub); cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .tagged-rest-name a { color: inherit; text-decoration: none; }
+  .tagged-rest-name a:hover { text-decoration: underline; }
+  .tagged-rest-address { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem; }
+  .tagged-rest-category { font-size: 0.72rem; color: var(--text-sub); margin-top: 0.1rem; }
+  .tagged-rest-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+  .tagged-rest-link {
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.72rem;
+    color: var(--text-sub);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .tagged-rest-link:hover { background: var(--bg-hover); }
+  .add-to-room-btn { padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: none; font-size: 0.72rem; color: var(--text-sub); cursor: pointer; font-family: inherit; white-space: nowrap; }
   .add-to-room-btn:hover { background: var(--bg-hover); }
 </style>
 
@@ -614,15 +646,23 @@ export const prerender = false;
 
       // 태그된 식당
       if (post.restaurants && post.restaurants.length > 0) {
-        html += `<div class="tagged-restaurants"><h4 class="tagged-title">태그된 식당</h4>`;
+        html += `<div class="tagged-restaurants"><h4 class="tagged-title">📍 태그된 식당</h4>`;
         post.restaurants.forEach((rest: PostRestaurant, idx: number) => {
+          const hasCoords = rest.latitude != null && rest.longitude != null;
+          const kakaoLink = rest.kakaoPlaceId ? `https://place.map.kakao.com/${rest.kakaoPlaceId}` : '';
           html += `<div class="tagged-rest-card">
-            <div class="tagged-rest-info">
-              <div class="tagged-rest-name">${escapeHtml(rest.name)}</div>
-              <div class="tagged-rest-address">${escapeHtml(rest.address)}</div>
-              ${rest.category ? `<div class="tagged-rest-category">${escapeHtml(rest.category)}</div>` : ''}
+            ${hasCoords ? `<div class="tagged-rest-map" id="tagged-map-${idx}" data-lat="${rest.latitude}" data-lng="${rest.longitude}"></div>` : ''}
+            <div class="tagged-rest-body">
+              <div class="tagged-rest-info">
+                <div class="tagged-rest-name">${kakaoLink ? `<a href="${kakaoLink}" target="_blank" rel="noopener noreferrer">${escapeHtml(rest.name)}</a>` : escapeHtml(rest.name)}</div>
+                <div class="tagged-rest-address">${escapeHtml(rest.address)}</div>
+                ${rest.category ? `<div class="tagged-rest-category">${escapeHtml(rest.category)}</div>` : ''}
+              </div>
+              <div class="tagged-rest-actions">
+                ${kakaoLink ? `<a href="${kakaoLink}" target="_blank" rel="noopener noreferrer" class="tagged-rest-link">카카오맵</a>` : ''}
+                ${user ? `<button class="add-to-room-btn" data-idx="${idx}">내 방에 추가</button>` : ''}
+              </div>
             </div>
-            ${user ? `<button class="add-to-room-btn" data-idx="${idx}">내 방에 추가</button>` : ''}
           </div>`;
         });
         html += `</div>`;
@@ -844,6 +884,32 @@ export const prerender = false;
             });
           }
         });
+      }
+
+      // 태그된 식당 미니 지도 초기화
+      const mapEls = postContent.querySelectorAll<HTMLElement>('.tagged-rest-map');
+      if (mapEls.length > 0) {
+        const kakao = (window as Record<string, unknown>).kakao as Record<string, unknown> | undefined;
+        if (kakao?.maps) {
+          const maps = kakao.maps as Record<string, unknown>;
+          const loadFn = maps.load as ((cb: () => void) => void) | undefined;
+          const initMaps = () => {
+            const LatLng = maps.LatLng as new (lat: number, lng: number) => unknown;
+            const StaticMap = maps.StaticMap as new (el: HTMLElement, opts: Record<string, unknown>) => unknown;
+            const Marker = (maps as Record<string, unknown>).Marker;
+            mapEls.forEach((el) => {
+              const lat = parseFloat(el.dataset.lat || '0');
+              const lng = parseFloat(el.dataset.lng || '0');
+              if (!lat || !lng) return;
+              new StaticMap(el, {
+                center: new LatLng(lat, lng),
+                level: 3,
+                marker: Marker ? { position: new LatLng(lat, lng) } : false,
+              });
+            });
+          };
+          if (loadFn) { loadFn(initMaps); } else { initMaps(); }
+        }
       }
     }
 
