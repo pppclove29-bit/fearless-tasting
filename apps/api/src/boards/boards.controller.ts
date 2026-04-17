@@ -20,6 +20,13 @@ export class BoardsController {
     return this.boardsService.findEnabledBoards(search || undefined);
   }
 
+  /** 사이트맵용 데이터 (공개) */
+  @Get('sitemap-data')
+  @ApiOperation({ summary: '사이트맵 데이터', description: '게시판/게시글 사이트맵 데이터' })
+  getSitemapData() {
+    return this.boardsService.getSitemapData();
+  }
+
   /** 내가 작성한 게시글 목록 (로그인 필요) */
   @Get('my-posts')
   @UseGuards(JwtAuthGuard)

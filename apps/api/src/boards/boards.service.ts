@@ -66,6 +66,25 @@ export class BoardsService {
     });
   }
 
+  /** 사이트맵용 데이터 (게시판 slug + 게시글 ID) */
+  async getSitemapData() {
+    const boards = await this.prisma.read.board.findMany({
+      where: { enabled: true },
+      select: { slug: true },
+    });
+
+    const posts = await this.prisma.read.post.findMany({
+      select: { id: true, boardId: true, updatedAt: true, board: { select: { slug: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 1000,
+    });
+
+    return {
+      boards: boards.map((b) => b.slug),
+      posts: posts.map((p) => ({ id: p.id, slug: p.board.slug, updatedAt: p.updatedAt })),
+    };
+  }
+
   // ── Post ──
 
   /** 슬러그로 게시판 조회 */
