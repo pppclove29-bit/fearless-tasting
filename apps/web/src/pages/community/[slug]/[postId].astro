@@ -536,8 +536,8 @@ export const prerender = false;
       if (canEdit || canDelete) {
         postMoreBtn.hidden = false;
       }
-      if (!canEdit) editPostBtn.hidden = true;
-      if (!canDelete) deletePostBtn.hidden = true;
+      if (!canEdit) editPostBtn.style.display = 'none';
+      if (!canDelete) deletePostBtn.style.display = 'none';
 
       let html = `<div class="post-detail-section">`;
       if (boardName) {
