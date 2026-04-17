@@ -191,6 +191,17 @@ export class BoardsService {
             _count: { select: { likes: true } },
           },
         },
+        restaurants: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            category: true,
+            latitude: true,
+            longitude: true,
+            kakaoPlaceId: true,
+          },
+        },
         _count: { select: { likes: true, comments: true, bookmarks: true } },
       },
     });
@@ -209,7 +220,14 @@ export class BoardsService {
   }
 
   /** 게시글 작성 */
-  async createPost(boardId: string, authorId: string, title: string, content: string, isAnonymous?: boolean) {
+  async createPost(
+    boardId: string,
+    authorId: string,
+    title: string,
+    content: string,
+    isAnonymous?: boolean,
+    restaurants?: { name: string; address: string; category?: string; latitude?: number; longitude?: number; kakaoPlaceId?: string }[],
+  ) {
     // 게시판 존재 및 활성 여부 확인
     const board = await this.prisma.read.board.findUnique({ where: { id: boardId } });
     if (!board || !board.enabled) {
@@ -217,7 +235,25 @@ export class BoardsService {
     }
 
     return this.prisma.write.post.create({
-      data: { boardId, authorId, title, content, ...(isAnonymous !== undefined && { isAnonymous }) },
+      data: {
+        boardId,
+        authorId,
+        title,
+        content,
+        ...(isAnonymous !== undefined && { isAnonymous }),
+        ...(restaurants && restaurants.length > 0 && {
+          restaurants: {
+            create: restaurants.slice(0, 5).map((r) => ({
+              name: r.name,
+              address: r.address,
+              ...(r.category && { category: r.category }),
+              ...(r.latitude !== undefined && { latitude: r.latitude }),
+              ...(r.longitude !== undefined && { longitude: r.longitude }),
+              ...(r.kakaoPlaceId && { kakaoPlaceId: r.kakaoPlaceId }),
+            })),
+          },
+        }),
+      },
     });
   }
 

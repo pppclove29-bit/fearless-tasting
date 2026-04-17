@@ -519,6 +519,8 @@ model Post {
   likes     PostLike[]
   /// 북마크 목록
   bookmarks PostBookmark[]
+  /// 태그된 식당 목록
+  restaurants PostRestaurant[]
   /// 작성일
   createdAt DateTime   @default(now())
   /// 최종 수정일
@@ -526,6 +528,30 @@ model Post {
 
   @@index([boardId, createdAt])
   @@index([authorId])
+}
+
+/// 게시글 태그 식당 (커뮤니티 게시글에 태그된 식당 정보)
+model PostRestaurant {
+  /// 고유 식별자
+  id           String  @id @default(cuid())
+  /// 소속 게시글
+  post         Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  /// 게시글 ID (FK)
+  postId       String
+  /// 식당 이름
+  name         String  @db.VarChar(100)
+  /// 주소
+  address      String  @db.VarChar(300)
+  /// 카테고리
+  category     String? @db.VarChar(50)
+  /// 위도
+  latitude     Float?
+  /// 경도
+  longitude    Float?
+  /// 카카오 장소 ID
+  kakaoPlaceId String? @db.VarChar(50)
+
+  @@index([postId])
 }
 
 /// 게시글 추천 (유저당 1회)

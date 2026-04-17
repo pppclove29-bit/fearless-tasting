@@ -46,4 +46,5 @@ export type {
   PostAuthor,
   PostComment,
   PostDetail,
+  PostRestaurant,
 } from './community';

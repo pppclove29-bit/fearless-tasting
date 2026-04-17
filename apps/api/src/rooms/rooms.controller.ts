@@ -19,6 +19,7 @@ import { UpdateRoomDto } from './dto/update-room.dto';
 import { UpdateRoomRestaurantDto } from './dto/update-room-restaurant.dto';
 import { UpdateRoomVisitDto } from './dto/update-room-visit.dto';
 import { CreatePollDto } from './dto/create-poll.dto';
+import { CreateRestaurantFromCommunityDto } from './dto/create-restaurant-from-community.dto';
 
 
 interface RequestWithRoomMember extends Request {
@@ -279,6 +280,22 @@ export class RoomsController {
   ) {
     return this.roomsService.createRestaurant(
       id, user.id, dto.name, dto.address, dto.province, dto.city, dto.neighborhood, dto.category, dto.images, dto.latitude, dto.longitude,
+    );
+  }
+
+  /** 커뮤니티 게시글에서 식당 추가 */
+  @Post(':id/restaurants/from-community')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '커뮤니티 게시글에서 방에 식당 추가' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  createRestaurantFromCommunity(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+    @Body() dto: CreateRestaurantFromCommunityDto,
+  ) {
+    return this.roomsService.createRestaurant(
+      id, user.id, dto.name, dto.address, dto.province, dto.city, dto.neighborhood, dto.category || '기타', undefined, dto.latitude, dto.longitude,
     );
   }
 

@@ -8,7 +8,7 @@ import type {
   AppNotification, RoomStats, PlatformStats,
   RankingUser, RankingsResponse, DiscoverRestaurant, DiscoverResponse,
   PublicRoomListItem, PaginatedPublicRooms,
-  Board, BoardListItem, PostListItem, PaginatedPosts, PostDetail,
+  Board, BoardListItem, PostListItem, PaginatedPosts, PostDetail, PostRestaurant,
 } from '@repo/types';
 
 export type {
@@ -19,7 +19,7 @@ export type {
   RoomStats, PlatformStats, RankingUser, RankingsResponse,
   DiscoverRestaurant, DiscoverResponse,
   PublicRoomListItem, PaginatedPublicRooms,
-  Board, BoardListItem, PostListItem, PaginatedPosts, PostDetail,
+  Board, BoardListItem, PostListItem, PaginatedPosts, PostDetail, PostRestaurant,
 };
 export type { AppNotification as Notification } from '@repo/types';
 
@@ -842,15 +842,36 @@ export async function fetchPost(slug: string, postId: string): Promise<PostDetai
 }
 
 /** 게시글 작성 */
-export async function createPost(slug: string, title: string, content: string, isAnonymous?: boolean): Promise<PostDetail> {
-  const body: { title: string; content: string; isAnonymous?: boolean } = { title, content };
+export async function createPost(
+  slug: string,
+  title: string,
+  content: string,
+  isAnonymous?: boolean,
+  restaurants?: { name: string; address: string; category?: string; latitude?: number; longitude?: number; kakaoPlaceId?: string }[],
+): Promise<PostDetail> {
+  const body: { title: string; content: string; isAnonymous?: boolean; restaurants?: { name: string; address: string; category?: string; latitude?: number; longitude?: number; kakaoPlaceId?: string }[] } = { title, content };
   if (isAnonymous) body.isAnonymous = true;
+  if (restaurants && restaurants.length > 0) body.restaurants = restaurants;
   const res = await apiFetch(`${API_BASE}/boards/${slug}/posts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   await throwIfNotOk(res, '게시글 작성에 실패했습니다.');
+  return res.json();
+}
+
+/** 커뮤니티 식당을 방에 추가 */
+export async function addRestaurantFromCommunity(
+  roomId: string,
+  data: { name: string; address: string; province: string; city: string; neighborhood: string; category?: string; latitude?: number; longitude?: number },
+): Promise<RoomRestaurant> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/from-community`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  await throwIfNotOk(res, '식당 추가에 실패했습니다.');
   return res.json();
 }
 

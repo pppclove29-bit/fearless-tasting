@@ -94,7 +94,7 @@ export class BoardsController {
     @Req() req: Request & { user: { id: string } },
   ) {
     const board = await this.boardsService.findBoardBySlug(slug);
-    return this.boardsService.createPost(board.id, req.user.id, dto.title, dto.content, dto.isAnonymous);
+    return this.boardsService.createPost(board.id, req.user.id, dto.title, dto.content, dto.isAnonymous, dto.restaurants);
   }
 
   /** 게시글 수정 (작성자만) */

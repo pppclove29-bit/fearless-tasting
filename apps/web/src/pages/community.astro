@@ -71,6 +71,14 @@ import AdSlot from '@/components/AdSlot.astro';
               <span>익명으로 작성</span>
             </label>
           </div>
+          <div class="write-field">
+            <label class="write-label">식당 태그 (선택, 최대 5개)</label>
+            <div class="rest-tag-search-wrap">
+              <input type="text" id="write-rest-search" class="write-input" placeholder="식당 이름으로 검색" />
+              <div id="write-rest-results" class="rest-search-results" hidden></div>
+            </div>
+            <div id="write-rest-tags" class="rest-tags"></div>
+          </div>
           <div class="write-actions">
             <button type="button" class="write-cancel" id="write-cancel">취소</button>
             <button type="submit" class="write-submit">작성</button>
@@ -363,6 +371,60 @@ import AdSlot from '@/components/AdSlot.astro';
     cursor: pointer;
   }
   .write-submit:hover { opacity: 0.85; }
+
+  .rest-tag-search-wrap { position: relative; }
+  .rest-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 10;
+  }
+  .rest-search-results[hidden] { display: none; }
+  .rest-search-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border: none;
+    background: none;
+    font-size: 0.82rem;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .rest-search-item:hover { background: var(--bg-hover); }
+  .rest-search-name { font-weight: 600; color: var(--text-heading); }
+  .rest-search-addr { font-size: 0.75rem; color: var(--text-muted); }
+
+  .rest-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .rest-tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--bg-hover);
+    font-size: 0.78rem;
+    color: var(--text-heading);
+  }
+  .rest-tag-remove {
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+  }
+  .rest-tag-remove:hover { color: var(--text-heading); }
 </style>
 
 <style is:global>
@@ -674,12 +736,155 @@ import AdSlot from '@/components/AdSlot.astro';
     const writeBoard = document.getElementById('write-board') as HTMLSelectElement | null;
     const writeContent = document.getElementById('write-content') as HTMLTextAreaElement | null;
     const writeAnon = document.getElementById('write-anon') as HTMLInputElement | null;
+    const writeRestSearch = document.getElementById('write-rest-search') as HTMLInputElement | null;
+    const writeRestResults = document.getElementById('write-rest-results');
+    const writeRestTags = document.getElementById('write-rest-tags');
+
+    interface TaggedRestaurant {
+      name: string;
+      address: string;
+      category?: string;
+      latitude?: number;
+      longitude?: number;
+      kakaoPlaceId?: string;
+    }
+    let taggedRestaurants: TaggedRestaurant[] = [];
+
+    function renderRestTags() {
+      if (!writeRestTags) return;
+      writeRestTags.innerHTML = taggedRestaurants.map((r, i) =>
+        `<span class="rest-tag-chip">${escapeHtml(r.name)}<button type="button" class="rest-tag-remove" data-idx="${i}">&times;</button></span>`
+      ).join('');
+      for (const btn of writeRestTags.querySelectorAll<HTMLButtonElement>('.rest-tag-remove')) {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx || '0', 10);
+          taggedRestaurants.splice(idx, 1);
+          renderRestTags();
+        });
+      }
+    }
+
+    // 카카오 장소 검색
+    let restSearchTimer: ReturnType<typeof setTimeout> | null = null;
+    writeRestSearch?.addEventListener('input', () => {
+      if (restSearchTimer) clearTimeout(restSearchTimer);
+      restSearchTimer = setTimeout(() => {
+        const query = writeRestSearch.value.trim();
+        if (!query || query.length < 2) {
+          if (writeRestResults) writeRestResults.hidden = true;
+          return;
+        }
+        searchKakaoPlaces(query);
+      }, 300);
+    });
+
+    function searchKakaoPlaces(query: string) {
+      if (!writeRestResults) return;
+      const kakaoMapKey = (document.querySelector('meta[name="kakao-map-key"]') as HTMLMetaElement | null)?.content;
+      if (!kakaoMapKey) {
+        // fallback: 수동 입력 모드
+        writeRestResults.innerHTML = `<button type="button" class="rest-search-item" data-manual="true">
+          <div class="rest-search-name">"${escapeHtml(query)}" 직접 추가</div>
+          <div class="rest-search-addr">주소를 직접 입력해주세요</div>
+        </button>`;
+        writeRestResults.hidden = false;
+        setupSearchResultHandlers(query);
+        return;
+      }
+
+      const script = document.querySelector('script[src*="dapi.kakao.com"]');
+      if (!script && typeof (window as Record<string, unknown>).kakao === 'undefined') {
+        // 카카오 SDK 미로드 시 수동 입력
+        writeRestResults.innerHTML = `<button type="button" class="rest-search-item" data-manual="true">
+          <div class="rest-search-name">"${escapeHtml(query)}" 직접 추가</div>
+          <div class="rest-search-addr">주소를 직접 입력해주세요</div>
+        </button>`;
+        writeRestResults.hidden = false;
+        setupSearchResultHandlers(query);
+        return;
+      }
+
+      const kakao = (window as Record<string, unknown>).kakao as { maps?: { services?: { Places: new () => { keywordSearch: (q: string, cb: (data: { place_name: string; address_name: string; category_group_name: string; y: string; x: string; id: string }[], status: string) => void) => void }; Status: { OK: string } } } };
+      if (!kakao?.maps?.services) {
+        writeRestResults.innerHTML = `<button type="button" class="rest-search-item" data-manual="true">
+          <div class="rest-search-name">"${escapeHtml(query)}" 직접 추가</div>
+          <div class="rest-search-addr">주소를 직접 입력해주세요</div>
+        </button>`;
+        writeRestResults.hidden = false;
+        setupSearchResultHandlers(query);
+        return;
+      }
+
+      const ps = new kakao.maps.services.Places();
+      ps.keywordSearch(query, (data, status) => {
+        if (status !== kakao.maps!.services!.Status.OK || data.length === 0) {
+          writeRestResults.innerHTML = `<button type="button" class="rest-search-item" data-manual="true">
+            <div class="rest-search-name">"${escapeHtml(query)}" 직접 추가</div>
+            <div class="rest-search-addr">검색 결과가 없습니다. 직접 추가하세요.</div>
+          </button>`;
+          writeRestResults.hidden = false;
+          setupSearchResultHandlers(query);
+          return;
+        }
+
+        writeRestResults.innerHTML = data.slice(0, 5).map((place, i) =>
+          `<button type="button" class="rest-search-item" data-place-idx="${i}" data-name="${escapeHtml(place.place_name)}" data-address="${escapeHtml(place.address_name)}" data-category="${escapeHtml(place.category_group_name || '')}" data-lat="${place.y}" data-lng="${place.x}" data-kakao-id="${place.id}">
+            <div class="rest-search-name">${escapeHtml(place.place_name)}</div>
+            <div class="rest-search-addr">${escapeHtml(place.address_name)}</div>
+          </button>`
+        ).join('');
+        writeRestResults.hidden = false;
+        setupSearchResultHandlers(query);
+      });
+    }
+
+    function setupSearchResultHandlers(query: string) {
+      if (!writeRestResults || !writeRestSearch) return;
+      for (const item of writeRestResults.querySelectorAll<HTMLButtonElement>('.rest-search-item')) {
+        item.addEventListener('click', () => {
+          if (taggedRestaurants.length >= 5) {
+            showToast('식당은 최대 5개까지 태그할 수 있습니다.');
+            return;
+          }
+
+          if (item.dataset.manual === 'true') {
+            const address = prompt('주소를 입력해주세요:') || '';
+            taggedRestaurants.push({ name: query, address });
+          } else {
+            taggedRestaurants.push({
+              name: item.dataset.name || '',
+              address: item.dataset.address || '',
+              category: item.dataset.category || undefined,
+              latitude: item.dataset.lat ? parseFloat(item.dataset.lat) : undefined,
+              longitude: item.dataset.lng ? parseFloat(item.dataset.lng) : undefined,
+              kakaoPlaceId: item.dataset.kakaoId || undefined,
+            });
+          }
+
+          renderRestTags();
+          writeRestSearch.value = '';
+          writeRestResults.hidden = true;
+        });
+      }
+    }
+
+    // 검색 결과 외부 클릭 시 닫기
+    document.addEventListener('click', (e) => {
+      if (writeRestResults && !writeRestResults.hidden) {
+        const target = e.target as HTMLElement;
+        if (!writeRestResults.contains(target) && target !== writeRestSearch) {
+          writeRestResults.hidden = true;
+        }
+      }
+    });
 
     function openWriteModal() {
       if (!writeModal || !writeBoard) return;
       writeBoard.innerHTML = boards.map((b) =>
         `<option value="${escapeHtml(b.slug)}" ${b.slug === activeSlug ? 'selected' : ''}>${escapeHtml(b.name)}</option>`
       ).join('');
+      taggedRestaurants = [];
+      renderRestTags();
       writeModal.hidden = false;
       writeTitle?.focus();
     }
@@ -690,6 +895,9 @@ import AdSlot from '@/components/AdSlot.astro';
       if (writeTitle) writeTitle.value = '';
       if (writeContent) writeContent.value = '';
       if (writeAnon) writeAnon.checked = false;
+      if (writeRestSearch) writeRestSearch.value = '';
+      taggedRestaurants = [];
+      renderRestTags();
     }
 
     writeModalClose?.addEventListener('click', closeWriteModal);
@@ -710,7 +918,7 @@ import AdSlot from '@/components/AdSlot.astro';
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '작성 중...'; }
 
       try {
-        await createPost(slug, title, content, isAnonymous);
+        await createPost(slug, title, content, isAnonymous, taggedRestaurants.length > 0 ? taggedRestaurants : undefined);
         closeWriteModal();
         showToast('게시글이 작성되었습니다.', 'success');
         activeSlug = slug;

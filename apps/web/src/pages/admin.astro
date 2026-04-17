@@ -722,6 +722,45 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   /* 요구사항 관리 */
+  .request-guide {
+    background: var(--bg-hover);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    line-height: 1.6;
+  }
+  .request-guide h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 0.5rem;
+  }
+  .request-guide ul {
+    padding-left: 1.2rem;
+    margin: 0.4rem 0;
+  }
+  .request-guide li { margin-bottom: 0.25rem; }
+  .badge-open {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .badge-closed {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    background: var(--bg-hover);
+    color: var(--text-muted);
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
   .request-form {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -1427,9 +1466,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     function renderRequestForm(): string {
       return `
+        <div class="request-guide">
+          <h3>요구사항 등록 안내</h3>
+          <p>서비스에 추가하고 싶은 기능이나 수정이 필요한 부분을 등록해주세요.</p>
+          <ul>
+            <li><strong>제목</strong>: 어떤 기능인지 한 줄로 요약 (예: "커뮤니티에 이미지 첨부 기능")</li>
+            <li><strong>상세 설명</strong>: 왜 필요한지, 어떻게 동작하면 좋겠는지 자유롭게 작성</li>
+          </ul>
+          <p>등록하면 개발팀에 자동으로 전달됩니다. 처리 상태는 아래 목록에서 확인할 수 있어요.</p>
+          <p><span class="badge-open">open</span> = 검토 중 &nbsp; <span class="badge-closed">closed</span> = 완료</p>
+        </div>
         <div class="request-form" id="request-form">
           <input type="text" id="rf-title" placeholder="요구사항 제목" maxlength="200" />
-          <textarea id="rf-desc" placeholder="상세 설명"></textarea>
+          <textarea id="rf-desc" placeholder="상세 설명 (왜 필요한지, 어떻게 동작하면 좋겠는지)"></textarea>
           <div class="notice-form-actions">
             <button type="button" class="btn-primary-sm" id="rf-submit">등록</button>
           </div>

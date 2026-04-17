@@ -61,6 +61,17 @@ export interface PostComment {
   createdAt: string;
 }
 
+/** 게시글 태그 식당 */
+export interface PostRestaurant {
+  id: string;
+  name: string;
+  address: string;
+  category: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  kakaoPlaceId: string | null;
+}
+
 /** 게시글 상세 */
 export interface PostDetail {
   id: string;
@@ -71,6 +82,7 @@ export interface PostDetail {
   isAuthor?: boolean;
   author: PostAuthor;
   comments: PostComment[];
+  restaurants?: PostRestaurant[];
   _count?: { likes?: number; bookmarks?: number };
   createdAt: string;
   updatedAt: string;
