@@ -28,14 +28,6 @@ import AdSlot from '@/components/AdSlot.astro';
       <button type="button" class="popular-toggle" id="popular-toggle" title="인기글만 보기">인기글</button>
     </div>
 
-    <div class="table-header">
-      <span class="col-no">번호</span>
-      <span class="col-cat">분류</span>
-      <span class="col-title">제목</span>
-      <span class="col-author">작성자</span>
-      <span class="col-views">조회</span>
-      <span class="col-date">작성시간</span>
-    </div>
 
     <div id="feed-content">
       <p class="loading-msg">불러오는 중...</p>
@@ -204,22 +196,8 @@ import AdSlot from '@/components/AdSlot.astro';
     font-weight: 600;
   }
 
-  .table-header {
-    display: flex;
-    align-items: center;
-    padding: 0.6rem 0.5rem;
-    border-bottom: 2px solid var(--text-heading);
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--text-sub);
-  }
-
-  .col-no { width: 40px; text-align: center; flex: 0 0 40px; }
-  .col-cat { width: 72px; text-align: center; flex: 0 0 72px; }
-  .col-title { flex: 1 1 0; min-width: 0; overflow: hidden; padding-right: 0.5rem; }
-  .col-author { width: 72px; text-align: center; flex: 0 0 72px; }
-  .col-views { width: 50px; text-align: center; flex: 0 0 50px; }
-  .col-date { width: 80px; text-align: right; flex: 0 0 80px; }
+  /* 테이블 컬럼 (카드형에서는 숨김) */
+  .col-no, .col-author, .col-views, .col-date { display: none; }
 
   .loading-msg {
     text-align: center;
@@ -442,20 +420,20 @@ import AdSlot from '@/components/AdSlot.astro';
     font-weight: 600;
   }
 
+  /* 카드형 게시글 */
   .post-row {
     display: flex;
-    align-items: center;
-    padding: 0.75rem 0.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.85rem 0.6rem;
+    gap: 0.35rem;
     border-bottom: 1px solid var(--border);
     text-decoration: none;
     color: inherit;
     transition: background 0.1s;
-    font-size: 0.82rem;
-    gap: 0;
   }
   .post-row:hover { background: var(--bg-hover); }
 
-  .post-row .col-no { color: var(--text-muted); font-size: 0.78rem; }
   .post-row .col-cat .cat-badge {
     display: inline-block;
     padding: 0.15rem 0.45rem;
@@ -468,6 +446,7 @@ import AdSlot from '@/components/AdSlot.astro';
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
+    width: 100%;
     min-width: 0;
     overflow: hidden;
   }
@@ -475,9 +454,10 @@ import AdSlot from '@/components/AdSlot.astro';
     display: flex;
     align-items: center;
     gap: 0.4rem;
+    flex-wrap: wrap;
   }
   .post-row .post-preview {
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     color: var(--text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -490,10 +470,8 @@ import AdSlot from '@/components/AdSlot.astro';
   }
   .post-row .post-title-text {
     font-weight: 600;
+    font-size: 0.92rem;
     color: var(--text-heading);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
   .post-row .new-badge {
     display: inline-flex;
@@ -513,13 +491,10 @@ import AdSlot from '@/components/AdSlot.astro';
     font-size: 0.75rem;
     flex-shrink: 0;
   }
-  .post-row .col-author { color: var(--text-sub); font-size: 0.78rem; }
-  .post-row .col-views { color: var(--text-muted); font-size: 0.78rem; }
-  .post-row .col-date { color: var(--text-muted); font-size: 0.75rem; }
 
-  /* 모바일 메타 (데스크탑에선 숨김) */
+  /* 메타 행 (작성자 · 시간 · 조회 + 댓글) */
   .post-meta-mobile {
-    display: none;
+    display: flex;
     align-items: center;
     gap: 0.3rem;
     font-size: 0.72rem;
@@ -534,26 +509,6 @@ import AdSlot from '@/components/AdSlot.astro';
     align-items: center;
     gap: 0.2rem;
     color: var(--text-sub);
-  }
-
-  /* 모바일: 카드형 레이아웃 — 반드시 .post-row 정의 뒤에 위치해야 함 */
-  @media (max-width: 600px) {
-    .table-header { display: none; }
-    .post-row {
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 0.85rem 0.6rem;
-      gap: 0.35rem;
-    }
-    .post-row .col-no { display: none; }
-    .post-row .col-cat { width: auto; flex: none; text-align: left; }
-    .post-row .col-title { padding-right: 0; width: 100%; }
-    .post-row .col-title-row { flex-wrap: wrap; }
-    .post-row .post-title-text { font-size: 0.92rem; white-space: normal; }
-    .post-row .col-author,
-    .post-row .col-views,
-    .post-row .col-date { display: none; }
-    .post-row .post-meta-mobile { display: flex; }
   }
 
   .page-btn {
@@ -667,20 +622,15 @@ import AdSlot from '@/components/AdSlot.astro';
         const contentPreview = post.content ? post.content.replace(/\n/g, ' ').slice(0, 60) : '';
 
         return `<a href="/community/${encodeURIComponent(slug)}/${post.id}" class="post-row">
-          <span class="col-no">${no}</span>
           <span class="col-cat"><span class="cat-badge">${escapeHtml(boardName)}</span></span>
           <span class="col-title">
             <span class="col-title-row">
               ${post.isPopular ? '<span class="popular-badge" title="인기글">&#11088;</span>' : ''}
               <span class="post-title-text">${escapeHtml(post.title)}</span>
               ${isNew(post.createdAt) ? '<span class="new-badge">N</span>' : ''}
-              ${commentCount > 0 ? `<span class="comment-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> ${commentCount}</span>` : ''}
             </span>
             ${contentPreview ? `<span class="post-preview">${escapeHtml(contentPreview)}</span>` : ''}
           </span>
-          <span class="col-author">${escapeHtml(authorName)}</span>
-          <span class="col-views"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> ${post._count?.views ?? 0}</span>
-          <span class="col-date">${relativeTime(post.createdAt)}</span>
           <span class="post-meta-mobile">
             <span>${escapeHtml(authorName)}</span>
             <span class="meta-sep">·</span>
