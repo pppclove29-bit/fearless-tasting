@@ -943,3 +943,31 @@ export async function deleteBoard(id: string): Promise<void> {
   await throwIfNotOk(res, '게시판 삭제에 실패했습니다.');
 }
 
+// ─── 요구사항 (Feature Requests) ───
+
+export interface FeatureRequestItem {
+  id: number;
+  title: string;
+  state: string;
+  createdAt: string;
+  url: string;
+}
+
+/** 요구사항 등록 (GitHub Issue 생성) */
+export async function createFeatureRequest(title: string, description: string): Promise<{ number: number; html_url: string }> {
+  const res = await apiFetch(`${API_BASE}/admin/feature-requests`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, description }),
+  });
+  await throwIfNotOk(res, '요구사항 등록에 실패했습니다.');
+  return res.json();
+}
+
+/** 요구사항 목록 조회 */
+export async function fetchFeatureRequests(): Promise<FeatureRequestItem[]> {
+  const res = await apiFetch(`${API_BASE}/admin/feature-requests`);
+  await throwIfNotOk(res, '요구사항 목록을 불러올 수 없습니다.');
+  return res.json();
+}
+

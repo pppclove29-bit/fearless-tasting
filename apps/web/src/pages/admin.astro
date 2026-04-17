@@ -18,6 +18,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <button type="button" class="tab-btn" data-tab="demo">가계정</button>
         <button type="button" class="tab-btn" data-tab="users">유저</button>
         <button type="button" class="tab-btn" data-tab="boards">게시판</button>
+        <button type="button" class="tab-btn" data-tab="requests">요구사항</button>
       </div>
 
       <div id="tab-stats" class="tab-panel"></div>
@@ -26,6 +27,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <div id="tab-demo" class="tab-panel" hidden></div>
       <div id="tab-users" class="tab-panel" hidden></div>
       <div id="tab-boards" class="tab-panel" hidden></div>
+      <div id="tab-requests" class="tab-panel" hidden></div>
     </div>
   </div>
 </BaseLayout>
@@ -718,11 +720,92 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: flex;
     gap: 0.4rem;
   }
+
+  /* 요구사항 관리 */
+  .request-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .request-form input,
+  .request-form textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    margin-bottom: 0.5rem;
+    background: var(--bg-input, var(--bg));
+    color: var(--text);
+  }
+
+  .request-form textarea {
+    min-height: 100px;
+    resize: vertical;
+  }
+
+  .request-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.35rem;
+  }
+
+  .request-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-heading);
+  }
+
+  .request-title a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .request-title a:hover {
+    text-decoration: underline;
+  }
+
+  .request-state {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  .request-state.open {
+    background: #dcfce7;
+    color: #16a34a;
+  }
+
+  .request-state.closed {
+    background: var(--bg-hover);
+    color: var(--text-muted);
+  }
+
+  .request-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
 </style>
 
 <script>
-  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice, fetchDemoAccounts, createDemoAccount, updateDemoAccount, deleteDemoAccount, loginAsDemoAccount, saveTokens, searchUserByEmail, updateUserRole, fetchAllBoards, createBoard, updateBoard, deleteBoard } from '@/lib/api';
-  import type { Notice, DemoAccount, AdminUserInfo, Board } from '@/lib/api';
+  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice, fetchDemoAccounts, createDemoAccount, updateDemoAccount, deleteDemoAccount, loginAsDemoAccount, saveTokens, searchUserByEmail, updateUserRole, fetchAllBoards, createBoard, updateBoard, deleteBoard, createFeatureRequest, fetchFeatureRequests } from '@/lib/api';
+  import type { Notice, DemoAccount, AdminUserInfo, Board, FeatureRequestItem } from '@/lib/api';
   import { formatDate } from '@repo/utils';
 
   function initAdminPage() {
@@ -737,7 +820,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const demoPanel = document.getElementById('tab-demo');
     const usersPanel = document.getElementById('tab-users');
     const boardsPanel = document.getElementById('tab-boards');
-    if (!loadingMsg || !accessDenied || !adminTabs || !statsPanel || !noticesPanel || !inquiriesPanel || !demoPanel || !usersPanel || !boardsPanel) return;
+    const requestsPanel = document.getElementById('tab-requests');
+    if (!loadingMsg || !accessDenied || !adminTabs || !statsPanel || !noticesPanel || !inquiriesPanel || !demoPanel || !usersPanel || !boardsPanel || !requestsPanel) return;
 
     function escapeHtml(text: string): string {
       const div = document.createElement('div');
@@ -753,7 +837,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     };
 
     // 탭 전환
-    const panels: Record<string, HTMLElement> = { stats: statsPanel, notices: noticesPanel, inquiries: inquiriesPanel, demo: demoPanel, users: usersPanel, boards: boardsPanel };
+    const panels: Record<string, HTMLElement> = { stats: statsPanel, notices: noticesPanel, inquiries: inquiriesPanel, demo: demoPanel, users: usersPanel, boards: boardsPanel, requests: requestsPanel };
     for (const btn of document.querySelectorAll<HTMLButtonElement>('.tab-btn')) {
       btn.addEventListener('click', () => {
         for (const b of document.querySelectorAll('.tab-btn')) b.classList.remove('active');
@@ -765,6 +849,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         if (tab === 'demo' && demoPanel.innerHTML === '') loadDemoAccounts();
         if (tab === 'users' && usersPanel.innerHTML === '') initUsersTab();
         if (tab === 'boards' && boardsPanel.innerHTML === '') loadBoardsAdmin();
+        if (tab === 'requests' && requestsPanel.innerHTML === '') loadFeatureRequestsTab();
       });
     }
 
@@ -1331,6 +1416,65 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           }
           await loadBoardsAdmin();
         } catch (e) { alert(e instanceof Error ? e.message : '저장에 실패했습니다.'); }
+      });
+    }
+
+    // ─── 요구사항 관리 ───
+
+    function renderRequestForm(): string {
+      return `
+        <div class="request-form" id="request-form">
+          <input type="text" id="rf-title" placeholder="요구사항 제목" maxlength="200" />
+          <textarea id="rf-desc" placeholder="상세 설명"></textarea>
+          <div class="notice-form-actions">
+            <button type="button" class="btn-primary-sm" id="rf-submit">등록</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderRequestList(items: FeatureRequestItem[]): string {
+      if (items.length === 0) return '<p class="empty-msg">등록된 요구사항이 없습니다.</p>';
+      return items.map((item) => `
+        <div class="request-card">
+          <div class="request-header">
+            <span class="request-title"><a href="${item.url}" target="_blank" rel="noopener noreferrer">#${item.id} ${escapeHtml(item.title)}</a></span>
+            <span class="request-state ${item.state}">${item.state === 'open' ? 'Open' : 'Closed'}</span>
+          </div>
+          <div class="request-date">${formatDate(item.createdAt)}</div>
+        </div>
+      `).join('');
+    }
+
+    async function loadFeatureRequestsTab() {
+      requestsPanel.innerHTML = '<p class="empty-msg">로딩 중...</p>';
+      try {
+        const items = await fetchFeatureRequests();
+        requestsPanel.innerHTML = renderRequestForm() + renderRequestList(items);
+        bindRequestForm(items);
+      } catch {
+        requestsPanel.innerHTML = renderRequestForm() + '<p class="empty-msg">요구사항 목록을 불러올 수 없습니다.</p>';
+        bindRequestForm([]);
+      }
+    }
+
+    function bindRequestForm(_items: FeatureRequestItem[]) {
+      const submitBtn = document.getElementById('rf-submit');
+      if (!submitBtn) return;
+      submitBtn.addEventListener('click', async () => {
+        const titleInput = document.getElementById('rf-title') as HTMLInputElement | null;
+        const descInput = document.getElementById('rf-desc') as HTMLTextAreaElement | null;
+        if (!titleInput || !descInput) return;
+        const title = titleInput.value.trim();
+        const description = descInput.value.trim();
+        if (!title) { alert('제목을 입력해주세요.'); return; }
+        if (!description) { alert('상세 설명을 입력해주세요.'); return; }
+        try {
+          await createFeatureRequest(title, description);
+          await loadFeatureRequestsTab();
+        } catch (e) {
+          alert(e instanceof Error ? e.message : '등록에 실패했습니다.');
+        }
       });
     }
 
