@@ -43,6 +43,40 @@ import AdSlot from '@/components/AdSlot.astro';
     <AdSlot slot="community-feed" position="middle" format="horizontal" />
 
     <div id="pagination-wrap" class="pagination" hidden></div>
+
+    <!-- 글쓰기 모달 -->
+    <div id="write-modal" class="modal-overlay" hidden>
+      <div class="write-modal-content">
+        <div class="write-modal-header">
+          <h2 class="write-modal-title">새 게시글 작성</h2>
+          <button type="button" class="write-modal-close" id="write-modal-close">&times;</button>
+        </div>
+        <form id="write-form">
+          <div class="write-field">
+            <label class="write-label">제목</label>
+            <input type="text" id="write-title" class="write-input" maxlength="200" required />
+          </div>
+          <div class="write-field">
+            <label class="write-label">분류</label>
+            <select id="write-board" class="write-select"></select>
+          </div>
+          <div class="write-field">
+            <label class="write-label">내용</label>
+            <textarea id="write-content" class="write-textarea" placeholder="내용을 입력하세요" required></textarea>
+          </div>
+          <div class="write-field">
+            <label class="write-checkbox-label">
+              <input type="checkbox" id="write-anon" />
+              <span>익명으로 작성</span>
+            </label>
+          </div>
+          <div class="write-actions">
+            <button type="button" class="write-cancel" id="write-cancel">취소</button>
+            <button type="submit" class="write-submit">작성</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </BaseLayout>
 
@@ -174,6 +208,134 @@ import AdSlot from '@/components/AdSlot.astro';
     .col-no { width: 36px; }
     .col-cat { width: 56px; }
   }
+
+  /* 글쓰기 모달 */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .modal-overlay[hidden] { display: none; }
+
+  .write-modal-content {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .write-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+
+  .write-modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .write-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .write-field { margin-bottom: 1rem; }
+
+  .write-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-sub);
+    margin-bottom: 0.35rem;
+  }
+
+  .write-input, .write-select {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    color: var(--text);
+    background: var(--bg);
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .write-input:focus, .write-select:focus, .write-textarea:focus {
+    border-color: var(--text-heading);
+  }
+
+  .write-textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    color: var(--text);
+    background: var(--bg);
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+    resize: vertical;
+  }
+  .write-textarea::placeholder { color: var(--text-muted); }
+
+  .write-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    cursor: pointer;
+  }
+
+  .write-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .write-cancel {
+    padding: 0.55rem 1.2rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: none;
+    color: var(--text-sub);
+    font-size: 0.85rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .write-cancel:hover { background: var(--bg-hover); }
+
+  .write-submit {
+    padding: 0.55rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    background: var(--text-heading);
+    color: var(--bg);
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .write-submit:hover { opacity: 0.85; }
 </style>
 
 <style is:global>
@@ -284,7 +446,7 @@ import AdSlot from '@/components/AdSlot.astro';
 </style>
 
 <script>
-  import { fetchBoards, fetchPosts, fetchMyPosts, fetchCurrentUser } from '@/lib/api';
+  import { fetchBoards, fetchPosts, fetchMyPosts, fetchCurrentUser, createPost, showToast } from '@/lib/api';
   import type { BoardListItem, PaginatedPosts } from '@/lib/api';
 
   function initCommunityPage() {
@@ -439,7 +601,11 @@ import AdSlot from '@/components/AdSlot.astro';
 
         if (isLoggedIn && btnWrite) {
           btnWrite.hidden = false;
-          btnWrite.href = boards.length > 0 ? `/community/${boards[0].slug}/write` : '#';
+          btnWrite.removeAttribute('href');
+          btnWrite.addEventListener('click', (e) => {
+            e.preventDefault();
+            openWriteModal();
+          });
         }
 
         // URL에서 board 선택
@@ -455,6 +621,65 @@ import AdSlot from '@/components/AdSlot.astro';
         feedContent.innerHTML = '<p class="feed-empty">커뮤니티를 불러올 수 없습니다.</p>';
       }
     }
+
+    // 글쓰기 모달
+    const writeModal = document.getElementById('write-modal');
+    const writeModalClose = document.getElementById('write-modal-close');
+    const writeCancel = document.getElementById('write-cancel');
+    const writeForm = document.getElementById('write-form') as HTMLFormElement | null;
+    const writeTitle = document.getElementById('write-title') as HTMLInputElement | null;
+    const writeBoard = document.getElementById('write-board') as HTMLSelectElement | null;
+    const writeContent = document.getElementById('write-content') as HTMLTextAreaElement | null;
+    const writeAnon = document.getElementById('write-anon') as HTMLInputElement | null;
+
+    function openWriteModal() {
+      if (!writeModal || !writeBoard) return;
+      writeBoard.innerHTML = boards.map((b) =>
+        `<option value="${escapeHtml(b.slug)}" ${b.slug === activeSlug ? 'selected' : ''}>${escapeHtml(b.name)}</option>`
+      ).join('');
+      writeModal.hidden = false;
+      writeTitle?.focus();
+    }
+
+    function closeWriteModal() {
+      if (!writeModal) return;
+      writeModal.hidden = true;
+      if (writeTitle) writeTitle.value = '';
+      if (writeContent) writeContent.value = '';
+      if (writeAnon) writeAnon.checked = false;
+    }
+
+    writeModalClose?.addEventListener('click', closeWriteModal);
+    writeCancel?.addEventListener('click', closeWriteModal);
+    writeModal?.addEventListener('click', (e) => {
+      if (e.target === writeModal) closeWriteModal();
+    });
+
+    writeForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = writeTitle?.value.trim();
+      const content = writeContent?.value.trim();
+      const slug = writeBoard?.value;
+      const isAnonymous = writeAnon?.checked || false;
+      if (!title || !content || !slug) return;
+
+      const submitBtn = writeForm.querySelector<HTMLButtonElement>('.write-submit');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '작성 중...'; }
+
+      try {
+        await createPost(slug, title, content, isAnonymous);
+        closeWriteModal();
+        showToast('게시글이 작성되었습니다.', 'success');
+        activeSlug = slug;
+        currentPage = 1;
+        renderTabs();
+        await loadPosts();
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : '게시글 작성에 실패했습니다.');
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '작성'; }
+      }
+    });
 
     init();
   }
