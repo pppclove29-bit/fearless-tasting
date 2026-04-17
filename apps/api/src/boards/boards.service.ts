@@ -141,7 +141,7 @@ export class BoardsService {
   }
 
   /** 게시글 상세 (댓글 포함) */
-  async findPostById(postId: string) {
+  async findPostById(postId: string, requestUserId?: string) {
     const post = await this.prisma.read.post.findUnique({
       where: { id: postId },
       select: {
@@ -177,6 +177,7 @@ export class BoardsService {
 
     return {
       ...post,
+      isAuthor: requestUserId ? post.author.id === requestUserId : false,
       author: post.isAnonymous
         ? { id: 'anonymous', nickname: '익명', profileImageUrl: null }
         : post.author,

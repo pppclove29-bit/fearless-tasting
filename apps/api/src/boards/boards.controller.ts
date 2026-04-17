@@ -62,11 +62,24 @@ export class BoardsController {
     return this.boardsService.findPosts(board.id, pageNum, limitNum);
   }
 
-  /** 게시글 상세 (공개) */
+  /** 게시글 상세 (공개, 로그인 시 isAuthor 포함) */
   @Get(':slug/posts/:postId')
   @ApiOperation({ summary: '게시글 상세', description: '게시글과 댓글을 조회합니다.' })
-  findPostById(@Param('postId') postId: string) {
-    return this.boardsService.findPostById(postId);
+  findPostById(@Param('postId') postId: string, @Req() req: Request) {
+    const userId = this.extractUserId(req);
+    return this.boardsService.findPostById(postId, userId);
+  }
+
+  /** Bearer 토큰에서 userId 추출 (인증 필수 아님) */
+  private extractUserId(req: Request): string | undefined {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith('Bearer ')) return undefined;
+    try {
+      const payload = JSON.parse(Buffer.from(auth.split('.')[1], 'base64').toString());
+      return payload.sub;
+    } catch {
+      return undefined;
+    }
   }
 
   /** 게시글 작성 (로그인 필요) */

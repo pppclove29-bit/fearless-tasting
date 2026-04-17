@@ -530,7 +530,7 @@ export const prerender = false;
         if (board) boardName = board.name;
       } catch { /* ignore */ }
 
-      const isAuthor = user && user.id === post.author.id;
+      const isAuthor = post.isAuthor || false;
       const isAdmin = user && user.role === 'admin';
       const canEdit = isAuthor;
       const canDelete = isAuthor || isAdmin;
@@ -611,7 +611,7 @@ export const prerender = false;
       }
 
       // Edit/Delete handlers
-      if (canModify) {
+      if (canEdit || canDelete) {
         editPostBtn.addEventListener('click', () => {
           postMoreDropdown.hidden = true;
           location.href = `/community/${encodeURIComponent(slug)}/write?edit=${postId}`;

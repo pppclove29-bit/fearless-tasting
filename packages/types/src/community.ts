@@ -65,6 +65,7 @@ export interface PostDetail {
   content: string;
   isAnonymous: boolean;
   boardId: string;
+  isAuthor?: boolean;
   author: PostAuthor;
   comments: PostComment[];
   _count?: { likes?: number };

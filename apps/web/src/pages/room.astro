@@ -1898,6 +1898,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .share-copy-btn:hover { opacity: 0.85; }
 
+  .share-kakao-btn {
+    padding: 0.45rem 0.75rem;
+    background: #FEE500;
+    color: #191919;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+
+  .share-kakao-btn:hover { opacity: 0.85; }
+
   .share-action-text {
     display: block;
     margin-top: 0.35rem;
@@ -2629,6 +2645,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <div class="share-link-row">
                 <input type="text" class="share-link-input" id="share-invite-url" value="${getInviteLink()}" readonly />
                 <button type="button" class="share-copy-btn" id="copy-invite-btn">복사</button>
+                <button type="button" class="share-kakao-btn" id="kakao-share-btn">카카오톡</button>
               </div>
               ${isOwner() ? '<button type="button" class="share-action-text" id="invite-regen-action">초대 코드 재생성</button>' : ''}
             </div>
@@ -2876,6 +2893,40 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const btn = document.getElementById('copy-invite-btn');
         if (btn) { btn.textContent = '복사됨!'; setTimeout(() => { btn.textContent = '복사'; }, 1500); }
         showToast('초대 메시지가 복사되었습니다!', 'success');
+      });
+
+      // 카카오톡 공유
+      document.getElementById('kakao-share-btn')?.addEventListener('click', () => {
+        const kakao = (window as Record<string, unknown>).Kakao as Record<string, unknown> | undefined;
+        if (!kakao) { showToast('카카오 SDK를 불러올 수 없습니다.'); return; }
+        if (kakao.isInitialized && !(kakao.isInitialized as () => boolean)()) {
+          const appKey = document.querySelector('meta[name="kakao-app-key"]')?.getAttribute('content');
+          if (appKey) (kakao.init as (key: string) => void)(appKey);
+        }
+        if (kakao.Share) {
+          const Share = kakao.Share as Record<string, (...args: unknown[]) => void>;
+          Share.sendDefault({
+            objectType: 'feed',
+            content: {
+              title: `"${currentRoom.name}" 맛집 리스트에 초대합니다!`,
+              description: '우리만의 맛집을 함께 기록해요',
+              imageUrl: `${location.origin}/og-image.png`,
+              link: {
+                webUrl: getInviteLink(),
+                mobileWebUrl: getInviteLink(),
+              },
+            },
+            buttons: [{
+              title: '방 입장하기',
+              link: {
+                webUrl: getInviteLink(),
+                mobileWebUrl: getInviteLink(),
+              },
+            }],
+          });
+        } else {
+          showToast('카카오톡 공유 기능을 사용할 수 없습니다.');
+        }
       });
 
       // 초대 코드 재생성

@@ -244,23 +244,34 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .star-btn.active { color: #f59e0b; }
   .star-btn.hover { color: #f59e0b; }
 
-  /* 세부평점 별 */
-  .detail-slider {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.6rem;
+  /* 세부평점 칩 */
+  .detail-rating-row {
+    margin-bottom: 0.75rem;
   }
-  .detail-slider-label { font-size: 0.85rem; font-weight: 600; color: var(--text-heading); min-width: 3.5em; }
-  .detail-stars { display: inline-flex; gap: 0.15rem; }
-  .detail-star {
-    font-size: 1.4rem;
-    color: var(--border);
+  .detail-rating-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin-bottom: 0.35rem;
+  }
+  .detail-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .detail-chip {
+    padding: 0.35rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    background: none;
+    font-size: 0.75rem;
+    color: var(--text-sub);
     cursor: pointer;
-    transition: color 0.1s;
-    line-height: 1;
+    font-family: inherit;
+    transition: all 0.15s;
   }
-  .detail-star.active { color: #f59e0b; }
+  .detail-chip.active {
+    background: var(--text-heading);
+    color: var(--bg);
+    border-color: var(--text-heading);
+  }
 
   /* 체크박스 */
   .check-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--text-sub); }
@@ -612,16 +623,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </summary>
           <div class="accordion-body">
             <div id="detail-ratings">
-              ${[
-                ['taste','맛'],
-                ['value','가성비'],
-                ['service','서비스'],
-                ['cleanliness','청결'],
-                ['accessibility','접근성'],
-              ].map(([key, label]) => `
-                <div class="detail-slider" data-key="${key}" data-value="0">
-                  <span class="detail-slider-label">${label}</span>
-                  <span class="detail-stars">${Array.from({ length: 5 }, (_, i) => `<span class="detail-star" data-value="${i + 1}">★</span>`).join('')}</span>
+              ${([
+                ['taste','맛',['남겼다','억지로 먹었다','다 먹었다','한 그릇 더 먹고 싶었다','먹는 내내 감탄했다']],
+                ['value','가성비',['돈 줘도 안 먹는다','좀 비싸다','적당하다','가격 대비 만족','사장님 남는 거 맞아요?']],
+                ['service','서비스',['손님이 죄인인 줄','좀 불친절','보통','친절하다','사장님이 내 팬인가보다']],
+                ['cleanliness','청결',['나오면 안 될 게 나왔다','좀 지저분','보통','깨끗하다','수술실인가?']],
+                ['accessibility','접근성',['등산인가 식사인가','찾기 어려움','보통','찾기 쉬움','나오자마자 바로 앞']],
+              ] as [string, string, string[]][]).map(([key, label, guides]) => `
+                <div class="detail-rating-row" data-key="${key}" data-value="0">
+                  <span class="detail-rating-label">${label}</span>
+                  <div class="detail-chips" data-key="${key}">
+                    <button type="button" class="detail-chip active" data-val="0">잘 모르겠어요</button>
+                    ${guides.map((g, i) => `<button type="button" class="detail-chip" data-val="${i + 1}">${i + 1}. ${g}</button>`).join('')}
+                  </div>
                 </div>
               `).join('')}
             </div>
@@ -880,16 +894,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     }
 
-    for (const slider of content.querySelectorAll<HTMLElement>('.detail-slider')) {
-      const key = slider.dataset.key || '';
-      for (const star of slider.querySelectorAll<HTMLElement>('.detail-star')) {
-        star.addEventListener('click', () => {
-          const val = Number(star.dataset.value || 0);
-          const current = Number(slider.dataset.value || 0);
-          const newVal = current === val ? 0 : val;
+    for (const row of content.querySelectorAll<HTMLElement>('.detail-rating-row')) {
+      const key = row.dataset.key || '';
+      for (const chip of row.querySelectorAll<HTMLButtonElement>('.detail-chip')) {
+        chip.addEventListener('click', () => {
+          const val = Number(chip.dataset.val || 0);
+          const current = Number(row.dataset.value || 0);
+          // Clicking same chip again goes back to "잘 모르겠어요" (0)
+          const newVal = (current === val && val !== 0) ? 0 : val;
           detailRatings[key] = newVal;
-          slider.dataset.value = String(newVal);
-          slider.querySelectorAll('.detail-star').forEach((s, i) => s.classList.toggle('active', i < newVal));
+          row.dataset.value = String(newVal);
+          row.querySelectorAll('.detail-chip').forEach((c) => c.classList.toggle('active', Number((c as HTMLElement).dataset.val) === newVal));
         });
       }
     }

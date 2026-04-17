@@ -1393,23 +1393,34 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     white-space: nowrap;
   }
 
-  /* 세부평점 별 */
-  .detail-slider {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
+  /* 세부평점 칩 */
+  .detail-rating-row {
+    margin-bottom: 0.75rem;
   }
-  .detail-slider-label { font-size: 0.8rem; font-weight: 600; color: var(--text-heading); min-width: 3.5em; }
-  .detail-stars { display: inline-flex; gap: 0.1rem; }
-  .detail-star {
-    font-size: 1.3rem;
-    color: var(--border);
+  .detail-rating-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin-bottom: 0.35rem;
+  }
+  .detail-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .detail-chip {
+    padding: 0.35rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    background: none;
+    font-size: 0.75rem;
+    color: var(--text-sub);
     cursor: pointer;
-    transition: color 0.1s;
-    line-height: 1;
+    font-family: inherit;
+    transition: all 0.15s;
   }
-  .detail-star.active { color: #f59e0b; }
+  .detail-chip.active {
+    background: var(--text-heading);
+    color: var(--bg);
+    border-color: var(--text-heading);
+  }
 
 
   .review-detail-ratings {
@@ -1735,16 +1746,29 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return `<span class="star-rating${sizeClass}" data-name="${name}" data-value="${value}">${stars}<span class="star-label">${value || ''}</span></span>`;
     }
 
-    /** 세부 평점 한 항목 (별) */
+    /** 세부 평점 가이드 텍스트 */
+    const detailGuides: Record<string, string[]> = {
+      taste: ['남겼다','억지로 먹었다','다 먹었다','한 그릇 더 먹고 싶었다','먹는 내내 감탄했다'],
+      value: ['돈 줘도 안 먹는다','좀 비싸다','적당하다','가격 대비 만족','사장님 남는 거 맞아요?'],
+      service: ['손님이 죄인인 줄','좀 불친절','보통','친절하다','사장님이 내 팬인가보다'],
+      cleanliness: ['나오면 안 될 게 나왔다','좀 지저분','보통','깨끗하다','수술실인가?'],
+      accessibility: ['등산인가 식사인가','찾기 어려움','보통','찾기 쉬움','나오자마자 바로 앞'],
+    };
+
+    /** 세부 평점 한 항목 (칩) */
     function detailSliderHtml(label: string, name: string, value: number | string): string {
       const v = typeof value === 'string' ? (value ? parseInt(value, 10) : 0) : (value || 0);
-      const stars = Array.from({ length: 5 }, (_, i) =>
-        `<span class="detail-star ${i < v ? 'active' : ''}" data-value="${i + 1}">★</span>`
-      ).join('');
+      // name 형식: "new-review-taste" 또는 "edit-taste" → 마지막 단어가 키
+      const keyPart = name.split('-').pop() || '';
+      const guides = detailGuides[keyPart] || [];
+      const chips = [
+        `<button type="button" class="detail-chip ${v === 0 ? 'active' : ''}" data-val="0">잘 모르겠어요</button>`,
+        ...guides.map((g, i) => `<button type="button" class="detail-chip ${v === i + 1 ? 'active' : ''}" data-val="${i + 1}">${i + 1}. ${g}</button>`),
+      ].join('');
       return `
-        <div class="detail-slider" data-name="${name}" data-value="${v}">
-          <span class="detail-slider-label">${label}</span>
-          <span class="detail-stars">${stars}</span>
+        <div class="detail-rating-row" data-name="${name}" data-value="${v}">
+          <span class="detail-rating-label">${label}</span>
+          <div class="detail-chips">${chips}</div>
         </div>`;
     }
 
@@ -1778,15 +1802,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           });
         }
       }
-      // 세부평점 별 클릭 핸들러
-      for (const slider of container.querySelectorAll<HTMLElement>('.detail-slider')) {
-        for (const star of slider.querySelectorAll<HTMLElement>('.detail-star')) {
-          star.addEventListener('click', () => {
-            const val = parseInt(star.dataset.value || '0', 10);
-            const current = parseInt(slider.dataset.value || '0', 10);
-            const newVal = current === val ? 0 : val;
-            slider.dataset.value = String(newVal);
-            slider.querySelectorAll('.detail-star').forEach((s, i) => s.classList.toggle('active', i < newVal));
+      // 세부평점 칩 클릭 핸들러
+      for (const row of container.querySelectorAll<HTMLElement>('.detail-rating-row')) {
+        for (const chip of row.querySelectorAll<HTMLButtonElement>('.detail-chip')) {
+          chip.addEventListener('click', () => {
+            const val = parseInt(chip.dataset.val || '0', 10);
+            const current = parseInt(row.dataset.value || '0', 10);
+            const newVal = (current === val && val !== 0) ? 0 : val;
+            row.dataset.value = String(newVal);
+            row.querySelectorAll('.detail-chip').forEach((c) => c.classList.toggle('active', parseInt((c as HTMLElement).dataset.val || '0', 10) === newVal));
           });
         }
       }
@@ -1798,9 +1822,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return el ? parseInt(el.dataset.value || '0', 10) : 0;
     }
 
-    /** 세부평점 별에서 값 읽기 */
+    /** 세부평점 칩에서 값 읽기 */
     function getSliderValue(container: HTMLElement, name: string): number {
-      const el = container.querySelector<HTMLElement>(`.detail-slider[data-name="${name}"]`);
+      const el = container.querySelector<HTMLElement>(`.detail-rating-row[data-name="${name}"]`);
       return el ? parseInt(el.dataset.value || '0', 10) : 0;
     }
 
