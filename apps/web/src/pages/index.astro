@@ -238,6 +238,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.88rem;
     font-weight: 600;
     color: var(--text);
+    white-space: nowrap;
   }
 
   .step-num {
@@ -259,6 +260,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     height: 2px;
     background: var(--border);
     flex-shrink: 0;
+  }
+
+  @media (max-width: 480px) {
+    .how-it-works {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .step-arrow {
+      width: 2px;
+      height: 16px;
+    }
   }
 
   .bottom-cta-btn {
