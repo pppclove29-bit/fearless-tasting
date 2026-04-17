@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import AdSlot from '@/components/AdSlot.astro';
 export const prerender = false;
 ---
 
@@ -29,6 +30,8 @@ export const prerender = false;
     <div id="post-content">
       <p class="loading-msg">불러오는 중...</p>
     </div>
+
+    <AdSlot slot="community-post" position="bottom" format="horizontal" />
 
     <div class="comment-input-bar" id="comment-bar" hidden>
       <input type="text" class="comment-input" id="comment-input" placeholder="댓글을 입력하세요" maxlength="1000" />

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import AdSlot from '@/components/AdSlot.astro';
 ---
 
 <BaseLayout title="커뮤니티" description="무모한 시식가 커뮤니티 게시판. 맛집 정보와 리뷰를 자유롭게 나눠보세요.">
@@ -15,6 +16,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     <div id="feed-content">
       <p class="loading-msg">불러오는 중...</p>
     </div>
+
+    <AdSlot slot="community-feed" position="middle" format="horizontal" />
 
     <div id="load-more-wrap" class="load-more-wrap" hidden>
       <button type="button" class="load-more-btn" id="load-more-btn">더보기</button>
