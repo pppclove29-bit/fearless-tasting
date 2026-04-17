@@ -751,6 +751,43 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.72rem;
     font-weight: 600;
   }
+  .rc-toggle {
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+    text-decoration: underline;
+  }
+  .rc-detail { margin-top: 0.5rem; }
+  .rc-item {
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border-light, var(--border));
+  }
+  .rc-author { font-size: 0.75rem; font-weight: 600; color: var(--text-heading); margin-right: 0.4rem; }
+  .rc-date { font-size: 0.68rem; color: var(--text-muted); }
+  .rc-body { font-size: 0.8rem; color: var(--text-sub); margin-top: 0.15rem; line-height: 1.4; }
+  .rc-empty { font-size: 0.78rem; color: var(--text-muted); margin: 0.3rem 0; }
+  .rc-write {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+  }
+  .rc-input {
+    flex: 1;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+  }
+  .rc-input:focus { border-color: var(--text-heading); }
+
   .badge-closed {
     display: inline-block;
     padding: 0.1rem 0.4rem;
@@ -843,7 +880,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <script>
-  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice, fetchDemoAccounts, createDemoAccount, updateDemoAccount, deleteDemoAccount, loginAsDemoAccount, saveTokens, searchUserByEmail, updateUserRole, fetchAllBoards, createBoard, updateBoard, deleteBoard, createFeatureRequest, fetchFeatureRequests } from '@/lib/api';
+  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice, fetchDemoAccounts, createDemoAccount, updateDemoAccount, deleteDemoAccount, loginAsDemoAccount, saveTokens, searchUserByEmail, updateUserRole, fetchAllBoards, createBoard, updateBoard, deleteBoard, createFeatureRequest, fetchFeatureRequests, fetchRequestComments, addRequestComment } from '@/lib/api';
   import type { Notice, DemoAccount, AdminUserInfo, Board, FeatureRequestItem } from '@/lib/api';
   import { formatDate } from '@repo/utils';
 
@@ -1489,12 +1526,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     function renderRequestList(items: FeatureRequestItem[]): string {
       if (items.length === 0) return '<p class="empty-msg">등록된 요구사항이 없습니다.</p>';
       return items.map((item) => `
-        <div class="request-card">
+        <div class="request-card" data-issue="${item.id}">
           <div class="request-header">
             <span class="request-title"><a href="${item.url}" target="_blank" rel="noopener noreferrer">#${item.id} ${escapeHtml(item.title)}</a></span>
             <span class="request-state ${item.state}">${item.state === 'open' ? 'Open' : 'Closed'}</span>
           </div>
           <div class="request-date">${formatDate(item.createdAt)}</div>
+          <div class="request-comments" id="rc-${item.id}">
+            <button type="button" class="rc-toggle" data-issue="${item.id}">댓글 보기</button>
+          </div>
         </div>
       `).join('');
     }
@@ -1529,6 +1569,63 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           alert(e instanceof Error ? e.message : '등록에 실패했습니다.');
         }
       });
+
+      // 댓글 토글
+      for (const btn of requestsPanel.querySelectorAll<HTMLButtonElement>('.rc-toggle')) {
+        btn.addEventListener('click', async () => {
+          const issueNum = parseInt(btn.dataset.issue || '0', 10);
+          const container = document.getElementById(`rc-${issueNum}`);
+          if (!container) return;
+
+          if (container.dataset.loaded) {
+            const detail = container.querySelector('.rc-detail');
+            if (detail) { detail.remove(); btn.textContent = '댓글 보기'; container.dataset.loaded = ''; }
+            return;
+          }
+
+          btn.textContent = '로딩 중...';
+          try {
+            const comments = await fetchRequestComments(issueNum);
+            let html = '<div class="rc-detail">';
+            if (comments.length > 0) {
+              html += comments.map((c) => `
+                <div class="rc-item">
+                  <span class="rc-author">${escapeHtml(c.author)}</span>
+                  <span class="rc-date">${formatDate(c.createdAt)}</span>
+                  <div class="rc-body">${escapeHtml(c.body)}</div>
+                </div>
+              `).join('');
+            } else {
+              html += '<p class="rc-empty">댓글이 없습니다.</p>';
+            }
+            html += `<div class="rc-write">
+              <input type="text" class="rc-input" placeholder="댓글 입력" maxlength="500" />
+              <button type="button" class="btn-primary-sm rc-submit">작성</button>
+            </div></div>`;
+            container.insertAdjacentHTML('beforeend', html);
+            container.dataset.loaded = 'true';
+            btn.textContent = '댓글 닫기';
+
+            const writeBtn = container.querySelector<HTMLButtonElement>('.rc-submit');
+            const writeInput = container.querySelector<HTMLInputElement>('.rc-input');
+            writeBtn?.addEventListener('click', async () => {
+              const text = writeInput?.value.trim();
+              if (!text) return;
+              try {
+                await addRequestComment(issueNum, text);
+                container.dataset.loaded = '';
+                const detail = container.querySelector('.rc-detail');
+                if (detail) detail.remove();
+                btn.click(); // reload
+              } catch (e) {
+                alert(e instanceof Error ? e.message : '댓글 작성에 실패했습니다.');
+              }
+            });
+          } catch {
+            btn.textContent = '댓글 보기';
+          }
+        });
+      }
     }
 
     async function init() {

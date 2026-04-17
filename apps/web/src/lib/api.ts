@@ -1001,3 +1001,18 @@ export async function fetchFeatureRequests(): Promise<FeatureRequestItem[]> {
   return res.json();
 }
 
+export async function fetchRequestComments(issueNumber: number): Promise<{ id: number; body: string; author: string; createdAt: string }[]> {
+  const res = await apiFetch(`${API_BASE}/admin/feature-requests/${issueNumber}/comments`);
+  await throwIfNotOk(res, '댓글을 불러올 수 없습니다.');
+  return res.json();
+}
+
+export async function addRequestComment(issueNumber: number, comment: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/admin/feature-requests/${issueNumber}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ comment }),
+  });
+  await throwIfNotOk(res, '댓글 작성에 실패했습니다.');
+}
+

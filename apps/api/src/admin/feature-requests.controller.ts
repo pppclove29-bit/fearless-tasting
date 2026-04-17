@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, InternalServerErrorException } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { CreateFeatureRequestDto } from './dto/create-feature-request.dto';
@@ -9,6 +9,13 @@ interface GitHubIssue {
   state: string;
   created_at: string;
   html_url: string;
+}
+
+interface GitHubComment {
+  id: number;
+  body: string;
+  created_at: string;
+  user: { login: string; avatar_url: string };
 }
 
 interface FeatureRequestItem {
@@ -75,5 +82,50 @@ export class FeatureRequestsController {
       createdAt: issue.created_at,
       url: issue.html_url,
     }));
+  }
+
+  /** 요구사항 댓글 조회 */
+  @Get(':issueNumber/comments')
+  @ApiOperation({ summary: '요구사항 댓글 조회' })
+  async getComments(@Param('issueNumber') issueNumber: string) {
+    const response = await fetch(
+      `https://api.github.com/repos/pppclove29-bit/fearless-tasting/issues/${issueNumber}/comments`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      },
+    );
+    if (!response.ok) return [];
+    const comments = (await response.json()) as GitHubComment[];
+    return comments.map((c) => ({
+      id: c.id,
+      body: c.body,
+      author: c.user.login,
+      createdAt: c.created_at,
+    }));
+  }
+
+  /** 요구사항 댓글 작성 */
+  @Post(':issueNumber/comments')
+  @ApiOperation({ summary: '요구사항 댓글 작성' })
+  async addComment(@Param('issueNumber') issueNumber: string, @Body() body: { comment: string }) {
+    const response = await fetch(
+      `https://api.github.com/repos/pppclove29-bit/fearless-tasting/issues/${issueNumber}/comments`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          Accept: 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ body: body.comment }),
+      },
+    );
+    if (!response.ok) {
+      throw new InternalServerErrorException('댓글 작성에 실패했습니다');
+    }
+    return response.json();
   }
 }
