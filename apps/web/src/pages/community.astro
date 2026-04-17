@@ -385,7 +385,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <span>${relativeTime(post.createdAt)}</span>
             </div>
             <div class="feed-meta-right">
-              ${likeCount > 0 ? `<span class="feed-meta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-6 0v4"/><path d="M18.8 22H5.2A2.2 2.2 0 013 19.8V12h18v7.8a2.2 2.2 0 01-2.2 2.2z"/></svg>${likeCount}</span>` : ''}
+              ${likeCount > 0 ? `<span class="feed-meta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/></svg>${likeCount}</span>` : ''}
               ${commentCount > 0 ? `<span class="feed-meta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>${commentCount}</span>` : ''}
             </div>
           </div>
