@@ -583,7 +583,7 @@ import AdSlot from '@/components/AdSlot.astro';
     }
 
     function isNew(dateStr: string): boolean {
-      return Date.now() - new Date(dateStr).getTime() < 24 * 60 * 60 * 1000;
+      return Date.now() - new Date(dateStr).getTime() < 60 * 60 * 1000;
     }
 
     function renderTabs() {
