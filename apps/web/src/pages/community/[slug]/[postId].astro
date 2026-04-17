@@ -506,12 +506,15 @@ export const prerender = false;
 
       const isAuthor = user && user.id === post.author.id;
       const isAdmin = user && user.role === 'admin';
-      const canModify = isAuthor || isAdmin;
+      const canEdit = isAuthor;
+      const canDelete = isAuthor || isAdmin;
       const likeCount = post._count?.likes ?? 0;
 
-      if (canModify) {
+      if (canEdit || canDelete) {
         postMoreBtn.hidden = false;
       }
+      if (!canEdit) editPostBtn.hidden = true;
+      if (!canDelete) deletePostBtn.hidden = true;
 
       let html = `<div class="post-detail-section">`;
       if (boardName) {
