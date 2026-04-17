@@ -264,22 +264,22 @@ model RoomVisitParticipant {
 model RoomReview {
   /// 고유 식별자
   id                  String    @id @default(cuid())
-  /// 1~5 종합 평점
-  rating              Int
+  /// 0.5~5 종합 평점 (0.5 단위)
+  rating              Float
   /// 리뷰 본문
   content             String    @db.Text
-  /// 재방문 의사
-  wouldRevisit        Boolean   @default(true)
-  /// 맛 (1~5, 선택)
-  tasteRating         Int?
-  /// 가성비 (1~5, 선택)
-  valueRating         Int?
-  /// 서비스/친절함 (1~5, 선택)
-  serviceRating       Int?
-  /// 청결함 (1~5, 선택)
-  cleanlinessRating   Int?
-  /// 접근성 (1~5, 선택)
-  accessibilityRating Int?
+  /// 재방문 의사 (1: 안 갈 것 같아요, 2: 사주면 갈게요, 3: 가까우면 갈만해요, 4: 또 가고 싶어요, 5: 꼭 다시 갈 거예요)
+  wouldRevisit        Int       @default(4)
+  /// 맛 (0.5~5, 선택, 0.5 단위)
+  tasteRating         Float?
+  /// 가성비 (0.5~5, 선택, 0.5 단위)
+  valueRating         Float?
+  /// 서비스/친절함 (0.5~5, 선택, 0.5 단위)
+  serviceRating       Float?
+  /// 청결함 (0.5~5, 선택, 0.5 단위)
+  cleanlinessRating   Float?
+  /// 접근성 (0.5~5, 선택, 0.5 단위)
+  accessibilityRating Float?
   /// 다시 먹어볼 메뉴
   favoriteMenu        String?   @db.VarChar(200)
   /// 다음에 먹어볼 메뉴

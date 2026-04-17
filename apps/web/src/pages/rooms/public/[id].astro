@@ -405,9 +405,10 @@ const description = room
                     rev.tryNextMenu ? `다음에 시켜볼 메뉴: ${escapeHtml(rev.tryNextMenu)}` : null,
                   ].filter(Boolean);
                   const menuHtml = menuLine.length > 0 ? `<div class="share-menu-info">${menuLine.join(' | ')}</div>` : '';
-                  const revisitBadge = rev.wouldRevisit === false
-                    ? '<span class="revisit-badge revisit-no">재방문 X</span>'
-                    : '<span class="revisit-badge revisit-yes">재방문 O</span>';
+                  const revisitLabels: Record<number, string> = { 5: '꼭 재방문', 4: '또 가고 싶어요', 3: '가까우면 갈만', 2: '사주면 갈게요', 1: '안 갈 것 같아요' };
+                  const rvLv = rev.wouldRevisit ?? 4;
+                  const revisitCls = rvLv >= 4 ? 'revisit-yes' : rvLv === 3 ? 'revisit-maybe' : 'revisit-no';
+                  const revisitBadge = `<span class="revisit-badge ${revisitCls}">${revisitLabels[rvLv] ?? '또 가고 싶어요'}</span>`;
                   return `
                     <div class="share-review-card">
                       <div class="share-review-header">

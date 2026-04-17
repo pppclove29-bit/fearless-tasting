@@ -430,16 +430,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .review-form-card summary::-webkit-details-marker { display: none; }
 
-  .revisit-btns { display: flex; gap: 0.4rem; }
+  .revisit-btns { display: flex; gap: 0.4rem; flex-wrap: wrap; }
   .revisit-btn {
-    flex: 1; padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px;
-    font-size: 0.82rem; font-weight: 500; cursor: pointer; font-family: inherit;
+    flex: 1; min-width: calc(33% - 0.4rem); padding: 0.5rem 0.3rem; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 0.78rem; font-weight: 500; cursor: pointer; font-family: inherit;
     background: var(--bg-card); color: var(--text-sub); text-align: center; transition: all 0.15s;
   }
   .revisit-btn:hover { border-color: var(--border-mid); }
-  .revisit-btn.active[data-val="yes"] { background: var(--text-heading); color: var(--bg); border-color: var(--text-heading); }
-  .revisit-btn.active[data-val="maybe"] { background: #f59e0b; color: #fff; border-color: #f59e0b; }
-  .revisit-btn.active[data-val="no"] { background: var(--bg-hover); color: var(--text-muted); border-color: var(--border-mid); }
+  .revisit-btn.active[data-val="5"] { background: var(--text-heading); color: var(--bg); border-color: var(--text-heading); }
+  .revisit-btn.active[data-val="4"] { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .revisit-btn.active[data-val="3"] { background: #f59e0b; color: #fff; border-color: #f59e0b; }
+  .revisit-btn.active[data-val="2"] { background: #f97316; color: #fff; border-color: #f97316; }
+  .revisit-btn.active[data-val="1"] { background: var(--bg-hover); color: var(--text-muted); border-color: var(--border-mid); }
 
   .review-form-card-header {
     padding: 0.5rem 0.75rem;
@@ -981,8 +983,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-weight: 500;
   }
 
-  .revisit-badge.yes { background: var(--bg-hover); color: var(--text-heading); }
-  .revisit-badge.no { background: #fee2e2; color: #991b1b; }
+  .revisit-badge.lv5 { background: var(--bg-hover); color: var(--text-heading); }
+  .revisit-badge.lv4 { background: #dbeafe; color: #1d4ed8; }
+  .revisit-badge.lv3 { background: #fef3c7; color: #92400e; }
+  .revisit-badge.lv2 { background: #ffedd5; color: #9a3412; }
+  .revisit-badge.lv1 { background: #fee2e2; color: #991b1b; }
 
   .revisit-toggle {
     display: flex;
@@ -1317,39 +1322,44 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-bottom: 0.5rem;
   }
 
-  /* 별점 클릭 */
+  /* 별점 클릭 (0.5 단위) */
   .star-rating {
     display: inline-flex;
-    gap: 0.15rem;
+    gap: 0;
     align-items: center;
   }
 
-  .star-rating .star {
+  .star-wrap {
+    position: relative;
+    width: 28px;
+    height: 28px;
     cursor: pointer;
-    font-size: 1.4rem;
-    color: var(--border-mid);
-    transition: color 0.1s, transform 0.1s;
-    user-select: none;
-    line-height: 1;
   }
+  .star-wrap svg { width: 28px; height: 28px; display: block; }
+  .star-wrap .star-bg { color: var(--border-mid); }
+  .star-wrap .star-half-fill,
+  .star-wrap .star-full-fill { position: absolute; top: 0; left: 0; color: #e6a817; opacity: 0; pointer-events: none; }
+  .star-wrap.half .star-half-fill { opacity: 1; }
+  .star-wrap.full .star-full-fill { opacity: 1; }
+  .star-wrap.hover-half .star-half-fill { opacity: 0.6; }
+  .star-wrap.hover-full .star-full-fill { opacity: 0.6; }
+  .star-wrap.half .star-bg,
+  .star-wrap.full .star-bg { opacity: 0; }
 
-  .star-rating .star.active {
-    color: #e6a817;
+  .star-rating.star-sm .star-wrap {
+    width: 24px;
+    height: 24px;
   }
-
-  .star-rating .star:hover {
-    transform: scale(1.15);
-  }
-
-  .star-rating.star-sm .star {
-    font-size: 1.25rem;
+  .star-rating.star-sm .star-wrap svg {
+    width: 24px;
+    height: 24px;
   }
 
   .star-rating .star-label {
     font-size: 0.78rem;
     color: var(--text-muted);
     margin-left: 0.3rem;
-    min-width: 1.5em;
+    min-width: 2ch;
   }
 
   /* 세부 평점 */
@@ -1737,11 +1747,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     const renderStars = formatRating;
 
-    /** 클릭 가능한 별점 UI 생성 */
+    /** 클릭 가능한 별점 UI 생성 (0.5 단위) */
     function starRatingHtml(name: string, value: number, max = 5, size: 'default' | 'sm' = 'default'): string {
-      const stars = Array.from({ length: max }, (_, i) =>
-        `<span class="star ${i < value ? 'active' : ''}" data-value="${i + 1}">★</span>`
-      ).join('');
+      const starSvg = '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/>';
+      const halfClip = '<defs><clipPath id="half-clip"><rect x="0" y="0" width="12" height="24"/></clipPath></defs>';
+      const stars = Array.from({ length: max }, (_, i) => {
+        const star = i + 1;
+        let cls = '';
+        if (value >= star) cls = 'full';
+        else if (value >= star - 0.5) cls = 'half';
+        return `<span class="star-wrap ${cls}" data-value="${star}"><svg class="star-bg" viewBox="0 0 24 24" fill="currentColor">${starSvg}</svg><svg class="star-half-fill" viewBox="0 0 24 24" fill="currentColor">${halfClip}${starSvg.replace('/>', ' clip-path="url(#half-clip)"/>')}</svg><svg class="star-full-fill" viewBox="0 0 24 24" fill="currentColor">${starSvg}</svg></span>`;
+      }).join('');
       const sizeClass = size === 'sm' ? ' star-sm' : '';
       return `<span class="star-rating${sizeClass}" data-name="${name}" data-value="${value}">${stars}<span class="star-label">${value || ''}</span></span>`;
     }
@@ -1786,19 +1802,47 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       }
     }
 
+    /** 별점 표시 업데이트 (0.5 단위) */
+    function updateStarDisplay(wraps: NodeListOf<HTMLElement> | HTMLElement[], rating: number) {
+      for (const w of wraps) {
+        const star = Number(w.dataset.value);
+        w.classList.remove('half', 'full', 'hover-half', 'hover-full');
+        if (rating >= star) w.classList.add('full');
+        else if (rating >= star - 0.5) w.classList.add('half');
+      }
+    }
+
     function attachStarRatingHandlers(container: HTMLElement) {
       for (const ratingEl of container.querySelectorAll<HTMLElement>('.star-rating')) {
-        for (const star of ratingEl.querySelectorAll<HTMLElement>('.star')) {
-          star.addEventListener('click', () => {
-            const val = parseInt(star.dataset.value || '0', 10);
-            const current = parseInt(ratingEl.dataset.value || '0', 10);
-            // 같은 별 다시 클릭하면 해제 (세부 평점만)
-            const newVal = (current === val && ratingEl.classList.contains('star-sm')) ? 0 : val;
+        const wraps = ratingEl.querySelectorAll<HTMLElement>('.star-wrap');
+        for (const wrap of wraps) {
+          wrap.addEventListener('click', (e) => {
+            const star = Number(wrap.dataset.value);
+            const rect = wrap.getBoundingClientRect();
+            const isLeft = (e as MouseEvent).clientX < rect.left + rect.width / 2;
+            const clickedVal = isLeft ? star - 0.5 : star;
+            const current = parseFloat(ratingEl.dataset.value || '0');
+            // 같은 값 다시 클릭하면 해제 (세부 평점만)
+            const newVal = (current === clickedVal && ratingEl.classList.contains('star-sm')) ? 0 : clickedVal;
             ratingEl.dataset.value = String(newVal);
-            const stars = ratingEl.querySelectorAll('.star');
-            stars.forEach((s, i) => s.classList.toggle('active', i < newVal));
+            updateStarDisplay(wraps, newVal);
             const label = ratingEl.querySelector('.star-label');
             if (label) label.textContent = newVal ? String(newVal) : '';
+          });
+          wrap.addEventListener('mousemove', (e) => {
+            wraps.forEach((w) => w.classList.remove('hover-half', 'hover-full'));
+            const star = Number(wrap.dataset.value);
+            const rect = wrap.getBoundingClientRect();
+            const isLeft = (e as MouseEvent).clientX < rect.left + rect.width / 2;
+            const hoverVal = isLeft ? star - 0.5 : star;
+            for (const w of wraps) {
+              const s = Number(w.dataset.value);
+              if (hoverVal >= s) w.classList.add('hover-full');
+              else if (hoverVal >= s - 0.5) w.classList.add('hover-half');
+            }
+          });
+          wrap.addEventListener('mouseleave', () => {
+            wraps.forEach((w) => w.classList.remove('hover-half', 'hover-full'));
           });
         }
       }
@@ -1816,10 +1860,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       }
     }
 
-    /** star-rating 요소에서 값 읽기 */
+    /** star-rating 요소에서 값 읽기 (0.5 단위) */
     function getStarValue(container: HTMLElement, name: string): number {
       const el = container.querySelector<HTMLElement>(`.star-rating[data-name="${name}"]`);
-      return el ? parseInt(el.dataset.value || '0', 10) : 0;
+      return el ? parseFloat(el.dataset.value || '0') : 0;
     }
 
     /** 세부평점 칩에서 값 읽기 */
@@ -1846,7 +1890,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const v = sortedVisits[idx];
       if (!v) return '';
       const isUnknown = v.memo?.startsWith('(날짜 미상)') ?? false;
-      return `${idx + 1}번째 방문 · ${isUnknown ? '날짜 미상' : formatDate(v.visitedAt)}`;
+      // 날짜순 번호: 오래된 방문이 1번째 (배열은 최신순이므로 뒤집기)
+      const visitNumber = sortedVisits.length - idx;
+      return `${visitNumber}번째 방문 · ${isUnknown ? '날짜 미상' : formatDate(v.visitedAt)}`;
     }
 
     function renderReviewCard(rev: RoomReviewWithUser): string {
@@ -1856,7 +1902,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       if (isReviewOwner || canDeleteReview) {
         const menuItems: string[] = [];
         if (isReviewOwner) {
-          menuItems.push(`<button type="button" class="edit-rev-btn" data-rev-id="${rev.id}" data-rating="${rev.rating}" data-content="${escapeHtml(rev.content)}" data-revisit="${rev.wouldRevisit !== false}" data-taste="${rev.tasteRating ?? ''}" data-value="${rev.valueRating ?? ''}" data-service="${rev.serviceRating ?? ''}" data-cleanliness="${rev.cleanlinessRating ?? ''}" data-accessibility="${rev.accessibilityRating ?? ''}" data-fav-menu="${escapeHtml(rev.favoriteMenu ?? '')}" data-try-menu="${escapeHtml(rev.tryNextMenu ?? '')}">수정</button>`);
+          menuItems.push(`<button type="button" class="edit-rev-btn" data-rev-id="${rev.id}" data-rating="${rev.rating}" data-content="${escapeHtml(rev.content)}" data-revisit="${rev.wouldRevisit}" data-taste="${rev.tasteRating ?? ''}" data-value="${rev.valueRating ?? ''}" data-service="${rev.serviceRating ?? ''}" data-cleanliness="${rev.cleanlinessRating ?? ''}" data-accessibility="${rev.accessibilityRating ?? ''}" data-fav-menu="${escapeHtml(rev.favoriteMenu ?? '')}" data-try-menu="${escapeHtml(rev.tryNextMenu ?? '')}">수정</button>`);
         }
         if (canDeleteReview) {
           menuItems.push(`<button type="button" class="danger delete-rev-btn" data-rev-id="${rev.id}">삭제</button>`);
@@ -1864,9 +1910,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         actionsHtml = `<span class="more-menu-wrap"><button type="button" class="more-menu-btn" aria-label="리뷰 더보기">⋯</button><div class="more-menu-dropdown" hidden><div class="more-menu-title">리뷰</div>${menuItems.join('')}</div></span>`;
       }
 
-      const revisitBadge = rev.wouldRevisit === false
-        ? '<span class="revisit-badge no">재방문 X</span>'
-        : '<span class="revisit-badge yes">재방문 O</span>';
+      const revisitLabels: Record<number, string> = { 5: '꼭 재방문', 4: '또 가고 싶어요', 3: '가까우면 갈만', 2: '사주면 갈게요', 1: '안 갈 것 같아요' };
+      const revisitLevel = rev.wouldRevisit ?? 4;
+      const revisitBadge = `<span class="revisit-badge lv${revisitLevel}">${revisitLabels[revisitLevel] ?? '또 가고 싶어요'}</span>`;
 
       const detailRatings = [
         rev.tasteRating != null ? `맛 ${rev.tasteRating}` : null,
@@ -1967,9 +2013,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                <div class="review-form-card-header">🔄 재방문 의사</div>
                <div class="review-form-card-body">
                  <div class="revisit-btns new-review-revisit-btns">
-                   <button type="button" class="revisit-btn active" data-val="yes">또 가고 싶어요</button>
-                   <button type="button" class="revisit-btn" data-val="maybe">사주면 갈게요</button>
-                   <button type="button" class="revisit-btn" data-val="no">글쎄요</button>
+                   <button type="button" class="revisit-btn" data-val="5">꼭 다시 갈 거예요</button>
+                   <button type="button" class="revisit-btn active" data-val="4">또 가고 싶어요</button>
+                   <button type="button" class="revisit-btn" data-val="3">가까우면 갈만해요</button>
+                   <button type="button" class="revisit-btn" data-val="2">사주면 갈게요</button>
+                   <button type="button" class="revisit-btn" data-val="1">안 갈 것 같아요</button>
                  </div>
                </div>
              </div>
@@ -2061,8 +2109,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         `<span class="${i < Math.round(avgRating) ? '' : 'star-muted'}">★</span>`
       ).join('');
 
-      const revisitYes = allReviews.filter(r => r.wouldRevisit !== false).length;
-      const revisitRate = Math.round((revisitYes / allReviews.length) * 100);
+      // 재방문 의사 가중 평균: 1→0%, 2→25%, 3→50%, 4→75%, 5→100%
+      const revisitWeights: Record<number, number> = { 1: 0, 2: 25, 3: 50, 4: 75, 5: 100 };
+      const revisitSum = allReviews.reduce((sum, r) => sum + (revisitWeights[r.wouldRevisit ?? 4] ?? 75), 0);
+      const revisitRate = Math.round(revisitSum / allReviews.length);
 
       ratingSummary.innerHTML = `
         <div class="rating-hero">
@@ -2520,8 +2570,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           const visitId = btn.dataset.visitId || '';
           const rating = getStarValue(visitCard as HTMLElement, 'new-review-rating');
           const content = visitCard.querySelector<HTMLTextAreaElement>('.new-review-content')?.value.trim() || '';
-          const revisitVal = visitCard.querySelector<HTMLButtonElement>('.new-review-revisit-btns .revisit-btn.active')?.dataset.val ?? 'yes';
-          const wouldRevisit = revisitVal !== 'no';
+          const revisitVal = visitCard.querySelector<HTMLButtonElement>('.new-review-revisit-btns .revisit-btn.active')?.dataset.val ?? '4';
+          const wouldRevisit = parseInt(revisitVal, 10);
           if (!rating) { showToast('평점을 선택해주세요.', 'info'); return; }
           const detailFields = collectDetailFields(visitCard as HTMLElement, 'new-review');
 
@@ -2550,7 +2600,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           const revId = btn.dataset.revId || '';
           const origRating = btn.dataset.rating || '0';
           const origContent = btn.dataset.content || '';
-          const origRevisit = btn.dataset.revisit === 'true';
+          const origRevisit = parseInt(btn.dataset.revisit || '4', 10);
           const card = area.querySelector<HTMLElement>(`.review-bubble-wrap[data-rev-id="${revId}"]`);
           if (!card) return;
 
@@ -2586,9 +2636,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 <div class="review-form-card-header">🔄 재방문 의사</div>
                 <div class="review-form-card-body">
                   <div class="revisit-btns edit-revisit-btns">
-                    <button type="button" class="revisit-btn ${origRevisit ? 'active' : ''}" data-val="yes">또 가고 싶어요</button>
-                    <button type="button" class="revisit-btn" data-val="maybe">사주면 갈게요</button>
-                    <button type="button" class="revisit-btn ${!origRevisit ? 'active' : ''}" data-val="no">글쎄요</button>
+                    <button type="button" class="revisit-btn ${origRevisit === 5 ? 'active' : ''}" data-val="5">꼭 다시 갈 거예요</button>
+                    <button type="button" class="revisit-btn ${origRevisit === 4 ? 'active' : ''}" data-val="4">또 가고 싶어요</button>
+                    <button type="button" class="revisit-btn ${origRevisit === 3 ? 'active' : ''}" data-val="3">가까우면 갈만해요</button>
+                    <button type="button" class="revisit-btn ${origRevisit === 2 ? 'active' : ''}" data-val="2">사주면 갈게요</button>
+                    <button type="button" class="revisit-btn ${origRevisit === 1 ? 'active' : ''}" data-val="1">안 갈 것 같아요</button>
                   </div>
                 </div>
               </div>
@@ -2614,8 +2666,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           card.querySelector('.save-edit-btn')?.addEventListener('click', async () => {
             const newRating = getStarValue(card, 'edit-rating');
             const newContent = card.querySelector<HTMLTextAreaElement>('.edit-content')?.value.trim() || '';
-            const editRevisitVal = card.querySelector<HTMLButtonElement>('.edit-revisit-btns .revisit-btn.active')?.dataset.val ?? 'yes';
-            const newRevisit = editRevisitVal !== 'no';
+            const editRevisitVal = card.querySelector<HTMLButtonElement>('.edit-revisit-btns .revisit-btn.active')?.dataset.val ?? '4';
+            const newRevisit = parseInt(editRevisitVal, 10);
             const detailFields = collectDetailFields(card, 'edit', true);
 
             try {

@@ -228,21 +228,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .cat-chip:hover, .wait-chip:hover { border-color: var(--border-mid); }
   .cat-chip.active, .wait-chip.active { background: var(--text-heading); color: var(--bg); border-color: var(--text-heading); }
 
-  /* 별점 */
-  .star-rating { display: inline-flex; gap: 0.2rem; }
+  /* 별점 (0.5 단위) */
+  .star-rating { display: inline-flex; gap: 0; align-items: center; }
+  .star-rating-value { font-size: 0.95rem; font-weight: 600; color: var(--text-heading); margin-left: 0.5rem; min-width: 2ch; }
 
-  .star-btn {
-    background: none;
-    border: none;
+  .star-wrap {
+    position: relative;
+    width: 28px;
+    height: 28px;
     cursor: pointer;
-    padding: 0;
-    font-size: 1.5rem;
-    color: var(--border);
-    transition: color 0.1s;
-    line-height: 1;
   }
-  .star-btn.active { color: #f59e0b; }
-  .star-btn.hover { color: #f59e0b; }
+  .star-wrap svg { width: 28px; height: 28px; display: block; }
+  .star-wrap .star-bg { color: var(--border); }
+  .star-wrap .star-half-fill,
+  .star-wrap .star-full-fill { position: absolute; top: 0; left: 0; color: #f59e0b; opacity: 0; pointer-events: none; }
+  .star-wrap.half .star-half-fill { opacity: 1; }
+  .star-wrap.full .star-full-fill { opacity: 1; }
+  .star-wrap.hover-half .star-half-fill { opacity: 0.6; }
+  .star-wrap.hover-full .star-full-fill { opacity: 0.6; }
+  .star-wrap.half .star-bg,
+  .star-wrap.full .star-bg { opacity: 0; }
 
   /* 세부평점 칩 */
   .detail-rating-row {
@@ -278,13 +283,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .check-row input[type="checkbox"] { accent-color: var(--text-heading); }
 
   /* 재방문 의사 */
-  .revisit-btns { display: flex; gap: 0.4rem; }
+  .revisit-btns { display: flex; gap: 0.4rem; flex-wrap: wrap; }
   .revisit-btn {
     flex: 1;
-    padding: 0.5rem;
+    min-width: calc(33% - 0.4rem);
+    padding: 0.5rem 0.3rem;
     border: 1px solid var(--border);
     border-radius: 10px;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 500;
     cursor: pointer;
     font-family: inherit;
@@ -294,9 +300,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     transition: all 0.15s;
   }
   .revisit-btn:hover { border-color: var(--border-mid); }
-  .revisit-btn.active[data-val="yes"] { background: var(--text-heading); color: var(--bg); border-color: var(--text-heading); }
-  .revisit-btn.active[data-val="maybe"] { background: #f59e0b; color: #fff; border-color: #f59e0b; }
-  .revisit-btn.active[data-val="no"] { background: var(--bg-hover); color: var(--text-muted); border-color: var(--border-mid); }
+  .revisit-btn.active[data-val="5"] { background: var(--text-heading); color: var(--bg); border-color: var(--text-heading); }
+  .revisit-btn.active[data-val="4"] { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .revisit-btn.active[data-val="3"] { background: #f59e0b; color: #fff; border-color: #f59e0b; }
+  .revisit-btn.active[data-val="2"] { background: #f97316; color: #fff; border-color: #f97316; }
+  .revisit-btn.active[data-val="1"] { background: var(--bg-hover); color: var(--text-muted); border-color: var(--border-mid); }
 
   /* 버튼 */
   .step-actions { display: flex; gap: 0.5rem; margin-top: 1.5rem; }
@@ -497,7 +505,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     let selectedCategory = '';
     let selectedWait = '';
     let mainRating = 0;
-    let wouldRevisit: boolean | null = null;
+    let wouldRevisit: number | null = null;
     const detailRatings: Record<string, number> = {};
 
     const backUrl = isExisting
@@ -599,7 +607,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="accordion-body">
             <div class="main-rating-area">
               <div class="star-rating" id="main-stars">
-                ${[1,2,3,4,5].map((n) => `<button type="button" class="star-btn" data-star="${n}">★</button>`).join('')}
+                ${[1,2,3,4,5].map((n) => `<span class="star-wrap" data-star="${n}"><svg class="star-bg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg><svg class="star-half-fill" viewBox="0 0 24 24" fill="currentColor"><defs><clipPath id="half-clip"><rect x="0" y="0" width="12" height="24"/></clipPath></defs><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" clip-path="url(#half-clip)"/></svg><svg class="star-full-fill" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg></span>`).join('')}
+                <span class="star-rating-value" id="main-stars-value"></span>
               </div>
               <span class="main-rating-hint">별을 눌러 평가하세요</span>
             </div>
@@ -649,9 +658,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </summary>
           <div class="accordion-body">
             <div class="revisit-btns" id="revisit-btns">
-              <button type="button" class="revisit-btn" data-val="yes">또 가고 싶어요</button>
-              <button type="button" class="revisit-btn" data-val="maybe">사주면 갈게요</button>
-              <button type="button" class="revisit-btn" data-val="no">글쎄요</button>
+              <button type="button" class="revisit-btn" data-val="5">꼭 다시 갈 거예요</button>
+              <button type="button" class="revisit-btn" data-val="4">또 가고 싶어요</button>
+              <button type="button" class="revisit-btn" data-val="3">가까우면 갈만해요</button>
+              <button type="button" class="revisit-btn" data-val="2">사주면 갈게요</button>
+              <button type="button" class="revisit-btn" data-val="1">안 갈 것 같아요</button>
             </div>
           </div>
         </details>
@@ -878,19 +889,43 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     }
 
-    // 별점 (호버 + 클릭)
-    const mainStars = content.querySelectorAll<HTMLButtonElement>('#main-stars .star-btn');
-    for (const btn of mainStars) {
-      btn.addEventListener('click', () => {
-        mainRating = Number(btn.dataset.star);
-        mainStars.forEach((b, i) => b.classList.toggle('active', i < mainRating));
+    // 별점 (0.5 단위 호버 + 클릭)
+    const mainStarWraps = content.querySelectorAll<HTMLElement>('#main-stars .star-wrap');
+    const mainStarsValue = content.querySelector<HTMLElement>('#main-stars-value');
+
+    function updateStarDisplay(wraps: NodeListOf<HTMLElement>, rating: number) {
+      wraps.forEach((w) => {
+        const star = Number(w.dataset.star);
+        w.classList.remove('half', 'full', 'hover-half', 'hover-full');
+        if (rating >= star) w.classList.add('full');
+        else if (rating >= star - 0.5) w.classList.add('half');
       });
-      btn.addEventListener('mouseenter', () => {
-        const hoverVal = Number(btn.dataset.star);
-        mainStars.forEach((b, i) => b.classList.toggle('hover', i < hoverVal));
+    }
+
+    for (const wrap of mainStarWraps) {
+      wrap.addEventListener('click', (e) => {
+        const star = Number(wrap.dataset.star);
+        const rect = wrap.getBoundingClientRect();
+        const isLeft = (e as MouseEvent).clientX < rect.left + rect.width / 2;
+        const clickedVal = isLeft ? star - 0.5 : star;
+        mainRating = (mainRating === clickedVal) ? 0 : clickedVal;
+        updateStarDisplay(mainStarWraps, mainRating);
+        if (mainStarsValue) mainStarsValue.textContent = mainRating ? String(mainRating) : '';
       });
-      btn.addEventListener('mouseleave', () => {
-        mainStars.forEach((b) => b.classList.remove('hover'));
+      wrap.addEventListener('mousemove', (e) => {
+        mainStarWraps.forEach((w) => w.classList.remove('hover-half', 'hover-full'));
+        const star = Number(wrap.dataset.star);
+        const rect = wrap.getBoundingClientRect();
+        const isLeft = (e as MouseEvent).clientX < rect.left + rect.width / 2;
+        const hoverVal = isLeft ? star - 0.5 : star;
+        mainStarWraps.forEach((w) => {
+          const s = Number(w.dataset.star);
+          if (hoverVal >= s) w.classList.add('hover-full');
+          else if (hoverVal >= s - 0.5) w.classList.add('hover-half');
+        });
+      });
+      wrap.addEventListener('mouseleave', () => {
+        mainStarWraps.forEach((w) => w.classList.remove('hover-half', 'hover-full'));
       });
     }
 
@@ -912,10 +947,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     // 재방문 의사 버튼
     for (const btn of content.querySelectorAll<HTMLButtonElement>('.revisit-btn')) {
       btn.addEventListener('click', () => {
-        const val = btn.dataset.val!;
         content.querySelectorAll('.revisit-btn').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
-        wouldRevisit = val === 'yes';
+        wouldRevisit = parseInt(btn.dataset.val!, 10);
       });
     }
 
@@ -1003,7 +1037,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         await createRoomReview(roomId!, visit.id, {
           rating: mainRating,
           content: reviewContent,
-          wouldRevisit: wouldRevisit === true,
+          wouldRevisit: wouldRevisit!,
           tasteRating: detailRatings.taste || null,
           valueRating: detailRatings.value || null,
           serviceRating: detailRatings.service || null,

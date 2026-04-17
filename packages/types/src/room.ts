@@ -79,7 +79,7 @@ export interface RoomReview {
   id: string;
   rating: number;
   content: string;
-  wouldRevisit: boolean;
+  wouldRevisit: number;
   tasteRating?: number | null;
   valueRating?: number | null;
   serviceRating?: number | null;
@@ -137,7 +137,7 @@ export interface SharedRoomReview {
   id: string;
   rating: number;
   content: string;
-  wouldRevisit: boolean;
+  wouldRevisit: number;
   tasteRating?: number | null;
   valueRating?: number | null;
   serviceRating?: number | null;
@@ -212,7 +212,7 @@ export interface PaginatedRestaurants {
 export interface ReviewData {
   rating: number;
   content: string;
-  wouldRevisit?: boolean;
+  wouldRevisit?: number;
   tasteRating?: number | null;
   valueRating?: number | null;
   serviceRating?: number | null;
@@ -236,7 +236,7 @@ export interface ReviewComparison {
     serviceRating: number | null;
     cleanlinessRating: number | null;
     accessibilityRating: number | null;
-    wouldRevisit: boolean;
+    wouldRevisit: number;
   } | null;
 }
 

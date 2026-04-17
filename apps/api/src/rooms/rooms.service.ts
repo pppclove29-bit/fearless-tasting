@@ -632,7 +632,7 @@ export class RoomsService {
     userId: string,
     rating: number,
     content?: string,
-    wouldRevisit = true,
+    wouldRevisit = 4,
     tasteRating?: number,
     valueRating?: number,
     serviceRating?: number,
@@ -682,7 +682,7 @@ export class RoomsService {
     data: {
       rating?: number;
       content?: string;
-      wouldRevisit?: boolean;
+      wouldRevisit?: number;
       tasteRating?: number | null;
       valueRating?: number | null;
       serviceRating?: number | null;
