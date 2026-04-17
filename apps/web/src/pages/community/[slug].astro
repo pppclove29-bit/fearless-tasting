@@ -13,16 +13,22 @@ export const prerender = false;
       <p class="loading-msg">불러오는 중...</p>
     </div>
 
-    <div id="load-more-wrap" class="load-more-wrap" hidden>
-      <button type="button" class="load-more-btn" id="load-more-btn">더보기</button>
-    </div>
+    <nav id="pagination-wrap" class="pagination" hidden></nav>
 
-    <button type="button" class="fab" id="fab-write" hidden aria-label="글쓰기">
+    <div class="fab-group">
+      <button type="button" class="fab fab-secondary" id="fab-my-posts" hidden aria-label="내 글">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      </button>
+      <button type="button" class="fab" id="fab-write" hidden aria-label="글쓰기">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
         <line x1="12" y1="5" x2="12" y2="19"></line>
         <line x1="5" y1="12" x2="19" y2="12"></line>
       </svg>
     </button>
+    </div>
   </div>
 </BaseLayout>
 
@@ -61,31 +67,25 @@ export const prerender = false;
     padding: 3rem 1rem;
   }
 
-  .load-more-wrap {
-    text-align: center;
-    padding: 1rem 0 2rem;
+  .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 1.25rem 0 2rem;
   }
 
-  .load-more-btn {
-    padding: 0.55rem 1.5rem;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    background: var(--bg);
-    color: var(--text-sub);
-    font-size: 0.82rem;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .load-more-btn:hover {
-    background: var(--bg-hover);
-  }
-
-  .fab {
+  .fab-group {
     position: fixed;
     bottom: 24px;
     right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    z-index: 100;
+  }
+
+  .fab {
     width: 48px;
     height: 48px;
     border-radius: 50%;
@@ -98,7 +98,20 @@ export const prerender = false;
     cursor: pointer;
     box-shadow: 0 2px 12px rgba(0,0,0,0.15);
     transition: transform 0.15s, box-shadow 0.15s;
-    z-index: 100;
+  }
+
+  .fab-secondary {
+    width: 40px;
+    height: 40px;
+    background: var(--bg);
+    color: var(--text-heading);
+    border: 1px solid var(--border);
+  }
+
+  .fab-secondary.active {
+    background: var(--text-heading);
+    color: var(--bg);
+    border-color: var(--text-heading);
   }
 
   .fab:hover {
@@ -206,19 +219,57 @@ export const prerender = false;
     font-size: 0.85rem;
     padding: 3rem 1rem;
   }
+
+  .page-btn {
+    min-width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-family: inherit;
+    color: var(--text-sub);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .page-btn:hover:not(:disabled) {
+    background: var(--bg-hover);
+  }
+
+  .page-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .page-btn.active {
+    background: var(--text-heading);
+    color: var(--bg);
+    border-color: var(--text-heading);
+  }
+
+  .my-posts-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: -8px;
+  }
 </style>
 
 <script>
-  import { fetchBoards, fetchPosts, fetchCurrentUser } from '@/lib/api';
+  import { fetchBoards, fetchPosts, fetchMyPosts, fetchCurrentUser } from '@/lib/api';
   import type { BoardListItem, PostListItem, PaginatedPosts } from '@/lib/api';
 
   function initBoardPage() {
     const tabsScroll = document.getElementById('tabs-scroll');
     const feedContent = document.getElementById('feed-content');
-    const loadMoreWrap = document.getElementById('load-more-wrap');
-    const loadMoreBtn = document.getElementById('load-more-btn');
+    const paginationWrap = document.getElementById('pagination-wrap');
     const fabWrite = document.getElementById('fab-write');
-    if (!tabsScroll || !feedContent || !loadMoreWrap || !loadMoreBtn || !fabWrite) return;
+    const fabMyPosts = document.getElementById('fab-my-posts');
+    if (!tabsScroll || !feedContent || !paginationWrap || !fabWrite || !fabMyPosts) return;
 
     const pathParts = location.pathname.split('/').filter(Boolean);
     const slugFromUrl = decodeURIComponent(pathParts[1] || '');
@@ -229,6 +280,7 @@ export const prerender = false;
     let currentPage = 1;
     let totalPages = 1;
     let posts: PostListItem[] = [];
+    let showMyPosts = false;
 
     function escapeHtml(text: string): string {
       const div = document.createElement('div');
@@ -274,39 +326,41 @@ export const prerender = false;
     }
 
     function selectBoard(slug: string) {
-      if (slug === activeSlug) return;
+      if (slug === activeSlug && !showMyPosts) return;
       activeSlug = slug;
       currentPage = 1;
       posts = [];
+      showMyPosts = false;
+      fabMyPosts.classList.remove('active');
       updateActiveChip();
       // Update page title
       const board = boards.find(b => b.slug === slug);
       if (board) document.title = `${board.name} — 커뮤니티 | 무모한 시식가`;
-      loadPosts(true);
+      loadPosts();
     }
 
-    function renderFeed(reset: boolean) {
-      if (reset) feedContent.innerHTML = '';
+    function renderFeed() {
+      feedContent.innerHTML = '';
 
-      if (posts.length === 0 && reset) {
-        feedContent.innerHTML = '<p class="feed-empty">아직 작성된 글이 없습니다.</p>';
-        loadMoreWrap.hidden = true;
+      if (posts.length === 0) {
+        feedContent.innerHTML = `<p class="feed-empty">${showMyPosts ? '작성한 글이 없습니다.' : '아직 작성된 글이 없습니다.'}</p>`;
+        paginationWrap.hidden = true;
         return;
       }
 
-      const newPosts = reset ? posts : posts.slice((currentPage - 2) * 20);
-
-      newPosts.forEach((post) => {
+      posts.forEach((post) => {
         const contentPreview = post.content ? post.content.replace(/\n/g, ' ').slice(0, 100) : '';
         const commentCount = post._count?.comments ?? 0;
+        const authorName = post.isAnonymous ? '익명' : post.author.nickname;
         const a = document.createElement('a');
         a.href = `/community/${encodeURIComponent(post.boardSlug || activeSlug)}/${post.id}`;
         a.className = 'feed-item';
         a.innerHTML = `
+          ${showMyPosts && post.boardName ? `<span class="feed-badge">${escapeHtml(post.boardName)}</span>` : ''}
           <div class="feed-title">${escapeHtml(post.title)}</div>
           ${contentPreview ? `<div class="feed-preview">${escapeHtml(contentPreview)}</div>` : ''}
           <div class="feed-meta">
-            <span>${escapeHtml(post.author.nickname)}</span>
+            <span>${escapeHtml(authorName)}</span>
             <span class="feed-meta-dot"></span>
             <span>${relativeTime(post.createdAt)}</span>
             ${commentCount > 0 ? `<span class="feed-meta-dot"></span><span>댓글 ${commentCount}</span>` : ''}
@@ -315,36 +369,79 @@ export const prerender = false;
         feedContent.appendChild(a);
       });
 
-      loadMoreWrap.hidden = currentPage >= totalPages;
+      renderPagination();
     }
 
-    async function loadPosts(reset: boolean) {
-      if (reset) {
-        feedContent.innerHTML = '<p class="loading-msg">불러오는 중...</p>';
+    function renderPagination() {
+      paginationWrap.innerHTML = '';
+      if (totalPages <= 1) {
+        paginationWrap.hidden = true;
+        return;
       }
+
+      paginationWrap.hidden = false;
+
+      // Prev button
+      const prevBtn = document.createElement('button');
+      prevBtn.type = 'button';
+      prevBtn.className = 'page-btn';
+      prevBtn.textContent = '<';
+      prevBtn.disabled = currentPage <= 1;
+      prevBtn.addEventListener('click', () => goToPage(currentPage - 1));
+      paginationWrap.appendChild(prevBtn);
+
+      // Page number buttons (show max 5 around current)
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + 4);
+      const adjustedStart = Math.max(1, endPage - 4);
+
+      for (let i = adjustedStart; i <= endPage; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `page-btn${i === currentPage ? ' active' : ''}`;
+        btn.textContent = String(i);
+        btn.addEventListener('click', () => goToPage(i));
+        paginationWrap.appendChild(btn);
+      }
+
+      // Next button
+      const nextBtn = document.createElement('button');
+      nextBtn.type = 'button';
+      nextBtn.className = 'page-btn';
+      nextBtn.textContent = '>';
+      nextBtn.disabled = currentPage >= totalPages;
+      nextBtn.addEventListener('click', () => goToPage(currentPage + 1));
+      paginationWrap.appendChild(nextBtn);
+    }
+
+    function goToPage(page: number) {
+      if (page < 1 || page > totalPages || page === currentPage) return;
+      currentPage = page;
+      loadPosts();
+      feedContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function loadPosts() {
+      feedContent.innerHTML = '<p class="loading-msg">불러오는 중...</p>';
+      paginationWrap.hidden = true;
 
       let result: PaginatedPosts;
       try {
-        result = await fetchPosts(activeSlug, currentPage, 20);
+        if (showMyPosts) {
+          result = await fetchMyPosts(currentPage, 20);
+        } else {
+          result = await fetchPosts(activeSlug, currentPage, 20);
+        }
       } catch {
         feedContent.innerHTML = '<p class="feed-empty">게시글을 불러올 수 없습니다.</p>';
-        loadMoreWrap.hidden = true;
+        paginationWrap.hidden = true;
         return;
       }
 
       totalPages = result.totalPages;
-      if (reset) {
-        posts = result.items;
-      } else {
-        posts = [...posts, ...result.items];
-      }
-      renderFeed(reset);
+      posts = result.items;
+      renderFeed();
     }
-
-    loadMoreBtn.addEventListener('click', () => {
-      currentPage++;
-      loadPosts(false);
-    });
 
     async function init() {
       try {
@@ -365,12 +462,20 @@ export const prerender = false;
       const user = await fetchCurrentUser();
       if (user) {
         fabWrite.hidden = false;
+        fabMyPosts.hidden = false;
         fabWrite.addEventListener('click', () => {
           location.href = `/community/${encodeURIComponent(activeSlug)}/write`;
         });
+        fabMyPosts.addEventListener('click', () => {
+          showMyPosts = !showMyPosts;
+          fabMyPosts.classList.toggle('active', showMyPosts);
+          currentPage = 1;
+          posts = [];
+          loadPosts();
+        });
       }
 
-      await loadPosts(true);
+      await loadPosts();
     }
 
     init();

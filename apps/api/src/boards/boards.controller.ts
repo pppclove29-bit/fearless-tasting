@@ -16,8 +16,22 @@ export class BoardsController {
   /** 활성 게시판 목록 (공개) */
   @Get()
   @ApiOperation({ summary: '게시판 목록', description: '활성화된 게시판 목록을 조회합니다.' })
-  findEnabledBoards() {
-    return this.boardsService.findEnabledBoards();
+  findEnabledBoards(@Query('search') search?: string) {
+    return this.boardsService.findEnabledBoards(search || undefined);
+  }
+
+  /** 내가 작성한 게시글 목록 (로그인 필요) */
+  @Get('my-posts')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '내 게시글 목록', description: '내가 작성한 게시글을 조회합니다.' })
+  findMyPosts(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Req() req?: Request & { user: { id: string } },
+  ) {
+    const pageNum = Math.max(1, parseInt(page || '1', 10) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(pageSize || '20', 10) || 20));
+    return this.boardsService.findMyPosts(req!.user.id, pageNum, limitNum);
   }
 
   /** 게시판 슬러그로 조회 (공개) */
@@ -58,7 +72,7 @@ export class BoardsController {
     @Req() req: Request & { user: { id: string } },
   ) {
     const board = await this.boardsService.findBoardBySlug(slug);
-    return this.boardsService.createPost(board.id, req.user.id, dto.title, dto.content);
+    return this.boardsService.createPost(board.id, req.user.id, dto.title, dto.content, dto.isAnonymous);
   }
 
   /** 게시글 수정 (작성자만) */

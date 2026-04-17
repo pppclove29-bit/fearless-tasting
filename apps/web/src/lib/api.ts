@@ -818,8 +818,9 @@ export async function fetchReviewComparison(roomId: string, restaurantId: string
 // ─── 커뮤니티 (게시판) ───
 
 /** 게시판 목록 조회 */
-export async function fetchBoards(): Promise<BoardListItem[]> {
-  const res = await apiFetch(`${API_BASE}/boards`);
+export async function fetchBoards(search?: string): Promise<BoardListItem[]> {
+  const params = search ? `?search=${encodeURIComponent(search)}` : '';
+  const res = await apiFetch(`${API_BASE}/boards${params}`);
   if (!res.ok) return [];
   return res.json();
 }
@@ -839,13 +840,22 @@ export async function fetchPost(slug: string, postId: string): Promise<PostDetai
 }
 
 /** 게시글 작성 */
-export async function createPost(slug: string, title: string, content: string): Promise<PostDetail> {
+export async function createPost(slug: string, title: string, content: string, isAnonymous?: boolean): Promise<PostDetail> {
+  const body: { title: string; content: string; isAnonymous?: boolean } = { title, content };
+  if (isAnonymous) body.isAnonymous = true;
   const res = await apiFetch(`${API_BASE}/boards/${slug}/posts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, content }),
+    body: JSON.stringify(body),
   });
   await throwIfNotOk(res, '게시글 작성에 실패했습니다.');
+  return res.json();
+}
+
+/** 내 게시글 목록 (페이지네이션) */
+export async function fetchMyPosts(page = 1, pageSize = 20): Promise<PaginatedPosts> {
+  const res = await apiFetch(`${API_BASE}/boards/my-posts?page=${page}&limit=${pageSize}`);
+  await throwIfNotOk(res, '내 게시글을 불러올 수 없습니다.');
   return res.json();
 }
 

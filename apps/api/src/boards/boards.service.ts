@@ -55,10 +55,13 @@ export class BoardsService {
   }
 
   /** 활성 게시판 목록 (공개용) */
-  async findEnabledBoards() {
+  async findEnabledBoards(search?: string) {
     return this.prisma.read.board.findMany({
-      where: { enabled: true },
-      orderBy: { sortOrder: 'asc' },
+      where: {
+        enabled: true,
+        ...(search && { name: { contains: search } }),
+      },
+      orderBy: [{ sortOrder: 'asc' }],
       include: { _count: { select: { posts: true } } },
     });
   }
@@ -86,6 +89,7 @@ export class BoardsService {
           id: true,
           title: true,
           content: true,
+          isAnonymous: true,
           createdAt: true,
           updatedAt: true,
           board: { select: { slug: true, name: true } },
@@ -98,10 +102,14 @@ export class BoardsService {
       this.prisma.read.post.count({ where: { boardId } }),
     ]);
 
-    const mapped = items.map(({ board, ...rest }) => ({
+    const mapped = items.map(({ board, author, isAnonymous, ...rest }) => ({
       ...rest,
+      isAnonymous,
       boardSlug: board.slug,
       boardName: board.name,
+      author: isAnonymous
+        ? { id: 'anonymous', nickname: '익명', profileImageUrl: null }
+        : author,
     }));
 
     return {
@@ -121,6 +129,7 @@ export class BoardsService {
         id: true,
         title: true,
         content: true,
+        isAnonymous: true,
         boardId: true,
         createdAt: true,
         updatedAt: true,
@@ -147,11 +156,16 @@ export class BoardsService {
       throw new NotFoundException('게시글을 찾을 수 없습니다');
     }
 
-    return post;
+    return {
+      ...post,
+      author: post.isAnonymous
+        ? { id: 'anonymous', nickname: '익명', profileImageUrl: null }
+        : post.author,
+    };
   }
 
   /** 게시글 작성 */
-  async createPost(boardId: string, authorId: string, title: string, content: string) {
+  async createPost(boardId: string, authorId: string, title: string, content: string, isAnonymous?: boolean) {
     // 게시판 존재 및 활성 여부 확인
     const board = await this.prisma.read.board.findUnique({ where: { id: boardId } });
     if (!board || !board.enabled) {
@@ -159,7 +173,7 @@ export class BoardsService {
     }
 
     return this.prisma.write.post.create({
-      data: { boardId, authorId, title, content },
+      data: { boardId, authorId, title, content, ...(isAnonymous !== undefined && { isAnonymous }) },
     });
   }
 
@@ -206,6 +220,46 @@ export class BoardsService {
     }
 
     return this.prisma.write.post.delete({ where: { id: postId } });
+  }
+
+  /** 내가 작성한 게시글 목록 (페이지네이션) */
+  async findMyPosts(userId: string, page: number, limit: number) {
+    const [items, total] = await Promise.all([
+      this.prisma.read.post.findMany({
+        where: { authorId: userId },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          isAnonymous: true,
+          createdAt: true,
+          updatedAt: true,
+          board: { select: { slug: true, name: true } },
+          author: {
+            select: { id: true, nickname: true, profileImageUrl: true },
+          },
+          _count: { select: { comments: true, likes: true } },
+        },
+      }),
+      this.prisma.read.post.count({ where: { authorId: userId } }),
+    ]);
+
+    const mapped = items.map(({ board, ...rest }) => ({
+      ...rest,
+      boardSlug: board.slug,
+      boardName: board.name,
+    }));
+
+    return {
+      items: mapped,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   // ── Comment ──

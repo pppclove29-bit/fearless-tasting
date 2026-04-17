@@ -4,6 +4,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
 <BaseLayout title="커뮤니티" description="무모한 시식가 커뮤니티 게시판. 맛집 정보와 리뷰를 자유롭게 나눠보세요.">
   <div class="community-page">
+    <div class="board-search-wrap">
+      <input type="text" class="board-search-input" id="board-search" placeholder="게시판 검색" />
+    </div>
+
     <div class="board-tabs" id="board-tabs">
       <div class="tabs-scroll" id="tabs-scroll"></div>
     </div>
@@ -30,6 +34,32 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     max-width: 480px;
     margin: 0 auto;
     padding-bottom: 80px;
+  }
+
+  .board-search-wrap {
+    padding: 0.75rem 0.75rem 0;
+  }
+
+  .board-search-input {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-heading);
+    font-size: 0.85rem;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+  }
+
+  .board-search-input:focus {
+    border-color: var(--text-heading);
+  }
+
+  .board-search-input::placeholder {
+    color: var(--text-muted);
   }
 
   .board-tabs {
@@ -242,7 +272,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const loadMoreWrap = document.getElementById('load-more-wrap');
     const loadMoreBtn = document.getElementById('load-more-btn');
     const fabWrite = document.getElementById('fab-write');
-    if (!tabsScroll || !feedContent || !loadMoreWrap || !loadMoreBtn || !fabWrite) return;
+    const boardSearchInput = document.getElementById('board-search') as HTMLInputElement | null;
+    if (!tabsScroll || !feedContent || !loadMoreWrap || !loadMoreBtn || !fabWrite || !boardSearchInput) return;
 
     let boards: BoardListItem[] = [];
     let activeSlug = '';
@@ -349,7 +380,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${contentPreview ? `<div class="feed-preview">${escapeHtml(contentPreview)}</div>` : ''}
           <div class="feed-meta">
             <div class="feed-meta-left">
-              <span>${escapeHtml(post.author.nickname)}</span>
+              <span>${escapeHtml(post.isAnonymous ? '익명' : post.author.nickname)}</span>
               <span class="feed-meta-dot"></span>
               <span>${relativeTime(post.createdAt)}</span>
             </div>
@@ -393,6 +424,31 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     loadMoreBtn.addEventListener('click', () => {
       currentPage++;
       loadPosts(false);
+    });
+
+    let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    boardSearchInput.addEventListener('input', () => {
+      if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(async () => {
+        const query = boardSearchInput.value.trim();
+        try {
+          boards = await fetchBoards(query || undefined);
+        } catch {
+          boards = [];
+        }
+        if (boards.length === 0) {
+          tabsScroll.innerHTML = '';
+          feedContent.innerHTML = '<p class="feed-empty">검색 결과가 없습니다.</p>';
+          loadMoreWrap.hidden = true;
+          return;
+        }
+        activeSlug = boards[0].slug;
+        currentPage = 1;
+        posts = [];
+        renderTabs();
+        await loadPosts(true);
+      }, 300);
     });
 
     async function init() {

@@ -32,6 +32,7 @@ export interface PostListItem {
   id: string;
   title: string;
   content: string;
+  isAnonymous: boolean;
   boardSlug: string;
   boardName: string;
   author: PostAuthor;
@@ -62,6 +63,7 @@ export interface PostDetail {
   id: string;
   title: string;
   content: string;
+  isAnonymous: boolean;
   boardId: string;
   author: PostAuthor;
   comments: PostComment[];
