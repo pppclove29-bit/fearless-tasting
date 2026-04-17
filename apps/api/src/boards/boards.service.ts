@@ -115,7 +115,7 @@ export class BoardsService {
           author: {
             select: { id: true, nickname: true, profileImageUrl: true },
           },
-          _count: { select: { comments: true, likes: true } },
+          _count: { select: { comments: true, likes: true, bookmarks: true } },
         },
       }),
       this.prisma.read.post.count({ where: { boardId } }),
@@ -167,7 +167,7 @@ export class BoardsService {
             _count: { select: { likes: true } },
           },
         },
-        _count: { select: { likes: true, comments: true } },
+        _count: { select: { likes: true, comments: true, bookmarks: true } },
       },
     });
 
@@ -261,7 +261,7 @@ export class BoardsService {
           author: {
             select: { id: true, nickname: true, profileImageUrl: true },
           },
-          _count: { select: { comments: true, likes: true } },
+          _count: { select: { comments: true, likes: true, bookmarks: true } },
         },
       }),
       this.prisma.read.post.count({ where: { authorId: userId } }),
@@ -329,6 +329,21 @@ export class BoardsService {
     await this.prisma.write.commentLike.create({ data: { commentId, userId } });
     const count = await this.prisma.read.commentLike.count({ where: { commentId } });
     return { liked: true, likeCount: count };
+  }
+
+  // ── Bookmark ──
+
+  /** 게시글 북마크 토글 */
+  async toggleBookmark(postId: string, userId: string) {
+    const existing = await this.prisma.read.postBookmark.findUnique({
+      where: { postId_userId: { postId, userId } },
+    });
+    if (existing) {
+      await this.prisma.write.postBookmark.delete({ where: { id: existing.id } });
+      return { bookmarked: false };
+    }
+    await this.prisma.write.postBookmark.create({ data: { postId, userId } });
+    return { bookmarked: true };
   }
 
   /** 댓글 삭제 (작성자 또는 관리자) */

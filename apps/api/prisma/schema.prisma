@@ -55,6 +55,8 @@ model User {
   postLikes           PostLike[]    @relation("PostLikes")
   /// 댓글 추천
   commentLikes        CommentLike[] @relation("CommentLikes")
+  /// 게시글 북마크
+  postBookmarks       PostBookmark[]
   /// 마지막 활동 시각 (DAU 추적용)
   lastActiveAt        DateTime?
   /// 가입일
@@ -513,6 +515,8 @@ model Post {
   comments  Comment[]
   /// 추천 목록
   likes     PostLike[]
+  /// 북마크 목록
+  bookmarks PostBookmark[]
   /// 작성일
   createdAt DateTime   @default(now())
   /// 최종 수정일
@@ -580,6 +584,25 @@ model CommentLike {
 
   @@unique([commentId, userId])
   @@index([commentId])
+}
+
+/// 게시글 북마크 (유저당 1회)
+model PostBookmark {
+  /// 고유 식별자
+  id        String   @id @default(cuid())
+  /// 대상 게시글
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  /// 게시글 ID (FK)
+  postId    String
+  /// 북마크한 유저
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// 유저 ID (FK)
+  userId    String
+  /// 북마크일
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([userId])
 }
 
 /// 고객 문의 (지역 추가 요청, 버그 신고, 기타 피드백)

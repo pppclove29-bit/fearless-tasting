@@ -38,7 +38,7 @@ export interface PostListItem {
   author: PostAuthor;
   createdAt: string;
   updatedAt: string;
-  _count: { comments: number; likes: number };
+  _count: { comments: number; likes: number; bookmarks: number };
 }
 
 /** 페이지네이션된 게시글 목록 */
@@ -55,6 +55,7 @@ export interface PostComment {
   id: string;
   content: string;
   author: PostAuthor;
+  _count?: { likes: number };
   createdAt: string;
 }
 
@@ -68,7 +69,7 @@ export interface PostDetail {
   isAuthor?: boolean;
   author: PostAuthor;
   comments: PostComment[];
-  _count?: { likes?: number };
+  _count?: { likes?: number; bookmarks?: number };
   createdAt: string;
   updatedAt: string;
 }

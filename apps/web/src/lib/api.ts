@@ -899,6 +899,13 @@ export async function togglePostLike(slug: string, postId: string): Promise<{ li
   return res.json();
 }
 
+/** 게시글 북마크 토글 */
+export async function togglePostBookmark(slug: string, postId: string): Promise<{ bookmarked: boolean }> {
+  const res = await apiFetch(`${API_BASE}/boards/${slug}/posts/${postId}/bookmark`, { method: 'POST' });
+  await throwIfNotOk(res, '북마크에 실패했습니다.');
+  return res.json();
+}
+
 /** 댓글 추천 토글 */
 export async function toggleCommentLike(slug: string, postId: string, commentId: string): Promise<{ liked: boolean; likeCount: number }> {
   const res = await apiFetch(`${API_BASE}/boards/${slug}/posts/${postId}/comments/${commentId}/like`, { method: 'POST' });

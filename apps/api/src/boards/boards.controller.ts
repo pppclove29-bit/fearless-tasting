@@ -155,6 +155,17 @@ export class BoardsController {
     return this.boardsService.togglePostLike(postId, req.user.id);
   }
 
+  /** 게시글 북마크 토글 */
+  @Post(':slug/posts/:postId/bookmark')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '게시글 북마크/취소', description: '게시글을 북마크하거나 북마크를 취소합니다.' })
+  toggleBookmark(
+    @Param('postId') postId: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.boardsService.toggleBookmark(postId, req.user.id);
+  }
+
   /** 댓글 추천 토글 */
   @Post(':slug/posts/:postId/comments/:commentId/like')
   @UseGuards(JwtAuthGuard)
