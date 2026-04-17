@@ -495,7 +495,7 @@ export const prerender = false;
 </style>
 
 <script>
-  import { fetchBoards, fetchPost, deletePost, createComment, deleteComment, togglePostLike, toggleCommentLike, togglePostBookmark, fetchCurrentUser, fetchMyRooms, addRestaurantFromCommunity, showToast, showDangerConfirm } from '@/lib/api';
+  import { fetchBoards, fetchPost, deletePost, createComment, deleteComment, togglePostLike, toggleCommentLike, fetchCurrentUser, fetchMyRooms, addRestaurantFromCommunity, showToast, showDangerConfirm } from '@/lib/api';
   import type { PostDetail, BoardListItem, RoomListItem, PostRestaurant } from '@/lib/api';
 
   function initPostDetailPage() {
@@ -628,23 +628,12 @@ export const prerender = false;
         html += `</div>`;
       }
 
-      const bookmarkCount = post._count?.bookmarks ?? 0;
       const svgHeart = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>';
-      const svgStar = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
 
-      // 카운트 행 (조회/댓글/좋아요/북마크)
-      html += `<div class="post-stats-row">
-        <span class="post-stat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> ${viewCount}</span>
-        <span class="post-stat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> ${commentCount}</span>
-        <span class="post-stat">${svgHeart} <span id="post-like-count">${likeCount}</span></span>
-        <span class="post-stat">${svgStar} <span id="post-bookmark-count">${bookmarkCount}</span></span>
-      </div>`;
-
-      // 좋아요 + 북마크 액션 버튼
+      // 좋아요 버튼
       if (user) {
         html += `<div class="post-action-row">
-          <button type="button" class="post-action-btn" id="post-like-btn">${svgHeart} 좋아요</button>
-          <button type="button" class="post-action-btn" id="post-bookmark-btn">${svgStar} 북마크</button>
+          <button type="button" class="post-action-btn" id="post-like-btn">${svgHeart} 좋아요 <span id="post-like-count">${likeCount}</span></button>
         </div>`;
       }
 
@@ -725,23 +714,6 @@ export const prerender = false;
           if (likeBtn) likeBtn.classList.toggle('active', result.liked);
         } catch (e) {
           showToast(e instanceof Error ? e.message : '좋아요에 실패했습니다.');
-        }
-      });
-
-      // Post bookmark (별)
-      document.getElementById('post-bookmark-btn')?.addEventListener('click', async () => {
-        try {
-          const result = await togglePostBookmark(slug, postId);
-          const countEl = document.getElementById('post-bookmark-count');
-          if (countEl) {
-            const current = parseInt(countEl.textContent || '0', 10);
-            countEl.textContent = String(result.bookmarked ? current + 1 : Math.max(0, current - 1));
-          }
-          const bookmarkBtn = document.getElementById('post-bookmark-btn');
-          if (bookmarkBtn) bookmarkBtn.classList.toggle('active', result.bookmarked);
-          showToast(result.bookmarked ? '북마크에 추가했습니다.' : '북마크를 해제했습니다.', 'success');
-        } catch (e) {
-          showToast(e instanceof Error ? e.message : '북마크에 실패했습니다.');
         }
       });
 
