@@ -1415,7 +1415,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <div class="board-admin-actions">
                 <button type="button" class="btn-toggle-sm board-toggle-btn" data-id="${b.id}" data-enabled="${b.enabled}">${b.enabled ? '비활성화' : '활성화'}</button>
                 <button type="button" class="btn-outline-sm board-edit-btn" data-id="${b.id}">수정</button>
-                <button type="button" class="btn-danger-sm board-delete-btn" data-id="${b.id}">삭제</button>
+                <button type="button" class="btn-danger-sm board-delete-btn" data-id="${b.id}" data-name="${escapeHtml(b.name)}">삭제</button>
               </div>
             </div>
           </div>
@@ -1460,10 +1460,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         });
       }
 
-      // 삭제
+      // 삭제 (게시판 이름 입력 확인)
       for (const btn of boardsPanel.querySelectorAll<HTMLButtonElement>('.board-delete-btn')) {
         btn.addEventListener('click', async () => {
-          if (!confirm('이 게시판을 삭제하시겠습니까? 모든 게시글도 함께 삭제됩니다.')) return;
+          const boardName = btn.dataset.name || '';
+          const input = prompt(`게시판 "${boardName}"을(를) 삭제하면 모든 게시글도 함께 삭제됩니다.\n\n확인하려면 게시판 이름을 입력하세요:`);
+          if (input === null) return;
+          if (input.trim() !== boardName) {
+            alert('게시판 이름이 일치하지 않습니다.');
+            return;
+          }
           try {
             await deleteBoard(btn.dataset.id!);
             await loadBoardsAdmin();
