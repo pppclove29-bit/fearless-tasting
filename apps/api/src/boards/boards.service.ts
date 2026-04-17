@@ -156,10 +156,10 @@ export class BoardsService {
     const filteredTotal = popularOnly ? filtered.length : total;
 
     return {
-      items: mapped,
+      data: mapped,
       total: filteredTotal,
       page,
-      limit,
+      pageSize: limit,
       totalPages: Math.ceil(filteredTotal / limit),
     };
   }
@@ -335,10 +335,10 @@ export class BoardsService {
     }));
 
     return {
-      items: mapped,
+      data: mapped,
       total,
       page,
-      limit,
+      pageSize: limit,
       totalPages: Math.ceil(total / limit),
     };
   }
