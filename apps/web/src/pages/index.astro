@@ -41,7 +41,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <input type="text" id="create-name" class="modal-input" placeholder="예: 우리 동네 맛집" required maxlength="100" />
           </div>
           <div class="modal-field">
-            <label class="modal-label" for="create-max-members">최대 인원</label>
+            <label class="modal-label" for="create-max-members">최대 인원 <span style="font-weight:400;color:var(--text-muted);font-size:0.75rem;">(2~20명)</span></label>
             <input type="number" id="create-max-members" class="modal-input modal-input-short" min="2" max="20" value="4" />
           </div>
           <div class="modal-field">

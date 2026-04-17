@@ -2211,11 +2211,34 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .map-container {
+    position: relative;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 14px;
     overflow: hidden;
   }
+
+  .map-my-location {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    z-index: 10;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: var(--bg-card, #fff);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary, #666);
+    transition: color 0.15s;
+  }
+  .map-my-location:hover { color: #3b82f6; }
+  .map-my-location.active { color: #3b82f6; }
+  .map-my-location svg { width: 20px; height: 20px; }
 
   .map-container #kakao-map,
   .map-container #region-kakao-map,
@@ -2606,7 +2629,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               </div>
               <div class="stg-row">
                 <div class="stg-lbl-wrap">
-                  <span class="stg-lbl">최대 인원</span>
+                  <span class="stg-lbl">최대 인원 <span style="font-weight:400;color:var(--text-muted);font-size:0.72rem;">(2~20명)</span></span>
                   <span class="stg-sub">${currentRoom.members.length}명 참여 중</span>
                 </div>
                 <input type="number" id="settings-max-members" class="stg-input stg-input-num" min="${currentRoom.members.length}" max="20" value="${currentRoom.maxMembers}" />
@@ -2665,7 +2688,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <div class="share-section">
               <div class="share-max-members-row">
                 <div>
-                  <div class="share-section-label">최대 인원</div>
+                  <div class="share-section-label">최대 인원 <span style="font-weight:400;color:var(--text-muted);font-size:0.72rem;">(2~20명)</span></div>
                   <div class="share-section-desc">현재 ${currentRoom.members.length}/${currentRoom.maxMembers}명</div>
                 </div>
                 <input type="number" id="max-members-input" class="max-members-select" min="${currentRoom.members.length}" max="20" value="${currentRoom.maxMembers}" />
@@ -2694,7 +2717,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <span class="room-announcement-text">${escapeHtml(currentRoom.announcement)}</span>
       </div>` : ''}
 
-      ${hasKakaoMap ? '<div id="main-map-container" class="map-container" style="margin-bottom:1rem;"><div id="main-kakao-map"></div></div>' : ''}
+      ${hasKakaoMap ? `<div id="main-map-container" class="map-container" style="margin-bottom:1rem;"><div id="main-kakao-map"></div><button id="main-map-my-location" class="map-my-location" type="button" title="내 위치로 이동"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button></div>` : ''}
 
       <div class="room-tab-bar">
         <button type="button" class="room-tab-btn active" data-tab="restaurants">🍽️ 식당</button>
@@ -2820,14 +2843,42 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     });
 
     // 내 위치
+    let myLocationOverlay: Record<string, unknown> | null = null;
+    let myLatLng: unknown = null;
+
+    function showMyLocation() {
+      if (!('geolocation' in navigator)) return;
+      const btn = document.getElementById('main-map-my-location');
+      if (btn) btn.classList.add('active');
+
+      navigator.geolocation.getCurrentPosition((pos) => {
+        myLatLng = new LatLng(pos.coords.latitude, pos.coords.longitude);
+        if (!myLocationOverlay) {
+          const myEl = document.createElement('div');
+          myEl.innerHTML = '<div style="width:14px;height:14px;background:#4285F4;border:3px solid #fff;border-radius:50%;box-shadow:0 0 6px rgba(66,133,244,0.5);"></div>';
+          myLocationOverlay = new CustomOverlayCtor({ map: mainMap, content: myEl, position: myLatLng, zIndex: 1 }) as Record<string, unknown>;
+        } else {
+          (myLocationOverlay as Record<string, (p: unknown) => void>).setPosition(myLatLng);
+        }
+        (mainMap as Record<string, (c: unknown) => void>).setCenter(myLatLng);
+        (mainMap as Record<string, (l: number) => void>).setLevel(4);
+      }, () => {
+        if (btn) btn.classList.remove('active');
+      });
+    }
+
+    // 초기 로드 시 내 위치 마커만 표시 (이동 없이)
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition((pos) => {
-        const myPos = new LatLng(pos.coords.latitude, pos.coords.longitude);
+        myLatLng = new LatLng(pos.coords.latitude, pos.coords.longitude);
         const myEl = document.createElement('div');
         myEl.innerHTML = '<div style="width:14px;height:14px;background:#4285F4;border:3px solid #fff;border-radius:50%;box-shadow:0 0 6px rgba(66,133,244,0.5);"></div>';
-        new CustomOverlayCtor({ map: mainMap, content: myEl, position: myPos, zIndex: 1 });
+        myLocationOverlay = new CustomOverlayCtor({ map: mainMap, content: myEl, position: myLatLng, zIndex: 1 }) as Record<string, unknown>;
       }, () => {});
     }
+
+    const myLocBtn = document.getElementById('main-map-my-location');
+    myLocBtn?.addEventListener('click', showMyLocation);
   }
 
   function attachHeaderHandlers() {
@@ -4663,12 +4714,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const overlayContent = document.createElement('div');
       overlayContent.className = 'map-overlay-card';
       overlayContent.innerHTML = `
-        <div style="background:#fff;border-radius:8px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.15);min-width:120px;cursor:pointer;border:1px solid #e8e8e8;">
-          <div style="font-size:13px;font-weight:600;color:#111;margin-bottom:2px;">${escapeHtml(r.name)}</div>
-          <div style="font-size:11px;color:#888;margin-bottom:3px;">${escapeHtml(r.category || '')}</div>
+        <div style="background:var(--bg-card,#fff);border-radius:8px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.25);min-width:120px;cursor:pointer;border:1px solid var(--border,#e8e8e8);">
+          <div style="font-size:13px;font-weight:600;color:var(--text-heading,#111);margin-bottom:2px;">${escapeHtml(r.name)}</div>
+          <div style="font-size:11px;color:var(--text-secondary,#888);margin-bottom:3px;">${escapeHtml(r.category || '')}</div>
           ${ratingLine}
         </div>
-        <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #fff;margin:0 auto;"></div>
+        <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid var(--bg-card,#fff);margin:0 auto;"></div>
       `;
 
       overlayContent.addEventListener('click', (e) => {
