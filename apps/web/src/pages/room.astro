@@ -2352,6 +2352,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: block;
   }
 
+  .rest-search-empty {
+    padding: 0.85rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
   .review-sort-row {
     display: flex;
     justify-content: flex-end;
@@ -4312,13 +4319,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             return;
           }
           results.innerHTML = data.slice(0, 8).map((p) =>
-            `<button type="button" class="address-result-item" data-name="${escapeHtml(p.place_name)}" data-address="${escapeHtml(p.road_address_name || p.address_name)}" data-category="${escapeHtml(p.category_group_name || '기타')}" data-lat="${p.y}" data-lng="${p.x}">
-              <div class="addr-name">${escapeHtml(p.place_name)}</div>
-              <div class="addr-road">${escapeHtml(p.road_address_name || p.address_name)}</div>
-            </button>`
+            `<div class="address-result-item" role="button" tabindex="0" data-name="${escapeHtml(p.place_name)}" data-address="${escapeHtml(p.road_address_name || p.address_name)}" data-category="${escapeHtml(p.category_group_name || '기타')}" data-lat="${p.y}" data-lng="${p.x}">
+              <div class="address-result-info">
+                <div class="address-result-name">${escapeHtml(p.place_name)}</div>
+                <div class="address-result-addr">${escapeHtml(p.road_address_name || p.address_name)}</div>
+              </div>
+            </div>`
           ).join('');
           results.hidden = false;
-          for (const item of results.querySelectorAll<HTMLButtonElement>('.address-result-item')) {
+          for (const item of results.querySelectorAll<HTMLElement>('.address-result-item')) {
             item.addEventListener('click', () => {
               const name = item.dataset.name || '';
               const address = item.dataset.address || '';
