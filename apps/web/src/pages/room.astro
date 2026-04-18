@@ -721,36 +721,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
   }
 
-  .room-rest-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.25rem;
-    flex-shrink: 0;
-  }
-
-  .wishlist-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.2rem;
-    line-height: 1;
+  .wishlist-help {
+    font-size: 0.75rem;
     color: var(--text-muted);
-    transition: color 0.15s, transform 0.15s;
-  }
-  .wishlist-btn:hover { color: #ef4444; transform: scale(1.15); }
-  .wishlist-btn.active { color: #ef4444; }
-  .wishlist-btn svg { display: block; }
-
-  .wishlist-badge {
-    display: inline-block;
-    background: #fbbf24;
-    color: #78350f;
-    font-size: 0.65rem;
-    font-weight: 700;
-    padding: 0.1rem 0.35rem;
-    border-radius: 4px;
-    vertical-align: middle;
+    margin: 0.25rem 0 0.75rem;
+    line-height: 1.5;
   }
 
   .nearest-wishlist-card {
@@ -777,28 +752,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .room-restaurant-card.is-wishlist {
     border-left: 3px solid #fbbf24;
-  }
-
-  .wishlist-filter-btn {
-    font-size: 0.78rem;
-    padding: 0.3rem 0.7rem;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    background: var(--bg-card);
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-  .wishlist-filter-btn svg { width: 13px; height: 13px; }
-  .wishlist-filter-btn:hover { border-color: var(--border-mid); }
-  .wishlist-filter-btn.active {
-    background: #ef4444;
-    color: #fff;
-    border-color: #ef4444;
   }
 
   .section-subtitle {
@@ -2532,7 +2485,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import {
     fetchCurrentUser, fetchRoom, deleteRoom, leaveRoom,
     updateRoomMemberRole, kickRoomMember, transferOwnership,
-    createRoomRestaurant, fetchRoomRestaurants, toggleRestaurantWishlist,
+    createRoomRestaurant, fetchRoomRestaurants,
     toggleRoomPublic, updateRoom, regenerateInviteCode,
     fetchRoomStats,
     createPoll, fetchPolls, votePoll, closePoll,
@@ -2637,28 +2590,37 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   roomSortBackdrop.addEventListener('click', closeRoomSortSheet);
 
-  const svgHeartOutline = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
-  const svgHeartFilled = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
-
   function renderRestaurantCard(r: RoomRestaurantInfo): string {
     const closedBadge = r.isClosed ? '<span class="closed-badge">폐점</span> ' : '';
-    const wishlistBadge = r.isWishlist ? '<span class="wishlist-badge">가고 싶은</span> ' : '';
-    const heartIcon = r.isWishlist ? svgHeartFilled : svgHeartOutline;
     return `
-      <div class="room-restaurant-card${r.isClosed ? ' is-closed' : ''}${r.isWishlist ? ' is-wishlist' : ''}" data-rid="${r.id}">
+      <div class="room-restaurant-card${r.isClosed ? ' is-closed' : ''}" data-rid="${r.id}">
         <div class="room-rest-top">
           <div class="room-rest-info">
-            <div class="room-rest-name">${wishlistBadge}${closedBadge}${escapeHtml(r.name)}</div>
+            <div class="room-rest-name">${closedBadge}${escapeHtml(r.name)}</div>
             <div class="room-rest-address">${escapeHtml(r.address)}</div>
             <div class="room-rest-category">· ${escapeHtml(r.category)}</div>
           </div>
-          <div class="room-rest-right">
-            ${!r.isWishlist && r.avgRating ? `<div class="room-rest-score">${svgStar} ${r.avgRating}</div>` : ''}
-            <button type="button" class="wishlist-btn${r.isWishlist ? ' active' : ''}" data-rid="${r.id}" title="${r.isWishlist ? '위시리스트에서 제거' : '가고 싶은 식당'}">${heartIcon}</button>
+          ${r.avgRating ? `<div class="room-rest-score">${svgStar} ${r.avgRating}</div>` : ''}
+        </div>
+        <div class="room-rest-footer">
+          <span class="room-rest-reviews-count">방문 ${r._count.visits}회 · 리뷰 ${r._count.reviews}개</span>
+        </div>
+      </div>`;
+  }
+
+  function renderWishlistCard(r: RoomRestaurantInfo): string {
+    const closedBadge = r.isClosed ? '<span class="closed-badge">폐점</span> ' : '';
+    return `
+      <div class="room-restaurant-card is-wishlist" data-rid="${r.id}">
+        <div class="room-rest-top">
+          <div class="room-rest-info">
+            <div class="room-rest-name">${closedBadge}${escapeHtml(r.name)}</div>
+            <div class="room-rest-address">${escapeHtml(r.address)}</div>
+            <div class="room-rest-category">· ${escapeHtml(r.category)}</div>
           </div>
         </div>
         <div class="room-rest-footer">
-          <span class="room-rest-reviews-count">${r.isWishlist ? '아직 안 가본 식당' : `방문 ${r._count.visits}회 · 리뷰 ${r._count.reviews}개`}</span>
+          <span class="room-rest-reviews-count">아직 안 가본 식당</span>
         </div>
       </div>`;
   }
@@ -2811,6 +2773,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       <div class="room-tab-bar">
         <button type="button" class="room-tab-btn active" data-tab="restaurants">🍽️ 식당</button>
+        <button type="button" class="room-tab-btn" data-tab="wishlist">💛 위시리스트</button>
         <button type="button" class="room-tab-btn" data-tab="region">📍 지역</button>
         <button type="button" class="room-tab-btn" data-tab="timeline">📋 활동</button>
         <!-- <button type="button" class="room-tab-btn" data-tab="stats">📊 통계</button> -->
@@ -2818,6 +2781,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>
 
       <div id="tab-restaurants" class="room-tab-panel"></div>
+      <div id="tab-wishlist" class="room-tab-panel" hidden></div>
       <div id="tab-region" class="room-tab-panel" hidden></div>
       <div id="tab-timeline" class="room-tab-panel" hidden></div>
       <div id="tab-stats" class="room-tab-panel" hidden></div>
@@ -2959,36 +2923,41 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     let myLatLng: unknown = null;
 
     function showMyLocation() {
-      if (!('geolocation' in navigator)) return;
+      if (!('geolocation' in navigator)) {
+        showToast('이 브라우저에서는 위치 기능을 사용할 수 없습니다.');
+        return;
+      }
       const btn = document.getElementById('main-map-my-location');
       if (btn) btn.classList.add('active');
 
-      navigator.geolocation.getCurrentPosition((pos) => {
-        myLatLng = new LatLng(pos.coords.latitude, pos.coords.longitude);
-        if (!myLocationOverlay) {
-          const myEl = document.createElement('div');
-          myEl.innerHTML = '<div style="width:14px;height:14px;background:#4285F4;border:3px solid #fff;border-radius:50%;box-shadow:0 0 6px rgba(66,133,244,0.5);"></div>';
-          myLocationOverlay = new CustomOverlayCtor({ map: mainMap, content: myEl, position: myLatLng, zIndex: 1 }) as Record<string, unknown>;
-        } else {
-          (myLocationOverlay as Record<string, (p: unknown) => void>).setPosition(myLatLng);
-        }
-        (mainMap as Record<string, (c: unknown) => void>).setCenter(myLatLng);
-        (mainMap as Record<string, (l: number) => void>).setLevel(4);
-      }, () => {
-        if (btn) btn.classList.remove('active');
-      });
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          myLatLng = new LatLng(pos.coords.latitude, pos.coords.longitude);
+          if (!myLocationOverlay) {
+            const myEl = document.createElement('div');
+            myEl.innerHTML = '<div style="width:14px;height:14px;background:#4285F4;border:3px solid #fff;border-radius:50%;box-shadow:0 0 6px rgba(66,133,244,0.5);"></div>';
+            myLocationOverlay = new CustomOverlayCtor({ map: mainMap, content: myEl, position: myLatLng, zIndex: 1 }) as Record<string, unknown>;
+          } else {
+            (myLocationOverlay as Record<string, (p: unknown) => void>).setPosition(myLatLng);
+          }
+          (mainMap as Record<string, (c: unknown) => void>).setCenter(myLatLng);
+          (mainMap as Record<string, (l: number) => void>).setLevel(4);
+        },
+        (err) => {
+          if (btn) btn.classList.remove('active');
+          if (err.code === err.PERMISSION_DENIED) {
+            showToast('위치 권한이 거부되었습니다. 브라우저 설정에서 허용해 주세요.');
+          } else if (err.code === err.POSITION_UNAVAILABLE) {
+            showToast('현재 위치를 확인할 수 없습니다.');
+          } else if (err.code === err.TIMEOUT) {
+            showToast('위치 확인 시간이 초과되었습니다.');
+          }
+        },
+        { enableHighAccuracy: true, timeout: 10000 },
+      );
     }
 
-    // 초기 로드 시 내 위치 마커만 표시 (이동 없이)
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        myLatLng = new LatLng(pos.coords.latitude, pos.coords.longitude);
-        const myEl = document.createElement('div');
-        myEl.innerHTML = '<div style="width:14px;height:14px;background:#4285F4;border:3px solid #fff;border-radius:50%;box-shadow:0 0 6px rgba(66,133,244,0.5);"></div>';
-        myLocationOverlay = new CustomOverlayCtor({ map: mainMap, content: myEl, position: myLatLng, zIndex: 1 }) as Record<string, unknown>;
-      }, () => {});
-    }
-
+    // 유저 클릭 시에만 위치 요청 (자동 호출 시 브라우저가 조용히 거부할 수 있음)
     const myLocBtn = document.getElementById('main-map-my-location');
     myLocBtn?.addEventListener('click', showMyLocation);
   }
@@ -3187,12 +3156,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   function attachTabHandlers() {
     const restaurantsPanel = document.getElementById('tab-restaurants');
+    const wishlistPanel = document.getElementById('tab-wishlist');
     const regionPanel = document.getElementById('tab-region');
     const statsPanel = document.getElementById('tab-stats');
     const membersPanel = document.getElementById('tab-members');
-    if (!restaurantsPanel || !regionPanel || !statsPanel || !membersPanel) return;
+    if (!restaurantsPanel || !wishlistPanel || !regionPanel || !statsPanel || !membersPanel) return;
     const panels: Record<string, HTMLElement> = {
       restaurants: restaurantsPanel,
+      wishlist: wishlistPanel,
       region: regionPanel,
       stats: statsPanel,
       members: membersPanel,
@@ -3200,6 +3171,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const timelinePanel = document.getElementById('tab-timeline');
     if (timelinePanel) panels.timeline = timelinePanel;
 
+    let wishlistLoaded = false;
     for (const btn of document.querySelectorAll<HTMLButtonElement>('.room-tab-btn')) {
       btn.addEventListener('click', () => {
         for (const b of document.querySelectorAll('.room-tab-btn')) b.classList.remove('active');
@@ -3207,6 +3179,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const tab = btn.dataset.tab!;
         for (const [key, panel] of Object.entries(panels)) {
           panel.hidden = key !== tab;
+        }
+        // 위시리스트 탭 최초 진입 시 렌더
+        if (tab === 'wishlist' && !wishlistLoaded) {
+          wishlistLoaded = true;
+          renderWishlistTab().catch((err) => console.error('[wishlist] unhandled:', err));
         }
       });
     }
@@ -3984,7 +3961,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   let activeCategory = '';
   let searchQuery = '';
   let sortOrder = 'latest'; // 'latest' | 'rating-high' | 'rating-low' | 'reviews' | 'visits' | 'name'
-  let wishlistFilter = false;
   const REST_PAGE_SIZE = 10;
   let restPage = 1;
   let restData: RoomRestaurantInfo[] = [];
@@ -4084,10 +4060,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const restSortLabels: Record<string, string> = { latest: '최신순', 'rating-high': '평점 높은순', 'rating-low': '평점 낮은순', reviews: '리뷰 많은순', visits: '방문 많은순', name: '이름순' };
 
     panel.innerHTML = addFormHtml
-      + '<div id="nearest-wishlist-banner" hidden></div>'
       + `<div class="rest-list-header"><h3 class="section-subtitle">식당 목록 <span class="section-count" id="rest-total-count">-</span></h3><a href="/room/add?roomId=${currentRoom.id}" class="add-rest-fab">+ 식당 등록</a></div>`
       + `<div class="review-sort-row">
-          <button type="button" class="wishlist-filter-btn${wishlistFilter ? ' active' : ''}" id="wishlist-filter-btn">${svgHeartFilled} 가고 싶은</button>
           <button type="button" class="sort-trigger-btn" id="rest-sort-trigger">
             ${restSortLabels[sortOrder] || '최신순'}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -4104,13 +4078,273 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     attachDrawerHandlers();
     attachSearchHandler();
     attachSortHandler();
-    attachWishlistFilterHandler();
-
-    // 가장 가까운 위시리스트 배너 렌더
-    renderNearestWishlistBanner();
 
     // 서버에서 식당 목록 로드
     await loadRestaurants();
+  }
+
+  // ─── 위시리스트 탭 ───
+  let wishlistData: RoomRestaurantInfo[] = [];
+
+  async function renderWishlistTab() {
+    const panel = document.getElementById('tab-wishlist');
+    if (!panel) return;
+
+    panel.innerHTML = `
+      <div id="nearest-wishlist-banner" hidden></div>
+      <div class="rest-list-header">
+        <h3 class="section-subtitle">가고 싶은 식당 <span class="section-count" id="wishlist-total-count">-</span></h3>
+        <button type="button" class="add-rest-fab" id="wishlist-register-btn">+ 위시리스트 등록</button>
+      </div>
+      <p class="wishlist-help">아직 가보지 않았지만 가고 싶은 식당을 기록해 두세요. 방문 후 "가본 식당으로 등록" 버튼을 누르면 일반 식당 목록으로 이동합니다.</p>
+      <div id="wishlist-list"><p class="empty-text">로딩 중...</p></div>
+
+      <div class="add-rest-drawer-overlay" id="wishlist-drawer-overlay"></div>
+      <div class="add-rest-drawer" id="wishlist-drawer">
+        <div class="add-rest-drawer-header">
+          <h3>위시리스트 등록</h3>
+          <button type="button" class="add-rest-drawer-close" id="close-wishlist-drawer">&times;</button>
+        </div>
+        <div class="add-rest-drawer-body">
+          <div class="add-restaurant-form">
+            ${hasKakaoMap ? `
+              <p class="manual-form-hint">카카오 장소 검색으로 식당을 찾아 추가합니다.</p>
+              <div class="form-row full address-search-wrap">
+                <input type="text" id="wl-rest-search" placeholder="식당 이름으로 검색" autocomplete="off" />
+                <div id="wl-address-results" class="address-results" hidden></div>
+              </div>
+              <div class="auto-filled-info" id="wl-auto-filled-info" hidden>
+                <span id="wl-auto-filled-name"></span>
+                <span id="wl-auto-filled-address"></span>
+                <span id="wl-auto-filled-category"></span>
+              </div>
+              <input type="hidden" id="wl-rest-name" />
+              <input type="hidden" id="wl-rest-address" />
+              <input type="hidden" id="wl-rest-province" />
+              <input type="hidden" id="wl-rest-city" />
+              <input type="hidden" id="wl-rest-neighborhood" />
+              <input type="hidden" id="wl-rest-category" />
+              <input type="hidden" id="wl-rest-lat" />
+              <input type="hidden" id="wl-rest-lng" />
+              <div class="add-rest-actions">
+                <button type="button" class="btn-primary-sm" id="wl-submit-btn" disabled>등록</button>
+              </div>
+            ` : '<p class="empty-text">카카오 지도가 활성화되어 있지 않아 위시리스트를 등록할 수 없습니다.</p>'}
+          </div>
+        </div>
+      </div>
+    `;
+
+    attachWishlistDrawerHandlers();
+    attachWishlistRegisterHandler();
+    if (hasKakaoMap) attachWishlistSearchHandler();
+
+    await loadWishlist();
+    renderNearestWishlistBanner();
+  }
+
+  async function loadWishlist() {
+    try {
+      const result = await fetchRoomRestaurants(currentRoom.id, {
+        page: 1, pageSize: 100, wishlist: true, sort: 'latest',
+      });
+      wishlistData = result.data;
+      const countEl = document.getElementById('wishlist-total-count');
+      if (countEl) countEl.textContent = String(result.total);
+      renderWishlistList();
+    } catch {
+      const listEl = document.getElementById('wishlist-list');
+      if (listEl) listEl.innerHTML = '<p class="empty-text">위시리스트를 불러올 수 없습니다.</p>';
+    }
+  }
+
+  function renderWishlistList() {
+    const listEl = document.getElementById('wishlist-list');
+    if (!listEl) return;
+    if (wishlistData.length === 0) {
+      listEl.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">&#x1F49B;</div>
+          <div class="empty-state-title">아직 가고 싶은 식당이 없어요</div>
+          <div class="empty-state-desc">커뮤니티에서 본 맛집이나 친구가 추천한 곳을<br/>"+ 위시리스트 등록"으로 모아보세요.</div>
+        </div>`;
+      return;
+    }
+    listEl.innerHTML = wishlistData.map((r) => renderWishlistCard(r)).join('');
+    for (const card of listEl.querySelectorAll<HTMLElement>('.room-restaurant-card')) {
+      card.addEventListener('click', () => {
+        const rid = card.dataset.rid!;
+        location.href = `/room/restaurant?roomId=${currentRoom.id}&id=${rid}`;
+      });
+    }
+  }
+
+  function attachWishlistDrawerHandlers() {
+    const openBtn = document.getElementById('wishlist-register-btn');
+    const closeBtn = document.getElementById('close-wishlist-drawer');
+    const overlay = document.getElementById('wishlist-drawer-overlay');
+    const drawer = document.getElementById('wishlist-drawer');
+    if (!openBtn || !drawer) return;
+
+    const open = () => { drawer.classList.add('open'); overlay?.classList.add('open'); document.body.style.overflow = 'hidden'; };
+    const close = () => { drawer.classList.remove('open'); overlay?.classList.remove('open'); document.body.style.overflow = ''; };
+
+    openBtn.addEventListener('click', open);
+    closeBtn?.addEventListener('click', close);
+    overlay?.addEventListener('click', close);
+  }
+
+  function attachWishlistSearchHandler() {
+    const searchInput = document.getElementById('wl-rest-search') as HTMLInputElement | null;
+    const results = document.getElementById('wl-address-results');
+    const info = document.getElementById('wl-auto-filled-info');
+    const nameEl = document.getElementById('wl-auto-filled-name');
+    const addressEl = document.getElementById('wl-auto-filled-address');
+    const categoryEl = document.getElementById('wl-auto-filled-category');
+    const submitBtn = document.getElementById('wl-submit-btn') as HTMLButtonElement | null;
+    if (!searchInput || !results || !info || !nameEl || !addressEl || !categoryEl || !submitBtn) return;
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    searchInput.addEventListener('input', () => {
+      if (timer) clearTimeout(timer);
+      const q = searchInput.value.trim();
+      if (!q || q.length < 2) { results.hidden = true; return; }
+      timer = setTimeout(() => {
+        const kakao = (window as Record<string, unknown>).kakao as { maps?: { services?: { Places: new () => { keywordSearch: (q: string, cb: (data: { place_name: string; address_name: string; road_address_name?: string; category_name?: string; category_group_name?: string; y: string; x: string }[], status: string) => void) => void }; Status: { OK: string } } } };
+        if (!kakao?.maps?.services) {
+          results.innerHTML = '<div class="rest-search-empty">카카오 지도를 사용할 수 없습니다.</div>';
+          results.hidden = false;
+          return;
+        }
+        const ps = new kakao.maps.services.Places();
+        ps.keywordSearch(q, (data, status) => {
+          if (status !== kakao.maps!.services!.Status.OK || data.length === 0) {
+            results.innerHTML = '<div class="rest-search-empty">검색 결과가 없습니다.</div>';
+            results.hidden = false;
+            return;
+          }
+          results.innerHTML = data.slice(0, 8).map((p) =>
+            `<button type="button" class="address-result-item" data-name="${escapeHtml(p.place_name)}" data-address="${escapeHtml(p.road_address_name || p.address_name)}" data-category="${escapeHtml(p.category_group_name || '기타')}" data-lat="${p.y}" data-lng="${p.x}">
+              <div class="addr-name">${escapeHtml(p.place_name)}</div>
+              <div class="addr-road">${escapeHtml(p.road_address_name || p.address_name)}</div>
+            </button>`
+          ).join('');
+          results.hidden = false;
+          for (const item of results.querySelectorAll<HTMLButtonElement>('.address-result-item')) {
+            item.addEventListener('click', () => {
+              const name = item.dataset.name || '';
+              const address = item.dataset.address || '';
+              const category = item.dataset.category || '기타';
+              const lat = item.dataset.lat || '';
+              const lng = item.dataset.lng || '';
+              const parts = address.split(' ').filter(Boolean);
+              const pMap: Record<string, string> = {
+                '서울': '서울특별시', '부산': '부산광역시', '대구': '대구광역시',
+                '인천': '인천광역시', '광주': '광주광역시', '대전': '대전광역시',
+                '울산': '울산광역시', '세종': '세종특별자치시', '경기': '경기도',
+                '강원': '강원특별자치도', '충북': '충청북도', '충남': '충청남도',
+                '전북': '전북특별자치도', '전남': '전라남도', '경북': '경상북도',
+                '경남': '경상남도', '제주': '제주특별자치도',
+              };
+              (document.getElementById('wl-rest-name') as HTMLInputElement).value = name;
+              (document.getElementById('wl-rest-address') as HTMLInputElement).value = address;
+              (document.getElementById('wl-rest-province') as HTMLInputElement).value = pMap[parts[0]] || parts[0] || '';
+              (document.getElementById('wl-rest-city') as HTMLInputElement).value = parts[1] || '';
+              (document.getElementById('wl-rest-neighborhood') as HTMLInputElement).value = parts[2] || '';
+              (document.getElementById('wl-rest-category') as HTMLInputElement).value = category;
+              (document.getElementById('wl-rest-lat') as HTMLInputElement).value = lat;
+              (document.getElementById('wl-rest-lng') as HTMLInputElement).value = lng;
+
+              nameEl.textContent = name;
+              addressEl.textContent = address;
+              categoryEl.textContent = category;
+              info.hidden = false;
+              results.hidden = true;
+              searchInput.value = name;
+              submitBtn.disabled = false;
+            });
+          }
+        });
+      }, 300);
+    });
+  }
+
+  function attachWishlistRegisterHandler() {
+    const submitBtn = document.getElementById('wl-submit-btn') as HTMLButtonElement | null;
+    if (!submitBtn) return;
+    submitBtn.addEventListener('click', async () => {
+      const name = (document.getElementById('wl-rest-name') as HTMLInputElement).value;
+      const address = (document.getElementById('wl-rest-address') as HTMLInputElement).value;
+      const province = (document.getElementById('wl-rest-province') as HTMLInputElement).value;
+      const city = (document.getElementById('wl-rest-city') as HTMLInputElement).value;
+      const neighborhood = (document.getElementById('wl-rest-neighborhood') as HTMLInputElement).value;
+      const category = (document.getElementById('wl-rest-category') as HTMLInputElement).value;
+      const lat = (document.getElementById('wl-rest-lat') as HTMLInputElement).value;
+      const lng = (document.getElementById('wl-rest-lng') as HTMLInputElement).value;
+      if (!name || !address) { showToast('식당을 검색하여 선택해 주세요.'); return; }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '등록 중...';
+      try {
+        await createRoomRestaurant(currentRoom.id, {
+          name, address, province, city, neighborhood, category,
+          latitude: lat ? Number(lat) : undefined,
+          longitude: lng ? Number(lng) : undefined,
+          isClosed: false,
+          isWishlist: true,
+        } as Parameters<typeof createRoomRestaurant>[1]);
+        showToast('위시리스트에 추가되었습니다.', 'success');
+        // 드로어 닫기 + 리로드
+        document.getElementById('wishlist-drawer')?.classList.remove('open');
+        document.getElementById('wishlist-drawer-overlay')?.classList.remove('open');
+        document.body.style.overflow = '';
+        // 폼 초기화
+        (document.getElementById('wl-rest-search') as HTMLInputElement).value = '';
+        const info = document.getElementById('wl-auto-filled-info');
+        if (info) info.hidden = true;
+        await loadWishlist();
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : '위시리스트 등록에 실패했습니다.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '등록';
+      }
+    });
+  }
+
+  function renderNearestWishlistBanner() {
+    const banner = document.getElementById('nearest-wishlist-banner');
+    if (!banner || !navigator.geolocation) return;
+
+    const withCoords = wishlistData.filter((r) => r.latitude != null && r.longitude != null);
+    if (withCoords.length === 0) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude: myLat, longitude: myLng } = pos.coords;
+        const sorted = withCoords
+          .map((r) => ({ r, dist: haversineKm(myLat, myLng, r.latitude!, r.longitude!) }))
+          .sort((a, b) => a.dist - b.dist);
+        const nearest = sorted[0];
+        if (!nearest) return;
+        const distText = nearest.dist < 1
+          ? `${Math.round(nearest.dist * 1000)}m`
+          : `${nearest.dist.toFixed(1)}km`;
+        banner.innerHTML = `
+          <a href="/room/restaurant?roomId=${currentRoom.id}&id=${nearest.r.id}" class="nearest-wishlist-card">
+            <div class="nw-icon">📍</div>
+            <div class="nw-info">
+              <div class="nw-label">지금 위치에서 가까운 위시리스트</div>
+              <div class="nw-name">${escapeHtml(nearest.r.name)}</div>
+              <div class="nw-meta">${escapeHtml(nearest.r.category)} · ${distText}</div>
+            </div>
+            <div class="nw-arrow">›</div>
+          </a>`;
+        banner.hidden = false;
+      },
+      () => { /* 위치 거부 시 배너 미표시 */ },
+      { timeout: 5000, maximumAge: 60000 },
+    );
   }
 
   async function loadRestaurants() {
@@ -4121,7 +4355,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         search: searchQuery || undefined,
         category: activeCategory || undefined,
         sort: sortOrder,
-        wishlist: wishlistFilter || undefined,
+        wishlist: false,
       });
       restData = result.data;
       restTotal = result.total;
@@ -4196,7 +4430,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           search: searchQuery || undefined,
           category: activeCategory || undefined,
           sort: sortOrder,
-          wishlist: wishlistFilter || undefined,
+          wishlist: false,
         });
         restData = [...restData, ...result.data];
         // currentRoom.restaurants도 업데이트 (다른 탭 호환)
@@ -4252,17 +4486,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     });
   }
 
-  function attachWishlistFilterHandler() {
-    const btn = document.getElementById('wishlist-filter-btn');
-    if (!btn) return;
-    btn.addEventListener('click', () => {
-      wishlistFilter = !wishlistFilter;
-      btn.classList.toggle('active', wishlistFilter);
-      restPage = 1;
-      loadRestaurants();
-    });
-  }
-
   // Haversine 거리 (km)
   function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
     const R = 6371;
@@ -4271,45 +4494,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const dLng = toRad(lng2 - lng1);
     const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
     return 2 * R * Math.asin(Math.sqrt(a));
-  }
-
-  function renderNearestWishlistBanner() {
-    const banner = document.getElementById('nearest-wishlist-banner');
-    if (!banner || !navigator.geolocation) return;
-
-    const wishlistWithCoords = currentRoom.restaurants.filter(
-      (r) => r.isWishlist && r.latitude != null && r.longitude != null,
-    );
-    if (wishlistWithCoords.length === 0) return;
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude: myLat, longitude: myLng } = pos.coords;
-        const withDistance = wishlistWithCoords
-          .map((r) => ({ r, dist: haversineKm(myLat, myLng, r.latitude!, r.longitude!) }))
-          .sort((a, b) => a.dist - b.dist);
-        const nearest = withDistance[0];
-        if (!nearest) return;
-
-        const distText = nearest.dist < 1
-          ? `${Math.round(nearest.dist * 1000)}m`
-          : `${nearest.dist.toFixed(1)}km`;
-
-        banner.innerHTML = `
-          <a href="/room/restaurant?roomId=${currentRoom.id}&id=${nearest.r.id}" class="nearest-wishlist-card">
-            <div class="nw-icon">📍</div>
-            <div class="nw-info">
-              <div class="nw-label">가까운 가고 싶은 식당</div>
-              <div class="nw-name">${escapeHtml(nearest.r.name)}</div>
-              <div class="nw-meta">${escapeHtml(nearest.r.category)} · ${distText}</div>
-            </div>
-            <div class="nw-arrow">›</div>
-          </a>`;
-        banner.hidden = false;
-      },
-      () => { /* 위치 거부 시 배너 미표시 */ },
-      { timeout: 5000, maximumAge: 60000 },
-    );
   }
 
   function attachDrawerHandlers() {
@@ -4984,18 +5168,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       card.addEventListener('click', (_e) => {
         const rid = card.dataset.rid!;
         location.href = `/room/restaurant?roomId=${currentRoom.id}&id=${rid}`;
-      });
-    }
-    for (const btn of document.querySelectorAll<HTMLButtonElement>('.wishlist-btn')) {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const rid = btn.dataset.rid!;
-        try {
-          await toggleRestaurantWishlist(currentRoom.id, rid);
-          await loadRestaurants();
-        } catch {
-          showToast('위시리스트 변경에 실패했습니다.');
-        }
       });
     }
   }

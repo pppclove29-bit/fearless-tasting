@@ -61,7 +61,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-bottom: 1rem;
     border-bottom: 1px solid var(--border);
     padding-bottom: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    cursor: grab;
+    user-select: none;
+    scroll-behavior: smooth;
   }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-bar.is-dragging { cursor: grabbing; scroll-behavior: auto; }
 
   .tab-btn {
     padding: 0.6rem 1rem;
@@ -73,6 +82,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
     cursor: pointer;
     transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .tab-btn:hover {
@@ -510,6 +521,84 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin-top: 0.25rem;
   }
 
+  .stats-section { margin-bottom: 1.5rem; }
+  .stats-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin: 0 0 0.6rem;
+  }
+
+  .stat-growth {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #16a34a;
+    background: #dcfce7;
+    padding: 0.1rem 0.4rem;
+    border-radius: 10px;
+    vertical-align: middle;
+    margin-left: 0.3rem;
+  }
+
+  .mini-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 100px;
+    padding: 0.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .mini-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    min-width: 0;
+  }
+  .mini-bar {
+    width: 100%;
+    min-height: 2px;
+    background: #3b82f6;
+    border-radius: 2px 2px 0 0;
+    transition: height 0.2s;
+  }
+  .mini-bar-label {
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+    white-space: nowrap;
+  }
+
+  .dual-chart {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .chart-legend {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+  .legend-item { display: inline-flex; align-items: center; gap: 0.3rem; }
+  .legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  @media (max-width: 600px) {
+    .dual-chart { grid-template-columns: 1fr; }
+  }
+
   /* 유저 관리 */
   .user-search-form {
     background: var(--bg-card);
@@ -882,12 +971,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <script>
-  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice, fetchDemoAccounts, createDemoAccount, updateDemoAccount, deleteDemoAccount, loginAsDemoAccount, saveTokens, searchUserByEmail, updateUserRole, fetchAllBoards, createBoard, updateBoard, deleteBoard, createFeatureRequest, fetchFeatureRequests, fetchRequestComments, addRequestComment } from '@/lib/api';
-  import type { Notice, DemoAccount, AdminUserInfo, Board, FeatureRequestItem } from '@/lib/api';
+  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice, fetchDemoAccounts, createDemoAccount, updateDemoAccount, deleteDemoAccount, loginAsDemoAccount, saveTokens, searchUserByEmail, updateUserRole, fetchAllBoards, createBoard, updateBoard, deleteBoard, createFeatureRequest, fetchFeatureRequests, fetchRequestComments, addRequestComment, fetchAdminDashboard } from '@/lib/api';
+  import type { Notice, DemoAccount, AdminUserInfo, Board, FeatureRequestItem, AdminDashboard } from '@/lib/api';
   import { formatDate } from '@repo/utils';
 
   function initAdminPage() {
-    const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
 
     const loadingMsg = document.getElementById('loading-msg');
     const accessDenied = document.getElementById('access-denied');
@@ -931,56 +1019,96 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     }
 
-    interface Stats {
-      totalUsers: number;
-      dau: number;
-      wau: number;
-      mau: number;
-      totalRooms: number;
-      totalRoomRestaurants: number;
-      totalRoomReviews: number;
+    // 탭바 드래그 스크롤 (마우스)
+    const tabBar = document.querySelector<HTMLElement>('.tab-bar');
+    if (tabBar) {
+      let isDown = false;
+      let startX = 0;
+      let scrollLeft = 0;
+      let dragged = false;
+      tabBar.addEventListener('mousedown', (e) => {
+        isDown = true;
+        dragged = false;
+        startX = e.pageX - tabBar.offsetLeft;
+        scrollLeft = tabBar.scrollLeft;
+        tabBar.classList.add('is-dragging');
+      });
+      tabBar.addEventListener('mouseleave', () => { isDown = false; tabBar.classList.remove('is-dragging'); });
+      tabBar.addEventListener('mouseup', () => { isDown = false; tabBar.classList.remove('is-dragging'); });
+      tabBar.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - tabBar.offsetLeft;
+        const walk = x - startX;
+        if (Math.abs(walk) > 5) dragged = true;
+        tabBar.scrollLeft = scrollLeft - walk;
+      });
+      // 드래그 후 발생하는 click 이벤트 차단 (탭 전환 방지)
+      tabBar.addEventListener('click', (e) => {
+        if (dragged) {
+          e.preventDefault();
+          e.stopPropagation();
+          dragged = false;
+        }
+      }, true);
     }
 
     async function loadStats() {
       statsPanel.innerHTML = '<p class="empty-msg">로딩 중...</p>';
       try {
-        const res = await fetch(`${API_BASE}/users/stats`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}` },
-        });
-        if (!res.ok) {
-          statsPanel.innerHTML = '<p class="empty-msg">통계를 불러올 수 없습니다.</p>';
-          return;
-        }
-        const stats: Stats = await res.json();
+        const d: AdminDashboard = await fetchAdminDashboard();
+        const growthBadge = (n: number) => n > 0 ? `<span class="stat-growth">+${n}</span>` : '';
+        const barChart = (values: number[], labels: string[], colors?: string[]) => {
+          const max = Math.max(1, ...values);
+          return `<div class="mini-chart">${values.map((v, i) =>
+            `<div class="mini-bar-col" title="${labels[i]}: ${v}">
+              <div class="mini-bar" style="height:${(v / max) * 100}%;${colors ? `background:${colors[i]}` : ''}"></div>
+              <div class="mini-bar-label">${labels[i].slice(5)}</div>
+             </div>`
+          ).join('')}</div>`;
+        };
+        const signupValues = d.daily.signups.map((x) => x.count);
+        const signupLabels = d.daily.signups.map((x) => x.date);
+        const visitValues = d.daily.activity.map((x) => x.visits);
+        const reviewValues = d.daily.activity.map((x) => x.reviews);
+        const activityLabels = d.daily.activity.map((x) => x.date);
+
         statsPanel.innerHTML = `
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-value">${stats.dau}</div>
-              <div class="stat-label">오늘 활성 유저 (DAU)</div>
+          <div class="stats-section">
+            <h3 class="stats-section-title">유저</h3>
+            <div class="stats-grid">
+              <div class="stat-card"><div class="stat-value">${d.users.dau}</div><div class="stat-label">DAU (오늘)</div></div>
+              <div class="stat-card"><div class="stat-value">${d.users.wau}</div><div class="stat-label">WAU (7일)</div></div>
+              <div class="stat-card"><div class="stat-value">${d.users.mau}</div><div class="stat-label">MAU (30일)</div></div>
+              <div class="stat-card"><div class="stat-value">${d.users.total} ${growthBadge(d.users.newThisWeek)}</div><div class="stat-label">전체 유저</div></div>
             </div>
-            <div class="stat-card">
-              <div class="stat-value">${stats.wau}</div>
-              <div class="stat-label">7일 활성 유저 (WAU)</div>
+          </div>
+
+          <div class="stats-section">
+            <h3 class="stats-section-title">활동 (이번 주)</h3>
+            <div class="stats-grid">
+              <div class="stat-card"><div class="stat-value">${d.rooms.total} ${growthBadge(d.rooms.newThisWeek)}</div><div class="stat-label">방</div></div>
+              <div class="stat-card"><div class="stat-value">${d.restaurants.total} ${growthBadge(d.restaurants.newThisWeek)}</div><div class="stat-label">식당 (위시 ${d.restaurants.wishlist})</div></div>
+              <div class="stat-card"><div class="stat-value">${d.visits.total} ${growthBadge(d.visits.newThisWeek)}</div><div class="stat-label">방문</div></div>
+              <div class="stat-card"><div class="stat-value">${d.reviews.total} ${growthBadge(d.reviews.newThisWeek)}</div><div class="stat-label">리뷰</div></div>
+              <div class="stat-card"><div class="stat-value">${d.posts.total} ${growthBadge(d.posts.newThisWeek)}</div><div class="stat-label">게시글</div></div>
             </div>
-            <div class="stat-card">
-              <div class="stat-value">${stats.mau}</div>
-              <div class="stat-label">30일 활성 유저 (MAU)</div>
+          </div>
+
+          <div class="stats-section">
+            <h3 class="stats-section-title">일별 가입자 (최근 14일)</h3>
+            ${barChart(signupValues, signupLabels)}
+          </div>
+
+          <div class="stats-section">
+            <h3 class="stats-section-title">일별 활동 (최근 14일)</h3>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-dot" style="background:#3b82f6;"></span>방문</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#10b981;"></span>리뷰</span>
             </div>
-            <div class="stat-card">
-              <div class="stat-value">${stats.totalUsers}</div>
-              <div class="stat-label">전체 유저</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">${stats.totalRooms}</div>
-              <div class="stat-label">전체 방</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">${stats.totalRoomRestaurants}</div>
-              <div class="stat-label">전체 식당</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">${stats.totalRoomReviews}</div>
-              <div class="stat-label">전체 리뷰</div>
+            <div class="dual-chart">
+              ${barChart(visitValues, activityLabels, visitValues.map(() => '#3b82f6'))}
+              ${barChart(reviewValues, activityLabels, reviewValues.map(() => '#10b981'))}
             </div>
           </div>
         `;

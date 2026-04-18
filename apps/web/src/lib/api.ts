@@ -442,7 +442,8 @@ export async function fetchRoomRestaurants(
   if (params.search) qs.set('search', params.search);
   if (params.category) qs.set('category', params.category);
   if (params.sort) qs.set('sort', params.sort);
-  if (params.wishlist) qs.set('wishlist', 'true');
+  if (params.wishlist === true) qs.set('wishlist', 'true');
+  else if (params.wishlist === false) qs.set('wishlist', 'false');
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants?${qs}`);
   await throwIfNotOk(res, '식당 목록 조회에 실패했습니다.');
   return res.json();
@@ -758,6 +759,25 @@ export interface DemoAccount {
 export async function fetchDemoAccounts(): Promise<DemoAccount[]> {
   const res = await apiFetch(`${API_BASE}/admin/demo-accounts`);
   await throwIfNotOk(res, '가계정 목록을 불러올 수 없습니다.');
+  return res.json();
+}
+
+export interface AdminDashboard {
+  users: { total: number; dau: number; wau: number; mau: number; newThisWeek: number };
+  rooms: { total: number; newThisWeek: number };
+  restaurants: { total: number; newThisWeek: number; wishlist: number };
+  visits: { total: number; newThisWeek: number };
+  reviews: { total: number; newThisWeek: number };
+  posts: { total: number; newThisWeek: number };
+  daily: {
+    signups: { date: string; count: number }[];
+    activity: { date: string; visits: number; reviews: number }[];
+  };
+}
+
+export async function fetchAdminDashboard(): Promise<AdminDashboard> {
+  const res = await apiFetch(`${API_BASE}/admin/stats/dashboard`);
+  await throwIfNotOk(res, '대시보드를 불러올 수 없습니다.');
   return res.json();
 }
 

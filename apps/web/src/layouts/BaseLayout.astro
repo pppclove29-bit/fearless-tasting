@@ -106,6 +106,26 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     {import.meta.env.PUBLIC_AD_CLIENT && (
       <meta name="ad-client" content={import.meta.env.PUBLIC_AD_CLIENT} />
     )}
+    {import.meta.env.PUBLIC_GSC_VERIFICATION && (
+      <meta name="google-site-verification" content={import.meta.env.PUBLIC_GSC_VERIFICATION} />
+    )}
+    {import.meta.env.PUBLIC_GA_ID && (
+      <>
+        <script async src={`https://www.googletagmanager.com/gtag/js?id=${import.meta.env.PUBLIC_GA_ID}`}></script>
+        <script is:inline define:vars={{ gaId: import.meta.env.PUBLIC_GA_ID }}>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', gaId, { send_page_view: false });
+          document.addEventListener('astro:page-load', function() {
+            gtag('event', 'page_view', {
+              page_path: location.pathname + location.search,
+              page_title: document.title,
+            });
+          });
+        </script>
+      </>
+    )}
     <slot name="head" />
     <ViewTransitions />
     <title>{fullTitle}</title>
