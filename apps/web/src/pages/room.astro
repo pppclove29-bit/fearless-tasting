@@ -2826,54 +2826,50 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     let activeOverlay: Record<string, unknown> | null = null;
     let overlayClicked = false;
 
-    // 노란 마커 이미지 (위시리스트용)
-    const MarkerImageCtor = maps.MarkerImage as new (src: string, size: unknown, opts?: unknown) => unknown;
-    const SizeCtor = maps.Size as new (w: number, h: number) => unknown;
-    const PointCtor = maps.Point as new (x: number, y: number) => unknown;
-    const wishlistMarkerSvg = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40"><path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 26 14 26s14-15.5 14-26c0-7.7-6.3-14-14-14z" fill="#fbbf24" stroke="#78350f" stroke-width="1.5"/><circle cx="14" cy="14" r="5" fill="#fff"/></svg>');
-    const wishlistMarkerImage = new MarkerImageCtor(
-      `data:image/svg+xml;charset=utf-8,${wishlistMarkerSvg}`,
-      new SizeCtor(28, 40),
-      { offset: new PointCtor(14, 40) },
-    );
-
     const regularMarkers: Record<string, unknown>[] = [];
     const wishlistMarkers: Record<string, unknown>[] = [];
+    const events = maps.event as Record<string, (t: unknown, e: string, cb: () => void) => void>;
 
     for (const r of restaurantsWithCoords) {
       const position = new LatLng(r.latitude!, r.longitude!);
+      const marker = new MarkerCtor({ position });
+      const restUrl = `/room/restaurant?roomId=${currentRoom.id}&id=${r.id}`;
+      const overlayEl = document.createElement('div');
 
       if (r.isWishlist) {
-        // 위시리스트: 노란 마커, 클릭 불가
-        const wishMarker = new MarkerCtor({ position, image: wishlistMarkerImage, clickable: false });
-        wishlistMarkers.push(wishMarker);
-        continue;
+        overlayEl.innerHTML = `
+          <a href="${restUrl}" style="display:block;text-decoration:none;color:inherit;background:var(--bg-card,#fff);border-radius:8px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.25);min-width:120px;cursor:pointer;border:1px solid #fbbf24;">
+            <div style="font-size:10px;font-weight:700;color:#78350f;background:#fef3c7;display:inline-block;padding:1px 6px;border-radius:4px;margin-bottom:4px;">💛 가고 싶은 식당</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-heading,#111);margin-bottom:2px;">${escapeHtml(r.name)}</div>
+            <div style="font-size:11px;color:var(--text-secondary,#888);">${escapeHtml(r.category || '')}</div>
+          </a>
+          <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #fbbf24;margin:0 auto;"></div>`;
+      } else {
+        const ratingLine = r.avgRating !== null
+          ? `<div style="color:#f59e0b;font-size:12px;">${svgStar} ${r.avgRating}</div>`
+          : '';
+        overlayEl.innerHTML = `
+          <a href="${restUrl}" style="display:block;text-decoration:none;color:inherit;background:var(--bg-card,#fff);border-radius:8px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.25);min-width:100px;cursor:pointer;border:1px solid var(--border,#e8e8e8);">
+            <div style="font-size:13px;font-weight:600;color:var(--text-heading,#111);margin-bottom:2px;">${escapeHtml(r.name)}</div>
+            <div style="font-size:11px;color:var(--text-secondary,#888);">${escapeHtml(r.category || '')}</div>
+            ${ratingLine}
+          </a>
+          <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid var(--bg-card,#fff);margin:0 auto;"></div>`;
       }
 
-      const marker = new MarkerCtor({ position });
-
-      const ratingLine = r.avgRating !== null
-        ? `<div style="color:#f59e0b;font-size:12px;">${svgStar} ${r.avgRating}</div>`
-        : '';
-      const overlayEl = document.createElement('div');
-      const restUrl = `/room/restaurant?roomId=${currentRoom.id}&id=${r.id}`;
-      overlayEl.innerHTML = `
-        <a href="${restUrl}" style="display:block;text-decoration:none;color:inherit;background:var(--bg-card,#fff);border-radius:8px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.25);min-width:100px;cursor:pointer;border:1px solid var(--border,#e8e8e8);">
-          <div style="font-size:13px;font-weight:600;color:var(--text-heading,#111);margin-bottom:2px;">${escapeHtml(r.name)}</div>
-          <div style="font-size:11px;color:var(--text-secondary,#888);">${escapeHtml(r.category || '')}</div>
-          ${ratingLine}
-        </a>
-        <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid var(--bg-card,#fff);margin:0 auto;"></div>`;
       const overlay = new CustomOverlayCtor({ content: overlayEl, position, yAnchor: 1.3, clickable: true });
 
-      const events = maps.event as Record<string, (t: unknown, e: string, cb: () => void) => void>;
       events.addListener(marker, 'click', () => {
         if (activeOverlay) (activeOverlay as Record<string, (m: unknown) => void>).setMap(null as unknown as never);
         (overlay as Record<string, (m: unknown) => void>).setMap(mainMap);
         activeOverlay = overlay;
       });
 
-      regularMarkers.push(marker);
+      if (r.isWishlist) {
+        wishlistMarkers.push(marker);
+      } else {
+        regularMarkers.push(marker);
+      }
     }
 
     const regularClusterer = new MarkerClustererCtor({
