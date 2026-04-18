@@ -2917,15 +2917,46 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     });
 
     // 탭별 마커 필터링
+    // Kakao MarkerClusterer.setMap(null)이 개별 마커를 완전히 제거하지 않는 경우가 있어
+    // 숨길 때는 clear() + setMap(null) + 개별 마커 setMap(null)까지 3단계로 확실히 제거
     function setMarkersVisibility(mode: 'all' | 'regular' | 'wishlist') {
       const showRegular = mode === 'all' || mode === 'regular';
       const showWishlist = mode === 'all' || mode === 'wishlist';
-      (regularClusterer as Record<string, (m: unknown) => void>).setMap(showRegular ? mainMap : null as unknown as never);
-      (wishlistClusterer as Record<string, (m: unknown) => void>).setMap(showWishlist ? mainMap : null as unknown as never);
+
+      const rc = regularClusterer as Record<string, (...args: unknown[]) => unknown>;
+      const wc = wishlistClusterer as Record<string, (...args: unknown[]) => unknown>;
+
+      if (showRegular) {
+        rc.clear();
+        rc.addMarkers(regularMarkers);
+        rc.setMap(mainMap);
+      } else {
+        rc.clear();
+        rc.setMap(null);
+        for (const m of regularMarkers) {
+          (m as Record<string, (x: unknown) => void>).setMap(null as unknown as never);
+        }
+      }
+
+      if (showWishlist) {
+        wc.clear();
+        wc.addMarkers(wishlistMarkers);
+        wc.setMap(mainMap);
+      } else {
+        wc.clear();
+        wc.setMap(null);
+        for (const m of wishlistMarkers) {
+          (m as Record<string, (x: unknown) => void>).setMap(null as unknown as never);
+        }
+      }
     }
     (window as Record<string, unknown>).__setMapMarkers = setMarkersVisibility;
-    // 초기 상태: 식당 탭이 기본이므로 일반 마커만 표시
-    setMarkersVisibility('regular');
+    // 초기 상태: 현재 활성 탭에 맞춰 마커 표시 (지도 로딩 중 탭 전환된 경우 대응)
+    const activeTab = document.querySelector<HTMLElement>('.room-tab-btn.active')?.dataset.tab || 'restaurants';
+    const initialMode: 'all' | 'regular' | 'wishlist' =
+      activeTab === 'restaurants' ? 'regular' :
+      activeTab === 'wishlist' ? 'wishlist' : 'all';
+    setMarkersVisibility(initialMode);
 
     // 모든 마커 포함하도록 범위 설정
     const bounds = new LatLngBounds();
