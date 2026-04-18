@@ -7,13 +7,15 @@
  */
 import { completeOnboarding, apiFetch } from './api';
 import { registerPushToken } from './firebase';
+import { trackEvent } from './analytics';
 
 interface Step {
+  id: string;
   icon: string;
   title: string;
   description: string;
   actionLabel: string;
-  action?: () => Promise<void> | void;
+  action?: () => Promise<'granted' | 'denied' | 'unsupported' | void>;
 }
 
 /** 온보딩 모달 시작 */
@@ -23,6 +25,7 @@ export async function startOnboarding(): Promise<void> {
 
   const steps: Step[] = [
     {
+      id: 'intro',
       icon: '🍽️',
       title: '함께 쌓아가는 우리만의 맛집 지도',
       description:
@@ -30,6 +33,7 @@ export async function startOnboarding(): Promise<void> {
       actionLabel: '다음',
     },
     {
+      id: 'room',
       icon: '🏠',
       title: '방을 만들거나 참여하세요',
       description:
@@ -37,6 +41,7 @@ export async function startOnboarding(): Promise<void> {
       actionLabel: '다음',
     },
     {
+      id: 'notification',
       icon: '🔔',
       title: '친구 활동을 실시간 알림으로',
       description:
@@ -45,6 +50,7 @@ export async function startOnboarding(): Promise<void> {
       action: requestNotificationPermission,
     },
     {
+      id: 'location',
       icon: '📍',
       title: '가까운 맛집을 추천해드려요',
       description:
@@ -53,6 +59,8 @@ export async function startOnboarding(): Promise<void> {
       action: requestLocationPermission,
     },
   ];
+
+  trackEvent('onboarding_started', { total_steps: steps.length });
 
   let currentStep = 0;
 
@@ -97,19 +105,29 @@ export async function startOnboarding(): Promise<void> {
       </div>
     `;
 
+    // 스텝 노출 시점 추적
+    trackEvent('onboarding_step_viewed', { step_index: currentStep, step_id: s.id });
+
     modal.querySelector('.ob-action')?.addEventListener('click', async () => {
       const btn = modal.querySelector<HTMLButtonElement>('.ob-action');
       if (btn) { btn.disabled = true; btn.textContent = '처리 중...'; }
+      let result: 'granted' | 'denied' | 'unsupported' | void;
       try {
-        if (s.action) await s.action();
+        if (s.action) result = await s.action();
       } catch {
         /* ignore */
       }
+      trackEvent('onboarding_step_completed', {
+        step_index: currentStep,
+        step_id: s.id,
+        ...(result ? { permission_result: result } : {}),
+      });
       nextStep();
     });
 
     modal.querySelector('.ob-skip')?.addEventListener('click', () => {
-      finish();
+      trackEvent('onboarding_skipped', { at_step: currentStep, step_id: s.id });
+      finish('skipped');
     });
   }
 
@@ -118,11 +136,12 @@ export async function startOnboarding(): Promise<void> {
       currentStep++;
       render();
     } else {
-      finish();
+      finish('completed');
     }
   }
 
-  async function finish() {
+  async function finish(reason: 'completed' | 'skipped') {
+    trackEvent('onboarding_finished', { reason, last_step: currentStep });
     try {
       await completeOnboarding();
     } catch {
@@ -142,23 +161,24 @@ export async function startOnboarding(): Promise<void> {
   render();
 }
 
-async function requestNotificationPermission(): Promise<void> {
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-  if (Notification.permission === 'denied') return;
+async function requestNotificationPermission(): Promise<'granted' | 'denied' | 'unsupported'> {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return 'unsupported';
+  if (Notification.permission === 'denied') return 'denied';
   if (Notification.permission === 'default') {
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted') return;
+    if (perm !== 'granted') return 'denied';
   }
-  // 권한 granted → FCM 토큰 등록
-  await registerPushToken(apiFetch);
+  // 권한 granted → FCM 토큰 등록 (fire-and-forget)
+  registerPushToken(apiFetch).catch(() => {});
+  return 'granted';
 }
 
-async function requestLocationPermission(): Promise<void> {
-  if (!('geolocation' in navigator)) return;
+async function requestLocationPermission(): Promise<'granted' | 'denied' | 'unsupported'> {
+  if (!('geolocation' in navigator)) return 'unsupported';
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
-      () => resolve(),
-      () => resolve(),
+      () => resolve('granted'),
+      () => resolve('denied'),
       { timeout: 8000 },
     );
   });
