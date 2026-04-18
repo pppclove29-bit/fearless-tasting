@@ -2490,7 +2490,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     fetchRoomStats,
     createPoll, fetchPolls, votePoll, closePoll,
     fetchTimeline,
-    showToast, showConfirm, showDangerConfirm,
+    showToast, showConfirm, showDangerConfirm, showPermissionExplainer, showPermissionDeniedGuide,
   } from '@/lib/api';
   import type { AuthUser, RoomDetailResponse, RoomRestaurantInfo, RoomStats, Poll, TimelineItem } from '@/lib/api';
   // getCities, getNeighborhoods are defined locally below
@@ -2823,7 +2823,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const center = new LatLng(restaurantsWithCoords[0].latitude!, restaurantsWithCoords[0].longitude!);
     const mainMap = new MapCtor(container, { center, level: 5 });
 
-    const markers: Record<string, unknown>[] = [];
     let activeOverlay: Record<string, unknown> | null = null;
     let overlayClicked = false;
 
@@ -2838,16 +2837,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       { offset: new PointCtor(14, 40) },
     );
 
-    const clusterableMarkers: Record<string, unknown>[] = [];
+    const regularMarkers: Record<string, unknown>[] = [];
+    const wishlistMarkers: Record<string, unknown>[] = [];
 
     for (const r of restaurantsWithCoords) {
       const position = new LatLng(r.latitude!, r.longitude!);
 
       if (r.isWishlist) {
-        // 위시리스트: 노란 마커, 클릭 불가, 클러스터링 제외
+        // 위시리스트: 노란 마커, 클릭 불가
         const wishMarker = new MarkerCtor({ position, image: wishlistMarkerImage, clickable: false });
-        (wishMarker as Record<string, (m: unknown) => void>).setMap(mainMap);
-        markers.push(wishMarker);
+        wishlistMarkers.push(wishMarker);
         continue;
       }
 
@@ -2874,13 +2873,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         activeOverlay = overlay;
       });
 
-      clusterableMarkers.push(marker);
-      markers.push(marker);
+      regularMarkers.push(marker);
     }
 
-    new MarkerClustererCtor({
+    const regularClusterer = new MarkerClustererCtor({
       map: mainMap,
-      markers: clusterableMarkers,
+      markers: regularMarkers,
       gridSize: 60,
       minLevel: 2,
       minClusterSize: 2,
@@ -2897,6 +2895,37 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
       }],
     });
+
+    const wishlistClusterer = new MarkerClustererCtor({
+      map: mainMap,
+      markers: wishlistMarkers,
+      gridSize: 60,
+      minLevel: 2,
+      minClusterSize: 2,
+      styles: [{
+        width: '36px', height: '36px',
+        background: '#fbbf24',
+        color: '#78350f',
+        borderRadius: '50%',
+        textAlign: 'center',
+        lineHeight: '36px',
+        fontSize: '13px',
+        fontWeight: '700',
+        border: '2px solid #fff',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+      }],
+    });
+
+    // 탭별 마커 필터링
+    function setMarkersVisibility(mode: 'all' | 'regular' | 'wishlist') {
+      const showRegular = mode === 'all' || mode === 'regular';
+      const showWishlist = mode === 'all' || mode === 'wishlist';
+      (regularClusterer as Record<string, (m: unknown) => void>).setMap(showRegular ? mainMap : null as unknown as never);
+      (wishlistClusterer as Record<string, (m: unknown) => void>).setMap(showWishlist ? mainMap : null as unknown as never);
+    }
+    (window as Record<string, unknown>).__setMapMarkers = setMarkersVisibility;
+    // 초기 상태: 식당 탭이 기본이므로 일반 마커만 표시
+    setMarkersVisibility('regular');
 
     // 모든 마커 포함하도록 범위 설정
     const bounds = new LatLngBounds();
@@ -2921,14 +2950,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     let myLocationOverlay: Record<string, unknown> | null = null;
     let myLatLng: unknown = null;
 
-    function showMyLocation() {
-      if (!('geolocation' in navigator)) {
-        showToast('이 브라우저에서는 위치 기능을 사용할 수 없습니다.');
-        return;
-      }
+    function requestLocation() {
       const btn = document.getElementById('main-map-my-location');
       if (btn) btn.classList.add('active');
-
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           myLatLng = new LatLng(pos.coords.latitude, pos.coords.longitude);
@@ -2945,7 +2969,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         (err) => {
           if (btn) btn.classList.remove('active');
           if (err.code === err.PERMISSION_DENIED) {
-            showToast('위치 권한이 거부되었습니다. 브라우저 설정에서 허용해 주세요.');
+            showPermissionDeniedGuide('location');
           } else if (err.code === err.POSITION_UNAVAILABLE) {
             showToast('현재 위치를 확인할 수 없습니다.');
           } else if (err.code === err.TIMEOUT) {
@@ -2954,6 +2978,37 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         },
         { enableHighAccuracy: true, timeout: 10000 },
       );
+    }
+
+    async function showMyLocation() {
+      if (!('geolocation' in navigator)) {
+        showToast('이 브라우저에서는 위치 기능을 사용할 수 없습니다.');
+        return;
+      }
+
+      // 권한 상태에 따라 분기
+      if ('permissions' in navigator) {
+        try {
+          const status = await navigator.permissions.query({ name: 'geolocation' });
+          if (status.state === 'denied') {
+            showPermissionDeniedGuide('location');
+            return;
+          }
+          if (status.state === 'prompt') {
+            const ok = await showPermissionExplainer({
+              title: '현재 위치를 사용해도 될까요?',
+              description: '지도 중심을 내 위치로 맞추고, 가까운 위시리스트 식당을 추천하는 데만 사용해요. 위치 정보는 서버에 저장되지 않습니다.',
+              icon: '📍',
+              allowText: '위치 허용하기',
+            });
+            if (!ok) return;
+          }
+        } catch {
+          // Permissions API 미지원 브라우저 → 바로 요청
+        }
+      }
+
+      requestLocation();
     }
 
     // 유저 클릭 시에만 위치 요청 (자동 호출 시 브라우저가 조용히 거부할 수 있음)
@@ -3183,6 +3238,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         if (tab === 'wishlist' && !wishlistLoaded) {
           wishlistLoaded = true;
           renderWishlistTab().catch((err) => console.error('[wishlist] unhandled:', err));
+        }
+        // 지도 마커 탭별 필터
+        const setMarkers = (window as Record<string, unknown>).__setMapMarkers as ((m: 'all' | 'regular' | 'wishlist') => void) | undefined;
+        if (setMarkers) {
+          if (tab === 'restaurants') setMarkers('regular');
+          else if (tab === 'wishlist') setMarkers('wishlist');
+          else setMarkers('all');
         }
       });
     }

@@ -444,7 +444,7 @@ export const prerender = false;
 </style>
 
 <script>
-  import { fetchCurrentUser, updateNickname, updatePushEnabled, logout, clearTokens, showToast, apiFetch } from '@/lib/api';
+  import { fetchCurrentUser, updateNickname, updatePushEnabled, logout, clearTokens, showToast, apiFetch, showPermissionExplainer, showPermissionDeniedGuide } from '@/lib/api';
   import { registerPushToken } from '@/lib/firebase';
   import { uploadImage } from '@/lib/image-upload';
 
@@ -595,15 +595,24 @@ export const prerender = false;
               return;
             }
             if (Notification.permission === 'denied') {
-              showToast('알림 권한이 차단되어 있습니다. 브라우저 설정에서 허용해 주세요.');
+              showPermissionDeniedGuide('notification');
               return;
             }
             if (Notification.permission === 'default') {
+              // 브라우저 팝업 전에 설명 모달로 맥락 제공 (반사적 거부 방지)
+              const ok = await showPermissionExplainer({
+                title: '친구 활동을 알림으로 받아볼까요?',
+                description: '방에 새 맛집, 방문, 리뷰가 등록되면 바로 알려드려요. 원치 않으면 프로필에서 언제든 끌 수 있습니다.',
+                icon: '🔔',
+                allowText: '알림 허용하기',
+              });
+              if (!ok) return;
               const perm = await Notification.requestPermission();
-              if (perm !== 'granted') {
-                showToast('알림 권한이 허용되지 않아 푸시 알림을 켤 수 없습니다.');
+              if (perm === 'denied') {
+                showPermissionDeniedGuide('notification');
                 return;
               }
+              if (perm !== 'granted') return;
             }
             // 권한 granted 상태 → FCM 토큰 발급 + 서버 등록
             const token = await registerPushToken(apiFetch);

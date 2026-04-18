@@ -23,7 +23,7 @@ export type {
 };
 export type { AppNotification as Notification } from '@repo/types';
 
-export { showToast, showConfirm, showDangerConfirm } from './toast';
+export { showToast, showConfirm, showDangerConfirm, showPermissionExplainer, showPermissionDeniedGuide } from './toast';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
 
