@@ -105,6 +105,14 @@ export class UsersController {
     return this.usersService.updatePushEnabled(user.id, body.enabled);
   }
 
+  /** 온보딩 완료 처리 */
+  @Patch('me/onboarding-completed')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '온보딩 완료 처리' })
+  async completeOnboarding(@CurrentUser() user: { id: string }) {
+    return this.usersService.completeOnboarding(user.id);
+  }
+
   /** 관리자 대시보드 통계 (DAU/WAU/MAU 등) */
   @Get('stats')
   @UseGuards(AdminGuard)

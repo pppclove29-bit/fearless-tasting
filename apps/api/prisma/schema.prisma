@@ -59,6 +59,8 @@ model User {
   postBookmarks       PostBookmark[]
   /// 마지막 활동 시각 (DAU 추적용)
   lastActiveAt        DateTime?
+  /// 온보딩 완료 시각 (null이면 최초 로그인, 온보딩 모달 노출)
+  onboardingCompletedAt DateTime?
   /// 가입일
   createdAt           DateTime               @default(now())
   /// 최종 수정일

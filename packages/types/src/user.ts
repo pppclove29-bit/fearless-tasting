@@ -14,4 +14,5 @@ export interface AuthUser {
   role: string;
   profileImageUrl: string | null;
   pushEnabled: boolean;
+  onboardingCompletedAt: string | null;
 }

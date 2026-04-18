@@ -904,8 +904,13 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
       if (user) {
         applyUserUI(user);
 
-        // FCM 푸시 토큰 등록 (fire-and-forget)
-        registerPushToken(apiFetch).catch(() => {});
+        // 온보딩 미완료 유저는 온보딩 모달 노출 (유저당 1회)
+        if (!user.onboardingCompletedAt) {
+          import('@/lib/onboarding').then((m) => m.startOnboarding()).catch(() => {});
+        } else {
+          // 온보딩 완료된 경우: 토큰이 이미 있으면 재등록 시도 (idempotent)
+          registerPushToken(apiFetch).catch(() => {});
+        }
 
         // 알림 벨 초기화
         const bellBtn = document.getElementById('notif-bell');

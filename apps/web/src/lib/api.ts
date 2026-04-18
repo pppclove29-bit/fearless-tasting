@@ -781,6 +781,16 @@ export async function fetchAdminDashboard(): Promise<AdminDashboard> {
   return res.json();
 }
 
+/** 온보딩 완료 처리 */
+export async function completeOnboarding(): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/users/me/onboarding-completed`, {
+    method: 'PATCH',
+  });
+  if (!res.ok) throw new Error('온보딩 처리에 실패했습니다.');
+  // 캐시 무효화
+  resetUserCache();
+}
+
 export async function createDemoAccount(nickname: string, memo?: string): Promise<unknown> {
   const res = await apiFetch(`${API_BASE}/admin/demo-accounts`, {
     method: 'POST',

@@ -219,7 +219,7 @@ export class AuthService {
     const user = await measure('auth.getUserProfile', () =>
       this.prisma.read.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true, pushEnabled: true },
+        select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true, pushEnabled: true, onboardingCompletedAt: true },
       }),
     );
     if (!user) return null;

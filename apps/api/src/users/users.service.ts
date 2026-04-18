@@ -64,6 +64,15 @@ export class UsersService {
     });
   }
 
+  /** 온보딩 완료 처리 */
+  async completeOnboarding(userId: string) {
+    return this.prisma.write.user.update({
+      where: { id: userId },
+      data: { onboardingCompletedAt: new Date() },
+      select: { id: true, onboardingCompletedAt: true },
+    });
+  }
+
   /** 회원 탈퇴 (방장인 방이 있으면 거부) */
   async deleteAccount(userId: string) {
     const ownedRoom = await this.prisma.read.room.findFirst({

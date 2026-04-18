@@ -13,10 +13,6 @@ import AdSlot from '@/components/AdSlot.astro';
     </div>
 
     <div class="community-toolbar">
-      <div class="search-wrap">
-        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" class="search-input" id="post-search" placeholder="게시글 검색" />
-      </div>
       <a class="btn-write" id="btn-write" href="#" hidden>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         글쓰기
@@ -107,33 +103,10 @@ import AdSlot from '@/components/AdSlot.astro';
   .community-toolbar {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 0.75rem;
     margin-bottom: 1rem;
   }
-
-  .search-wrap {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.55rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--bg);
-  }
-
-  .search-icon { color: var(--text-muted); flex-shrink: 0; }
-
-  .search-input {
-    flex: 1;
-    border: none;
-    background: none;
-    font-size: 0.85rem;
-    color: var(--text);
-    font-family: inherit;
-    outline: none;
-  }
-  .search-input::placeholder { color: var(--text-muted); }
 
   .btn-write {
     display: inline-flex;
@@ -548,9 +521,8 @@ import AdSlot from '@/components/AdSlot.astro';
     const feedContent = document.getElementById('feed-content');
     const paginationWrap = document.getElementById('pagination-wrap');
     const btnWrite = document.getElementById('btn-write') as HTMLAnchorElement | null;
-    const postSearch = document.getElementById('post-search') as HTMLInputElement | null;
     const popularToggle = document.getElementById('popular-toggle') as HTMLButtonElement | null;
-    if (!tabsScroll || !feedContent || !paginationWrap || !btnWrite || !postSearch) return;
+    if (!tabsScroll || !feedContent || !paginationWrap || !btnWrite) return;
 
     let boards: BoardListItem[] = [];
     let activeSlug = '';
@@ -558,7 +530,6 @@ import AdSlot from '@/components/AdSlot.astro';
     let totalPages = 1;
     let total = 0;
     let isLoggedIn = false;
-    let searchQuery = '';
     let popularOnly = false;
 
     function escapeHtml(text: string): string {
@@ -684,17 +655,6 @@ import AdSlot from '@/components/AdSlot.astro';
       }
     }
 
-    // 검색 디바운스
-    let searchTimer: ReturnType<typeof setTimeout> | null = null;
-    postSearch.addEventListener('input', () => {
-      if (searchTimer) clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => {
-        searchQuery = postSearch.value.trim();
-        currentPage = 1;
-        loadPosts();
-      }, 300);
-    });
-
     // 인기글 필터 토글
     popularToggle?.addEventListener('click', () => {
       popularOnly = !popularOnly;
@@ -774,6 +734,21 @@ import AdSlot from '@/components/AdSlot.astro';
 
     // 카카오 장소 검색
     let restSearchTimer: ReturnType<typeof setTimeout> | null = null;
+    let kakaoLoaded = false;
+
+    function loadKakaoMaps(): Promise<void> {
+      if (kakaoLoaded) return Promise.resolve();
+      return new Promise((resolve) => {
+        function tryLoad() {
+          const k = (window as Record<string, unknown>).kakao as Record<string, unknown> | undefined;
+          if (!k || !k.maps) { setTimeout(tryLoad, 100); return; }
+          const m = k.maps as Record<string, unknown>;
+          (m.load as (cb: () => void) => void)(() => { kakaoLoaded = true; resolve(); });
+        }
+        tryLoad();
+      });
+    }
+
     writeRestSearch?.addEventListener('input', () => {
       if (restSearchTimer) clearTimeout(restSearchTimer);
       restSearchTimer = setTimeout(() => {
@@ -786,12 +761,20 @@ import AdSlot from '@/components/AdSlot.astro';
       }, 300);
     });
 
-    function searchKakaoPlaces(query: string) {
+    async function searchKakaoPlaces(query: string) {
       if (!writeRestResults) return;
-      const kakaoMapKey = (document.querySelector('meta[name="kakao-map-key"]') as HTMLMetaElement | null)?.content;
+      const kakaoMapKey = (document.querySelector('meta[name="kakao-app-key"]') as HTMLMetaElement | null)?.content;
+
+      if (!kakaoMapKey) {
+        writeRestResults.innerHTML = `<div class="rest-search-empty">카카오 지도를 사용할 수 없습니다. 나중에 다시 시도해 주세요.</div>`;
+        writeRestResults.hidden = false;
+        return;
+      }
+
+      await loadKakaoMaps();
       const kakao = (window as Record<string, unknown>).kakao as { maps?: { services?: { Places: new () => { keywordSearch: (q: string, cb: (data: { place_name: string; address_name: string; category_group_name: string; y: string; x: string; id: string }[], status: string) => void) => void }; Status: { OK: string } } } };
 
-      if (!kakaoMapKey || !kakao?.maps?.services) {
+      if (!kakao?.maps?.services) {
         writeRestResults.innerHTML = `<div class="rest-search-empty">카카오 지도를 사용할 수 없습니다. 나중에 다시 시도해 주세요.</div>`;
         writeRestResults.hidden = false;
         return;
