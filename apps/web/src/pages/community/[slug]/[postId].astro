@@ -674,17 +674,15 @@ export const prerender = false;
         html += `<div class="tagged-restaurants"><h4 class="tagged-title">📍 태그된 식당</h4>`;
         post.restaurants.forEach((rest: PostRestaurant, idx: number) => {
           const hasCoords = rest.latitude != null && rest.longitude != null;
-          const kakaoLink = rest.kakaoPlaceId ? `https://place.map.kakao.com/${rest.kakaoPlaceId}` : '';
           html += `<div class="tagged-rest-card">
             ${hasCoords ? `<div class="tagged-rest-map" id="tagged-map-${idx}" data-lat="${rest.latitude}" data-lng="${rest.longitude}"></div>` : ''}
             <div class="tagged-rest-body">
               <div class="tagged-rest-info">
-                <div class="tagged-rest-name">${kakaoLink ? `<a href="${kakaoLink}" target="_blank" rel="noopener noreferrer">${escapeHtml(rest.name)}</a>` : escapeHtml(rest.name)}</div>
+                <div class="tagged-rest-name">${escapeHtml(rest.name)}</div>
                 <div class="tagged-rest-address">${escapeHtml(rest.address)}</div>
                 ${rest.category ? `<div class="tagged-rest-category">${escapeHtml(rest.category)}</div>` : ''}
               </div>
               <div class="tagged-rest-actions">
-                ${kakaoLink ? `<a href="${kakaoLink}" target="_blank" rel="noopener noreferrer" class="tagged-rest-link">카카오맵</a>` : ''}
                 ${user ? `<button class="add-to-room-btn" data-idx="${idx}">내 방에 추가</button>` : ''}
               </div>
             </div>
