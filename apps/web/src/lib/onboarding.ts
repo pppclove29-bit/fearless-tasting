@@ -5,7 +5,7 @@
  * - 알림 권한 요청
  * - 위치 권한 요청
  */
-import { completeOnboarding, apiFetch } from './api';
+import { completeOnboarding, apiFetch, showPermissionDeniedGuide } from './api';
 import { registerPushToken } from './firebase';
 import { trackEvent } from './analytics';
 
@@ -163,7 +163,10 @@ export async function startOnboarding(): Promise<void> {
 
 async function requestNotificationPermission(): Promise<'granted' | 'denied' | 'unsupported'> {
   if (!('Notification' in window) || !('serviceWorker' in navigator)) return 'unsupported';
-  if (Notification.permission === 'denied') return 'denied';
+  if (Notification.permission === 'denied') {
+    showPermissionDeniedGuide('notification');
+    return 'denied';
+  }
   if (Notification.permission === 'default') {
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') return 'denied';
@@ -175,10 +178,30 @@ async function requestNotificationPermission(): Promise<'granted' | 'denied' | '
 
 async function requestLocationPermission(): Promise<'granted' | 'denied' | 'unsupported'> {
   if (!('geolocation' in navigator)) return 'unsupported';
+
+  // 이미 거부된 상태면 getCurrentPosition을 호출해도 팝업 없이 즉시 실패함.
+  // 유저가 "클릭했는데 아무 일도 안 일어난다"고 느끼므로 복구 가이드 모달 노출.
+  if ('permissions' in navigator) {
+    try {
+      const status = await navigator.permissions.query({ name: 'geolocation' });
+      if (status.state === 'denied') {
+        showPermissionDeniedGuide('location');
+        return 'denied';
+      }
+    } catch {
+      /* Permissions API 미지원 시 폴백 */
+    }
+  }
+
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       () => resolve('granted'),
-      () => resolve('denied'),
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) {
+          showPermissionDeniedGuide('location');
+        }
+        resolve('denied');
+      },
       { timeout: 8000 },
     );
   });
