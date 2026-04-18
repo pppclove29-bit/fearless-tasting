@@ -764,7 +764,7 @@ export const prerender = false;
           try {
             await deletePost(slug, postId);
             showToast('게시글이 삭제되었습니다.');
-            location.href = `/community/${encodeURIComponent(slug)}`;
+            location.href = `/community?board=${encodeURIComponent(slug)}`;
           } catch (e) {
             showToast(e instanceof Error ? e.message : '삭제에 실패했습니다.');
           }

@@ -8,15 +8,20 @@ export default defineConfig({
   adapter: cloudflare(),
   integrations: [
     sitemap({
-      filter: (page) =>
-        !page.includes('/admin') &&
-        !page.includes('/login') &&
-        !page.includes('/room') &&
-        !page.includes('/rooms') &&
-        !page.includes('/profile') &&
-        !page.includes('/join') &&
-        !page.includes('/404') &&
-        !page.includes('/map'),
+      filter: (page) => {
+        const path = new URL(page).pathname;
+        if (path === '/rooms/public') return true;
+        return (
+          !path.startsWith('/admin') &&
+          !path.startsWith('/login') &&
+          !path.startsWith('/room') &&
+          !path.startsWith('/rooms') &&
+          !path.startsWith('/profile') &&
+          !path.startsWith('/join') &&
+          !path.startsWith('/404') &&
+          !path.startsWith('/map')
+        );
+      },
       serialize: (item) => {
         const url = item.url;
         if (url.endsWith('/') || url.endsWith('/about')) {

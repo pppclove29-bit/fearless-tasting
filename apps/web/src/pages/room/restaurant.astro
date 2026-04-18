@@ -430,11 +430,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .review-form-card summary::-webkit-details-marker { display: none; }
 
-  .revisit-btns { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .revisit-btns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 0.4rem;
+  }
   .revisit-btn {
-    flex: 1; min-width: calc(33% - 0.4rem); padding: 0.5rem 0.3rem; border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.55rem 0.5rem; border: 1px solid var(--border); border-radius: 8px;
     font-size: 0.78rem; font-weight: 500; cursor: pointer; font-family: inherit;
     background: var(--bg-card); color: var(--text-sub); text-align: center; transition: all 0.15s;
+    white-space: nowrap; word-break: keep-all; line-height: 1.3;
+  }
+  @media (max-width: 420px) {
+    .revisit-btns { grid-template-columns: repeat(2, 1fr); }
+    .revisit-btn { white-space: normal; }
   }
   .revisit-btn:hover { border-color: var(--border-mid); }
   .revisit-btn.active[data-val="5"] { background: var(--text-heading); color: var(--bg); border-color: var(--text-heading); }
@@ -1437,21 +1446,44 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
   .detail-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
   .detail-chip {
-    padding: 0.35rem 0.65rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem 0.35rem 0.35rem;
     border: 1px solid var(--border);
     border-radius: 100px;
-    background: none;
+    background: var(--bg-card);
     font-size: 0.75rem;
     color: var(--text-sub);
     cursor: pointer;
     font-family: inherit;
     transition: all 0.15s;
   }
+  .detail-chip-unknown { padding: 0.35rem 0.75rem; color: var(--text-muted); }
+  .chip-score {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .detail-chip[data-level="1"] .chip-score { background: #ef4444; }
+  .detail-chip[data-level="2"] .chip-score { background: #f97316; }
+  .detail-chip[data-level="3"] .chip-score { background: #eab308; }
+  .detail-chip[data-level="4"] .chip-score { background: #22c55e; }
+  .detail-chip[data-level="5"] .chip-score { background: #10b981; }
+
   .detail-chip.active {
     background: var(--text-heading);
     color: var(--bg);
     border-color: var(--text-heading);
   }
+  .detail-chip.active .chip-score { box-shadow: 0 0 0 2px var(--bg); }
 
 
   .review-detail-ratings {
@@ -1525,6 +1557,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .review-bubble-body {
     flex: 1;
     min-width: 0;
+  }
+  /* 리뷰 수정 폼은 아바타 너비까지 확장 (PWA 좁은 화면 대응) */
+  .review-bubble-body .review-form {
+    margin-left: calc(-40px - 0.65rem);
+  }
+  .review-bubble-body .review-form .review-form-card-body {
+    padding: 0.6rem 0.6rem;
   }
   .review-nickname {
     font-size: 0.82rem;
@@ -1800,8 +1839,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const keyPart = name.split('-').pop() || '';
       const guides = detailGuides[keyPart] || [];
       const chips = [
-        `<button type="button" class="detail-chip ${v === 0 ? 'active' : ''}" data-val="0">잘 모르겠어요</button>`,
-        ...guides.map((g, i) => `<button type="button" class="detail-chip ${v === i + 1 ? 'active' : ''}" data-val="${i + 1}">${i + 1}. ${g}</button>`),
+        `<button type="button" class="detail-chip detail-chip-unknown${v === 0 ? ' active' : ''}" data-val="0">잘 모르겠어요</button>`,
+        ...guides.map((g, i) => `<button type="button" class="detail-chip${v === i + 1 ? ' active' : ''}" data-level="${i + 1}" data-val="${i + 1}"><span class="chip-score">${i + 1}</span><span class="chip-label">${g}</span></button>`),
       ].join('');
       return `
         <div class="detail-rating-row" data-name="${name}" data-value="${v}">
@@ -1924,7 +1963,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       if (isReviewOwner || canDeleteReview) {
         const menuItems: string[] = [];
         if (isReviewOwner) {
-          menuItems.push(`<button type="button" class="edit-rev-btn" data-rev-id="${rev.id}" data-rating="${rev.rating}" data-content="${escapeHtml(rev.content)}" data-revisit="${rev.wouldRevisit}" data-taste="${rev.tasteRating ?? ''}" data-value="${rev.valueRating ?? ''}" data-service="${rev.serviceRating ?? ''}" data-cleanliness="${rev.cleanlinessRating ?? ''}" data-accessibility="${rev.accessibilityRating ?? ''}" data-fav-menu="${escapeHtml(rev.favoriteMenu ?? '')}" data-try-menu="${escapeHtml(rev.tryNextMenu ?? '')}">수정</button>`);
+          menuItems.push(`<button type="button" class="edit-rev-btn" data-rev-id="${rev.id}" data-rating="${rev.rating}" data-content="${escapeHtml(rev.content)}" data-revisit="${rev.wouldRevisit ?? 4}" data-taste="${rev.tasteRating ?? ''}" data-value="${rev.valueRating ?? ''}" data-service="${rev.serviceRating ?? ''}" data-cleanliness="${rev.cleanlinessRating ?? ''}" data-accessibility="${rev.accessibilityRating ?? ''}" data-fav-menu="${escapeHtml(rev.favoriteMenu ?? '')}" data-try-menu="${escapeHtml(rev.tryNextMenu ?? '')}">수정</button>`);
         }
         if (canDeleteReview) {
           menuItems.push(`<button type="button" class="danger delete-rev-btn" data-rev-id="${rev.id}">삭제</button>`);
@@ -2642,7 +2681,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           const revId = btn.dataset.revId || '';
           const origRating = btn.dataset.rating || '0';
           const origContent = btn.dataset.content || '';
-          const origRevisit = parseInt(btn.dataset.revisit || '4', 10);
+          const parsedRevisit = parseInt(btn.dataset.revisit || '', 10);
+          const origRevisit = (parsedRevisit >= 1 && parsedRevisit <= 5) ? parsedRevisit : 4;
           const card = area.querySelector<HTMLElement>(`.review-bubble-wrap[data-rev-id="${revId}"]`);
           if (!card) return;
 
