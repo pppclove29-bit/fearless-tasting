@@ -2359,6 +2359,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.8rem;
   }
 
+  .review-sort-row { display: flex; gap: 0.5rem; align-items: center; }
+  .viewport-filter-btn {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    background: var(--bg-card);
+    color: var(--text-sub);
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .viewport-filter-btn:hover { border-color: var(--border-mid); }
+  .viewport-filter-btn.active {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+
   .review-sort-row {
     display: flex;
     justify-content: flex-end;
@@ -2954,6 +2975,39 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       }
     }
     (window as Record<string, unknown>).__setMapMarkers = setMarkersVisibility;
+
+    // 지도 뷰포트 필터용: 현재 bounds를 {sw,ne} lat/lng로 반환
+    const mapApi = mainMap as Record<string, () => Record<string, (...args: unknown[]) => { getLat: () => number; getLng: () => number }>>;
+    (window as Record<string, unknown>).__getMapBounds = () => {
+      try {
+        const b = mapApi.getBounds();
+        const sw = (b as unknown as { getSouthWest: () => { getLat: () => number; getLng: () => number } }).getSouthWest();
+        const ne = (b as unknown as { getNorthEast: () => { getLat: () => number; getLng: () => number } }).getNorthEast();
+        return {
+          swLat: sw.getLat(), swLng: sw.getLng(),
+          neLat: ne.getLat(), neLng: ne.getLng(),
+        };
+      } catch {
+        return null;
+      }
+    };
+
+    // 지도 이동/줌 완료(idle) 이벤트 구독 등록
+    const idleListeners: (() => void)[] = [];
+    const mapEventsForIdle = maps.event as Record<string, (t: unknown, e: string, cb: () => void) => void>;
+    mapEventsForIdle.addListener(mainMap, 'idle', () => {
+      for (const cb of idleListeners) {
+        try { cb(); } catch { /* ignore */ }
+      }
+    });
+    (window as Record<string, unknown>).__onMapIdle = (cb: () => void) => {
+      idleListeners.push(cb);
+      return () => {
+        const i = idleListeners.indexOf(cb);
+        if (i !== -1) idleListeners.splice(i, 1);
+      };
+    };
+
     // 초기 상태: 현재 활성 탭에 맞춰 마커 표시 (지도 로딩 중 탭 전환된 경우 대응)
     const activeTab = document.querySelector<HTMLElement>('.room-tab-btn.active')?.dataset.tab || 'restaurants';
     const initialMode: 'all' | 'regular' | 'wishlist' =
@@ -4056,6 +4110,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   let activeCategory = '';
   let searchQuery = '';
   let sortOrder = 'latest'; // 'latest' | 'rating-high' | 'rating-low' | 'reviews' | 'visits' | 'name'
+  let restViewportFilter = false;
+  let wishlistViewportFilter = false;
   const REST_PAGE_SIZE = 10;
   let restPage = 1;
   let restData: RoomRestaurantInfo[] = [];
@@ -4157,6 +4213,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     panel.innerHTML = addFormHtml
       + `<div class="rest-list-header"><h3 class="section-subtitle">식당 목록 <span class="section-count" id="rest-total-count">-</span></h3><a href="/room/add?roomId=${currentRoom.id}" class="add-rest-fab">+ 식당 등록</a></div>`
       + `<div class="review-sort-row">
+          ${hasKakaoMap ? `<button type="button" class="viewport-filter-btn${restViewportFilter ? ' active' : ''}" id="rest-viewport-filter">
+            🗺 지도 영역만
+          </button>` : ''}
           <button type="button" class="sort-trigger-btn" id="rest-sort-trigger">
             ${restSortLabels[sortOrder] || '최신순'}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -4173,6 +4232,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     attachDrawerHandlers();
     attachSearchHandler();
     attachSortHandler();
+    attachRestViewportFilterHandler();
+
+    // 지도가 준비되면 idle 리스너 연결 (지도 비동기 로딩 고려 → retry)
+    for (const delay of [0, 200, 800, 2000]) {
+      setTimeout(attachMapIdleForViewport, delay);
+    }
 
     // 서버에서 식당 목록 로드
     await loadRestaurants();
@@ -4192,6 +4257,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <button type="button" class="add-rest-fab" id="wishlist-register-btn">+ 위시리스트 등록</button>
       </div>
       <p class="wishlist-help">아직 가보지 않았지만 가고 싶은 식당을 기록해 두세요. 방문 후 "가본 식당으로 등록" 버튼을 누르면 일반 식당 목록으로 이동합니다.</p>
+      ${hasKakaoMap ? `<div class="review-sort-row" style="margin-bottom:0.5rem;">
+        <button type="button" class="viewport-filter-btn${wishlistViewportFilter ? ' active' : ''}" id="wishlist-viewport-filter">🗺 지도 영역만</button>
+      </div>` : ''}
       <div id="wishlist-list"><p class="empty-text">로딩 중...</p></div>
 
       <div class="add-rest-drawer-overlay" id="wishlist-drawer-overlay"></div>
@@ -4233,9 +4301,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     attachWishlistDrawerHandlers();
     attachWishlistRegisterHandler();
     if (hasKakaoMap) attachWishlistSearchHandler();
+    attachWishlistViewportFilterHandler();
 
     await loadWishlist();
     renderNearestWishlistBanner();
+  }
+
+  function attachWishlistViewportFilterHandler() {
+    const btn = document.getElementById('wishlist-viewport-filter');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      wishlistViewportFilter = !wishlistViewportFilter;
+      btn.classList.toggle('active', wishlistViewportFilter);
+      renderWishlistList();
+    });
   }
 
   async function loadWishlist() {
@@ -4256,16 +4335,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   function renderWishlistList() {
     const listEl = document.getElementById('wishlist-list');
     if (!listEl) return;
-    if (wishlistData.length === 0) {
-      listEl.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state-icon">&#x1F49B;</div>
-          <div class="empty-state-title">아직 가고 싶은 식당이 없어요</div>
-          <div class="empty-state-desc">커뮤니티에서 본 맛집이나 친구가 추천한 곳을<br/>"+ 위시리스트 등록"으로 모아보세요.</div>
-        </div>`;
+
+    const usingViewportFilter = wishlistViewportFilter && hasKakaoMap;
+    const visibleData = usingViewportFilter ? filterByViewport(wishlistData) : wishlistData;
+
+    const countEl = document.getElementById('wishlist-total-count');
+    if (countEl) countEl.textContent = String(visibleData.length);
+
+    if (visibleData.length === 0) {
+      if (usingViewportFilter) {
+        listEl.innerHTML = '<p class="empty-text">지도 영역에 위시리스트 식당이 없어요.<br/>지도를 움직여 다른 영역을 탐색해 보세요.</p>';
+      } else {
+        listEl.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">&#x1F49B;</div>
+            <div class="empty-state-title">아직 가고 싶은 식당이 없어요</div>
+            <div class="empty-state-desc">커뮤니티에서 본 맛집이나 친구가 추천한 곳을<br/>"+ 위시리스트 등록"으로 모아보세요.</div>
+          </div>`;
+      }
       return;
     }
-    listEl.innerHTML = wishlistData.map((r) => renderWishlistCard(r)).join('');
+    listEl.innerHTML = visibleData.map((r) => renderWishlistCard(r)).join('');
     for (const card of listEl.querySelectorAll<HTMLElement>('.room-restaurant-card')) {
       card.addEventListener('click', () => {
         const rid = card.dataset.rid!;
@@ -4445,10 +4535,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   async function loadRestaurants() {
+    const usingViewportFilter = restViewportFilter && hasKakaoMap;
     try {
+      // 뷰포트 필터 시 클라이언트 필터링을 위해 크게 fetch
       const result = await fetchRoomRestaurants(currentRoom.id, {
-        page: restPage,
-        pageSize: REST_PAGE_SIZE,
+        page: usingViewportFilter ? 1 : restPage,
+        pageSize: usingViewportFilter ? 200 : REST_PAGE_SIZE,
         search: searchQuery || undefined,
         category: activeCategory || undefined,
         sort: sortOrder,
@@ -4472,6 +4564,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
   }
 
+  function filterByViewport<T extends { latitude?: number | null; longitude?: number | null }>(items: T[]): T[] {
+    const getBounds = (window as Record<string, unknown>).__getMapBounds as (() => { swLat: number; swLng: number; neLat: number; neLng: number } | null) | undefined;
+    const bounds = getBounds?.();
+    if (!bounds) return items;
+    return items.filter((r) =>
+      r.latitude != null && r.longitude != null &&
+      r.latitude >= bounds.swLat && r.latitude <= bounds.neLat &&
+      r.longitude >= bounds.swLng && r.longitude <= bounds.neLng,
+    );
+  }
+
   function updateCategoryFilter() {
     const row = document.getElementById('category-filter-row');
     if (!row) return;
@@ -4493,8 +4596,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const listEl = document.getElementById('restaurant-list');
     if (!listEl) return;
 
-    if (restTotal === 0) {
-      if (searchQuery || activeCategory) {
+    const usingViewportFilter = restViewportFilter && hasKakaoMap;
+    const visibleData = usingViewportFilter ? filterByViewport(restData) : restData;
+    const displayTotal = usingViewportFilter ? visibleData.length : restTotal;
+
+    // 총 개수 표시 동기화
+    const countEl = document.getElementById('rest-total-count');
+    if (countEl) countEl.textContent = String(displayTotal);
+
+    if (displayTotal === 0) {
+      if (usingViewportFilter) {
+        listEl.innerHTML = '<p class="empty-text">지도 영역에 등록된 식당이 없어요.<br/>지도를 움직여 다른 영역을 탐색해 보세요.</p>';
+      } else if (searchQuery || activeCategory) {
         listEl.innerHTML = '<p class="empty-text">검색 결과가 없습니다.</p>';
       } else {
         listEl.innerHTML = `
@@ -4508,13 +4621,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return;
     }
 
+    // 뷰포트 필터 시에는 페이지네이션 없이 전부 표시
     const totalPages = Math.ceil(restTotal / REST_PAGE_SIZE);
-    const hasMore = restPage < totalPages;
+    const hasMore = !usingViewportFilter && restPage < totalPages;
 
-    listEl.innerHTML = restData.map((r) => renderRestaurantCard(r)).join('')
+    listEl.innerHTML = visibleData.map((r) => renderRestaurantCard(r)).join('')
       + (hasMore
         ? `<button type="button" class="btn-load-more" id="rest-load-more">더보기 (${Math.min(restPage * REST_PAGE_SIZE, restTotal)}/${restTotal})</button>`
-        : (restTotal > REST_PAGE_SIZE ? `<p class="rest-list-end">전체 ${restTotal}개</p>` : ''));
+        : (!usingViewportFilter && restTotal > REST_PAGE_SIZE ? `<p class="rest-list-end">전체 ${restTotal}개</p>` : ''));
 
     attachRestaurantCardHandlers();
 
@@ -4580,6 +4694,30 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         sortTrigger.innerHTML = `${label} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
         loadRestaurants();
       });
+    });
+  }
+
+  function attachRestViewportFilterHandler() {
+    const btn = document.getElementById('rest-viewport-filter');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      restViewportFilter = !restViewportFilter;
+      btn.classList.toggle('active', restViewportFilter);
+      restPage = 1;
+      await loadRestaurants();
+    });
+  }
+
+  // 지도 idle 이벤트에 뷰포트 필터 재적용 연결
+  let mapIdleListenerAttached = false;
+  function attachMapIdleForViewport() {
+    if (mapIdleListenerAttached) return;
+    const onIdle = (window as Record<string, unknown>).__onMapIdle as ((cb: () => void) => () => void) | undefined;
+    if (!onIdle) return;
+    mapIdleListenerAttached = true;
+    onIdle(() => {
+      if (restViewportFilter) renderRestaurantList();
+      if (wishlistViewportFilter) renderWishlistList();
     });
   }
 
