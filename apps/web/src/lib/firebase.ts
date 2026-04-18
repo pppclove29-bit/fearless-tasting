@@ -6,6 +6,8 @@ import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import type { Messaging } from 'firebase/messaging';
 
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+
 const firebaseConfig = {
   apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY,
   authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -36,17 +38,47 @@ function getMessagingInstance(): Messaging | null {
 }
 
 const FCM_TOKEN_KEY = 'fcm_token';
+const FCM_REGISTERED_KEY = 'fcm_token_registered';
+
+/** 서버에 토큰 등록 (idempotent). 성공 시 localStorage에 플래그 저장. */
+async function registerTokenWithServer(
+  apiFetch: (input: string, init?: RequestInit) => Promise<Response>,
+  token: string,
+): Promise<boolean> {
+  const device = `${navigator.platform} ${navigator.userAgent.split(' ').pop()}`;
+  try {
+    const res = await apiFetch(`${API_BASE}/users/me/fcm-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, device }),
+    });
+    if (res.ok) {
+      localStorage.setItem(FCM_REGISTERED_KEY, token);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * 알림 권한 요청 → FCM 토큰 발급 → 서버에 등록.
  * localStorage에 캐싱하여 매번 Firebase 토큰 요청을 방지.
+ * 토큰은 캐시됐지만 서버 등록이 실패한 경우엔 재등록 시도.
  */
 export async function registerPushToken(apiFetch: (input: string, init?: RequestInit) => Promise<Response>): Promise<string | null> {
   if (!('Notification' in window) || !('serviceWorker' in navigator)) return null;
 
-  // 이미 등록된 토큰이 있으면 스킵
+  // 캐시된 토큰이 있는데 서버 등록이 아직 안 됐으면 재등록 시도
   const cached = localStorage.getItem(FCM_TOKEN_KEY);
-  if (cached) return cached;
+  const registered = localStorage.getItem(FCM_REGISTERED_KEY);
+  if (cached) {
+    if (registered !== cached) {
+      await registerTokenWithServer(apiFetch, cached);
+    }
+    return cached;
+  }
 
   const msg = getMessagingInstance();
   if (!msg) return null;
@@ -70,12 +102,7 @@ export async function registerPushToken(apiFetch: (input: string, init?: Request
     if (!token) return null;
 
     // 서버에 토큰 등록
-    const device = `${navigator.platform} ${navigator.userAgent.split(' ').pop()}`;
-    await apiFetch('/users/me/fcm-token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, device }),
-    });
+    await registerTokenWithServer(apiFetch, token);
 
     // 캐싱
     localStorage.setItem(FCM_TOKEN_KEY, token);
@@ -102,8 +129,9 @@ export async function unregisterPushToken(
   if (!token) return;
 
   localStorage.removeItem(FCM_TOKEN_KEY);
+  localStorage.removeItem(FCM_REGISTERED_KEY);
   try {
-    await apiFetch('/users/me/fcm-token', {
+    await apiFetch(`${API_BASE}/users/me/fcm-token`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
