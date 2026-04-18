@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, MaxLength, Min, Max, IsArray, ArrayMaxSize } from 'class-validator';
+import { IsString, IsOptional, IsNumber, MaxLength, Min, Max, IsArray, ArrayMaxSize, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateRoomRestaurantDto {
@@ -53,4 +53,8 @@ export class CreateRoomRestaurantDto {
   @Max(180)
   longitude?: number;
 
+  @ApiPropertyOptional({ description: '위시리스트로 등록 여부 (가고 싶은 식당)' })
+  @IsOptional()
+  @IsBoolean()
+  isWishlist?: boolean;
 }

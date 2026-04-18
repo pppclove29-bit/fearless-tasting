@@ -438,6 +438,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import {
     fetchCurrentUser, fetchRoom,
     createRoomRestaurant, createRoomVisit, createRoomReview,
+    toggleRestaurantWishlist,
     showToast,
   } from '@/lib/api';
   import type { AuthUser, RoomDetailResponse } from '@/lib/api';
@@ -459,6 +460,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const roomId = params.get('roomId');
     const existingRestId = params.get('restaurantId');
     const existingRestName = params.get('name');
+    const fromWishlist = params.get('fromWishlist') === '1';
 
     if (!roomId) {
       loadingMsg.hidden = true;
@@ -686,6 +688,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
       </div>
     `;
+
+    // ── 카카오 지오코딩 (주소 → 좌표) ──
+    function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+      return new Promise((resolve) => {
+        const kakao = (window as Record<string, unknown>).kakao as Record<string, unknown> | undefined;
+        if (!kakao || !kakao.maps) { resolve(null); return; }
+        const maps = kakao.maps as Record<string, unknown>;
+        const services = maps.services as Record<string, unknown> | undefined;
+        if (!services) { resolve(null); return; }
+        const Geocoder = services.Geocoder as new () => { addressSearch: (addr: string, cb: (res: Array<{ x: string; y: string }>, status: string) => void) => void };
+        const StatusOK = (services.Status as Record<string, string>).OK;
+        const geocoder = new Geocoder();
+        geocoder.addressSearch(address, (result, status) => {
+          if (status === StatusOK && result[0]) {
+            resolve({ lat: Number(result[0].y), lng: Number(result[0].x) });
+          } else {
+            resolve(null);
+          }
+        });
+      });
+    }
 
     // ── 스텝 네비게이션 ──
     function goToStep(step: number) {
@@ -1012,6 +1035,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             return;
           }
 
+          // 직접 입력이면서 좌표가 없으면 카카오 지오코딩 시도
+          if (!isKakao && (!lat || !lng) && hasKakaoMap) {
+            try {
+              const coords = await geocodeAddress(restAddress);
+              if (coords) { lat = coords.lat; lng = coords.lng; }
+            } catch { /* 지오코딩 실패해도 등록은 진행 */ }
+          }
+
           const restaurant = await createRoomRestaurant(roomId!, {
             name: restName, address: restAddress, category: restCategory,
             province, city, neighborhood,
@@ -1044,6 +1075,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           cleanlinessRating: detailRatings.cleanliness || null,
           accessibilityRating: detailRatings.accessibility || null,
         });
+
+        // 위시리스트에서 온 경우: 위시리스트 상태 해제
+        if (fromWishlist && isExisting) {
+          try { await toggleRestaurantWishlist(roomId!, restaurantId); } catch { /* ignore */ }
+        }
 
         goToStep(3);
       } catch (err) {

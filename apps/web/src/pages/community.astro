@@ -789,49 +789,19 @@ import AdSlot from '@/components/AdSlot.astro';
     function searchKakaoPlaces(query: string) {
       if (!writeRestResults) return;
       const kakaoMapKey = (document.querySelector('meta[name="kakao-map-key"]') as HTMLMetaElement | null)?.content;
-      if (!kakaoMapKey) {
-        // fallback: 수동 입력 모드
-        writeRestResults.innerHTML = `<button type="button" class="rest-search-item" data-manual="true">
-          <div class="rest-search-name">"${escapeHtml(query)}" 직접 추가</div>
-          <div class="rest-search-addr">주소를 직접 입력해주세요</div>
-        </button>`;
-        writeRestResults.hidden = false;
-        setupSearchResultHandlers(query);
-        return;
-      }
-
-      const script = document.querySelector('script[src*="dapi.kakao.com"]');
-      if (!script && typeof (window as Record<string, unknown>).kakao === 'undefined') {
-        // 카카오 SDK 미로드 시 수동 입력
-        writeRestResults.innerHTML = `<button type="button" class="rest-search-item" data-manual="true">
-          <div class="rest-search-name">"${escapeHtml(query)}" 직접 추가</div>
-          <div class="rest-search-addr">주소를 직접 입력해주세요</div>
-        </button>`;
-        writeRestResults.hidden = false;
-        setupSearchResultHandlers(query);
-        return;
-      }
-
       const kakao = (window as Record<string, unknown>).kakao as { maps?: { services?: { Places: new () => { keywordSearch: (q: string, cb: (data: { place_name: string; address_name: string; category_group_name: string; y: string; x: string; id: string }[], status: string) => void) => void }; Status: { OK: string } } } };
-      if (!kakao?.maps?.services) {
-        writeRestResults.innerHTML = `<button type="button" class="rest-search-item" data-manual="true">
-          <div class="rest-search-name">"${escapeHtml(query)}" 직접 추가</div>
-          <div class="rest-search-addr">주소를 직접 입력해주세요</div>
-        </button>`;
+
+      if (!kakaoMapKey || !kakao?.maps?.services) {
+        writeRestResults.innerHTML = `<div class="rest-search-empty">카카오 지도를 사용할 수 없습니다. 나중에 다시 시도해 주세요.</div>`;
         writeRestResults.hidden = false;
-        setupSearchResultHandlers(query);
         return;
       }
 
       const ps = new kakao.maps.services.Places();
       ps.keywordSearch(query, (data, status) => {
         if (status !== kakao.maps!.services!.Status.OK || data.length === 0) {
-          writeRestResults.innerHTML = `<button type="button" class="rest-search-item" data-manual="true">
-            <div class="rest-search-name">"${escapeHtml(query)}" 직접 추가</div>
-            <div class="rest-search-addr">검색 결과가 없습니다. 직접 추가하세요.</div>
-          </button>`;
+          writeRestResults.innerHTML = `<div class="rest-search-empty">검색 결과가 없습니다. 정확한 상호로 다시 검색해 주세요.</div>`;
           writeRestResults.hidden = false;
-          setupSearchResultHandlers(query);
           return;
         }
 
@@ -842,11 +812,11 @@ import AdSlot from '@/components/AdSlot.astro';
           </button>`
         ).join('');
         writeRestResults.hidden = false;
-        setupSearchResultHandlers(query);
+        setupSearchResultHandlers();
       });
     }
 
-    function setupSearchResultHandlers(query: string) {
+    function setupSearchResultHandlers() {
       if (!writeRestResults || !writeRestSearch) return;
       for (const item of writeRestResults.querySelectorAll<HTMLButtonElement>('.rest-search-item')) {
         item.addEventListener('click', () => {
@@ -855,19 +825,14 @@ import AdSlot from '@/components/AdSlot.astro';
             return;
           }
 
-          if (item.dataset.manual === 'true') {
-            const address = prompt('주소를 입력해주세요:') || '';
-            taggedRestaurants.push({ name: query, address });
-          } else {
-            taggedRestaurants.push({
-              name: item.dataset.name || '',
-              address: item.dataset.address || '',
-              category: item.dataset.category || undefined,
-              latitude: item.dataset.lat ? parseFloat(item.dataset.lat) : undefined,
-              longitude: item.dataset.lng ? parseFloat(item.dataset.lng) : undefined,
-              kakaoPlaceId: item.dataset.kakaoId || undefined,
-            });
-          }
+          taggedRestaurants.push({
+            name: item.dataset.name || '',
+            address: item.dataset.address || '',
+            category: item.dataset.category || undefined,
+            latitude: item.dataset.lat ? parseFloat(item.dataset.lat) : undefined,
+            longitude: item.dataset.lng ? parseFloat(item.dataset.lng) : undefined,
+            kakaoPlaceId: item.dataset.kakaoId || undefined,
+          });
 
           renderRestTags();
           writeRestSearch.value = '';

@@ -315,7 +315,7 @@ export class RoomsService {
   /** 방 내 식당 목록 */
   async findRestaurants(
     roomId: string,
-    userId: string | undefined,
+    _userId: string | undefined,
     options: {
       page?: number;
       pageSize?: number;
@@ -340,8 +340,10 @@ export class RoomsService {
     if (options.category) {
       where.category = options.category;
     }
-    if (options.wishlist === 'true' && userId) {
-      where.wishlists = { some: { userId } };
+    if (options.wishlist === 'true') {
+      where.isWishlist = true;
+    } else if (options.wishlist === 'false') {
+      where.isWishlist = false;
     }
 
     // DB 레벨 정렬 가능한 필드만 orderBy로 설정
@@ -361,7 +363,6 @@ export class RoomsService {
             addedBy: { select: { id: true, nickname: true } },
             images: { select: { url: true }, orderBy: { sortOrder: 'asc' } },
             visits: { include: { reviews: { select: { rating: true } } } },
-            wishlists: { select: { userId: true } },
             _count: { select: { visits: true } },
           },
           orderBy,
@@ -371,15 +372,13 @@ export class RoomsService {
       ]),
     );
 
-    let data = restaurants.map(({ visits, images, wishlists, ...rest }) => {
+    let data = restaurants.map(({ visits, images, ...rest }) => {
       const allRatings = visits.flatMap((v) => v.reviews.map((r) => r.rating));
       return {
         ...rest,
         images: images.map((img) => toImageUrl(img.url)),
         avgRating: calcAvgRating(allRatings),
         _count: { ...rest._count, reviews: allRatings.length },
-        wishlistCount: wishlists.length,
-        isWishlisted: userId ? wishlists.some((w) => w.userId === userId) : false,
       };
     });
 
@@ -410,11 +409,13 @@ export class RoomsService {
     images?: string[],
     latitude?: number,
     longitude?: number,
+    isWishlist?: boolean,
   ) {
     const imageList = (images ?? []).slice(0, 3);
     const restaurant = await this.prisma.write.roomRestaurant.create({
       data: {
         roomId, addedById, name, address, province, city, neighborhood, category, latitude, longitude,
+        isWishlist: isWishlist ?? false,
         images: imageList.length > 0 ? { create: imageList.map((url, i) => ({ url, sortOrder: i })) } : undefined,
       },
     });
@@ -506,28 +507,24 @@ export class RoomsService {
     return this.prisma.write.roomRestaurant.delete({ where: { id: restaurantId } });
   }
 
-  /** 식당 위시리스트 토글 (가고 싶은 식당) */
-  async toggleWishlist(roomId: string, restaurantId: string, userId: string) {
+  /** 식당 위시리스트 토글 (방별, 가고 싶은 식당) */
+  async toggleWishlist(roomId: string, restaurantId: string) {
     const restaurant = await this.prisma.read.roomRestaurant.findFirst({
       where: { id: restaurantId, roomId },
+      select: { id: true, isWishlist: true },
     });
     if (!restaurant) throw new NotFoundException('식당을 찾을 수 없습니다.');
 
-    const existing = await this.prisma.read.roomRestaurantWishlist.findUnique({
-      where: { restaurantId_userId: { restaurantId, userId } },
+    const updated = await this.prisma.write.roomRestaurant.update({
+      where: { id: restaurantId },
+      data: { isWishlist: !restaurant.isWishlist },
+      select: { isWishlist: true },
     });
-    if (existing) {
-      await this.prisma.write.roomRestaurantWishlist.delete({ where: { id: existing.id } });
-      return { wishlisted: false };
-    }
-    await this.prisma.write.roomRestaurantWishlist.create({
-      data: { restaurantId, userId },
-    });
-    return { wishlisted: true };
+    return { isWishlist: updated.isWishlist };
   }
 
   /** 방 내 식당 상세 (방문 기록 + 리뷰 포함) */
-  async findRestaurantDetail(roomId: string, restaurantId: string, userId?: string) {
+  async findRestaurantDetail(roomId: string, restaurantId: string) {
     const restaurant = await measure('restaurant.detail.query', () =>
       // writer에서 읽어 수정 직후 재조회 시 replication lag 방지
       this.prisma.write.roomRestaurant.findUnique({
@@ -535,10 +532,6 @@ export class RoomsService {
         include: {
           addedBy: { select: { id: true, nickname: true } },
           images: { select: { url: true }, orderBy: { sortOrder: 'asc' } },
-          wishlists: {
-            include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
-            orderBy: { createdAt: 'desc' },
-          },
           visits: {
             include: {
               createdBy: { select: { id: true, nickname: true } },
@@ -561,7 +554,7 @@ export class RoomsService {
       throw new NotFoundException('식당을 찾을 수 없습니다');
     }
 
-    const { images, wishlists, ...rest } = restaurant;
+    const { images, ...rest } = restaurant;
     return {
       ...rest,
       images: images.map((img) => toImageUrl(img.url)),
@@ -570,8 +563,6 @@ export class RoomsService {
         participants: v.participants.map((p) => ({ ...p, user: withProfileImage(p.user) })),
         reviews: v.reviews.map((r) => ({ ...r, user: withProfileImage(r.user) })),
       })),
-      wishlistUsers: wishlists.map((w) => withProfileImage(w.user)),
-      isWishlisted: userId ? wishlists.some((w) => w.user.id === userId) : false,
     };
   }
 

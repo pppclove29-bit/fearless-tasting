@@ -29,7 +29,6 @@ export type {
   CompareReviewsResponse,
   PublicRoomListItem,
   PaginatedPublicRooms,
-  WishlistUser,
 } from './room';
 export type { Inquiry } from './inquiry';
 export type { Notice } from './notice';

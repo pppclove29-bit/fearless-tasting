@@ -281,7 +281,7 @@ export class RoomsController {
     @Body() dto: CreateRoomRestaurantDto,
   ) {
     return this.roomsService.createRestaurant(
-      id, user.id, dto.name, dto.address, dto.province, dto.city, dto.neighborhood, dto.category, dto.images, dto.latitude, dto.longitude,
+      id, user.id, dto.name, dto.address, dto.province, dto.city, dto.neighborhood, dto.category, dto.images, dto.latitude, dto.longitude, dto.isWishlist,
     );
   }
 
@@ -297,7 +297,7 @@ export class RoomsController {
     @Body() dto: CreateRestaurantFromCommunityDto,
   ) {
     return this.roomsService.createRestaurant(
-      id, user.id, dto.name, dto.address, dto.province, dto.city, dto.neighborhood, dto.category || '기타', undefined, dto.latitude, dto.longitude,
+      id, user.id, dto.name, dto.address, dto.province, dto.city, dto.neighborhood, dto.category || '기타', undefined, dto.latitude, dto.longitude, dto.isWishlist,
     );
   }
 
@@ -310,10 +310,9 @@ export class RoomsController {
   async findRestaurantDetail(
     @Param('id') id: string,
     @Param('rid') rid: string,
-    @CurrentUser() user: { id: string },
     @Req() req: RequestWithRoomMember,
   ) {
-    const detail = await this.roomsService.findRestaurantDetail(id, rid, user.id);
+    const detail = await this.roomsService.findRestaurantDetail(id, rid);
     return { ...detail, myRole: req.roomMember.role };
   }
 
@@ -356,18 +355,14 @@ export class RoomsController {
     return this.roomsService.removeRestaurant(id, rid, user.id, req.roomMember.role);
   }
 
-  /** 식당 위시리스트 토글 (가고 싶은 식당) */
+  /** 식당 위시리스트 토글 (방별, 가고 싶은 식당) */
   @Post(':id/restaurants/:rid/wishlist')
   @UseGuards(RoomMemberGuard)
-  @ApiOperation({ summary: '식당 위시리스트 토글 (가고 싶은 식당)' })
+  @ApiOperation({ summary: '식당 위시리스트 토글 (방별, 가고 싶은 식당)' })
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'rid', description: '식당 ID' })
-  toggleWishlist(
-    @Param('id') id: string,
-    @Param('rid') rid: string,
-    @CurrentUser() user: { id: string },
-  ) {
-    return this.roomsService.toggleWishlist(id, rid, user.id);
+  toggleWishlist(@Param('id') id: string, @Param('rid') rid: string) {
+    return this.roomsService.toggleWishlist(id, rid);
   }
 
   // ─── 방문 기록 ───

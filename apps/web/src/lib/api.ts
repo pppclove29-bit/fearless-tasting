@@ -7,7 +7,7 @@ import type {
   Inquiry, Notice, PollOption, Poll, TimelineItem,
   AppNotification, RoomStats, PlatformStats,
   RankingUser, RankingsResponse, DiscoverRestaurant, DiscoverResponse,
-  PublicRoomListItem, PaginatedPublicRooms, WishlistUser,
+  PublicRoomListItem, PaginatedPublicRooms,
   Board, BoardListItem, PostAuthor, PostListItem, PaginatedPosts, PostDetail, PostRestaurant,
 } from '@repo/types';
 
@@ -18,7 +18,7 @@ export type {
   Inquiry, Notice, PollOption, Poll, TimelineItem,
   RoomStats, PlatformStats, RankingUser, RankingsResponse,
   DiscoverRestaurant, DiscoverResponse,
-  PublicRoomListItem, PaginatedPublicRooms, WishlistUser,
+  PublicRoomListItem, PaginatedPublicRooms,
   Board, BoardListItem, PostAuthor, PostListItem, PaginatedPosts, PostDetail, PostRestaurant,
 };
 export type { AppNotification as Notification } from '@repo/types';
@@ -475,11 +475,11 @@ export async function updateRoomRestaurant(
   await throwIfNotOk(res, '식당 수정에 실패했습니다.');
 }
 
-/** 식당 위시리스트 토글 (가고 싶은 식당) */
+/** 식당 위시리스트 토글 (방별, 가고 싶은 식당) */
 export async function toggleRestaurantWishlist(
   roomId: string,
   rid: string,
-): Promise<{ wishlisted: boolean }> {
+): Promise<{ isWishlist: boolean }> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${rid}/wishlist`, {
     method: 'POST',
   });
@@ -877,7 +877,7 @@ export async function createPost(
 /** 커뮤니티 식당을 방에 추가 */
 export async function addRestaurantFromCommunity(
   roomId: string,
-  data: { name: string; address: string; province: string; city: string; neighborhood: string; category?: string; latitude?: number; longitude?: number },
+  data: { name: string; address: string; province: string; city: string; neighborhood: string; category?: string; latitude?: number; longitude?: number; isWishlist?: boolean },
 ): Promise<RoomRestaurant> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/from-community`, {
     method: 'POST',

@@ -871,7 +871,11 @@ export const prerender = false;
             <h3 style="font-size:1rem;font-weight:700;color:var(--text-heading);margin:0;">방 선택</h3>
             <button type="button" id="room-modal-close" style="background:none;border:none;font-size:1.3rem;color:var(--text-muted);cursor:pointer;">&times;</button>
           </div>
-          <p style="font-size:0.82rem;color:var(--text-sub);margin-bottom:0.75rem;">${escapeHtml(rest.name)}을(를) 추가할 방을 선택하세요.</p>
+          <p style="font-size:0.82rem;color:var(--text-sub);margin-bottom:0.5rem;">${escapeHtml(rest.name)}을(를) 추가할 방을 선택하세요.</p>
+          <div style="display:flex;gap:0.4rem;margin-bottom:0.75rem;padding:0.3rem;background:var(--bg-hover);border-radius:8px;">
+            <button type="button" class="mode-btn active" data-mode="wishlist" style="flex:1;padding:0.4rem;border:none;border-radius:6px;background:#fbbf24;color:#78350f;font-size:0.8rem;font-weight:700;cursor:pointer;">위시리스트로 추가</button>
+            <button type="button" class="mode-btn" data-mode="visited" style="flex:1;padding:0.4rem;border:none;border-radius:6px;background:transparent;color:var(--text-sub);font-size:0.8rem;font-weight:500;cursor:pointer;">가본 식당으로 추가</button>
+          </div>
           ${rooms.map((r: RoomListItem) => `<button type="button" class="room-select-item" data-room-id="${r.id}" style="display:block;width:100%;text-align:left;padding:0.6rem 0.75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:0.4rem;background:none;font-size:0.85rem;color:var(--text-heading);cursor:pointer;font-family:inherit;">${escapeHtml(r.name)}</button>`).join('')}`;
           modal.appendChild(inner);
           document.body.appendChild(modal);
@@ -880,6 +884,20 @@ export const prerender = false;
             if (e.target === modal) modal.remove();
           });
           inner.querySelector('#room-modal-close')?.addEventListener('click', () => modal.remove());
+
+          let selectedMode: 'wishlist' | 'visited' = 'wishlist';
+          for (const modeBtn of inner.querySelectorAll<HTMLButtonElement>('.mode-btn')) {
+            modeBtn.addEventListener('click', () => {
+              selectedMode = (modeBtn.dataset.mode as 'wishlist' | 'visited') || 'wishlist';
+              for (const b of inner.querySelectorAll<HTMLButtonElement>('.mode-btn')) {
+                const isActive = b.dataset.mode === selectedMode;
+                b.classList.toggle('active', isActive);
+                b.style.background = isActive ? (selectedMode === 'wishlist' ? '#fbbf24' : 'var(--text-heading)') : 'transparent';
+                b.style.color = isActive ? (selectedMode === 'wishlist' ? '#78350f' : 'var(--bg-card)') : 'var(--text-sub)';
+                b.style.fontWeight = isActive ? '700' : '500';
+              }
+            });
+          }
 
           for (const roomBtn of inner.querySelectorAll<HTMLButtonElement>('.room-select-item')) {
             roomBtn.addEventListener('click', async () => {
@@ -903,8 +921,9 @@ export const prerender = false;
                   category: rest.category || undefined,
                   latitude: rest.latitude || undefined,
                   longitude: rest.longitude || undefined,
+                  isWishlist: selectedMode === 'wishlist',
                 });
-                showToast('식당이 방에 추가되었습니다.', 'success');
+                showToast(selectedMode === 'wishlist' ? '위시리스트에 추가되었습니다.' : '식당이 방에 추가되었습니다.', 'success');
                 modal.remove();
               } catch (e) {
                 showToast(e instanceof Error ? e.message : '식당 추가에 실패했습니다.');
