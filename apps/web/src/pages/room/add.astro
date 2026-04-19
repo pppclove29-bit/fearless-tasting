@@ -787,6 +787,24 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // 스텝 2 진입 시 리뷰 단계 튜토리얼 발동
+      if (step === 2) {
+        import('@/lib/tutorial').then(({ runTutorial }) => {
+          runTutorial('register_restaurant_step2', [
+            {
+              target: '#main-stars',
+              title: '별점을 눌러 평가하세요',
+              description: '별을 클릭해 총점을 매깁니다. 반 별(0.5)도 가능하고, 같은 별을 다시 누르면 취소돼요.',
+            },
+            {
+              target: '#btn-submit',
+              title: '마지막으로 등록 완료',
+              description: '모두 입력했으면 이 버튼을 눌러 식당·방문·리뷰를 한 번에 저장하세요.',
+            },
+          ]).catch(() => {});
+        }).catch(() => {});
+      }
     }
 
     // ── 스텝 1: 식당 검색 ──
@@ -1222,6 +1240,29 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     });
 
     document.getElementById('btn-add-more')?.addEventListener('click', () => { location.reload(); });
+
+    // 신규 등록일 때만 스텝 1 튜토리얼 (기존 식당 리뷰 추가는 바로 스텝 2에서 시작)
+    if (!isExisting) {
+      import('@/lib/tutorial').then(({ runTutorial }) => {
+        const searchTarget = hasKakaoMap ? '#place-search' : '#manual-name';
+        runTutorial('register_restaurant_step1', [
+          {
+            target: searchTarget,
+            title: '식당을 검색하거나 직접 입력',
+            description: hasKakaoMap
+              ? '2글자 이상 입력하면 카카오·네이버 결과가 탭으로 표시돼요. 없으면 "직접 입력"으로 전환할 수 있어요.'
+              : '식당 이름과 주소를 입력하세요.',
+            placement: 'bottom',
+          },
+          {
+            target: '#btn-step1-next',
+            title: '리뷰 단계로 이동',
+            description: '식당을 선택하거나 정보를 모두 입력하면 이 버튼이 활성화됩니다.',
+            placement: 'top',
+          },
+        ]).catch(() => {});
+      }).catch(() => {});
+    }
   }
   }
 
