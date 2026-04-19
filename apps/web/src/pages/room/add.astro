@@ -230,6 +230,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
     font-size: 0.8rem;
   }
+  .search-sentinel {
+    padding: 0.6rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+  }
 
   /* 선택된 식당 카드 */
   .selected-place {
@@ -912,19 +918,77 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         });
       }
 
+      let kakaoPage = 1;
+      let kakaoHasMore = false;
+      let naverStart = 1;
+      let naverHasMore = false;
+      let currentQuery = '';
+      let loadingMore = false;
+      let sentinelIO: IntersectionObserver | null = null;
+
+      async function kakaoSearch(q: string, page: number): Promise<{ items: UnifiedPlace[]; hasMore: boolean }> {
+        const k = (window as Record<string, unknown>).kakao as Record<string, unknown> | undefined;
+        const m = k?.maps as Record<string, unknown> | undefined;
+        if (!m) return { items: [], hasMore: false };
+        return new Promise((resolve) => {
+          const svc = m.services as Record<string, new () => Record<string, unknown>>;
+          const places = new svc.Places();
+          (places.keywordSearch as (...args: unknown[]) => unknown)(q, (data: Array<Record<string, string>>, status: string, pagination: { hasNextPage?: boolean }) => {
+            const OK = ((m.services as Record<string, Record<string, string>>).Status as Record<string, string>).OK;
+            if (status !== OK || !data) { resolve({ items: [], hasMore: false }); return; }
+            const items = data.map((p) => {
+              const catParts = (p.category_name || '').split(' > ');
+              const lastCat = catParts[catParts.length - 1] || '';
+              return {
+                source: 'kakao' as const,
+                name: p.place_name,
+                address: p.address_name,
+                category: (lastCat && lastCat !== '음식점') ? lastCat : '음식점',
+                lat: p.y,
+                lng: p.x,
+              };
+            });
+            resolve({ items, hasMore: !!pagination?.hasNextPage });
+          }, { page, category_group_code: 'FD6' });
+        });
+      }
+
+      async function naverSearchPage(q: string, start: number): Promise<{ items: UnifiedPlace[]; hasMore: boolean }> {
+        const { items: rawItems, hasMore } = await searchNaverPlaces(q, start);
+        const converted: UnifiedPlace[] = await Promise.all(rawItems.map(async (item) => {
+          const fullAddr = item.roadAddress || item.address;
+          const coords = await geocodeAddress(fullAddr).catch(() => null);
+          return {
+            source: 'naver' as const,
+            name: item.name,
+            address: fullAddr,
+            category: (item.category.split('>').pop() || '기타').trim(),
+            lat: coords ? String(coords.lat) : '',
+            lng: coords ? String(coords.lng) : '',
+          };
+        }));
+        return { items: converted, hasMore };
+      }
+
       function renderActiveList() {
+        sentinelIO?.disconnect();
+        sentinelIO = null;
         const list = activeSource === 'kakao' ? kakaoResults : naverResults;
+        const hasMore = activeSource === 'kakao' ? kakaoHasMore : naverHasMore;
         if (list.length === 0) {
           resultList.innerHTML = `<div class="search-empty">${activeSource === 'kakao' ? '카카오' : '네이버'} 검색 결과가 없습니다.</div>`;
           return;
         }
-        resultList.innerHTML = list.map((p, i) =>
+        const itemsHtml = list.map((p, i) =>
           `<div class="search-result-item" data-idx="${i}">
             <div class="search-result-name">${escapeHtml(p.name)}</div>
             <div class="search-result-addr">${escapeHtml(p.address)}</div>
             ${p.category ? `<div class="search-result-cat">${escapeHtml(p.category)}</div>` : ''}
           </div>`,
         ).join('');
+        const sentinelHtml = hasMore ? '<div class="search-sentinel">더 불러오는 중...</div>' : '';
+        resultList.innerHTML = itemsHtml + sentinelHtml;
+
         for (const item of resultList.querySelectorAll<HTMLElement>('.search-result-item')) {
           item.addEventListener('click', () => {
             const idx = Number(item.dataset.idx);
@@ -932,6 +996,36 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             if (p) selectPlace(p);
           });
         }
+
+        const sentinel = resultList.querySelector<HTMLElement>('.search-sentinel');
+        if (sentinel) {
+          sentinelIO = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) loadMore();
+          }, { root: resultsDiv, rootMargin: '50px' });
+          sentinelIO.observe(sentinel);
+        }
+      }
+
+      async function loadMore() {
+        if (loadingMore || !currentQuery) return;
+        const hasMore = activeSource === 'kakao' ? kakaoHasMore : naverHasMore;
+        if (!hasMore) return;
+        loadingMore = true;
+        if (activeSource === 'kakao') {
+          kakaoPage++;
+          const { items, hasMore: more } = await kakaoSearch(currentQuery, kakaoPage);
+          kakaoResults = kakaoResults.concat(items);
+          kakaoHasMore = more;
+          kakaoCountEl.textContent = String(kakaoResults.length);
+        } else {
+          naverStart += 5;
+          const { items, hasMore: more } = await naverSearchPage(currentQuery, naverStart);
+          naverResults = naverResults.concat(items);
+          naverHasMore = more;
+          naverCountEl.textContent = String(naverResults.length);
+        }
+        loadingMore = false;
+        renderActiveList();
       }
 
       for (const tabBtn of sourceTabs.querySelectorAll<HTMLButtonElement>('.search-source-tab')) {
@@ -948,59 +1042,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const kw = searchInput.value.trim();
         if (kw.length < 2) { resultsDiv.hidden = true; return; }
         timer = setTimeout(async () => {
+          currentQuery = kw;
+          kakaoResults = []; kakaoPage = 1; kakaoHasMore = false;
+          naverResults = []; naverStart = 1; naverHasMore = false;
+
           resultsDiv.hidden = false;
           sourceTabs.hidden = false;
           resultList.innerHTML = '<div class="search-empty">검색 중...</div>';
 
           try { await loadMaps(); } catch { /* ignore */ }
-          const k = (window as Record<string, unknown>).kakao as Record<string, unknown> | undefined;
-          const m = k?.maps as Record<string, unknown> | undefined;
 
-          const kakaoPromise = new Promise<UnifiedPlace[]>((resolve) => {
-            if (!m) { resolve([]); return; }
-            const svc = m.services as Record<string, new () => Record<string, unknown>>;
-            const places = new svc.Places();
-            (places.keywordSearch as (...args: unknown[]) => unknown)(kw, (data: Array<Record<string, string>>, status: string) => {
-              const OK = ((m.services as Record<string, Record<string, string>>).Status as Record<string, string>).OK;
-              if (status !== OK || !data) { resolve([]); return; }
-              resolve(data.slice(0, 10).map((p) => {
-                const catParts = (p.category_name || '').split(' > ');
-                const lastCat = catParts[catParts.length - 1] || '';
-                return {
-                  source: 'kakao' as const,
-                  name: p.place_name,
-                  address: p.address_name,
-                  category: (lastCat && lastCat !== '음식점') ? lastCat : '음식점',
-                  lat: p.y,
-                  lng: p.x,
-                };
-              }));
-            }, { category_group_code: 'FD6' });
-          });
+          const [kRes, nRes] = await Promise.all([
+            kakaoSearch(kw, 1),
+            naverSearchPage(kw, 1).catch(() => ({ items: [] as UnifiedPlace[], hasMore: false })),
+          ]);
+          kakaoResults = kRes.items; kakaoHasMore = kRes.hasMore;
+          naverResults = nRes.items; naverHasMore = nRes.hasMore;
+          kakaoCountEl.textContent = String(kakaoResults.length);
+          naverCountEl.textContent = String(naverResults.length);
 
-          const naverPromise = searchNaverPlaces(kw).then(async (items) => {
-            const converted: UnifiedPlace[] = await Promise.all(items.map(async (item) => {
-              const fullAddr = item.roadAddress || item.address;
-              const coords = await geocodeAddress(fullAddr).catch(() => null);
-              return {
-                source: 'naver' as const,
-                name: item.name,
-                address: fullAddr,
-                category: (item.category.split('>').pop() || '기타').trim(),
-                lat: coords ? String(coords.lat) : '',
-                lng: coords ? String(coords.lng) : '',
-              };
-            }));
-            return converted;
-          }).catch(() => [] as UnifiedPlace[]);
-
-          const [kRes, nRes] = await Promise.all([kakaoPromise, naverPromise]);
-          kakaoResults = kRes;
-          naverResults = nRes;
-          kakaoCountEl.textContent = String(kRes.length);
-          naverCountEl.textContent = String(nRes.length);
-
-          activeSource = (kRes.length === 0 && nRes.length > 0) ? 'naver' : 'kakao';
+          activeSource = (kakaoResults.length === 0 && naverResults.length > 0) ? 'naver' : 'kakao';
           for (const b of sourceTabs.querySelectorAll('.search-source-tab')) {
             b.classList.toggle('active', (b as HTMLElement).dataset.source === activeSource);
           }

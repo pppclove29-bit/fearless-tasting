@@ -2375,6 +2375,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
     font-size: 0.8rem;
   }
+  .rest-search-sentinel {
+    padding: 0.6rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+  }
 
   .search-source-tabs {
     display: flex;
@@ -4488,38 +4494,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       submitBtn!.disabled = false;
     }
 
-    function renderActiveList() {
-      const list = activeSource === 'kakao' ? kakaoResults : naverResults;
-      if (list.length === 0) {
-        resultList!.innerHTML = `<div class="rest-search-empty">${activeSource === 'kakao' ? '카카오' : '네이버'} 검색 결과가 없습니다.</div>`;
-        return;
-      }
-      resultList!.innerHTML = list.map((p, i) =>
-        `<div class="address-result-item" role="button" tabindex="0" data-idx="${i}">
-          <div class="address-result-info">
-            <div class="address-result-name">${escapeHtml(p.name)}</div>
-            <div class="address-result-addr">${escapeHtml(p.address)}</div>
-          </div>
-        </div>`,
-      ).join('');
-      for (const item of resultList!.querySelectorAll<HTMLElement>('.address-result-item')) {
-        item.addEventListener('click', () => {
-          const idx = parseInt(item.dataset.idx || '0', 10);
-          const p = (activeSource === 'kakao' ? kakaoResults : naverResults)[idx];
-          if (p) pickPlace(p);
-        });
-      }
-    }
-
-    // 소스 탭 전환
-    for (const tabBtn of sourceTabsEl?.querySelectorAll<HTMLButtonElement>('.search-source-tab') || []) {
-      tabBtn.addEventListener('click', () => {
-        activeSource = (tabBtn.dataset.source as 'kakao' | 'naver') || 'kakao';
-        for (const b of sourceTabsEl!.querySelectorAll('.search-source-tab')) b.classList.remove('active');
-        tabBtn.classList.add('active');
-        renderActiveList();
-      });
-    }
+    let kakaoPage = 1;
+    let kakaoHasMore = false;
+    let naverStart = 1;
+    let naverHasMore = false;
+    let currentQuery = '';
+    let loadingMore = false;
+    let sentinelIO: IntersectionObserver | null = null;
 
     function kakaoGeocode(address: string): Promise<{ lat: string; lng: string }> {
       return new Promise((resolve) => {
@@ -4536,68 +4517,136 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     }
 
+    async function kakaoSearchPage(q: string, page: number): Promise<{ items: UnifiedPlace[]; hasMore: boolean }> {
+      const kakao = (window as Record<string, unknown>).kakao as { maps?: { services?: { Places: new () => { keywordSearch: (q: string, cb: (data: { place_name: string; address_name: string; road_address_name?: string; category_group_name?: string; y: string; x: string }[], status: string, pagination: { hasNextPage?: boolean }) => void, opts?: { page?: number }) => void }; Status: { OK: string } } } };
+      if (!kakao?.maps?.services) return { items: [], hasMore: false };
+      return new Promise((resolve) => {
+        const ps = new kakao.maps!.services!.Places();
+        ps.keywordSearch(q, (data, status, pagination) => {
+          if (status !== kakao.maps!.services!.Status.OK || !data) { resolve({ items: [], hasMore: false }); return; }
+          const items: UnifiedPlace[] = data.map((p) => ({
+            source: 'kakao',
+            name: p.place_name,
+            address: p.road_address_name || p.address_name,
+            category: p.category_group_name || '기타',
+            lat: p.y,
+            lng: p.x,
+          }));
+          resolve({ items, hasMore: !!pagination?.hasNextPage });
+        }, { page });
+      });
+    }
+
+    async function naverSearchPage(q: string, start: number): Promise<{ items: UnifiedPlace[]; hasMore: boolean }> {
+      const { items: rawItems, hasMore } = await searchNaverPlaces(q, start);
+      const converted: UnifiedPlace[] = await Promise.all(rawItems.map(async (item) => {
+        const fullAddr = item.roadAddress || item.address;
+        const { lat, lng } = await kakaoGeocode(fullAddr);
+        return {
+          source: 'naver' as const,
+          name: item.name,
+          address: fullAddr,
+          category: (item.category.split('>').pop() || '기타').trim(),
+          lat,
+          lng,
+        };
+      }));
+      return { items: converted, hasMore };
+    }
+
+    function renderActiveList() {
+      sentinelIO?.disconnect();
+      sentinelIO = null;
+      const list = activeSource === 'kakao' ? kakaoResults : naverResults;
+      const hasMore = activeSource === 'kakao' ? kakaoHasMore : naverHasMore;
+      if (list.length === 0) {
+        resultList!.innerHTML = `<div class="rest-search-empty">${activeSource === 'kakao' ? '카카오' : '네이버'} 검색 결과가 없습니다.</div>`;
+        return;
+      }
+      const itemsHtml = list.map((p, i) =>
+        `<div class="address-result-item" role="button" tabindex="0" data-idx="${i}">
+          <div class="address-result-info">
+            <div class="address-result-name">${escapeHtml(p.name)}</div>
+            <div class="address-result-addr">${escapeHtml(p.address)}</div>
+          </div>
+        </div>`,
+      ).join('');
+      const sentinelHtml = hasMore ? '<div class="rest-search-sentinel">더 불러오는 중...</div>' : '';
+      resultList!.innerHTML = itemsHtml + sentinelHtml;
+      for (const item of resultList!.querySelectorAll<HTMLElement>('.address-result-item')) {
+        item.addEventListener('click', () => {
+          const idx = parseInt(item.dataset.idx || '0', 10);
+          const p = (activeSource === 'kakao' ? kakaoResults : naverResults)[idx];
+          if (p) pickPlace(p);
+        });
+      }
+      const sentinel = resultList!.querySelector<HTMLElement>('.rest-search-sentinel');
+      if (sentinel) {
+        sentinelIO = new IntersectionObserver((entries) => {
+          if (entries[0].isIntersecting) loadMore();
+        }, { root: results, rootMargin: '50px' });
+        sentinelIO.observe(sentinel);
+      }
+    }
+
+    async function loadMore() {
+      if (loadingMore || !currentQuery) return;
+      const hasMore = activeSource === 'kakao' ? kakaoHasMore : naverHasMore;
+      if (!hasMore) return;
+      loadingMore = true;
+      if (activeSource === 'kakao') {
+        kakaoPage++;
+        const { items, hasMore: more } = await kakaoSearchPage(currentQuery, kakaoPage);
+        kakaoResults = kakaoResults.concat(items);
+        kakaoHasMore = more;
+        if (kakaoCountEl) kakaoCountEl.textContent = String(kakaoResults.length);
+      } else {
+        naverStart += 5;
+        const { items, hasMore: more } = await naverSearchPage(currentQuery, naverStart);
+        naverResults = naverResults.concat(items);
+        naverHasMore = more;
+        if (naverCountEl) naverCountEl.textContent = String(naverResults.length);
+      }
+      loadingMore = false;
+      renderActiveList();
+    }
+
+    // 소스 탭 전환
+    for (const tabBtn of sourceTabsEl?.querySelectorAll<HTMLButtonElement>('.search-source-tab') || []) {
+      tabBtn.addEventListener('click', () => {
+        activeSource = (tabBtn.dataset.source as 'kakao' | 'naver') || 'kakao';
+        for (const b of sourceTabsEl!.querySelectorAll('.search-source-tab')) b.classList.remove('active');
+        tabBtn.classList.add('active');
+        renderActiveList();
+      });
+    }
+
     let timer: ReturnType<typeof setTimeout> | null = null;
     searchInput.addEventListener('input', () => {
       if (timer) clearTimeout(timer);
       const q = searchInput.value.trim();
       if (!q || q.length < 2) { results.hidden = true; return; }
       timer = setTimeout(async () => {
+        currentQuery = q;
+        kakaoResults = []; kakaoPage = 1; kakaoHasMore = false;
+        naverResults = []; naverStart = 1; naverHasMore = false;
+
         results.hidden = false;
         if (sourceTabsEl) sourceTabsEl.hidden = false;
         resultList.innerHTML = '<div class="rest-search-empty">검색 중...</div>';
 
-        const kakao = (window as Record<string, unknown>).kakao as { maps?: { services?: { Places: new () => { keywordSearch: (q: string, cb: (data: { place_name: string; address_name: string; road_address_name?: string; category_group_name?: string; y: string; x: string }[], status: string) => void) => void }; Status: { OK: string } } } };
+        const [k, n] = await Promise.all([
+          kakaoSearchPage(q, 1),
+          naverSearchPage(q, 1).catch(() => ({ items: [] as UnifiedPlace[], hasMore: false })),
+        ]);
+        kakaoResults = k.items; kakaoHasMore = k.hasMore;
+        naverResults = n.items; naverHasMore = n.hasMore;
+        if (kakaoCountEl) kakaoCountEl.textContent = String(kakaoResults.length);
+        if (naverCountEl) naverCountEl.textContent = String(naverResults.length);
 
-        const kakaoPromise = new Promise<UnifiedPlace[]>((resolve) => {
-          if (!kakao?.maps?.services) { resolve([]); return; }
-          const ps = new kakao.maps.services.Places();
-          ps.keywordSearch(q, (data, status) => {
-            if (status !== kakao.maps!.services!.Status.OK || !data) { resolve([]); return; }
-            resolve(data.slice(0, 10).map((p) => ({
-              source: 'kakao',
-              name: p.place_name,
-              address: p.road_address_name || p.address_name,
-              category: p.category_group_name || '기타',
-              lat: p.y,
-              lng: p.x,
-            })));
-          });
-        });
-
-        const naverPromise = searchNaverPlaces(q).then(async (items) => {
-          // 네이버 결과는 카카오 지오코더로 주소→WGS84 변환
-          const converted = await Promise.all(items.map(async (item) => {
-            const fullAddr = item.roadAddress || item.address;
-            const { lat, lng } = await kakaoGeocode(fullAddr);
-            return {
-              source: 'naver' as const,
-              name: item.name,
-              address: fullAddr,
-              category: (item.category.split('>').pop() || '기타').trim(),
-              lat,
-              lng,
-            };
-          }));
-          return converted;
-        }).catch(() => [] as UnifiedPlace[]);
-
-        const [k, n] = await Promise.all([kakaoPromise, naverPromise]);
-        kakaoResults = k;
-        naverResults = n;
-        if (kakaoCountEl) kakaoCountEl.textContent = String(k.length);
-        if (naverCountEl) naverCountEl.textContent = String(n.length);
-
-        // 카카오에 결과 없고 네이버만 있으면 자동으로 네이버 탭 활성화
-        if (k.length === 0 && n.length > 0) {
-          activeSource = 'naver';
-          for (const b of sourceTabsEl!.querySelectorAll('.search-source-tab')) {
-            b.classList.toggle('active', (b as HTMLElement).dataset.source === 'naver');
-          }
-        } else {
-          activeSource = 'kakao';
-          for (const b of sourceTabsEl!.querySelectorAll('.search-source-tab')) {
-            b.classList.toggle('active', (b as HTMLElement).dataset.source === 'kakao');
-          }
+        activeSource = (kakaoResults.length === 0 && naverResults.length > 0) ? 'naver' : 'kakao';
+        for (const b of sourceTabsEl!.querySelectorAll('.search-source-tab')) {
+          b.classList.toggle('active', (b as HTMLElement).dataset.source === activeSource);
         }
         renderActiveList();
       }, 300);

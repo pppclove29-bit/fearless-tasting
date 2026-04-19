@@ -17,7 +17,7 @@ async function bootstrap() {
     origin: process.env.FRONTEND_URL || 'http://localhost:4321',
     credentials: true,
     maxAge: 86400, // preflight 캐시 24시간 — 매 요청마다 OPTIONS 왕복 제거
-    exposedHeaders: ['X-Places-Debug'],
+    exposedHeaders: ['X-Places-Debug', 'X-Places-Start', 'X-Places-Has-More'],
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new AllExceptionsFilter());

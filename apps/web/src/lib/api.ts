@@ -847,19 +847,21 @@ export interface NaverPlaceResult {
   mapy: string;
 }
 
-/** 네이버 장소 검색 (백엔드 프록시) */
-export async function searchNaverPlaces(query: string): Promise<NaverPlaceResult[]> {
-  if (!query || query.trim().length < 2) return [];
+/** 네이버 장소 검색 (백엔드 프록시). start=1..1000, 페이지당 5개 */
+export async function searchNaverPlaces(query: string, start: number = 1): Promise<{ items: NaverPlaceResult[]; hasMore: boolean }> {
+  if (!query || query.trim().length < 2) return { items: [], hasMore: false };
   try {
-    const res = await apiFetch(`${API_BASE}/places/naver?q=${encodeURIComponent(query)}`);
-    if (!res.ok) return [];
+    const res = await apiFetch(`${API_BASE}/places/naver?q=${encodeURIComponent(query)}&start=${start}`);
+    if (!res.ok) return { items: [], hasMore: false };
     const debug = res.headers.get('X-Places-Debug');
     if (debug && debug !== 'ok' && import.meta.env.DEV) {
       console.warn('[naver places]', debug);
     }
-    return res.json();
+    const hasMore = res.headers.get('X-Places-Has-More') === '1';
+    const items = await res.json() as NaverPlaceResult[];
+    return { items, hasMore };
   } catch {
-    return [];
+    return { items: [], hasMore: false };
   }
 }
 

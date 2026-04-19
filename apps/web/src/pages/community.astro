@@ -63,7 +63,13 @@ import AdSlot from '@/components/AdSlot.astro';
             <label class="write-label">식당 태그 (선택, 최대 5개)</label>
             <div class="rest-tag-search-wrap">
               <input type="text" id="write-rest-search" class="write-input" placeholder="식당 이름으로 검색" />
-              <div id="write-rest-results" class="rest-search-results" hidden></div>
+              <div id="write-rest-results" class="rest-search-results" hidden>
+                <div class="search-source-tabs" id="write-source-tabs" hidden>
+                  <button type="button" class="search-source-tab active" data-source="kakao">카카오 <span class="src-count" id="write-kakao-count">0</span></button>
+                  <button type="button" class="search-source-tab" data-source="naver">네이버 <span class="src-count" id="write-naver-count">0</span></button>
+                </div>
+                <div id="write-result-list"></div>
+              </div>
             </div>
             <div id="write-rest-tags" class="rest-tags"></div>
           </div>
@@ -325,10 +331,49 @@ import AdSlot from '@/components/AdSlot.astro';
     border: 1px solid var(--border-mid);
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-    max-height: 280px;
+    max-height: 320px;
     overflow-y: auto;
     z-index: 10;
     padding: 0.25rem 0;
+  }
+  .rest-search-results .search-source-tabs {
+    display: flex;
+    gap: 0.3rem;
+    padding: 0.35rem 0.35rem 0;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-card);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .rest-search-results .search-source-tab {
+    flex: 1;
+    padding: 0.4rem 0.5rem;
+    border: none;
+    background: none;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    border-bottom: 2px solid transparent;
+  }
+  .rest-search-results .search-source-tab.active {
+    color: var(--text-heading);
+    font-weight: 700;
+    border-bottom-color: var(--text-heading);
+  }
+  .rest-search-results .src-count {
+    display: inline-block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-left: 0.2rem;
+  }
+  .rest-search-sentinel {
+    padding: 0.6rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.72rem;
   }
   .rest-search-results[hidden] { display: none; }
   .rest-search-item {
@@ -540,7 +585,7 @@ import AdSlot from '@/components/AdSlot.astro';
 </style>
 
 <script>
-  import { fetchBoards, fetchPosts, fetchMyPosts, fetchCurrentUser, createPost, showToast } from '@/lib/api';
+  import { fetchBoards, fetchPosts, fetchMyPosts, fetchCurrentUser, createPost, searchNaverPlaces, showToast } from '@/lib/api';
   import type { BoardListItem, PaginatedPosts } from '@/lib/api';
 
   function initCommunityPage() {
@@ -776,80 +821,197 @@ import AdSlot from '@/components/AdSlot.astro';
       });
     }
 
-    writeRestSearch?.addEventListener('input', () => {
-      if (restSearchTimer) clearTimeout(restSearchTimer);
-      restSearchTimer = setTimeout(() => {
-        const query = writeRestSearch.value.trim();
-        if (!query || query.length < 2) {
-          if (writeRestResults) writeRestResults.hidden = true;
-          return;
-        }
-        searchKakaoPlaces(query);
-      }, 300);
-    });
+    // ── 듀얼 소스(카카오/네이버) 검색 + 무한스크롤 ──
+    const writeSourceTabs = document.getElementById('write-source-tabs');
+    const writeResultList = document.getElementById('write-result-list');
+    const writeKakaoCount = document.getElementById('write-kakao-count');
+    const writeNaverCount = document.getElementById('write-naver-count');
 
-    async function searchKakaoPlaces(query: string) {
-      if (!writeRestResults) return;
-      const kakaoMapKey = (document.querySelector('meta[name="kakao-app-key"]') as HTMLMetaElement | null)?.content;
+    type WritePlace = {
+      source: 'kakao' | 'naver';
+      name: string;
+      address: string;
+      category: string;
+      lat: string;
+      lng: string;
+      kakaoId: string;
+    };
+    let writeKakaoResults: WritePlace[] = [];
+    let writeNaverResults: WritePlace[] = [];
+    let writeKakaoPage = 1;
+    let writeKakaoHasMore = false;
+    let writeNaverStart = 1;
+    let writeNaverHasMore = false;
+    let writeActiveSource: 'kakao' | 'naver' = 'kakao';
+    let writeCurrentQuery = '';
+    let writeLoadingMore = false;
+    let writeSentinelIO: IntersectionObserver | null = null;
 
-      if (!kakaoMapKey) {
-        writeRestResults.innerHTML = `<div class="rest-search-empty">카카오 지도를 사용할 수 없습니다. 나중에 다시 시도해 주세요.</div>`;
-        writeRestResults.hidden = false;
-        return;
-      }
-
-      await loadKakaoMaps();
-      const kakao = (window as Record<string, unknown>).kakao as { maps?: { services?: { Places: new () => { keywordSearch: (q: string, cb: (data: { place_name: string; address_name: string; category_group_name: string; y: string; x: string; id: string }[], status: string) => void) => void }; Status: { OK: string } } } };
-
-      if (!kakao?.maps?.services) {
-        writeRestResults.innerHTML = `<div class="rest-search-empty">카카오 지도를 사용할 수 없습니다. 나중에 다시 시도해 주세요.</div>`;
-        writeRestResults.hidden = false;
-        return;
-      }
-
-      const ps = new kakao.maps.services.Places();
-      ps.keywordSearch(query, (data, status) => {
-        if (status !== kakao.maps!.services!.Status.OK || data.length === 0) {
-          writeRestResults.innerHTML = `<div class="rest-search-empty">검색 결과가 없습니다. 정확한 상호로 다시 검색해 주세요.</div>`;
-          writeRestResults.hidden = false;
-          return;
-        }
-
-        writeRestResults.innerHTML = data.slice(0, 5).map((place, i) =>
-          `<button type="button" class="rest-search-item" data-place-idx="${i}" data-name="${escapeHtml(place.place_name)}" data-address="${escapeHtml(place.address_name)}" data-category="${escapeHtml(place.category_group_name || '')}" data-lat="${place.y}" data-lng="${place.x}" data-kakao-id="${place.id}">
-            <div class="rest-search-name">${escapeHtml(place.place_name)}</div>
-            <div class="rest-search-addr">${escapeHtml(place.address_name)}</div>
-          </button>`
-        ).join('');
-        writeRestResults.hidden = false;
-        setupSearchResultHandlers();
+    function writeKakaoGeocode(address: string): Promise<{ lat: string; lng: string }> {
+      return new Promise((resolve) => {
+        const k = (window as Record<string, unknown>).kakao as { maps?: { services?: { Geocoder: new () => { addressSearch: (a: string, cb: (res: Array<{ x: string; y: string }>, status: string) => void) => void }; Status: { OK: string } } } };
+        if (!k?.maps?.services) { resolve({ lat: '', lng: '' }); return; }
+        const geocoder = new k.maps.services.Geocoder();
+        geocoder.addressSearch(address, (res, status) => {
+          if (status === k.maps!.services!.Status.OK && res[0]) resolve({ lat: res[0].y, lng: res[0].x });
+          else resolve({ lat: '', lng: '' });
+        });
       });
     }
 
-    function setupSearchResultHandlers() {
-      if (!writeRestResults || !writeRestSearch) return;
-      for (const item of writeRestResults.querySelectorAll<HTMLButtonElement>('.rest-search-item')) {
+    async function writeKakaoSearch(q: string, page: number): Promise<{ items: WritePlace[]; hasMore: boolean }> {
+      const kakao = (window as Record<string, unknown>).kakao as { maps?: { services?: { Places: new () => { keywordSearch: (q: string, cb: (data: { place_name: string; address_name: string; category_group_name: string; y: string; x: string; id: string }[], status: string, pagination: { hasNextPage?: boolean }) => void, opts?: { page?: number }) => void }; Status: { OK: string } } } };
+      if (!kakao?.maps?.services) return { items: [], hasMore: false };
+      return new Promise((resolve) => {
+        const ps = new kakao.maps!.services!.Places();
+        ps.keywordSearch(q, (data, status, pagination) => {
+          if (status !== kakao.maps!.services!.Status.OK || !data) { resolve({ items: [], hasMore: false }); return; }
+          const items: WritePlace[] = data.map((p) => ({
+            source: 'kakao',
+            name: p.place_name,
+            address: p.address_name,
+            category: p.category_group_name || '',
+            lat: p.y,
+            lng: p.x,
+            kakaoId: p.id,
+          }));
+          resolve({ items, hasMore: !!pagination?.hasNextPage });
+        }, { page });
+      });
+    }
+
+    async function writeNaverSearch(q: string, start: number): Promise<{ items: WritePlace[]; hasMore: boolean }> {
+      const { items: rawItems, hasMore } = await searchNaverPlaces(q, start);
+      const converted: WritePlace[] = await Promise.all(rawItems.map(async (item) => {
+        const fullAddr = item.roadAddress || item.address;
+        const { lat, lng } = await writeKakaoGeocode(fullAddr);
+        return {
+          source: 'naver' as const,
+          name: item.name,
+          address: fullAddr,
+          category: (item.category.split('>').pop() || '').trim(),
+          lat,
+          lng,
+          kakaoId: '',
+        };
+      }));
+      return { items: converted, hasMore };
+    }
+
+    function renderWriteList() {
+      writeSentinelIO?.disconnect();
+      writeSentinelIO = null;
+      if (!writeResultList) return;
+      const list = writeActiveSource === 'kakao' ? writeKakaoResults : writeNaverResults;
+      const hasMore = writeActiveSource === 'kakao' ? writeKakaoHasMore : writeNaverHasMore;
+      if (list.length === 0) {
+        writeResultList.innerHTML = `<div class="rest-search-empty">${writeActiveSource === 'kakao' ? '카카오' : '네이버'} 검색 결과가 없습니다.</div>`;
+        return;
+      }
+      writeResultList.innerHTML = list.map((p, i) =>
+        `<button type="button" class="rest-search-item" data-idx="${i}">
+          <div class="rest-search-name">${escapeHtml(p.name)}</div>
+          <div class="rest-search-addr">${escapeHtml(p.address)}</div>
+        </button>`
+      ).join('') + (hasMore ? '<div class="rest-search-sentinel">더 불러오는 중...</div>' : '');
+      for (const item of writeResultList.querySelectorAll<HTMLButtonElement>('.rest-search-item')) {
         item.addEventListener('click', () => {
           if (taggedRestaurants.length >= 5) {
             showToast('식당은 최대 5개까지 태그할 수 있습니다.');
             return;
           }
-
+          const idx = Number(item.dataset.idx);
+          const p = (writeActiveSource === 'kakao' ? writeKakaoResults : writeNaverResults)[idx];
+          if (!p) return;
           taggedRestaurants.push({
-            name: item.dataset.name || '',
-            address: item.dataset.address || '',
-            category: item.dataset.category || undefined,
-            latitude: item.dataset.lat ? parseFloat(item.dataset.lat) : undefined,
-            longitude: item.dataset.lng ? parseFloat(item.dataset.lng) : undefined,
-            kakaoPlaceId: item.dataset.kakaoId || undefined,
+            name: p.name,
+            address: p.address,
+            category: p.category || undefined,
+            latitude: p.lat ? parseFloat(p.lat) : undefined,
+            longitude: p.lng ? parseFloat(p.lng) : undefined,
+            kakaoPlaceId: p.kakaoId || undefined,
           });
-
           renderRestTags();
-          writeRestSearch.value = '';
-          writeRestResults.hidden = true;
+          if (writeRestSearch) writeRestSearch.value = '';
+          if (writeRestResults) writeRestResults.hidden = true;
         });
       }
+      const sentinel = writeResultList.querySelector<HTMLElement>('.rest-search-sentinel');
+      if (sentinel) {
+        writeSentinelIO = new IntersectionObserver((entries) => {
+          if (entries[0].isIntersecting) writeLoadMore();
+        }, { root: writeRestResults, rootMargin: '50px' });
+        writeSentinelIO.observe(sentinel);
+      }
     }
+
+    async function writeLoadMore() {
+      if (writeLoadingMore || !writeCurrentQuery) return;
+      const hasMore = writeActiveSource === 'kakao' ? writeKakaoHasMore : writeNaverHasMore;
+      if (!hasMore) return;
+      writeLoadingMore = true;
+      if (writeActiveSource === 'kakao') {
+        writeKakaoPage++;
+        const { items, hasMore: more } = await writeKakaoSearch(writeCurrentQuery, writeKakaoPage);
+        writeKakaoResults = writeKakaoResults.concat(items);
+        writeKakaoHasMore = more;
+        if (writeKakaoCount) writeKakaoCount.textContent = String(writeKakaoResults.length);
+      } else {
+        writeNaverStart += 5;
+        const { items, hasMore: more } = await writeNaverSearch(writeCurrentQuery, writeNaverStart);
+        writeNaverResults = writeNaverResults.concat(items);
+        writeNaverHasMore = more;
+        if (writeNaverCount) writeNaverCount.textContent = String(writeNaverResults.length);
+      }
+      writeLoadingMore = false;
+      renderWriteList();
+    }
+
+    for (const tabBtn of writeSourceTabs?.querySelectorAll<HTMLButtonElement>('.search-source-tab') || []) {
+      tabBtn.addEventListener('click', () => {
+        writeActiveSource = (tabBtn.dataset.source as 'kakao' | 'naver') || 'kakao';
+        for (const b of writeSourceTabs!.querySelectorAll('.search-source-tab')) b.classList.remove('active');
+        tabBtn.classList.add('active');
+        renderWriteList();
+      });
+    }
+
+    writeRestSearch?.addEventListener('input', () => {
+      if (restSearchTimer) clearTimeout(restSearchTimer);
+      restSearchTimer = setTimeout(async () => {
+        const query = writeRestSearch.value.trim();
+        if (!query || query.length < 2) {
+          if (writeRestResults) writeRestResults.hidden = true;
+          return;
+        }
+        writeCurrentQuery = query;
+        writeKakaoResults = []; writeKakaoPage = 1; writeKakaoHasMore = false;
+        writeNaverResults = []; writeNaverStart = 1; writeNaverHasMore = false;
+
+        if (!writeRestResults || !writeResultList) return;
+        writeRestResults.hidden = false;
+        if (writeSourceTabs) writeSourceTabs.hidden = false;
+        writeResultList.innerHTML = '<div class="rest-search-empty">검색 중...</div>';
+
+        const kakaoMapKey = (document.querySelector('meta[name="kakao-app-key"]') as HTMLMetaElement | null)?.content;
+        if (kakaoMapKey) { try { await loadKakaoMaps(); } catch { /* ignore */ } }
+
+        const [k, n] = await Promise.all([
+          writeKakaoSearch(query, 1),
+          writeNaverSearch(query, 1).catch(() => ({ items: [] as WritePlace[], hasMore: false })),
+        ]);
+        writeKakaoResults = k.items; writeKakaoHasMore = k.hasMore;
+        writeNaverResults = n.items; writeNaverHasMore = n.hasMore;
+        if (writeKakaoCount) writeKakaoCount.textContent = String(writeKakaoResults.length);
+        if (writeNaverCount) writeNaverCount.textContent = String(writeNaverResults.length);
+
+        writeActiveSource = (writeKakaoResults.length === 0 && writeNaverResults.length > 0) ? 'naver' : 'kakao';
+        for (const b of writeSourceTabs?.querySelectorAll('.search-source-tab') || []) {
+          b.classList.toggle('active', (b as HTMLElement).dataset.source === writeActiveSource);
+        }
+        renderWriteList();
+      }, 300);
+    });
 
     // 검색 결과 외부 클릭 시 닫기
     document.addEventListener('click', (e) => {
