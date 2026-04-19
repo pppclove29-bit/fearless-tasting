@@ -846,22 +846,39 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    padding: 0.4rem 0.85rem;
+    padding: 0.55rem 1.1rem;
     background: var(--text-heading);
     color: var(--bg);
     border: none;
     border-radius: 100px;
-    font-size: 0.78rem;
-    font-weight: 600;
+    font-size: 0.88rem;
+    font-weight: 700;
     cursor: pointer;
     font-family: inherit;
-    transition: opacity 0.15s;
+    transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
     text-decoration: none;
     white-space: nowrap;
     flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
 
-  .add-rest-fab:hover { opacity: 0.85; }
+  .add-rest-fab:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
+
+  /* 비어있을 때 유도 펄스 */
+  .add-rest-fab.attn {
+    animation: fab-pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes fab-pulse {
+    0%, 100% { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(0, 0, 0, 0.25); }
+    50% { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 10px rgba(0, 0, 0, 0); }
+  }
+  [data-theme="dark"] .add-rest-fab.attn {
+    animation: fab-pulse-dark 1.8s ease-in-out infinite;
+  }
+  @keyframes fab-pulse-dark {
+    0%, 100% { box-shadow: 0 2px 8px rgba(255, 255, 255, 0.15), 0 0 0 0 rgba(255, 255, 255, 0.35); }
+    50% { box-shadow: 0 2px 8px rgba(255, 255, 255, 0.15), 0 0 0 10px rgba(255, 255, 255, 0); }
+  }
 
   /* 식당 등록 폼 */
   .add-restaurant-form {
@@ -4247,7 +4264,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const restSortLabels: Record<string, string> = { latest: '최신순', 'rating-high': '평점 높은순', 'rating-low': '평점 낮은순', reviews: '리뷰 많은순', visits: '방문 많은순', name: '이름순' };
 
     panel.innerHTML = addFormHtml
-      + `<div class="rest-list-header"><h3 class="section-subtitle">식당 목록 <span class="section-count" id="rest-total-count">-</span></h3><a href="/room/add?roomId=${currentRoom.id}" class="add-rest-fab">+ 식당 등록</a></div>`
+      + `<div class="rest-list-header"><h3 class="section-subtitle">식당 목록 <span class="section-count" id="rest-total-count">-</span></h3><a href="/room/add?roomId=${currentRoom.id}" class="add-rest-fab" id="add-rest-btn">+ 식당 등록</a></div>`
       + `<div class="review-sort-row">
           ${hasKakaoMap ? `<button type="button" class="viewport-filter-btn${restViewportFilter ? ' active' : ''}" id="rest-viewport-filter">
             🗺 지도 영역만
@@ -4734,6 +4751,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     // 총 개수 표시 동기화
     const countEl = document.getElementById('rest-total-count');
     if (countEl) countEl.textContent = String(displayTotal);
+
+    // 비어있으면 식당 등록 버튼에 주의 끌기 펄스 + 튜토리얼 발동
+    const addBtn = document.getElementById('add-rest-btn');
+    if (addBtn) addBtn.classList.toggle('attn', restTotal === 0);
+    if (restTotal === 0) {
+      import('@/lib/tutorial').then(({ runTutorial }) => {
+        runTutorial('add_restaurant', [
+          {
+            target: '#add-rest-btn',
+            title: '맛집을 추가해보세요',
+            description: '이 버튼을 누르면 카카오/네이버로 검색하거나 직접 입력해서 첫 식당과 리뷰를 등록할 수 있어요.',
+          },
+        ]).catch(() => {});
+      }).catch(() => {});
+    }
 
     if (displayTotal === 0) {
       if (usingViewportFilter) {

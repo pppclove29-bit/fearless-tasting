@@ -61,6 +61,8 @@ model User {
   lastActiveAt        DateTime?
   /// 온보딩 완료 시각 (null이면 최초 로그인, 온보딩 모달 노출)
   onboardingCompletedAt DateTime?
+  /// 튜토리얼 진행 상태 (코치마크 튜토리얼별 완료 기록)
+  tutorialProgress    UserTutorialProgress[]
   /// 가입일
   createdAt           DateTime               @default(now())
   /// 최종 수정일
@@ -636,6 +638,23 @@ model PostBookmark {
   createdAt DateTime @default(now())
 
   @@unique([postId, userId])
+  @@index([userId])
+}
+
+/// 유저별 튜토리얼 진행 상태 (코치마크 튜토리얼별 완료 기록)
+model UserTutorialProgress {
+  /// 고유 식별자
+  id          String   @id @default(cuid())
+  /// 연결된 유저
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// 유저 ID (FK)
+  userId      String
+  /// 튜토리얼 키 (예: 'create_room', 'add_restaurant')
+  tutorialKey String   @db.VarChar(50)
+  /// 완료 시각
+  completedAt DateTime @default(now())
+
+  @@unique([userId, tutorialKey])
   @@index([userId])
 }
 

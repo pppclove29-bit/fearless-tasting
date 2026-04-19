@@ -64,6 +64,25 @@ export class UsersService {
     });
   }
 
+  /** 내가 완료한 튜토리얼 키 목록 */
+  async getCompletedTutorials(userId: string): Promise<{ completed: string[] }> {
+    const rows = await this.prisma.read.userTutorialProgress.findMany({
+      where: { userId },
+      select: { tutorialKey: true },
+    });
+    return { completed: rows.map((r) => r.tutorialKey) };
+  }
+
+  /** 튜토리얼 완료 기록 (idempotent) */
+  async completeTutorial(userId: string, tutorialKey: string) {
+    await this.prisma.write.userTutorialProgress.upsert({
+      where: { userId_tutorialKey: { userId, tutorialKey } },
+      update: {},
+      create: { userId, tutorialKey },
+    });
+    return { ok: true };
+  }
+
   /** 온보딩 완료 처리 */
   async completeOnboarding(userId: string) {
     return this.prisma.write.user.update({

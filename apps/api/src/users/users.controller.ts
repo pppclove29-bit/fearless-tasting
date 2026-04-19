@@ -113,6 +113,26 @@ export class UsersController {
     return this.usersService.completeOnboarding(user.id);
   }
 
+  /** 내가 완료한 튜토리얼 키 목록 */
+  @Get('me/tutorials')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '완료한 튜토리얼 키 목록' })
+  getCompletedTutorials(@CurrentUser() user: { id: string }) {
+    return this.usersService.getCompletedTutorials(user.id);
+  }
+
+  /** 튜토리얼 완료 처리 */
+  @Post('me/tutorials/:key/complete')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '튜토리얼 완료 처리' })
+  @ApiParam({ name: 'key', description: '튜토리얼 키 (create_room, add_restaurant 등)' })
+  completeTutorial(
+    @CurrentUser() user: { id: string },
+    @Param('key') key: string,
+  ) {
+    return this.usersService.completeTutorial(user.id, key);
+  }
+
   /** 관리자 대시보드 통계 (DAU/WAU/MAU 등) */
   @Get('stats')
   @UseGuards(AdminGuard)

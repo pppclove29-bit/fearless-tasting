@@ -791,6 +791,29 @@ export async function completeOnboarding(): Promise<void> {
   resetUserCache();
 }
 
+/** 완료한 튜토리얼 키 목록 */
+export async function fetchCompletedTutorials(): Promise<string[]> {
+  try {
+    const res = await apiFetch(`${API_BASE}/users/me/tutorials`);
+    if (!res.ok) return [];
+    const body = await res.json();
+    return Array.isArray(body?.completed) ? body.completed : [];
+  } catch {
+    return [];
+  }
+}
+
+/** 튜토리얼 완료 처리 (idempotent) */
+export async function completeTutorial(key: string): Promise<void> {
+  try {
+    await apiFetch(`${API_BASE}/users/me/tutorials/${encodeURIComponent(key)}/complete`, {
+      method: 'POST',
+    });
+  } catch {
+    /* ignore — 다음 방문 시 재시도 */
+  }
+}
+
 export interface NaverPlaceResult {
   source: 'naver';
   name: string;
