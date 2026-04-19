@@ -286,6 +286,7 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     position: sticky;
     top: 0;
     z-index: 100;
+    padding-top: env(safe-area-inset-top);
   }
 
   nav {
@@ -295,6 +296,8 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     max-width: 960px;
     margin: 0 auto;
     padding: 0.75rem 1.5rem;
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
   }
 
   .nav-brand {
@@ -429,8 +432,8 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
 
   .notif-dropdown {
     position: fixed;
-    top: 52px;
-    right: 1rem;
+    top: calc(52px + env(safe-area-inset-top));
+    right: max(1rem, env(safe-area-inset-right));
     width: min(360px, calc(100vw - 1.5rem));
     max-height: min(70vh, 450px);
     overflow-y: auto;
@@ -660,6 +663,8 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
 
     nav {
       padding: 0.5rem 0.75rem;
+      padding-left: max(0.75rem, env(safe-area-inset-left));
+      padding-right: max(0.75rem, env(safe-area-inset-right));
       position: relative;
     }
   }
@@ -758,6 +763,9 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
     border-top: 1px solid var(--border);
     box-shadow: 0 -4px 16px var(--shadow);
     padding: 0.85rem 1.25rem;
+    padding-bottom: calc(0.85rem + env(safe-area-inset-bottom));
+    padding-left: max(1.25rem, env(safe-area-inset-left));
+    padding-right: max(1.25rem, env(safe-area-inset-right));
     animation: pwa-slide-up 0.3s ease-out;
   }
 

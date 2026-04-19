@@ -78,6 +78,34 @@ export async function startOnboarding(): Promise<void> {
   document.body.style.overflow = 'hidden';
   requestAnimationFrame(() => { overlay.style.opacity = '1'; });
 
+  // 좌/우 스와이프로 스텝 이동 (권한 요청은 트리거하지 않고 내비게이션만)
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchActive = false;
+  modal.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    touchActive = true;
+  }, { passive: true });
+  modal.addEventListener('touchend', (e) => {
+    if (!touchActive) return;
+    touchActive = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0 && currentStep < steps.length - 1) {
+      trackEvent('onboarding_step_swiped', { step_index: currentStep, direction: 'next' });
+      currentStep++;
+      render();
+    } else if (dx > 0 && currentStep > 0) {
+      trackEvent('onboarding_step_swiped', { step_index: currentStep, direction: 'prev' });
+      currentStep--;
+      render();
+    }
+  }, { passive: true });
+
   function render() {
     const s = steps[currentStep];
     const dots = steps
