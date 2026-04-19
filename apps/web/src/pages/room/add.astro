@@ -190,6 +190,47 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .search-result-addr { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.1rem; }
   .search-result-cat { font-size: 0.65rem; color: var(--text-muted); margin-top: 0.1rem; }
 
+  /* 소스 탭 (카카오/네이버) */
+  .search-source-tabs {
+    display: flex;
+    gap: 0.3rem;
+    padding: 0.35rem 0.35rem 0;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-card);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .search-source-tab {
+    flex: 1;
+    padding: 0.4rem 0.5rem;
+    border: none;
+    background: none;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    border-bottom: 2px solid transparent;
+  }
+  .search-source-tab.active {
+    color: var(--text-heading);
+    font-weight: 700;
+    border-bottom-color: var(--text-heading);
+  }
+  .src-count {
+    display: inline-block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-left: 0.2rem;
+  }
+  .search-empty {
+    padding: 0.85rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
   /* 선택된 식당 카드 */
   .selected-place {
     padding: 0.75rem;
@@ -438,7 +479,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import {
     fetchCurrentUser, fetchRoom,
     createRoomRestaurant, createRoomVisit, createRoomReview,
-    toggleRestaurantWishlist,
+    toggleRestaurantWishlist, searchNaverPlaces,
     showToast,
   } from '@/lib/api';
   import type { AuthUser, RoomDetailResponse } from '@/lib/api';
@@ -547,7 +588,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div id="kakao-area" ${!hasKakaoMap ? 'hidden' : ''}>
           <div class="form-group search-wrap">
             <input type="text" class="form-input" id="place-search" placeholder="식당 이름으로 검색" autocomplete="off" />
-            <div class="search-results" id="search-results" hidden></div>
+            <div class="search-results" id="search-results" hidden>
+              <div class="search-source-tabs" id="add-source-tabs" hidden>
+                <button type="button" class="search-source-tab active" data-source="kakao">카카오 <span class="src-count" id="add-kakao-count">0</span></button>
+                <button type="button" class="search-source-tab" data-source="naver">네이버 <span class="src-count" id="add-naver-count">0</span></button>
+              </div>
+              <div id="add-result-list"></div>
+            </div>
           </div>
           <div id="selected-place" hidden></div>
         </div>
@@ -766,17 +813,41 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     }
 
-    // 카카오 검색
+    // 카카오 + 네이버 검색 (탭 전환)
     if (hasKakaoMap) {
       const searchInput = document.getElementById('place-search') as HTMLInputElement;
       const resultsDiv = document.getElementById('search-results')!;
+      const sourceTabs = document.getElementById('add-source-tabs')!;
+      const resultList = document.getElementById('add-result-list')!;
+      const kakaoCountEl = document.getElementById('add-kakao-count')!;
+      const naverCountEl = document.getElementById('add-naver-count')!;
       let timer: ReturnType<typeof setTimeout>;
       let kakaoLoaded = false;
+
+      type UnifiedPlace = {
+        source: 'kakao' | 'naver';
+        name: string;
+        address: string;
+        category: string;
+        lat: string;
+        lng: string;
+      };
+      let kakaoResults: UnifiedPlace[] = [];
+      let naverResults: UnifiedPlace[] = [];
+      let activeSource: 'kakao' | 'naver' = 'kakao';
+
+      const pMap: Record<string, string> = {
+        '서울': '서울특별시', '부산': '부산광역시', '대구': '대구광역시',
+        '인천': '인천광역시', '광주': '광주광역시', '대전': '대전광역시',
+        '울산': '울산광역시', '세종': '세종특별자치시', '경기': '경기도',
+        '강원': '강원특별자치도', '충북': '충청북도', '충남': '충청남도',
+        '전북': '전북특별자치도', '전남': '전라남도', '경북': '경상북도',
+        '경남': '경상남도', '제주': '제주특별자치도',
+      };
 
       function loadMaps(): Promise<void> {
         if (kakaoLoaded) return Promise.resolve();
         return new Promise((resolve) => {
-          // SDK defer 로드가 아직 안 끝났으면 대기
           function tryLoad() {
             const k = (window as Record<string, unknown>).kakao as Record<string, unknown> | undefined;
             if (!k || !k.maps) { setTimeout(tryLoad, 100); return; }
@@ -787,81 +858,134 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         });
       }
 
+      function selectPlace(p: UnifiedPlace) {
+        const parts = p.address.split(' ').filter(Boolean);
+        placeData = {
+          name: p.name,
+          address: p.address,
+          lat: p.lat,
+          lng: p.lng,
+          category: p.category || '음식점',
+          province: pMap[parts[0]] || parts[0] || '',
+          city: parts[1] || '',
+          neighborhood: parts[2] || '',
+        };
+
+        const selectedDiv = document.getElementById('selected-place')!;
+        selectedDiv.innerHTML = `
+          <div class="selected-place">
+            <div class="selected-place-name">${escapeHtml(placeData.name)}</div>
+            <div class="selected-place-meta">${escapeHtml(placeData.address)} · ${escapeHtml(placeData.category)}</div>
+            <button type="button" class="selected-place-clear" id="clear-place">다시 검색</button>
+          </div>`;
+        selectedDiv.hidden = false;
+        resultsDiv.hidden = true;
+        searchInput.value = '';
+        searchInput.hidden = true;
+        updateStep1Btn();
+
+        document.getElementById('clear-place')!.addEventListener('click', () => {
+          placeData = {};
+          selectedDiv.hidden = true;
+          searchInput.hidden = false;
+          searchInput.focus();
+          updateStep1Btn();
+        });
+      }
+
+      function renderActiveList() {
+        const list = activeSource === 'kakao' ? kakaoResults : naverResults;
+        if (list.length === 0) {
+          resultList.innerHTML = `<div class="search-empty">${activeSource === 'kakao' ? '카카오' : '네이버'} 검색 결과가 없습니다.</div>`;
+          return;
+        }
+        resultList.innerHTML = list.map((p, i) =>
+          `<div class="search-result-item" data-idx="${i}">
+            <div class="search-result-name">${escapeHtml(p.name)}</div>
+            <div class="search-result-addr">${escapeHtml(p.address)}</div>
+            ${p.category ? `<div class="search-result-cat">${escapeHtml(p.category)}</div>` : ''}
+          </div>`,
+        ).join('');
+        for (const item of resultList.querySelectorAll<HTMLElement>('.search-result-item')) {
+          item.addEventListener('click', () => {
+            const idx = Number(item.dataset.idx);
+            const p = (activeSource === 'kakao' ? kakaoResults : naverResults)[idx];
+            if (p) selectPlace(p);
+          });
+        }
+      }
+
+      for (const tabBtn of sourceTabs.querySelectorAll<HTMLButtonElement>('.search-source-tab')) {
+        tabBtn.addEventListener('click', () => {
+          activeSource = (tabBtn.dataset.source as 'kakao' | 'naver') || 'kakao';
+          for (const b of sourceTabs.querySelectorAll('.search-source-tab')) b.classList.remove('active');
+          tabBtn.classList.add('active');
+          renderActiveList();
+        });
+      }
+
       searchInput.addEventListener('input', () => {
         clearTimeout(timer);
         const kw = searchInput.value.trim();
         if (kw.length < 2) { resultsDiv.hidden = true; return; }
         timer = setTimeout(async () => {
-          try {
-          await loadMaps();
-          const k = (window as Record<string, unknown>).kakao as Record<string, unknown>;
-          const m = k.maps as Record<string, unknown>;
-          const svc = m.services as Record<string, new () => Record<string, unknown>>;
-          const places = new svc.Places();
-          (places.keywordSearch as (...args: unknown[]) => unknown)(kw, (data: Array<Record<string, string>>, status: string) => {
-            const OK = ((m.services as Record<string, Record<string, string>>).Status as Record<string, string>).OK;
-            if (status !== OK || !data.length) { resultsDiv.hidden = true; return; }
-            resultsDiv.innerHTML = data.slice(0, 10).map((p, i) => {
-              const catParts = (p.category_name || '').split(' > ');
-              const cat = catParts[catParts.length - 1] || '';
-              return `<div class="search-result-item" data-idx="${i}">
-                <div class="search-result-name">${escapeHtml(p.place_name)}</div>
-                <div class="search-result-addr">${escapeHtml(p.address_name)}</div>
-                ${cat ? `<div class="search-result-cat">${escapeHtml(cat)}</div>` : ''}
-              </div>`;
-            }).join('');
-            resultsDiv.hidden = false;
+          resultsDiv.hidden = false;
+          sourceTabs.hidden = false;
+          resultList.innerHTML = '<div class="search-empty">검색 중...</div>';
 
-            for (const item of resultsDiv.querySelectorAll<HTMLElement>('.search-result-item')) {
-              item.addEventListener('click', () => {
-                const idx = Number(item.dataset.idx);
-                const p = data[idx];
+          try { await loadMaps(); } catch { /* ignore */ }
+          const k = (window as Record<string, unknown>).kakao as Record<string, unknown> | undefined;
+          const m = k?.maps as Record<string, unknown> | undefined;
+
+          const kakaoPromise = new Promise<UnifiedPlace[]>((resolve) => {
+            if (!m) { resolve([]); return; }
+            const svc = m.services as Record<string, new () => Record<string, unknown>>;
+            const places = new svc.Places();
+            (places.keywordSearch as (...args: unknown[]) => unknown)(kw, (data: Array<Record<string, string>>, status: string) => {
+              const OK = ((m.services as Record<string, Record<string, string>>).Status as Record<string, string>).OK;
+              if (status !== OK || !data) { resolve([]); return; }
+              resolve(data.slice(0, 10).map((p) => {
                 const catParts = (p.category_name || '').split(' > ');
                 const lastCat = catParts[catParts.length - 1] || '';
-                placeData = {
+                return {
+                  source: 'kakao' as const,
                   name: p.place_name,
                   address: p.address_name,
+                  category: (lastCat && lastCat !== '음식점') ? lastCat : '음식점',
                   lat: p.y,
                   lng: p.x,
-                  category: (lastCat && lastCat !== '음식점') ? lastCat : '음식점',
                 };
-                const parts = p.address_name.split(' ').filter(Boolean);
-                const pMap: Record<string, string> = {
-                  '서울': '서울특별시', '부산': '부산광역시', '대구': '대구광역시',
-                  '인천': '인천광역시', '광주': '광주광역시', '대전': '대전광역시',
-                  '울산': '울산광역시', '세종': '세종특별자치시', '경기': '경기도',
-                  '강원': '강원특별자치도', '충북': '충청북도', '충남': '충청남도',
-                  '전북': '전북특별자치도', '전남': '전라남도', '경북': '경상북도',
-                  '경남': '경상남도', '제주': '제주특별자치도',
-                };
-                placeData.province = pMap[parts[0]] || parts[0] || '';
-                placeData.city = parts[1] || '';
-                placeData.neighborhood = parts[2] || '';
+              }));
+            }, { category_group_code: 'FD6' });
+          });
 
-                const selectedDiv = document.getElementById('selected-place')!;
-                selectedDiv.innerHTML = `
-                  <div class="selected-place">
-                    <div class="selected-place-name">${escapeHtml(placeData.name)}</div>
-                    <div class="selected-place-meta">${escapeHtml(placeData.address)} · ${escapeHtml(placeData.category)}</div>
-                    <button type="button" class="selected-place-clear" id="clear-place">다시 검색</button>
-                  </div>`;
-                selectedDiv.hidden = false;
-                resultsDiv.hidden = true;
-                searchInput.value = '';
-                searchInput.hidden = true;
-                updateStep1Btn();
+          const naverPromise = searchNaverPlaces(kw).then(async (items) => {
+            const converted: UnifiedPlace[] = await Promise.all(items.map(async (item) => {
+              const fullAddr = item.roadAddress || item.address;
+              const coords = await geocodeAddress(fullAddr).catch(() => null);
+              return {
+                source: 'naver' as const,
+                name: item.name,
+                address: fullAddr,
+                category: (item.category.split('>').pop() || '기타').trim(),
+                lat: coords ? String(coords.lat) : '',
+                lng: coords ? String(coords.lng) : '',
+              };
+            }));
+            return converted;
+          }).catch(() => [] as UnifiedPlace[]);
 
-                document.getElementById('clear-place')!.addEventListener('click', () => {
-                  placeData = {};
-                  selectedDiv.hidden = true;
-                  searchInput.hidden = false;
-                  searchInput.focus();
-                  updateStep1Btn();
-                });
-              });
-            }
-          }, { category_group_code: 'FD6' });
-          } catch (err) { console.error('[kakao search]', err); }
+          const [kRes, nRes] = await Promise.all([kakaoPromise, naverPromise]);
+          kakaoResults = kRes;
+          naverResults = nRes;
+          kakaoCountEl.textContent = String(kRes.length);
+          naverCountEl.textContent = String(nRes.length);
+
+          activeSource = (kRes.length === 0 && nRes.length > 0) ? 'naver' : 'kakao';
+          for (const b of sourceTabs.querySelectorAll('.search-source-tab')) {
+            b.classList.toggle('active', (b as HTMLElement).dataset.source === activeSource);
+          }
+          renderActiveList();
         }, 300);
       });
 
