@@ -31,11 +31,15 @@ async function loadCompleted(): Promise<Set<string>> {
 /**
  * 튜토리얼 실행 (이미 완료된 경우 스킵).
  * 모든 스텝이 끝나거나 스킵하면 서버에 완료 기록.
+ * URL에 ?tutorial=replay 가 있으면 완료 여부 무시하고 강제 실행 (저장은 하지 않음).
  */
 export async function runTutorial(key: string, steps: CoachStep[]): Promise<void> {
   if (document.getElementById(OVERLAY_ID)) return; // 이미 실행 중
-  const completed = await loadCompleted();
-  if (completed.has(key)) return;
+  const forceReplay = new URLSearchParams(location.search).get('tutorial') === 'replay';
+  if (!forceReplay) {
+    const completed = await loadCompleted();
+    if (completed.has(key)) return;
+  }
 
   // 첫 스텝 타겟이 나타날 때까지 잠시 대기 (View Transitions 대응)
   const firstTarget = await waitForElement(steps[0]?.target);
@@ -122,6 +126,7 @@ export async function runTutorial(key: string, steps: CoachStep[]): Promise<void
 
   async function finish(_reason: 'completed' | 'skipped') {
     cleanup();
+    if (forceReplay) return; // 강제 재생 모드는 기록 안 함
     completedCache?.add(key);
     await completeTutorial(key);
   }

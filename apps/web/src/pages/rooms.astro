@@ -623,16 +623,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       updateSearchVisibility();
       applyAndRender();
 
-      // 방이 없는 신규 유저에게만 "방 만들기" 코치마크 안내
-      if (allRooms.length === 0) {
-        runTutorial('create_room', [
-          {
-            target: '#create-room-btn',
-            title: '첫 방을 만들어보세요',
-            description: '방을 만들면 친구·가족과 함께 맛집 리스트를 공유할 수 있어요. 이 버튼을 눌러 시작해보세요.',
-          },
-        ]).catch(() => {});
-      }
+      // "방 만들기" 코치마크 (처음 들어온 유저 1회)
+      runTutorial('create_room', [
+        {
+          target: '#create-room-btn',
+          title: '여기서 방을 만들 수 있어요',
+          description: '방을 만들면 친구·가족과 함께 맛집 리스트를 공유할 수 있어요. 이 버튼을 눌러 시작해보세요.',
+        },
+      ]).catch(() => {});
     })();
   }
 

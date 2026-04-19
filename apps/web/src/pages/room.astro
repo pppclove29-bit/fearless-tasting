@@ -4752,20 +4752,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const countEl = document.getElementById('rest-total-count');
     if (countEl) countEl.textContent = String(displayTotal);
 
-    // 비어있으면 식당 등록 버튼에 주의 끌기 펄스 + 튜토리얼 발동
+    // 식당 등록 버튼 — 비어있을 때 펄스, 첫 방문 시 튜토리얼 1회
     const addBtn = document.getElementById('add-rest-btn');
     if (addBtn) addBtn.classList.toggle('attn', restTotal === 0);
-    if (restTotal === 0) {
-      import('@/lib/tutorial').then(({ runTutorial }) => {
-        runTutorial('add_restaurant', [
-          {
-            target: '#add-rest-btn',
-            title: '맛집을 추가해보세요',
-            description: '이 버튼을 누르면 카카오/네이버로 검색하거나 직접 입력해서 첫 식당과 리뷰를 등록할 수 있어요.',
-          },
-        ]).catch(() => {});
-      }).catch(() => {});
-    }
+    import('@/lib/tutorial').then(({ runTutorial }) => {
+      runTutorial('add_restaurant', [
+        {
+          target: '#add-rest-btn',
+          title: '여기서 맛집을 추가할 수 있어요',
+          description: '이 버튼을 누르면 식당을 검색하거나 직접 입력해서 식당과 리뷰를 등록할 수 있어요.',
+        },
+      ]).catch(() => {});
+    }).catch(() => {});
 
     if (displayTotal === 0) {
       if (usingViewportFilter) {
