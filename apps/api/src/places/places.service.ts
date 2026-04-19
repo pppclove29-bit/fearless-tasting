@@ -23,8 +23,9 @@ export class PlacesService {
 
   /** 네이버 로컬 장소 검색 (최대 5개 — Naver Open API 제약) */
   async searchNaver(query: string): Promise<{ items: PlaceResult[]; reason: string }> {
-    const clientId = process.env.NAVER_CLIENT_ID;
-    const clientSecret = process.env.NAVER_CLIENT_SECRET;
+    // 검색 전용 앱을 따로 쓰는 경우 NAVER_SEARCH_* 로 override 가능
+    const clientId = process.env.NAVER_SEARCH_CLIENT_ID || process.env.NAVER_CLIENT_ID;
+    const clientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET || process.env.NAVER_CLIENT_SECRET;
     if (!clientId || !clientSecret) {
       this.logger.warn('NAVER_CLIENT_ID/SECRET 환경변수 미설정 — 네이버 검색 비활성');
       return { items: [], reason: 'missing_credentials' };

@@ -56,6 +56,9 @@ services:
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-your_kakao_client_id}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-your_kakao_client_secret}
       KAKAO_CALLBACK_URL: http://localhost:4000/auth/kakao/callback
+      NAVER_CLIENT_ID: ${NAVER_CLIENT_ID:-}
+      NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET:-}
+      NAVER_CALLBACK_URL: ${NAVER_CALLBACK_URL:-http://localhost:4000/auth/naver/callback}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret-change-in-prod}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-prod}
       FRONTEND_URL: http://localhost:4321

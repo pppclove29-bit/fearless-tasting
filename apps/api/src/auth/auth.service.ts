@@ -129,7 +129,7 @@ export class AuthService {
 
   /** 네이버 인가 URL 생성 */
   getNaverAuthUrl(): string {
-    const clientId = process.env.NAVER_LOGIN_CLIENT_ID || process.env.NAVER_CLIENT_ID;
+    const clientId = process.env.NAVER_CLIENT_ID;
     const callbackUrl = process.env.NAVER_CALLBACK_URL;
     // state는 CSRF 방지용 임의 문자열 (검증은 스테이트리스로 간소화)
     const state = Math.random().toString(36).slice(2);
@@ -139,8 +139,8 @@ export class AuthService {
   /** 네이버 인가 코드로 토큰 교환 */
   async exchangeNaverCode(code: string, state: string): Promise<NaverTokenResponse> {
     return measure('auth.exchangeNaverCode', async () => {
-      const clientId = process.env.NAVER_LOGIN_CLIENT_ID || process.env.NAVER_CLIENT_ID;
-      const clientSecret = process.env.NAVER_LOGIN_CLIENT_SECRET || process.env.NAVER_CLIENT_SECRET;
+      const clientId = process.env.NAVER_CLIENT_ID;
+      const clientSecret = process.env.NAVER_CLIENT_SECRET;
       const params = new URLSearchParams({
         grant_type: 'authorization_code',
         client_id: clientId!,
