@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 export interface PlaceResult {
   source: 'naver';
@@ -19,11 +19,16 @@ function stripHtmlTags(s: string): string {
 
 @Injectable()
 export class PlacesService {
+  private readonly logger = new Logger(PlacesService.name);
+
   /** 네이버 로컬 장소 검색 (최대 5개 — Naver Open API 제약) */
   async searchNaver(query: string): Promise<PlaceResult[]> {
     const clientId = process.env.NAVER_CLIENT_ID;
     const clientSecret = process.env.NAVER_CLIENT_SECRET;
-    if (!clientId || !clientSecret) return [];
+    if (!clientId || !clientSecret) {
+      this.logger.warn('NAVER_CLIENT_ID/SECRET 환경변수 미설정 — 네이버 검색 비활성');
+      return [];
+    }
     if (!query || query.trim().length < 2) return [];
 
     const url = `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=5&start=1&sort=random`;
@@ -34,9 +39,14 @@ export class PlacesService {
           'X-Naver-Client-Secret': clientSecret,
         },
       });
-      if (!res.ok) return [];
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        this.logger.warn(`Naver API 오류 status=${res.status} body=${body.slice(0, 300)}`);
+        return [];
+      }
       const data = await res.json() as {
-        items: Array<{
+        total?: number;
+        items?: Array<{
           title: string;
           category: string;
           telephone: string;
@@ -46,7 +56,11 @@ export class PlacesService {
           mapy: string;
         }>;
       };
-      return (data.items || []).map((item) => ({
+      if (!data.items || data.items.length === 0) {
+        this.logger.debug(`Naver 검색 결과 0 (query="${query}" total=${data.total ?? 0})`);
+        return [];
+      }
+      return data.items.map((item) => ({
         source: 'naver' as const,
         name: stripHtmlTags(item.title),
         address: item.address,
@@ -56,7 +70,8 @@ export class PlacesService {
         mapx: item.mapx,
         mapy: item.mapy,
       }));
-    } catch {
+    } catch (err) {
+      this.logger.error('Naver 검색 예외', err);
       return [];
     }
   }
