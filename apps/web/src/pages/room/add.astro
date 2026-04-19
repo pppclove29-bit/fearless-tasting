@@ -480,6 +480,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     fetchCurrentUser, fetchRoom,
     createRoomRestaurant, createRoomVisit, createRoomReview,
     toggleRestaurantWishlist, searchNaverPlaces,
+    RestaurantDuplicateError,
     showToast,
   } from '@/lib/api';
   import type { AuthUser, RoomDetailResponse } from '@/lib/api';
@@ -1207,7 +1208,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         goToStep(3);
       } catch (err) {
-        showToast(err instanceof Error ? err.message : '등록에 실패했습니다.');
+        if (err instanceof RestaurantDuplicateError) {
+          showToast(err.message, 'info');
+          setTimeout(() => {
+            location.href = `/room/restaurant?roomId=${roomId}&id=${err.existingId}`;
+          }, 1200);
+        } else {
+          showToast(err instanceof Error ? err.message : '등록에 실패했습니다.');
+        }
         submitBtn.disabled = false;
         submitBtn.textContent = '등록 완료';
       }

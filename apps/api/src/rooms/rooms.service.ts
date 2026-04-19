@@ -411,6 +411,21 @@ export class RoomsService {
     longitude?: number,
     isWishlist?: boolean,
   ) {
+    // 중복 방지: 같은 방에 (이름, 주소) 동일한 식당이 이미 있으면 409 (위시리스트 여부 무관)
+    const duplicate = await this.prisma.read.roomRestaurant.findFirst({
+      where: { roomId, name, address },
+      select: { id: true, isWishlist: true },
+    });
+    if (duplicate) {
+      throw new ConflictException({
+        message: duplicate.isWishlist
+          ? '이미 위시리스트에 등록된 식당입니다.'
+          : '이미 등록된 식당입니다.',
+        existingId: duplicate.id,
+        isWishlist: duplicate.isWishlist,
+      });
+    }
+
     const imageList = (images ?? []).slice(0, 3);
     const restaurant = await this.prisma.write.roomRestaurant.create({
       data: {

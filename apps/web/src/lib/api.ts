@@ -417,6 +417,18 @@ export async function regenerateInviteCode(roomId: string): Promise<{ inviteCode
   return res.json();
 }
 
+/** 식당 등록 중복 에러 (같은 방에 이름+주소 동일) */
+export class RestaurantDuplicateError extends Error {
+  existingId: string;
+  isWishlist: boolean;
+  constructor(message: string, existingId: string, isWishlist: boolean) {
+    super(message);
+    this.name = 'RestaurantDuplicateError';
+    this.existingId = existingId;
+    this.isWishlist = isWishlist;
+  }
+}
+
 /** 방 내 식당 등록 */
 export async function createRoomRestaurant(
   roomId: string,
@@ -427,6 +439,16 @@ export async function createRoomRestaurant(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
+  if (res.status === 409) {
+    const body = await res.json().catch(() => null);
+    if (body?.existingId) {
+      throw new RestaurantDuplicateError(
+        body.message || '이미 등록된 식당입니다.',
+        body.existingId,
+        !!body.isWishlist,
+      );
+    }
+  }
   await throwIfNotOk(res, '식당 등록에 실패했습니다.');
   return res.json();
 }
