@@ -86,8 +86,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     <section class="hero">
       <h1 class="hero-title">우리끼리 솔직한<br/>맛집 리뷰</h1>
       <p class="hero-sub">방 만들고, 같이 기록하고, 비교하세요</p>
-      <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`} class="hero-cta login-only-cta">카카오로 시작하기</a>
-      <p class="hero-free">무료 · 3초 가입</p>
+      <div class="hero-cta-group login-only-cta">
+        <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`} class="hero-cta hero-cta-kakao">카카오로 시작하기</a>
+        <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/naver`} class="hero-cta hero-cta-naver"><span class="naver-logo">N</span>네이버로 시작하기</a>
+      </div>
+      <p class="hero-free login-only-cta">무료 · 3초 가입</p>
     </section>
 
     <section class="how-it-works">
@@ -199,12 +202,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     line-height: 1.7;
   }
 
+  .hero-cta-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
   .hero-cta {
     display: inline-flex;
     align-items: center;
-    padding: 0.85rem 2.5rem;
-    background: #FEE500;
-    color: #191919;
+    justify-content: center;
+    min-width: 220px;
+    padding: 0.85rem 2rem;
     font-size: 0.95rem;
     font-weight: 700;
     border-radius: 10px;
@@ -215,6 +225,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .hero-cta:hover { opacity: 0.85; }
   .hero-cta:active { transform: scale(0.98); }
   .hero-cta[hidden] { display: none; }
+
+  .hero-cta-kakao { background: #FEE500; color: #191919; }
+  .hero-cta-naver { background: #03C75A; color: #fff; }
+  .hero-cta-naver .naver-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    background: #fff;
+    color: #03C75A;
+    font-weight: 900;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    font-family: Helvetica, Arial, sans-serif;
+  }
 
   .hero-free {
     font-size: 0.78rem;
