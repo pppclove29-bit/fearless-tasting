@@ -831,6 +831,10 @@ export async function searchNaverPlaces(query: string): Promise<NaverPlaceResult
   try {
     const res = await apiFetch(`${API_BASE}/places/naver?q=${encodeURIComponent(query)}`);
     if (!res.ok) return [];
+    const debug = res.headers.get('X-Places-Debug');
+    if (debug && debug !== 'ok' && import.meta.env.DEV) {
+      console.warn('[naver places]', debug);
+    }
     return res.json();
   } catch {
     return [];
