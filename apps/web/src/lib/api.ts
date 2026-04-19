@@ -791,6 +791,29 @@ export async function completeOnboarding(): Promise<void> {
   resetUserCache();
 }
 
+export interface NaverPlaceResult {
+  source: 'naver';
+  name: string;
+  address: string;
+  roadAddress: string;
+  category: string;
+  telephone: string;
+  mapx: string;
+  mapy: string;
+}
+
+/** 네이버 장소 검색 (백엔드 프록시) */
+export async function searchNaverPlaces(query: string): Promise<NaverPlaceResult[]> {
+  if (!query || query.trim().length < 2) return [];
+  try {
+    const res = await apiFetch(`${API_BASE}/places/naver?q=${encodeURIComponent(query)}`);
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
+
 export async function createDemoAccount(nickname: string, memo?: string): Promise<unknown> {
   const res = await apiFetch(`${API_BASE}/admin/demo-accounts`, {
     method: 'POST',

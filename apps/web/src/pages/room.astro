@@ -2359,6 +2359,40 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.8rem;
   }
 
+  .search-source-tabs {
+    display: flex;
+    gap: 0.3rem;
+    padding: 0.35rem 0.35rem 0;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-card);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .search-source-tab {
+    flex: 1;
+    padding: 0.4rem 0.5rem;
+    border: none;
+    background: none;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    border-bottom: 2px solid transparent;
+  }
+  .search-source-tab.active {
+    color: var(--text-heading);
+    font-weight: 700;
+    border-bottom-color: var(--text-heading);
+  }
+  .src-count {
+    display: inline-block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-left: 0.2rem;
+  }
+
   .review-sort-row { display: flex; gap: 0.5rem; align-items: center; }
   .viewport-filter-btn {
     padding: 0.35rem 0.7rem;
@@ -2513,7 +2547,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import {
     fetchCurrentUser, fetchRoom, deleteRoom, leaveRoom,
     updateRoomMemberRole, kickRoomMember, transferOwnership,
-    createRoomRestaurant, fetchRoomRestaurants,
+    createRoomRestaurant, fetchRoomRestaurants, searchNaverPlaces,
     toggleRoomPublic, updateRoom, regenerateInviteCode,
     fetchRoomStats,
     createPoll, fetchPolls, votePoll, closePoll,
@@ -3313,6 +3347,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const timelinePanel = document.getElementById('tab-timeline');
     if (timelinePanel) panels.timeline = timelinePanel;
 
+    // 마지막으로 활성화된 식당/위시리스트 마커 모드 기억 (기타 탭에서도 유지)
+    let lastMarkerMode: 'regular' | 'wishlist' = 'regular';
     let wishlistLoaded = false;
     for (const btn of document.querySelectorAll<HTMLButtonElement>('.room-tab-btn')) {
       btn.addEventListener('click', () => {
@@ -3327,12 +3363,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           wishlistLoaded = true;
           renderWishlistTab().catch((err) => console.error('[wishlist] unhandled:', err));
         }
-        // 지도 마커 탭별 필터
+        // 지도 마커: 식당/위시리스트 탭이면 해당 모드로 전환 + 기억, 기타 탭은 마지막 모드 유지
         const setMarkers = (window as Record<string, unknown>).__setMapMarkers as ((m: 'all' | 'regular' | 'wishlist') => void) | undefined;
         if (setMarkers) {
-          if (tab === 'restaurants') setMarkers('regular');
-          else if (tab === 'wishlist') setMarkers('wishlist');
-          else setMarkers('all');
+          if (tab === 'restaurants') { lastMarkerMode = 'regular'; setMarkers('regular'); }
+          else if (tab === 'wishlist') { lastMarkerMode = 'wishlist'; setMarkers('wishlist'); }
+          else setMarkers(lastMarkerMode);
         }
       });
     }
@@ -4271,10 +4307,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="add-rest-drawer-body">
           <div class="add-restaurant-form">
             ${hasKakaoMap ? `
-              <p class="manual-form-hint">카카오 장소 검색으로 식당을 찾아 추가합니다.</p>
+              <p class="manual-form-hint">카카오/네이버 장소 검색으로 식당을 찾아 추가합니다.</p>
               <div class="form-row full address-search-wrap">
                 <input type="text" id="wl-rest-search" placeholder="식당 이름으로 검색" autocomplete="off" />
-                <div id="wl-address-results" class="address-results" hidden></div>
+                <div id="wl-address-results" class="address-results" hidden>
+                  <div class="search-source-tabs" id="wl-source-tabs" hidden>
+                    <button type="button" class="search-source-tab active" data-source="kakao">카카오 <span class="src-count" id="wl-kakao-count">0</span></button>
+                    <button type="button" class="search-source-tab" data-source="naver">네이버 <span class="src-count" id="wl-naver-count">0</span></button>
+                  </div>
+                  <div id="wl-result-list"></div>
+                </div>
               </div>
               <div class="auto-filled-info" id="wl-auto-filled-info" hidden>
                 <span id="wl-auto-filled-name"></span>
@@ -4389,69 +4431,158 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const submitBtn = document.getElementById('wl-submit-btn') as HTMLButtonElement | null;
     if (!searchInput || !results || !info || !nameEl || !addressEl || !categoryEl || !submitBtn) return;
 
+    const resultList = document.getElementById('wl-result-list') as HTMLElement | null;
+    const sourceTabsEl = document.getElementById('wl-source-tabs') as HTMLElement | null;
+    const kakaoCountEl = document.getElementById('wl-kakao-count');
+    const naverCountEl = document.getElementById('wl-naver-count');
+    if (!resultList) return;
+
+    const pMap: Record<string, string> = {
+      '서울': '서울특별시', '부산': '부산광역시', '대구': '대구광역시',
+      '인천': '인천광역시', '광주': '광주광역시', '대전': '대전광역시',
+      '울산': '울산광역시', '세종': '세종특별자치시', '경기': '경기도',
+      '강원': '강원특별자치도', '충북': '충청북도', '충남': '충청남도',
+      '전북': '전북특별자치도', '전남': '전라남도', '경북': '경상북도',
+      '경남': '경상남도', '제주': '제주특별자치도',
+    };
+
+    type UnifiedPlace = { source: 'kakao' | 'naver'; name: string; address: string; category: string; lat: string; lng: string };
+    let kakaoResults: UnifiedPlace[] = [];
+    let naverResults: UnifiedPlace[] = [];
+    let activeSource: 'kakao' | 'naver' = 'kakao';
+
+    function pickPlace(p: UnifiedPlace) {
+      const parts = p.address.split(' ').filter(Boolean);
+      (document.getElementById('wl-rest-name') as HTMLInputElement).value = p.name;
+      (document.getElementById('wl-rest-address') as HTMLInputElement).value = p.address;
+      (document.getElementById('wl-rest-province') as HTMLInputElement).value = pMap[parts[0]] || parts[0] || '';
+      (document.getElementById('wl-rest-city') as HTMLInputElement).value = parts[1] || '';
+      (document.getElementById('wl-rest-neighborhood') as HTMLInputElement).value = parts[2] || '';
+      (document.getElementById('wl-rest-category') as HTMLInputElement).value = p.category;
+      (document.getElementById('wl-rest-lat') as HTMLInputElement).value = p.lat;
+      (document.getElementById('wl-rest-lng') as HTMLInputElement).value = p.lng;
+
+      nameEl!.textContent = p.name;
+      addressEl!.textContent = p.address;
+      categoryEl!.textContent = p.category;
+      info!.hidden = false;
+      results!.hidden = true;
+      searchInput!.value = p.name;
+      submitBtn!.disabled = false;
+    }
+
+    function renderActiveList() {
+      const list = activeSource === 'kakao' ? kakaoResults : naverResults;
+      if (list.length === 0) {
+        resultList!.innerHTML = `<div class="rest-search-empty">${activeSource === 'kakao' ? '카카오' : '네이버'} 검색 결과가 없습니다.</div>`;
+        return;
+      }
+      resultList!.innerHTML = list.map((p, i) =>
+        `<div class="address-result-item" role="button" tabindex="0" data-idx="${i}">
+          <div class="address-result-info">
+            <div class="address-result-name">${escapeHtml(p.name)}</div>
+            <div class="address-result-addr">${escapeHtml(p.address)}</div>
+          </div>
+        </div>`,
+      ).join('');
+      for (const item of resultList!.querySelectorAll<HTMLElement>('.address-result-item')) {
+        item.addEventListener('click', () => {
+          const idx = parseInt(item.dataset.idx || '0', 10);
+          const p = (activeSource === 'kakao' ? kakaoResults : naverResults)[idx];
+          if (p) pickPlace(p);
+        });
+      }
+    }
+
+    // 소스 탭 전환
+    for (const tabBtn of sourceTabsEl?.querySelectorAll<HTMLButtonElement>('.search-source-tab') || []) {
+      tabBtn.addEventListener('click', () => {
+        activeSource = (tabBtn.dataset.source as 'kakao' | 'naver') || 'kakao';
+        for (const b of sourceTabsEl!.querySelectorAll('.search-source-tab')) b.classList.remove('active');
+        tabBtn.classList.add('active');
+        renderActiveList();
+      });
+    }
+
+    function kakaoGeocode(address: string): Promise<{ lat: string; lng: string }> {
+      return new Promise((resolve) => {
+        const kakao = (window as Record<string, unknown>).kakao as { maps?: { services?: { Geocoder: new () => { addressSearch: (a: string, cb: (res: Array<{ x: string; y: string }>, status: string) => void) => void }; Status: { OK: string } } } };
+        if (!kakao?.maps?.services) { resolve({ lat: '', lng: '' }); return; }
+        const geocoder = new kakao.maps.services.Geocoder();
+        geocoder.addressSearch(address, (res, status) => {
+          if (status === kakao.maps!.services!.Status.OK && res[0]) {
+            resolve({ lat: res[0].y, lng: res[0].x });
+          } else {
+            resolve({ lat: '', lng: '' });
+          }
+        });
+      });
+    }
+
     let timer: ReturnType<typeof setTimeout> | null = null;
     searchInput.addEventListener('input', () => {
       if (timer) clearTimeout(timer);
       const q = searchInput.value.trim();
       if (!q || q.length < 2) { results.hidden = true; return; }
-      timer = setTimeout(() => {
-        const kakao = (window as Record<string, unknown>).kakao as { maps?: { services?: { Places: new () => { keywordSearch: (q: string, cb: (data: { place_name: string; address_name: string; road_address_name?: string; category_name?: string; category_group_name?: string; y: string; x: string }[], status: string) => void) => void }; Status: { OK: string } } } };
-        if (!kakao?.maps?.services) {
-          results.innerHTML = '<div class="rest-search-empty">카카오 지도를 사용할 수 없습니다.</div>';
-          results.hidden = false;
-          return;
-        }
-        const ps = new kakao.maps.services.Places();
-        ps.keywordSearch(q, (data, status) => {
-          if (status !== kakao.maps!.services!.Status.OK || data.length === 0) {
-            results.innerHTML = '<div class="rest-search-empty">검색 결과가 없습니다.</div>';
-            results.hidden = false;
-            return;
-          }
-          results.innerHTML = data.slice(0, 8).map((p) =>
-            `<div class="address-result-item" role="button" tabindex="0" data-name="${escapeHtml(p.place_name)}" data-address="${escapeHtml(p.road_address_name || p.address_name)}" data-category="${escapeHtml(p.category_group_name || '기타')}" data-lat="${p.y}" data-lng="${p.x}">
-              <div class="address-result-info">
-                <div class="address-result-name">${escapeHtml(p.place_name)}</div>
-                <div class="address-result-addr">${escapeHtml(p.road_address_name || p.address_name)}</div>
-              </div>
-            </div>`
-          ).join('');
-          results.hidden = false;
-          for (const item of results.querySelectorAll<HTMLElement>('.address-result-item')) {
-            item.addEventListener('click', () => {
-              const name = item.dataset.name || '';
-              const address = item.dataset.address || '';
-              const category = item.dataset.category || '기타';
-              const lat = item.dataset.lat || '';
-              const lng = item.dataset.lng || '';
-              const parts = address.split(' ').filter(Boolean);
-              const pMap: Record<string, string> = {
-                '서울': '서울특별시', '부산': '부산광역시', '대구': '대구광역시',
-                '인천': '인천광역시', '광주': '광주광역시', '대전': '대전광역시',
-                '울산': '울산광역시', '세종': '세종특별자치시', '경기': '경기도',
-                '강원': '강원특별자치도', '충북': '충청북도', '충남': '충청남도',
-                '전북': '전북특별자치도', '전남': '전라남도', '경북': '경상북도',
-                '경남': '경상남도', '제주': '제주특별자치도',
-              };
-              (document.getElementById('wl-rest-name') as HTMLInputElement).value = name;
-              (document.getElementById('wl-rest-address') as HTMLInputElement).value = address;
-              (document.getElementById('wl-rest-province') as HTMLInputElement).value = pMap[parts[0]] || parts[0] || '';
-              (document.getElementById('wl-rest-city') as HTMLInputElement).value = parts[1] || '';
-              (document.getElementById('wl-rest-neighborhood') as HTMLInputElement).value = parts[2] || '';
-              (document.getElementById('wl-rest-category') as HTMLInputElement).value = category;
-              (document.getElementById('wl-rest-lat') as HTMLInputElement).value = lat;
-              (document.getElementById('wl-rest-lng') as HTMLInputElement).value = lng;
+      timer = setTimeout(async () => {
+        results.hidden = false;
+        if (sourceTabsEl) sourceTabsEl.hidden = false;
+        resultList.innerHTML = '<div class="rest-search-empty">검색 중...</div>';
 
-              nameEl.textContent = name;
-              addressEl.textContent = address;
-              categoryEl.textContent = category;
-              info.hidden = false;
-              results.hidden = true;
-              searchInput.value = name;
-              submitBtn.disabled = false;
-            });
-          }
+        const kakao = (window as Record<string, unknown>).kakao as { maps?: { services?: { Places: new () => { keywordSearch: (q: string, cb: (data: { place_name: string; address_name: string; road_address_name?: string; category_group_name?: string; y: string; x: string }[], status: string) => void) => void }; Status: { OK: string } } } };
+
+        const kakaoPromise = new Promise<UnifiedPlace[]>((resolve) => {
+          if (!kakao?.maps?.services) { resolve([]); return; }
+          const ps = new kakao.maps.services.Places();
+          ps.keywordSearch(q, (data, status) => {
+            if (status !== kakao.maps!.services!.Status.OK || !data) { resolve([]); return; }
+            resolve(data.slice(0, 10).map((p) => ({
+              source: 'kakao',
+              name: p.place_name,
+              address: p.road_address_name || p.address_name,
+              category: p.category_group_name || '기타',
+              lat: p.y,
+              lng: p.x,
+            })));
+          });
         });
+
+        const naverPromise = searchNaverPlaces(q).then(async (items) => {
+          // 네이버 결과는 카카오 지오코더로 주소→WGS84 변환
+          const converted = await Promise.all(items.map(async (item) => {
+            const fullAddr = item.roadAddress || item.address;
+            const { lat, lng } = await kakaoGeocode(fullAddr);
+            return {
+              source: 'naver' as const,
+              name: item.name,
+              address: fullAddr,
+              category: (item.category.split('>').pop() || '기타').trim(),
+              lat,
+              lng,
+            };
+          }));
+          return converted;
+        }).catch(() => [] as UnifiedPlace[]);
+
+        const [k, n] = await Promise.all([kakaoPromise, naverPromise]);
+        kakaoResults = k;
+        naverResults = n;
+        if (kakaoCountEl) kakaoCountEl.textContent = String(k.length);
+        if (naverCountEl) naverCountEl.textContent = String(n.length);
+
+        // 카카오에 결과 없고 네이버만 있으면 자동으로 네이버 탭 활성화
+        if (k.length === 0 && n.length > 0) {
+          activeSource = 'naver';
+          for (const b of sourceTabsEl!.querySelectorAll('.search-source-tab')) {
+            b.classList.toggle('active', (b as HTMLElement).dataset.source === 'naver');
+          }
+        } else {
+          activeSource = 'kakao';
+          for (const b of sourceTabsEl!.querySelectorAll('.search-source-tab')) {
+            b.classList.toggle('active', (b as HTMLElement).dataset.source === 'kakao');
+          }
+        }
+        renderActiveList();
       }, 300);
     });
   }

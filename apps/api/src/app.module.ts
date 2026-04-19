@@ -14,6 +14,7 @@ import { FcmModule } from './fcm/fcm.module';
 import { StorageModule } from './storage/storage.module';
 import { AdminModule } from './admin/admin.module';
 import { BoardsModule } from './boards/boards.module';
+import { PlacesModule } from './places/places.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { BoardsModule } from './boards/boards.module';
     HealthModule,
     AdminModule,
     BoardsModule,
+    PlacesModule,
   ],
   providers: [
     {
