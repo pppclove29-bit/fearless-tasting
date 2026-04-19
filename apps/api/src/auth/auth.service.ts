@@ -26,6 +26,25 @@ interface KakaoUserResponse {
   };
 }
 
+interface NaverTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: string;
+}
+
+interface NaverUserResponse {
+  resultcode: string;
+  message: string;
+  response: {
+    id: string;
+    email?: string;
+    nickname?: string;
+    name?: string;
+    profile_image?: string;
+  };
+}
+
 interface JwtPayload {
   sub: string;
 }
@@ -103,6 +122,92 @@ export class AuthService {
         nickname: await this.ensureUniqueNickname(nickname),
         accounts: {
           create: { provider: 'kakao', providerId },
+        },
+      },
+    });
+  }
+
+  /** 네이버 인가 URL 생성 */
+  getNaverAuthUrl(): string {
+    const clientId = process.env.NAVER_LOGIN_CLIENT_ID || process.env.NAVER_CLIENT_ID;
+    const callbackUrl = process.env.NAVER_CALLBACK_URL;
+    // state는 CSRF 방지용 임의 문자열 (검증은 스테이트리스로 간소화)
+    const state = Math.random().toString(36).slice(2);
+    return `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(callbackUrl!)}&state=${state}`;
+  }
+
+  /** 네이버 인가 코드로 토큰 교환 */
+  async exchangeNaverCode(code: string, state: string): Promise<NaverTokenResponse> {
+    return measure('auth.exchangeNaverCode', async () => {
+      const clientId = process.env.NAVER_LOGIN_CLIENT_ID || process.env.NAVER_CLIENT_ID;
+      const clientSecret = process.env.NAVER_LOGIN_CLIENT_SECRET || process.env.NAVER_CLIENT_SECRET;
+      const params = new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: clientId!,
+        client_secret: clientSecret!,
+        code,
+        state,
+      });
+      const res = await fetch(`https://nid.naver.com/oauth2.0/token?${params.toString()}`);
+      if (!res.ok) {
+        throw new UnauthorizedException('네이버 토큰 교환 실패');
+      }
+      return res.json() as Promise<NaverTokenResponse>;
+    });
+  }
+
+  /** 네이버 액세스 토큰으로 유저 정보 조회 */
+  async getNaverUser(accessToken: string): Promise<NaverUserResponse> {
+    return measure('auth.getNaverUser', async () => {
+      const res = await fetch('https://openapi.naver.com/v1/nid/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!res.ok) {
+        throw new UnauthorizedException('네이버 유저 정보 조회 실패');
+      }
+      const data = await res.json() as NaverUserResponse;
+      if (data.resultcode !== '00') {
+        throw new UnauthorizedException(`네이버 유저 정보 조회 실패: ${data.message}`);
+      }
+      return data;
+    });
+  }
+
+  /** 네이버 유저 정보로 계정 조회 또는 생성 */
+  async findOrCreateFromNaver(naverUser: NaverUserResponse) {
+    const profile = naverUser.response;
+    const providerId = profile.id;
+    const email = profile.email || `naver_${providerId}@naver.user`;
+    const nickname = profile.nickname || profile.name || `user_${providerId.slice(0, 8)}`;
+
+    const existingAccount = await this.prisma.read.account.findUnique({
+      where: { provider_providerId: { provider: 'naver', providerId } },
+      include: { user: true },
+    });
+
+    if (existingAccount) {
+      return existingAccount.user;
+    }
+
+    // 이미 같은 이메일로 카카오 계정이 있으면 동일 유저에 네이버 계정 연결
+    if (profile.email) {
+      const userByEmail = await this.prisma.read.user.findUnique({
+        where: { email: profile.email },
+      });
+      if (userByEmail) {
+        await this.prisma.write.account.create({
+          data: { provider: 'naver', providerId, userId: userByEmail.id },
+        });
+        return userByEmail;
+      }
+    }
+
+    return this.prisma.write.user.create({
+      data: {
+        email,
+        nickname: await this.ensureUniqueNickname(nickname),
+        accounts: {
+          create: { provider: 'naver', providerId },
         },
       },
     });

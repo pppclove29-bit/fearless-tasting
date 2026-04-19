@@ -54,6 +54,43 @@ export class AuthController {
     res.redirect(`${frontendUrl}/login?${params.toString()}`);
   }
 
+  /** 네이버 OAuth 시작: 네이버 인가 페이지로 리다이렉트 */
+  @Get('naver')
+  @ApiOperation({
+    summary: '네이버 로그인',
+    description: '네이버 OAuth 인가 페이지로 302 리다이렉트합니다.',
+  })
+  naverLogin(@Res() res: Response) {
+    const url = this.authService.getNaverAuthUrl();
+    res.redirect(url);
+  }
+
+  /** 네이버 OAuth 콜백: 인가 코드 → 토큰 교환 → JWT 발급 → 프론트 리다이렉트 */
+  @Get('naver/callback')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @ApiExcludeEndpoint()
+  async naverCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Res() res: Response,
+  ) {
+    if (!code) {
+      throw new UnauthorizedException('인가 코드가 없습니다');
+    }
+
+    const naverToken = await this.authService.exchangeNaverCode(code, state || '');
+    const naverUser = await this.authService.getNaverUser(naverToken.access_token);
+    const user = await this.authService.findOrCreateFromNaver(naverUser);
+    const tokens = await this.authService.generateTokens(user.id);
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4321';
+    const params = new URLSearchParams({
+      access_token: tokens.accessToken,
+      refresh_token: tokens.refreshToken,
+    });
+    res.redirect(`${frontendUrl}/login?${params.toString()}`);
+  }
+
   /** 현재 로그인 유저 정보 */
   @Get('me')
   @Throttle({ default: { ttl: 60000, limit: 120 } })
