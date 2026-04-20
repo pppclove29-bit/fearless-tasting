@@ -59,7 +59,7 @@ function showConfirmModal(options: ConfirmOptions): Promise<boolean> {
       'background:#fff;border-radius:12px;padding:1.5rem;max-width:360px;width:100%;box-shadow:0 8px 24px rgba(0,0,0,0.15);font-family:inherit;';
 
     const msg = document.createElement('p');
-    msg.style.cssText = 'font-size:0.9rem;color:#333;line-height:1.6;margin:0 0 1.25rem;word-break:keep-all;';
+    msg.style.cssText = 'font-size:0.9rem;color:#333;line-height:1.6;margin:0 0 1.25rem;word-break:keep-all;white-space:pre-line;';
     msg.textContent = message;
 
     const btnRow = document.createElement('div');
