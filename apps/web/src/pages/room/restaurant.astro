@@ -1434,56 +1434,62 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   /* 세부평점 칩 */
+  /* 세부평점 — 별점 + 인라인 동적 라벨 */
   .detail-rating-row {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.9rem;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+  }
+  .detail-rating-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
   .detail-rating-label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-size: 0.82rem;
+    font-weight: 700;
     color: var(--text-heading);
-    margin-bottom: 0.35rem;
+    min-width: 3.5rem;
   }
-  .detail-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-  .detail-chip {
+  .detail-stars {
     display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.65rem 0.35rem 0.35rem;
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    background: var(--bg-card);
-    font-size: 0.75rem;
-    color: var(--text-sub);
+    gap: 0.2rem;
+    flex: 1;
+  }
+  .detail-star {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    background: none;
+    font-size: 1.3rem;
+    line-height: 1;
+    color: var(--border);
     cursor: pointer;
     font-family: inherit;
-    transition: all 0.15s;
+    transition: color 0.12s;
   }
-  .detail-chip-unknown { padding: 0.35rem 0.75rem; color: var(--text-muted); }
-  .chip-score {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    font-size: 0.68rem;
-    font-weight: 700;
-    color: #fff;
-    flex-shrink: 0;
+  .detail-star.filled { color: #f59e0b; }
+  .detail-star.preview { color: #fbbf24; opacity: 0.75; }
+  .detail-star:hover { transform: scale(1.08); }
+  .detail-rating-guide {
+    margin-top: 0.35rem;
+    padding-left: calc(3.5rem + 0.75rem);
+    font-size: 0.76rem;
+    min-height: 1.1em;
+    color: var(--text-heading);
+    font-weight: 600;
   }
-  .detail-chip[data-level="1"] .chip-score { background: #ef4444; }
-  .detail-chip[data-level="2"] .chip-score { background: #f97316; }
-  .detail-chip[data-level="3"] .chip-score { background: #eab308; }
-  .detail-chip[data-level="4"] .chip-score { background: #22c55e; }
-  .detail-chip[data-level="5"] .chip-score { background: #10b981; }
-
-  .detail-chip.active {
-    background: var(--text-heading);
-    color: var(--bg);
-    border-color: var(--text-heading);
+  .detail-rating-guide.is-empty {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-style: italic;
   }
-  .detail-chip.active .chip-score { box-shadow: 0 0 0 2px var(--bg); }
+  @media (max-width: 480px) {
+    .detail-rating-guide { padding-left: 0; }
+  }
 
 
   .review-detail-ratings {
@@ -1832,20 +1838,24 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       accessibility: ['등산인가 식사인가','한참 헤맸다','무난하게 도착','찾기 쉬움','눈 감고도 감'],
     };
 
-    /** 세부 평점 한 항목 (칩) */
+    /** 세부 평점 한 항목 (별점 + 인라인 동적 라벨) */
     function detailSliderHtml(label: string, name: string, value: number | string): string {
       const v = typeof value === 'string' ? (value ? parseInt(value, 10) : 0) : (value || 0);
       // name 형식: "new-review-taste" 또는 "edit-taste" → 마지막 단어가 키
       const keyPart = name.split('-').pop() || '';
       const guides = detailGuides[keyPart] || [];
-      const chips = [
-        `<button type="button" class="detail-chip detail-chip-unknown${v === 0 ? ' active' : ''}" data-val="0">잘 모르겠어요</button>`,
-        ...guides.map((g, i) => `<button type="button" class="detail-chip${v === i + 1 ? ' active' : ''}" data-level="${i + 1}" data-val="${i + 1}"><span class="chip-score">${i + 1}</span><span class="chip-label">${g}</span></button>`),
-      ].join('');
+      const stars = [1, 2, 3, 4, 5].map((n) =>
+        `<button type="button" class="detail-star${n <= v ? ' filled' : ''}" data-val="${n}" aria-label="${n}점">★</button>`,
+      ).join('');
+      const guideText = v > 0 ? `${v}. ${guides[v - 1] ?? ''}` : '별을 눌러 평가해주세요 · 같은 별 재클릭 시 취소';
+      const guideClass = v > 0 ? 'detail-rating-guide' : 'detail-rating-guide is-empty';
       return `
-        <div class="detail-rating-row" data-name="${name}" data-value="${v}">
-          <span class="detail-rating-label">${label}</span>
-          <div class="detail-chips">${chips}</div>
+        <div class="detail-rating-row" data-name="${name}" data-value="${v}" data-guides='${JSON.stringify(guides)}'>
+          <div class="detail-rating-head">
+            <span class="detail-rating-label">${label}</span>
+            <div class="detail-stars">${stars}</div>
+          </div>
+          <div class="${guideClass}">${guideText}</div>
         </div>`;
     }
 
@@ -1907,15 +1917,52 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           });
         }
       }
-      // 세부평점 칩 클릭 핸들러
+      // 세부평점 별점 클릭 + 호버 핸들러
       for (const row of container.querySelectorAll<HTMLElement>('.detail-rating-row')) {
-        for (const chip of row.querySelectorAll<HTMLButtonElement>('.detail-chip')) {
-          chip.addEventListener('click', () => {
-            const val = parseInt(chip.dataset.val || '0', 10);
+        const guides: string[] = (() => {
+          try { return JSON.parse(row.dataset.guides || '[]'); } catch { return []; }
+        })();
+        const guideEl = row.querySelector('.detail-rating-guide') as HTMLElement | null;
+        const stars: HTMLButtonElement[] = [];
+        row.querySelectorAll('.detail-star').forEach((s: Element) => stars.push(s as HTMLButtonElement));
+
+        const paintStars = (filled: number, preview = 0) => {
+          stars.forEach((s: HTMLButtonElement) => {
+            const v = parseInt(s.dataset.val || '0', 10);
+            s.classList.toggle('filled', v <= filled && filled > 0);
+            s.classList.toggle('preview', preview > 0 && v <= preview && v > filled);
+          });
+        };
+        const renderGuide = (value: number, isPreview = false) => {
+          if (!guideEl) return;
+          if (value === 0) {
+            guideEl.textContent = '별을 눌러 평가해주세요 · 같은 별 재클릭 시 취소';
+            guideEl.classList.add('is-empty');
+          } else {
+            guideEl.textContent = `${value}. ${guides[value - 1] ?? ''}`;
+            guideEl.classList.toggle('is-empty', isPreview);
+          }
+        };
+
+        for (const star of stars) {
+          star.addEventListener('click', () => {
+            const val = parseInt(star.dataset.val || '0', 10);
             const current = parseInt(row.dataset.value || '0', 10);
-            const newVal = (current === val && val !== 0) ? 0 : val;
+            const newVal = current === val ? 0 : val;
             row.dataset.value = String(newVal);
-            row.querySelectorAll('.detail-chip').forEach((c) => c.classList.toggle('active', parseInt((c as HTMLElement).dataset.val || '0', 10) === newVal));
+            paintStars(newVal);
+            renderGuide(newVal);
+          });
+          star.addEventListener('mouseenter', () => {
+            const val = parseInt(star.dataset.val || '0', 10);
+            const current = parseInt(row.dataset.value || '0', 10);
+            paintStars(current, val);
+            renderGuide(val, true);
+          });
+          star.addEventListener('mouseleave', () => {
+            const current = parseInt(row.dataset.value || '0', 10);
+            paintStars(current);
+            renderGuide(current);
           });
         }
       }

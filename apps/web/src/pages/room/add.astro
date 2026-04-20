@@ -296,33 +296,61 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .star-wrap.half .star-bg,
   .star-wrap.full .star-bg { opacity: 0; }
 
-  /* 세부평점 칩 */
+  /* 세부평점 — 별점 + 인라인 동적 라벨 */
   .detail-rating-row {
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+  }
+  .detail-rating-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
   .detail-rating-label {
-    display: block;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-heading);
-    margin-bottom: 0.35rem;
+    min-width: 3.5rem;
   }
-  .detail-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-  .detail-chip {
-    padding: 0.35rem 0.65rem;
-    border: 1px solid var(--border);
-    border-radius: 100px;
+  .detail-stars {
+    display: inline-flex;
+    gap: 0.2rem;
+    flex: 1;
+  }
+  .detail-star {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: none;
     background: none;
-    font-size: 0.75rem;
-    color: var(--text-sub);
+    font-size: 1.35rem;
+    line-height: 1;
+    color: var(--border);
     cursor: pointer;
     font-family: inherit;
-    transition: all 0.15s;
+    transition: color 0.12s;
   }
-  .detail-chip.active {
-    background: var(--text-heading);
-    color: var(--bg);
-    border-color: var(--text-heading);
+  .detail-star.filled { color: #f59e0b; }
+  .detail-star.preview { color: #fbbf24; opacity: 0.75; }
+  .detail-star:hover { transform: scale(1.08); }
+  .detail-rating-guide {
+    margin-top: 0.4rem;
+    padding-left: calc(3.5rem + 0.75rem);
+    font-size: 0.78rem;
+    min-height: 1.1em;
+    color: var(--text-heading);
+    font-weight: 600;
+  }
+  .detail-rating-guide.is-empty {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-style: italic;
+  }
+  @media (max-width: 480px) {
+    .detail-rating-guide { padding-left: 0; }
   }
 
   /* 체크박스 */
@@ -695,12 +723,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 ['cleanliness','청결',['나오면 안 될 게 나왔다','좀 지저분','보통','깨끗하다','수술실인가?']],
                 ['accessibility','접근성',['등산인가 식사인가','한참 헤맸다','무난하게 도착','찾기 쉬움','눈 감고도 감']],
               ] as [string, string, string[]][]).map(([key, label, guides]) => `
-                <div class="detail-rating-row" data-key="${key}" data-value="0">
-                  <span class="detail-rating-label">${label}</span>
-                  <div class="detail-chips" data-key="${key}">
-                    <button type="button" class="detail-chip active" data-val="0">잘 모르겠어요</button>
-                    ${guides.map((g, i) => `<button type="button" class="detail-chip" data-val="${i + 1}">${i + 1}. ${g}</button>`).join('')}
+                <div class="detail-rating-row" data-key="${key}" data-value="0" data-guides='${JSON.stringify(guides)}'>
+                  <div class="detail-rating-head">
+                    <span class="detail-rating-label">${label}</span>
+                    <div class="detail-stars" data-key="${key}">
+                      ${[1,2,3,4,5].map(n => `<button type="button" class="detail-star" data-val="${n}" aria-label="${n}점">★</button>`).join('')}
+                    </div>
                   </div>
+                  <div class="detail-rating-guide is-empty" data-key="${key}">별을 눌러 평가해주세요 · 같은 별 재클릭 시 취소</div>
                 </div>
               `).join('')}
             </div>
@@ -1158,15 +1188,53 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     for (const row of content.querySelectorAll<HTMLElement>('.detail-rating-row')) {
       const key = row.dataset.key || '';
-      for (const chip of row.querySelectorAll<HTMLButtonElement>('.detail-chip')) {
-        chip.addEventListener('click', () => {
-          const val = Number(chip.dataset.val || 0);
+      const guides: string[] = (() => {
+        try { return JSON.parse(row.dataset.guides || '[]'); } catch { return []; }
+      })();
+      const guideEl = row.querySelector('.detail-rating-guide') as HTMLElement | null;
+      const stars: HTMLButtonElement[] = [];
+      row.querySelectorAll('.detail-star').forEach((s: Element) => stars.push(s as HTMLButtonElement));
+
+      const paintStars = (filledCount: number, previewCount = 0) => {
+        stars.forEach((s: HTMLButtonElement) => {
+          const v = Number(s.dataset.val || 0);
+          s.classList.toggle('filled', v <= filledCount && filledCount > 0);
+          s.classList.toggle('preview', previewCount > 0 && v <= previewCount && v > filledCount);
+        });
+      };
+
+      const renderGuide = (value: number, isPreview = false) => {
+        if (!guideEl) return;
+        if (value === 0) {
+          guideEl.textContent = '별을 눌러 평가해주세요 · 같은 별 재클릭 시 취소';
+          guideEl.classList.add('is-empty');
+        } else {
+          const label = guides[value - 1] || '';
+          guideEl.textContent = `${value}. ${label}`;
+          guideEl.classList.toggle('is-empty', isPreview);
+        }
+      };
+
+      for (const star of stars) {
+        star.addEventListener('click', () => {
+          const val = Number(star.dataset.val || 0);
           const current = Number(row.dataset.value || 0);
-          // Clicking same chip again goes back to "잘 모르겠어요" (0)
-          const newVal = (current === val && val !== 0) ? 0 : val;
+          const newVal = current === val ? 0 : val;
           detailRatings[key] = newVal;
           row.dataset.value = String(newVal);
-          row.querySelectorAll('.detail-chip').forEach((c) => c.classList.toggle('active', Number((c as HTMLElement).dataset.val) === newVal));
+          paintStars(newVal);
+          renderGuide(newVal);
+        });
+        star.addEventListener('mouseenter', () => {
+          const val = Number(star.dataset.val || 0);
+          const current = Number(row.dataset.value || 0);
+          paintStars(current, val);
+          renderGuide(val, true);
+        });
+        star.addEventListener('mouseleave', () => {
+          const current = Number(row.dataset.value || 0);
+          paintStars(current);
+          renderGuide(current);
         });
       }
     }
