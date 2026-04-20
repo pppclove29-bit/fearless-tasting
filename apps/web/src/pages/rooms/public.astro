@@ -54,6 +54,7 @@ try {
   </Fragment>
 
   <div class="public-rooms-page">
+    <a href="/discover" class="public-rooms-back">&larr; 맛집 추천으로</a>
     <section class="public-rooms-hero">
       <h1>공개 맛집 방</h1>
       <p class="public-rooms-desc">다른 사람들의 맛집 리스트를 구경하세요</p>
@@ -107,9 +108,18 @@ try {
     padding: 0 1rem;
   }
 
+  .public-rooms-back {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-sub);
+    text-decoration: none;
+  }
+  .public-rooms-back:hover { color: var(--text-heading); }
+
   .public-rooms-hero {
     text-align: center;
-    padding: 2rem 0 1.5rem;
+    padding: 1rem 0 1.5rem;
   }
 
   .public-rooms-hero h1 {

@@ -40,6 +40,17 @@ export const prerender = false;
 
     <AdSlot slot="discover-bottom" position="bottom" format="horizontal" />
 
+    <section class="public-rooms-section">
+      <div class="public-rooms-header">
+        <h2>👀 다른 사람 방 구경하기</h2>
+        <a href="/rooms/public" class="public-rooms-more">전체 보기 →</a>
+      </div>
+      <p class="public-rooms-desc">실제 유저가 정리한 맛집 리스트를 그대로 엿보세요.</p>
+      <div id="public-rooms-content">
+        <div class="discover-loading">불러오는 중...</div>
+      </div>
+    </section>
+
     <section class="discover-seo">
       <h2>실제 방문 기반 맛집 추천</h2>
       <p>무모한 시식가는 친구, 연인, 가족과 함께 만드는 프라이빗 맛집 리뷰 플랫폼입니다.
@@ -251,6 +262,89 @@ export const prerender = false;
     color: inherit;
   }
 
+  /* 공개 방 구경하기 섹션 */
+  .public-rooms-section { margin-top: 2.5rem; }
+  .public-rooms-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+  .public-rooms-header h2 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+  .public-rooms-more {
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .public-rooms-more:hover { color: var(--text-heading); }
+  .public-rooms-desc {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 0 0 1rem;
+  }
+  .public-rooms-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+  @media (max-width: 768px) {
+    .public-rooms-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .public-rooms-grid { grid-template-columns: 1fr; }
+  }
+  .public-room-mini {
+    display: block;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.85rem 0.95rem;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .public-room-mini:hover {
+    border-color: var(--text-heading);
+    transform: translateY(-2px);
+  }
+  .public-room-mini-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .public-room-mini-stats {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+  .public-room-mini-stats .stat-rating { color: var(--text-heading); font-weight: 700; }
+  .public-room-mini-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .public-room-mini-tag {
+    font-size: 0.68rem;
+    color: var(--text-sub);
+    background: var(--bg-hover);
+    padding: 0.15rem 0.45rem;
+    border-radius: 100px;
+  }
+
   .discover-seo {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -279,7 +373,7 @@ export const prerender = false;
 </style>
 
 <script>
-  import { fetchDiscover } from '@/lib/api';
+  import { fetchDiscover, fetchPublicRooms } from '@/lib/api';
   import type { DiscoverResponse } from '@/lib/api';
 
   async function initDiscoverPage() {
@@ -355,6 +449,32 @@ export const prerender = false;
       renderCards();
     } catch {
       contentEl.innerHTML = '<div class="discover-empty">맛집 추천을 불러올 수 없습니다.</div>';
+    }
+
+    // 공개 방 구경하기 섹션
+    const publicRoomsEl = document.getElementById('public-rooms-content');
+    if (publicRoomsEl) {
+      try {
+        const publicRooms = await fetchPublicRooms(1, 6);
+        if (!publicRooms.data.length) {
+          publicRoomsEl.innerHTML = '<div class="discover-empty">아직 공개된 방이 없습니다.</div>';
+        } else {
+          publicRoomsEl.innerHTML = `<div class="public-rooms-grid">${publicRooms.data.map((room) => {
+            const rating = room.avgRating != null
+              ? `<span class="stat-rating">★ ${room.avgRating.toFixed(1)}</span> · `
+              : '';
+            const tags = (room.topCategories || []).slice(0, 3).map((c) => `<span class="public-room-mini-tag">#${c}</span>`).join('');
+            return `
+              <a href="/rooms/public/${room.id}" class="public-room-mini">
+                <div class="public-room-mini-name">${room.name}</div>
+                <div class="public-room-mini-stats">${rating}맛집 ${room.restaurantCount}곳 · 리뷰 ${room.reviewCount}개</div>
+                <div class="public-room-mini-tags">${tags}</div>
+              </a>`;
+          }).join('')}</div>`;
+        }
+      } catch {
+        publicRoomsEl.innerHTML = '<div class="discover-empty">공개 방을 불러올 수 없습니다.</div>';
+      }
     }
   }
 

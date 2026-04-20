@@ -99,6 +99,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <span class="empty-icon">🏠</span>
         <span class="empty-text">참여 중인 방이 없습니다</span>
         <span class="empty-sub">우측 상단 "+ 방 만들기" 버튼으로 방을 만들거나 초대받은 방에 입장하세요</span>
+        <a href="/rooms/public" class="empty-cta">👀 다른 사람 방 구경하기</a>
       </p>
     </div>
   </div>
@@ -422,6 +423,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .empty-icon { font-size: 2.5rem; margin-bottom: 0.25rem; }
   .empty-text { font-size: 0.95rem; font-weight: 600; color: var(--text-sub); }
   .empty-sub { font-size: 0.825rem; color: var(--text-muted); }
+  .empty-cta {
+    margin-top: 1rem;
+    padding: 0.65rem 1.3rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .empty-cta:hover { opacity: 0.88; }
 
   .form-error { padding: 0.75rem 1rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #dc2626; font-size: 0.85rem; margin-bottom: 1rem; }
   [data-theme="dark"] .form-error { background: #451a1a; border-color: #7f1d1d; color: #fca5a5; }
