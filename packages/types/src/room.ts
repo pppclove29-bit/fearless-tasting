@@ -125,6 +125,7 @@ export interface SharedRoomRestaurant {
   latitude?: number | null;
   longitude?: number | null;
   reviewCount: number;
+  avgRating: number | null;
 }
 
 export interface SharedRoomVisit {
@@ -153,10 +154,19 @@ export interface SharedRoomRestaurantDetail extends SharedRoomRestaurant {
   visits: SharedRoomVisit[];
 }
 
+export interface SharedRoomSummary {
+  restaurantCount: number;
+  totalReviews: number;
+  avgRating: number | null;
+  topCategories: string[];
+  topRegions: string[];
+}
+
 export interface SharedRoomDetail {
   id: string;
   name: string;
   restaurants: SharedRoomRestaurant[];
+  summary: SharedRoomSummary;
 }
 
 // ─── API 응답 타입 ───

@@ -23,11 +23,15 @@ try {
 }
 
 const title = room ? `${room.name} 맛집 리스트` : '공개 맛집 방';
-const topCategories = room
-  ? [...new Set(room.restaurants.map(r => r.category).filter(Boolean))].slice(0, 3).join(', ')
-  : '';
-const description = room
-  ? `${room.name}의 맛집 ${room.restaurants.length}곳${topCategories ? ` (${topCategories} 등)` : ''} — 실제 방문 리뷰와 평점을 확인하세요.`
+const summary = room?.summary;
+const topCategoriesStr = summary?.topCategories?.length ? summary.topCategories.join(', ') : '';
+const description = room && summary
+  ? [
+      `${room.name} · 맛집 ${summary.restaurantCount}곳 · 리뷰 ${summary.totalReviews}개`,
+      summary.avgRating != null ? `평균 ★${summary.avgRating.toFixed(1)}` : null,
+      topCategoriesStr ? `(${topCategoriesStr})` : null,
+      '실제 방문자의 리얼 리뷰를 확인하세요.',
+    ].filter(Boolean).join(' · ')
   : '공개 맛집 방을 확인하세요';
 ---
 
@@ -79,8 +83,39 @@ const description = room
         <a href="/rooms/public" class="back-link">&larr; 공개 맛집 방 목록</a>
         <div class="share-header">
           <h1>{room.name}</h1>
-          <span class="share-badge">공개 맛집 리스트 &middot; {room.restaurants.length}곳</span>
+          <span class="share-badge">공개 맛집 리스트 &middot; {room.summary.restaurantCount}곳</span>
         </div>
+
+        {room.summary.restaurantCount > 0 && (
+          <div class="public-summary">
+            <div class="public-summary-stats">
+              <div class="public-stat">
+                <div class="public-stat-value">{room.summary.restaurantCount}</div>
+                <div class="public-stat-label">식당</div>
+              </div>
+              <div class="public-stat">
+                <div class="public-stat-value">{room.summary.totalReviews}</div>
+                <div class="public-stat-label">리뷰</div>
+              </div>
+              {room.summary.avgRating != null && (
+                <div class="public-stat">
+                  <div class="public-stat-value">★ {room.summary.avgRating.toFixed(1)}</div>
+                  <div class="public-stat-label">평균 평점</div>
+                </div>
+              )}
+            </div>
+            {(room.summary.topCategories.length > 0 || room.summary.topRegions.length > 0) && (
+              <div class="public-summary-tags">
+                {room.summary.topCategories.map((c) => (
+                  <span class="public-tag">#{c}</span>
+                ))}
+                {room.summary.topRegions.map((r) => (
+                  <span class="public-tag public-tag-region">📍 {r}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div id="restaurant-detail-area"></div>
 
@@ -92,11 +127,23 @@ const description = room
               <div class="share-rest-name">{r.name}</div>
               <div class="share-rest-meta">{r.address} &middot; {r.category}</div>
               <div class="share-rest-footer">
+                {r.avgRating != null && (
+                  <span class="share-rest-rating">★ {r.avgRating.toFixed(1)}</span>
+                )}
                 <span class="share-rest-reviews-count">리뷰 {r.reviewCount}개</span>
               </div>
             </div>
           ))
         )}
+
+        <section class="public-cta-section">
+          <h2 class="public-cta-title">이런 맛집 리스트, 나도 만들 수 있어요</h2>
+          <p class="public-cta-desc">
+            친구·연인·가족과 함께 우리만의 맛집 리스트를 만들어보세요.<br/>
+            카카오·네이버 로그인으로 3초 만에 시작.
+          </p>
+          <a href="/login" class="public-cta-btn">무료로 시작하기</a>
+        </section>
       </div>
     )}
   </div>
@@ -182,7 +229,15 @@ const description = room
   .share-rest-footer {
     display: flex;
     justify-content: flex-end;
+    gap: 0.5rem;
+    align-items: center;
     margin-top: 0.35rem;
+  }
+
+  .share-rest-rating {
+    font-size: 0.78rem;
+    color: var(--text-heading);
+    font-weight: 700;
   }
 
   .share-rest-reviews-count {
@@ -190,6 +245,84 @@ const description = room
     color: var(--text-sub);
     font-weight: 500;
   }
+
+  /* 공개 방 요약 카드 */
+  .public-summary {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .public-summary-stats {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: space-around;
+    align-items: center;
+  }
+  .public-stat { text-align: center; }
+  .public-stat-value {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    letter-spacing: -0.01em;
+  }
+  .public-stat-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+  .public-summary-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px dashed var(--border);
+  }
+  .public-tag {
+    font-size: 0.72rem;
+    color: var(--text-sub);
+    background: var(--bg-hover);
+    padding: 0.2rem 0.55rem;
+    border-radius: 100px;
+  }
+  .public-tag-region { color: var(--text-heading); }
+
+  /* 신규 유저 전환 CTA */
+  .public-cta-section {
+    margin-top: 2rem;
+    padding: 2rem 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--text-heading);
+    border-radius: 14px;
+    text-align: center;
+  }
+  .public-cta-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.01em;
+  }
+  .public-cta-desc {
+    font-size: 0.85rem;
+    color: var(--text-sub);
+    line-height: 1.6;
+    margin: 0 0 1.1rem;
+  }
+  .public-cta-btn {
+    display: inline-block;
+    padding: 0.75rem 1.75rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .public-cta-btn:hover { opacity: 0.88; }
 
   .share-rest-detail {
     background: var(--bg-card);

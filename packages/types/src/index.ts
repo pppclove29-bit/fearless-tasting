@@ -14,6 +14,7 @@ export type {
   RoomRestaurantDetail,
   RoomDetail,
   SharedRoomDetail,
+  SharedRoomSummary,
   SharedRoomRestaurant,
   SharedRoomRestaurantDetail,
   SharedRoomVisit,

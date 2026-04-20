@@ -1198,7 +1198,7 @@ export class RoomsService {
             latitude: true,
             longitude: true,
             visits: {
-              select: { reviews: { select: { id: true } } },
+              select: { reviews: { select: { id: true, rating: true } } },
             },
           },
           orderBy: { createdAt: 'desc' },
@@ -1208,13 +1208,50 @@ export class RoomsService {
 
     if (!room) throw new NotFoundException('공개 방을 찾을 수 없습니다');
 
-    return {
-      ...room,
-      restaurants: room.restaurants.map(({ visits, images, ...r }) => ({
+    const restaurants = room.restaurants.map(({ visits, images, ...r }) => {
+      const ratings = visits.flatMap((v) => v.reviews.map((rv) => rv.rating));
+      const avgRating = ratings.length > 0
+        ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
+        : null;
+      return {
         ...r,
         images: images.map((img) => toImageUrl(img.url)),
-        reviewCount: visits.reduce((sum, v) => sum + v.reviews.length, 0),
-      })),
+        reviewCount: ratings.length,
+        avgRating,
+      };
+    });
+
+    // 방 요약 통계 (공유 카드용)
+    const totalReviews = restaurants.reduce((s, r) => s + r.reviewCount, 0);
+    const ratedRestaurants = restaurants.filter((r) => r.avgRating !== null);
+    const avgRating = ratedRestaurants.length > 0
+      ? Math.round(
+          (ratedRestaurants.reduce((s, r) => s + (r.avgRating ?? 0), 0) / ratedRestaurants.length) * 10,
+        ) / 10
+      : null;
+
+    // 대표 카테고리·지역 (빈도 상위 3)
+    const pickTop = (values: string[], n: number) => {
+      const counts = new Map<string, number>();
+      for (const v of values) if (v) counts.set(v, (counts.get(v) ?? 0) + 1);
+      return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([k]) => k);
+    };
+    const topCategories = pickTop(restaurants.map((r) => r.category), 3);
+    const topRegions = pickTop(
+      restaurants.map((r) => [r.city, r.neighborhood].filter(Boolean).join(' ').trim()),
+      3,
+    );
+
+    return {
+      ...room,
+      restaurants,
+      summary: {
+        restaurantCount: restaurants.length,
+        totalReviews,
+        avgRating,
+        topCategories,
+        topRegions,
+      },
     };
   }
 
