@@ -1332,6 +1332,173 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .poll-close-btn { margin-top: 0.5rem; }
   .poll-revote-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem; }
 
+  .poll-quick-templates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+    align-items: center;
+  }
+  .poll-qt-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-right: 0.25rem;
+  }
+  .poll-quick-btn {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.78rem;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    background: var(--bg-input);
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .poll-quick-btn:hover { border-color: var(--text-muted); }
+
+  .poll-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+    min-height: 0;
+  }
+  .poll-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.4rem 0.3rem 0.7rem;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 0.78rem;
+    color: var(--text);
+  }
+  .poll-chip.has-restaurant {
+    border-color: var(--text-heading);
+  }
+  .poll-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 100px;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 0;
+  }
+  .poll-chip-remove:hover { background: var(--bg-card); color: var(--text-heading); }
+
+  .poll-add-row {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+  }
+  .poll-add-row input { flex: 1; }
+
+  .poll-rest-picker {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.75rem;
+    background: var(--bg-input);
+  }
+  .poll-rest-picker summary {
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    cursor: pointer;
+    list-style: none;
+    padding: 0.1rem 0;
+  }
+  .poll-rest-picker summary::-webkit-details-marker { display: none; }
+  .poll-rest-picker[open] summary { margin-bottom: 0.5rem; }
+  .poll-rest-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+  .poll-rest-chip {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    background: var(--bg-card);
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .poll-rest-chip:hover:not(:disabled) { border-color: var(--text-heading); }
+  .poll-rest-chip:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    text-decoration: line-through;
+  }
+
+  .poll-option-row.poll-winner {
+    border-color: var(--text-heading);
+    border-width: 2px;
+  }
+  .poll-winner-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    background: var(--text-heading);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .poll-winner-cta:hover { opacity: 0.88; }
+
+  #active-poll-banner {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .active-poll-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--text-heading);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .active-poll-card:hover { background: var(--bg-hover); }
+  .active-poll-icon { font-size: 1.2rem; flex-shrink: 0; }
+  .active-poll-body { flex: 1; min-width: 0; }
+  .active-poll-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .active-poll-meta {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+  }
+  .active-poll-meta-voted { color: var(--text-heading); font-weight: 600; }
+  .active-poll-arrow { color: var(--text-muted); flex-shrink: 0; font-size: 0.9rem; }
+
   /* ─── 타임라인 ─── */
   .timeline-list {
     display: flex;
@@ -2856,11 +3023,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       ${hasKakaoMap ? `<div id="main-map-container" class="map-container" style="margin-bottom:1rem;"><div id="main-kakao-map"></div><button id="main-map-my-location" class="map-my-location" type="button" title="내 위치로 이동"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button></div>` : ''}
 
+      <div id="active-poll-banner" hidden></div>
+
       <div class="room-tab-bar">
         <button type="button" class="room-tab-btn active" data-tab="restaurants">🍽️ 식당</button>
         <button type="button" class="room-tab-btn" data-tab="wishlist">💛 위시리스트</button>
         <button type="button" class="room-tab-btn" data-tab="region">📍 지역</button>
         <button type="button" class="room-tab-btn" data-tab="timeline">📋 활동</button>
+        <button type="button" class="room-tab-btn" data-tab="poll">🗳️ 투표</button>
         <!-- <button type="button" class="room-tab-btn" data-tab="stats">📊 통계</button> -->
         <button type="button" class="room-tab-btn" data-tab="members">👥 멤버 (${currentRoom.members.length}/${currentRoom.maxMembers})</button>
       </div>
@@ -2869,6 +3039,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <div id="tab-wishlist" class="room-tab-panel" hidden></div>
       <div id="tab-region" class="room-tab-panel" hidden></div>
       <div id="tab-timeline" class="room-tab-panel" hidden></div>
+      <div id="tab-poll" class="room-tab-panel" hidden></div>
       <div id="tab-stats" class="room-tab-panel" hidden></div>
       <div id="tab-members" class="room-tab-panel" hidden></div>
     `;
@@ -2882,6 +3053,58 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     renderTimelineTab();
     renderStatsTab().catch((err) => console.error('[stats] unhandled:', err));
     renderMembersTab();
+    renderActivePollBanner().catch((err) => console.error('[poll-banner] unhandled:', err));
+  }
+
+  // 방 상단: 진행 중인 투표 요약 배너
+  async function renderActivePollBanner() {
+    const banner = document.getElementById('active-poll-banner');
+    if (!banner) return;
+
+    let polls: Poll[] = [];
+    try {
+      polls = await fetchPolls(currentRoom.id);
+    } catch {
+      return;
+    }
+
+    const active = polls.filter((p) => p.status === 'active');
+    if (active.length === 0) {
+      banner.hidden = true;
+      banner.innerHTML = '';
+      return;
+    }
+
+    banner.innerHTML = active.map((p) => {
+      const voters = new Set<string>();
+      for (const opt of p.options) for (const v of opt.votes) voters.add(v.userId);
+      const hasMyVote = voters.has(currentUser.id);
+      const metaClass = hasMyVote ? 'active-poll-meta active-poll-meta-voted' : 'active-poll-meta';
+      const metaText = hasMyVote
+        ? `✓ 투표 완료 · ${voters.size}/${currentRoom.members.length}명 참여`
+        : `아직 투표 안 함 · ${voters.size}/${currentRoom.members.length}명 참여`;
+      return `
+        <div class="active-poll-card" data-poll-id="${p.id}">
+          <span class="active-poll-icon">🗳️</span>
+          <div class="active-poll-body">
+            <div class="active-poll-title">${escapeHtml(p.title)}</div>
+            <div class="${metaClass}">${metaText}</div>
+          </div>
+          <span class="active-poll-arrow">›</span>
+        </div>`;
+    }).join('');
+    banner.hidden = false;
+
+    // 클릭 시 투표 탭으로 이동
+    for (const card of banner.querySelectorAll<HTMLElement>('.active-poll-card')) {
+      card.addEventListener('click', () => {
+        const tabBtn = document.querySelector<HTMLButtonElement>('.room-tab-btn[data-tab="poll"]');
+        if (tabBtn) {
+          tabBtn.click();
+          tabBtn.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    }
   }
 
   async function initMainMap() {
@@ -3369,10 +3592,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     };
     const timelinePanel = document.getElementById('tab-timeline');
     if (timelinePanel) panels.timeline = timelinePanel;
+    const pollPanel = document.getElementById('tab-poll');
+    if (pollPanel) panels.poll = pollPanel;
 
     // 마지막으로 활성화된 식당/위시리스트 마커 모드 기억 (기타 탭에서도 유지)
     let lastMarkerMode: 'regular' | 'wishlist' = 'regular';
     let wishlistLoaded = false;
+    let pollLoaded = false;
     for (const btn of document.querySelectorAll<HTMLButtonElement>('.room-tab-btn')) {
       btn.addEventListener('click', () => {
         for (const b of document.querySelectorAll('.room-tab-btn')) b.classList.remove('active');
@@ -3385,6 +3611,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         if (tab === 'wishlist' && !wishlistLoaded) {
           wishlistLoaded = true;
           renderWishlistTab().catch((err) => console.error('[wishlist] unhandled:', err));
+        }
+        // 투표 탭 최초 진입 시 렌더
+        if (tab === 'poll' && !pollLoaded) {
+          pollLoaded = true;
+          renderPollTab().catch((err) => console.error('[poll] unhandled:', err));
         }
         // 지도 마커: 식당/위시리스트 탭이면 해당 모드로 전환 + 기억, 기타 탭은 마지막 모드 유지
         const setMarkers = (window as Record<string, unknown>).__setMapMarkers as ((m: 'all' | 'regular' | 'wishlist') => void) | undefined;
@@ -3950,7 +4181,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   // ─── 투표 탭 ───
 
-  async function _renderPollTab() {
+  async function renderPollTab() {
     const panel = document.getElementById('tab-poll');
     if (!panel) return;
 
@@ -3963,6 +4194,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       panel.innerHTML = '<p class="empty-text">투표를 불러올 수 없습니다. 새로고침 후 다시 시도해주세요.</p>';
       return;
     }
+
+    // 상단 배너도 함께 갱신 (create/vote/close 이후 일관성 유지)
+    renderActivePollBanner().catch(() => { /* 무시 */ });
 
     const totalVoters = (poll: Poll) => {
       const voters = new Set<string>();
@@ -3977,16 +4211,44 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return null;
     };
 
+    // 방 식당 목록 (폐점 제외, 이름 오름차순)
+    const roomRestaurants = (currentRoom.restaurants || [])
+      .filter((r) => !r.isClosed)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    // 로컬 선택지 상태 (chip list)
+    type SelectedOption = { label: string; restaurantId?: string };
+    let selectedOptions: SelectedOption[] = [];
+
     const createFormHtml = `
       <div class="poll-create-form">
         <h3>🗳️ 새 투표 만들기</h3>
-        <input type="text" id="poll-title" class="poll-title-input" placeholder="투표 제목 (예: 오늘 뭐 먹지?)" maxlength="200" />
-        <div id="poll-options-list" class="poll-options-list">
-          <input type="text" class="poll-option-input" placeholder="선택지 1" maxlength="200" />
-          <input type="text" class="poll-option-input" placeholder="선택지 2" maxlength="200" />
+
+        <div class="poll-quick-templates">
+          <span class="poll-qt-label">템플릿</span>
+          <button type="button" class="poll-quick-btn" data-template="menu">🍜 오늘 뭐 먹지?</button>
+          ${roomRestaurants.length >= 2 ? `<button type="button" class="poll-quick-btn" data-template="restaurant">🍽️ 방 식당에서 고르기</button>` : ''}
         </div>
+
+        <input type="text" id="poll-title" class="poll-title-input" placeholder="투표 제목 (예: 오늘 뭐 먹지?)" maxlength="200" />
+
+        <div id="poll-selected-options" class="poll-chip-list"></div>
+
+        <div class="poll-add-row">
+          <input type="text" id="poll-new-option-input" class="poll-option-input" placeholder="선택지 직접 입력 후 Enter" maxlength="200" />
+          <button type="button" class="btn-outline-sm" id="poll-add-option-btn">+ 추가</button>
+        </div>
+
+        ${roomRestaurants.length > 0 ? `
+          <details class="poll-rest-picker">
+            <summary>🍽️ 방 식당에서 추가 (${roomRestaurants.length}개)</summary>
+            <div class="poll-rest-chips">
+              ${roomRestaurants.map((r) => `<button type="button" class="poll-rest-chip" data-restaurant-id="${r.id}" data-restaurant-name="${escapeHtml(r.name)}">${escapeHtml(r.name)}</button>`).join('')}
+            </div>
+          </details>
+        ` : ''}
+
         <div class="poll-form-actions">
-          <button type="button" class="btn-outline-sm" id="poll-add-option">+ 선택지 추가</button>
           <button type="button" class="btn-primary-sm" id="poll-submit">투표 만들기</button>
         </div>
       </div>`;
@@ -3998,6 +4260,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const total = poll.options.reduce((s, o) => s + o.votes.length, 0);
       const myChoice = myVote(poll);
       const isCreator = poll.createdBy.id === currentUser.id;
+
+      // 우승 옵션 계산 (마감 + 득표 있을 때만)
+      const winnerIds = new Set<string>();
+      if (poll.status === 'closed' && total > 0) {
+        const maxVotes = Math.max(...poll.options.map((o) => o.votes.length));
+        if (maxVotes > 0) {
+          for (const o of poll.options) if (o.votes.length === maxVotes) winnerIds.add(o.id);
+        }
+      }
+      const singleWinner = winnerIds.size === 1
+        ? poll.options.find((o) => winnerIds.has(o.id)) ?? null
+        : null;
 
       return `
         <div class="poll-card ${poll.status === 'closed' ? 'poll-closed' : ''}">
@@ -4011,16 +4285,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               const pct = total > 0 ? Math.round((opt.votes.length / total) * 100) : 0;
               const isMyVote = myChoice === opt.id;
               const canVote = poll.status === 'active' && !isMyVote;
+              const isWinner = winnerIds.has(opt.id);
               return `
-                <div class="poll-option-row ${isMyVote ? 'my-vote' : ''} ${canVote ? 'votable' : ''}"
+                <div class="poll-option-row ${isMyVote ? 'my-vote' : ''} ${canVote ? 'votable' : ''} ${isWinner ? 'poll-winner' : ''}"
                      ${canVote ? `data-poll-id="${poll.id}" data-option-id="${opt.id}"` : ''}>
                   <div class="poll-option-bar" style="width:${pct}%"></div>
-                  <span class="poll-option-label">${escapeHtml(opt.label)}${isMyVote ? ' ✓' : ''}</span>
+                  <span class="poll-option-label">${isWinner ? '🏆 ' : ''}${escapeHtml(opt.label)}${isMyVote ? ' ✓' : ''}</span>
                   <span class="poll-option-pct">${opt.votes.length}표 (${pct}%)</span>
                 </div>`;
             }).join('')}
           </div>
           ${myChoice && poll.status === 'active' ? '<p class="poll-revote-hint">다른 선택지를 눌러 투표를 변경할 수 있습니다</p>' : ''}
+          ${singleWinner && singleWinner.restaurantId
+            ? `<a class="poll-winner-cta" href="/room/restaurant?roomId=${currentRoom.id}&id=${singleWinner.restaurantId}">🍽️ ${escapeHtml(singleWinner.label)}에 방문 기록 남기기</a>`
+            : (winnerIds.size > 1 ? '<p class="poll-revote-hint">🤝 동점으로 마감되었습니다</p>' : '')
+          }
           ${isCreator && poll.status === 'active' ? `<button type="button" class="btn-outline-sm poll-close-btn" data-poll-id="${poll.id}">투표 마감</button>` : ''}
         </div>`;
     };
@@ -4037,37 +4316,117 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     panel.innerHTML = createFormHtml + emptyHtml + activePollsHtml + closedPollsHtml;
 
-    // 선택지 추가
-    document.getElementById('poll-add-option')?.addEventListener('click', () => {
-      const list = document.getElementById('poll-options-list');
+    // ── 선택지 chip 렌더링 ──
+    const renderSelectedChips = () => {
+      const list = document.getElementById('poll-selected-options');
       if (!list) return;
-      const count = list.querySelectorAll('.poll-option-input').length;
-      if (count >= 10) { showToast('선택지는 최대 10개까지 가능합니다.'); return; }
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'poll-option-input';
-      input.placeholder = `선택지 ${count + 1}`;
-      input.maxLength = 200;
-      list.appendChild(input);
+      list.innerHTML = selectedOptions.length === 0
+        ? '<span style="font-size:0.75rem;color:var(--text-muted);padding:0.2rem 0;">선택지를 추가해주세요 (최소 2개)</span>'
+        : selectedOptions.map((o, i) => `
+            <span class="poll-chip ${o.restaurantId ? 'has-restaurant' : ''}">
+              ${o.restaurantId ? '🍽️ ' : ''}${escapeHtml(o.label)}
+              <button type="button" class="poll-chip-remove" data-index="${i}" aria-label="삭제">×</button>
+            </span>`).join('');
+
+      // 방 식당 칩 disabled 동기화
+      const usedRestIds = new Set(selectedOptions.map((o) => o.restaurantId).filter(Boolean) as string[]);
+      for (const chip of document.querySelectorAll<HTMLButtonElement>('.poll-rest-chip')) {
+        const rid = chip.dataset.restaurantId;
+        chip.disabled = !!rid && usedRestIds.has(rid);
+      }
+
+      // 삭제 핸들러 재부착
+      for (const btn of document.querySelectorAll<HTMLButtonElement>('.poll-chip-remove')) {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.index!, 10);
+          if (!Number.isNaN(idx)) {
+            selectedOptions.splice(idx, 1);
+            renderSelectedChips();
+          }
+        });
+      }
+    };
+
+    const addSelectedOption = (opt: SelectedOption) => {
+      if (selectedOptions.length >= 10) { showToast('선택지는 최대 10개까지 가능합니다.'); return; }
+      const dup = selectedOptions.some((o) =>
+        opt.restaurantId ? o.restaurantId === opt.restaurantId : o.label === opt.label && !o.restaurantId,
+      );
+      if (dup) { showToast('이미 추가된 선택지입니다.'); return; }
+      selectedOptions.push(opt);
+      renderSelectedChips();
+    };
+
+    renderSelectedChips();
+
+    // ── 빠른 템플릿 ──
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('.poll-quick-btn')) {
+      btn.addEventListener('click', () => {
+        const template = btn.dataset.template;
+        const titleInput = document.getElementById('poll-title') as HTMLInputElement | null;
+        if (template === 'menu') {
+          if (titleInput && !titleInput.value.trim()) titleInput.value = '오늘 뭐 먹지?';
+          selectedOptions = [
+            { label: '🍚 한식' }, { label: '🍜 중식' }, { label: '🍣 일식' },
+            { label: '🍝 양식' }, { label: '🍡 분식' }, { label: '🍗 치킨' },
+          ];
+          renderSelectedChips();
+          showToast('한/중/일/양/분식/치킨 선택지가 채워졌어요', 'success');
+        } else if (template === 'restaurant') {
+          if (titleInput && !titleInput.value.trim()) titleInput.value = '어디 갈까요?';
+          // 최근 추가된 식당 최대 6개
+          const recent = [...roomRestaurants]
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .slice(0, 6);
+          selectedOptions = recent.map((r) => ({ label: r.name, restaurantId: r.id }));
+          renderSelectedChips();
+          showToast(`최근 식당 ${recent.length}곳이 채워졌어요`, 'success');
+        }
+      });
+    }
+
+    // ── 직접 입력 추가 ──
+    const addFreeformOption = () => {
+      const input = document.getElementById('poll-new-option-input') as HTMLInputElement | null;
+      if (!input) return;
+      const label = input.value.trim();
+      if (!label) return;
+      addSelectedOption({ label });
+      input.value = '';
+      input.focus();
+    };
+    document.getElementById('poll-add-option-btn')?.addEventListener('click', addFreeformOption);
+    document.getElementById('poll-new-option-input')?.addEventListener('keydown', (e) => {
+      if ((e as KeyboardEvent).key === 'Enter') {
+        e.preventDefault();
+        addFreeformOption();
+      }
     });
 
-    // 투표 생성
+    // ── 방 식당 chip 클릭 ──
+    for (const chip of document.querySelectorAll<HTMLButtonElement>('.poll-rest-chip')) {
+      chip.addEventListener('click', () => {
+        const rid = chip.dataset.restaurantId;
+        const name = chip.dataset.restaurantName;
+        if (!rid || !name) return;
+        addSelectedOption({ label: name, restaurantId: rid });
+      });
+    }
+
+    // ── 투표 생성 ──
     document.getElementById('poll-submit')?.addEventListener('click', async () => {
       const title = (document.getElementById('poll-title') as HTMLInputElement).value.trim();
-      const optionInputs = document.querySelectorAll<HTMLInputElement>('.poll-option-input');
-      const options = Array.from(optionInputs).map((i) => i.value.trim()).filter(Boolean);
-
       if (!title) { showToast('투표 제목을 입력해주세요.'); return; }
-      if (options.length < 2) { showToast('선택지를 2개 이상 입력해주세요.'); return; }
-
+      if (selectedOptions.length < 2) { showToast('선택지를 2개 이상 추가해주세요.'); return; }
       try {
-        await createPoll(currentRoom.id, { title, options: options.map((label) => ({ label })) });
+        await createPoll(currentRoom.id, { title, options: selectedOptions });
         showToast('투표가 생성되었습니다!', 'success');
+        selectedOptions = [];
         renderPollTab();
       } catch { showToast('투표 생성에 실패했습니다.'); }
     });
 
-    // 투표 참여
+    // ── 투표 참여 ──
     for (const row of document.querySelectorAll<HTMLElement>('.poll-option-row.votable')) {
       row.addEventListener('click', async () => {
         const pollId = row.dataset.pollId!;
@@ -4080,13 +4439,32 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     }
 
-    // 투표 마감
+    // ── 투표 마감 ──
     for (const btn of document.querySelectorAll<HTMLButtonElement>('.poll-close-btn')) {
       btn.addEventListener('click', async () => {
         if (!await showConfirm('이 투표를 마감하시겠습니까?')) return;
+        const pollId = btn.dataset.pollId!;
         try {
-          await closePoll(currentRoom.id, btn.dataset.pollId!);
-          showToast('투표가 마감되었습니다.', 'success');
+          await closePoll(currentRoom.id, pollId);
+          // 마감 후 winner 계산 (동점 처리 포함)
+          const refreshed = await fetchPolls(currentRoom.id).catch(() => [] as Poll[]);
+          const closed = refreshed.find((p) => p.id === pollId);
+          if (closed) {
+            const total = closed.options.reduce((s, o) => s + o.votes.length, 0);
+            if (total === 0) {
+              showToast('득표가 없어 마감되었습니다.', 'success');
+            } else {
+              const maxVotes = Math.max(...closed.options.map((o) => o.votes.length));
+              const winners = closed.options.filter((o) => o.votes.length === maxVotes);
+              if (winners.length === 1) {
+                showToast(`🏆 ${winners[0].label} 선정!`, 'success');
+              } else {
+                showToast(`🤝 ${winners.length}개 동점으로 마감되었습니다.`, 'success');
+              }
+            }
+          } else {
+            showToast('투표가 마감되었습니다.', 'success');
+          }
           renderPollTab();
         } catch { showToast('투표 마감에 실패했습니다.'); }
       });
