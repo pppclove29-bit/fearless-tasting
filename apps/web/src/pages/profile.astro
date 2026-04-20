@@ -455,7 +455,7 @@ export const prerender = false;
 
     const user = await fetchCurrentUser();
     if (!user) {
-      location.href = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`;
+      location.href = '/login';
       return;
     }
 

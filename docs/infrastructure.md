@@ -112,10 +112,10 @@ prisma db push → node apps/api/dist/main
 
 ## 방 인원 제한
 
-- 최대 멤버 수: **2명** (상수 `MAX_ROOM_MEMBERS = 2`)
-- 위치: `apps/api/src/rooms/rooms.service.ts`
-- 초과 시 403 응답: "방 인원이 가득 찼습니다 (최대 2명)"
-- 향후 과금 요소로 확장 가능 (Room 테이블에 `maxMembers` 컬럼 추가)
+- 최대 멤버 수는 **방별 설정값** (`Room.maxMembers`, 범위 **2~20**, 기본 4)
+- 위치: `apps/api/prisma/schema.prisma` (컬럼 정의) / `apps/api/src/rooms/rooms.service.ts` (체크 로직)
+- 초과 시 403 응답: "방 인원이 가득 찼습니다 (최대 N명)"
+- 방 생성/설정 API에서 조정 가능 (`CreateRoomDto.maxMembers`, `UpdateRoomDto.maxMembers`)
 
 ## 비용 요약
 

@@ -84,9 +84,9 @@ export const prerender = false;
     const user = await fetchCurrentUser();
 
     if (!user) {
-      // 비로그인 → 로그인 후 돌아오기
+      // 비로그인 → 로그인 선택 페이지 경유 (카카오/네이버 선택 가능)
       localStorage.setItem('login_redirect', `/join?code=${code}`);
-      location.href = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`;
+      location.href = '/login';
       return;
     }
 

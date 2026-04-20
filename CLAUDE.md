@@ -210,9 +210,11 @@ document.addEventListener('astro:page-load', initMyPage);
 
 ## 방 인원 제한
 
-- `MAX_ROOM_MEMBERS = 4` (rooms.service.ts)
+- **방당 최대 인원은 방별 설정값** (`Room.maxMembers`, 범위 2~20, 기본 4)
+  - 방 생성(`CreateRoomDto`) / 방 설정(`UpdateRoomDto`)에서 변경 가능
+  - 축소 시 현재 멤버 수보다 작게 설정 불가 (`rooms.service.ts` `updateRoom`)
 - `MAX_ROOMS_PER_USER = 30` — 유저당 참여 가능한 방 수 제한
-- 초대 코드 입장 및 방 생성 시 멤버 수/방 수 체크, 초과 시 403
+- 초대 코드 입장 시 `memberCount >= room.maxMembers`면 403 ("방 인원이 가득 찼습니다")
 
 ## 식당/방문 수정
 

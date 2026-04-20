@@ -22,7 +22,6 @@ const fullTitle = `${title} | 무모한 시식가`;
 const resolvedOgImage = ogImage
   ? new URL(ogImage, siteOrigin).href
   : `${siteOrigin}/og-image.png`;
-const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`;
 ---
 
 <html lang="ko">
@@ -158,7 +157,7 @@ const kakaoLoginUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:400
           <a href="/cs" class="nav-link">문의</a>
           <a href="/admin" class="nav-link nav-admin" id="admin-link" hidden>관리자</a>
           <div class="nav-auth" id="auth-nav">
-            <a href={kakaoLoginUrl} id="login-link" class="nav-link nav-login">로그인</a>
+            <a href="/login" id="login-link" class="nav-link nav-login">로그인</a>
             <span id="user-info" hidden>
               <button type="button" class="notif-bell" id="notif-bell" hidden title="알림" aria-label="알림">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
