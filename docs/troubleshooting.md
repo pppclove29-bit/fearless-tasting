@@ -71,13 +71,41 @@ pnpm install
 
 ## Prisma 관련
 
-### "Can't reach database server"
+### "Can't reach database server" (P1001) — 로컬
 **증상:** `Error: P1001: Can't reach database server at localhost:3306`
 **원인:** MySQL이 아직 시작되지 않았거나 접속 정보가 틀림
 **해결:**
 1. Docker가 실행 중인지 확인: `docker compose ps`
 2. `.env` 파일의 `DATABASE_URL` 확인
 3. MySQL 헬스체크 통과 확인: `docker compose logs mysql-writer`
+
+### "Can't reach database server" (P1001) — TiDB Serverless
+**증상:** Render 프로덕션 또는 로컬에서 TiDB 연결 실패
+**원인:**
+- `DATABASE_URL`에 `?sslaccept=strict` 쿼리 파라미터 누락
+- privatelink URL 대신 공용 엔드포인트 사용 필요
+**해결:**
+```
+mysql://유저:비밀번호@gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/test?sslaccept=strict
+```
+- 공용 엔드포인트 형식인지 확인 (`gateway01.ap-northeast-1.prod.aws.tidbcloud.com`)
+
+### TiDB SSL 인증서 오류 (P1011)
+**증상:** `Error: P1011: Error opening a TLS connection`
+**원인:** Docker 이미지에 CA 인증서 패키지가 없어 TLS 핸드셰이크 실패
+**해결:** `Dockerfile`에 `ca-certificates` 패키지 설치 확인
+```dockerfile
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+```
+
+### `prisma migrate deploy` vs `prisma db push` 혼용 문제
+**증상:** "The migration `0_init` was not found." 또는 migration history 불일치
+**원인:** 이 프로젝트는 프로덕션에서 `prisma db push`를 사용하고, `migrate resolve --applied 0_init`으로 baseline만 기록한다.
+**해결:**
+- 프로덕션/Docker: `prisma db push --accept-data-loss --skip-generate` (Dockerfile CMD 참고)
+- 로컬 개발(Docker): `prisma db push --skip-generate` (docker-compose.yml 참고)
+- 로컬 개발(직접 실행): `prisma db push`
+- 새 마이그레이션 파일 생성 시: `prisma migrate dev --name <이름>` (개발 환경에서만)
 
 ### "Prisma Client has not been generated"
 **해결:**
@@ -93,6 +121,33 @@ pnpm --filter @repo/api exec prisma generate
 
 # IDE 재시작 (TypeScript 서버 갱신)
 ```
+
+---
+
+## OAuth 관련
+
+### 카카오 로그인 후 "redirect_uri_mismatch" 오류
+**원인:** 카카오 개발자 콘솔의 Redirect URI와 `KAKAO_CALLBACK_URL` 환경변수 값이 불일치
+**해결:**
+1. 카카오 개발자 콘솔 → 해당 앱 → **카카오 로그인** → **Redirect URI** 확인
+2. `KAKAO_CALLBACK_URL` 값과 완전히 일치하는지 확인 (끝 슬래시 포함)
+3. 로컬: `http://localhost:4000/auth/kakao/callback`
+4. 프로덕션: `https://fearless-tasting.onrender.com/auth/kakao/callback`
+
+### 네이버 로그인 버튼이 비활성화되거나 500 에러
+**원인 1:** `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` 미설정
+**해결:** `.env`에 네이버 환경변수 추가 (local-setup.md 참고)
+
+**원인 2:** 네이버 개발자 센터의 Callback URL과 `NAVER_CALLBACK_URL` 불일치
+**해결:**
+1. [네이버 개발자 센터](https://developers.naver.com) → 애플리케이션 설정 → **API 설정** → Callback URL 확인
+2. `NAVER_CALLBACK_URL` 값과 일치하는지 확인
+3. 로컬: `http://localhost:4000/auth/naver/callback`
+4. 프로덕션: `https://fearless-tasting.onrender.com/auth/naver/callback`
+
+**원인 3:** state 파라미터 불일치 (CSRF 검증 실패)
+**증상:** 네이버 콜백에서 401 UnauthorizedException
+**해결:** 브라우저 쿠키/세션이 초기화되었을 때 발생. 로그인 페이지에서 새로 시도
 
 ---
 

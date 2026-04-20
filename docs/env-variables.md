@@ -22,8 +22,16 @@ mysql://[사용자]:[비밀번호]@[호스트]:[포트]/[데이터베이스명]
 | 변수명 | 필수 | 설명 | 로컬 기본값 |
 |--------|------|------|-------------|
 | `KAKAO_CLIENT_ID` | O | 카카오 REST API 키 ([카카오 디벨로퍼](https://developers.kakao.com)에서 발급) | - |
-| `KAKAO_CLIENT_SECRET` | O | 카카오 Client Secret | - |
+| `KAKAO_CLIENT_SECRET` | X | 카카오 Client Secret (선택, 보안 강화 시 설정) | - |
 | `KAKAO_CALLBACK_URL` | O | OAuth 콜백 URL. 카카오 앱 설정의 Redirect URI와 일치해야 함 | `http://localhost:4000/auth/kakao/callback` |
+
+### 네이버 OAuth
+
+| 변수명 | 필수 | 설명 | 로컬 기본값 |
+|--------|------|------|-------------|
+| `NAVER_CLIENT_ID` | X | 네이버 Client ID ([네이버 개발자 센터](https://developers.naver.com)에서 발급). 미설정 시 네이버 로그인 비활성 | - |
+| `NAVER_CLIENT_SECRET` | X | 네이버 Client Secret | - |
+| `NAVER_CALLBACK_URL` | X | 네이버 OAuth 콜백 URL. 네이버 앱 설정의 Callback URL과 일치해야 함 | `http://localhost:4000/auth/naver/callback` |
 
 ### JWT 인증
 
@@ -50,8 +58,11 @@ mysql://[사용자]:[비밀번호]@[호스트]:[포트]/[데이터베이스명]
 | 변수명 | 필수 | 설명 | 로컬 기본값 |
 |--------|------|------|-------------|
 | `PUBLIC_API_URL` | X | API 서버 주소. 미설정 시 `http://localhost:4000` | `http://localhost:4000` |
+| `PUBLIC_KAKAO_MAP_KEY` | X | 카카오맵 JavaScript 키. 미설정 시 지도 기능 숨김 | - |
+| `PUBLIC_AD_CLIENT` | X | Google AdSense 클라이언트 ID. 미설정 시 광고 완전 비활성 | - |
+| `SITE_URL` | X | 사이트 도메인. sitemap.xml 생성에 사용 (예: `https://fearless-tasting.pages.dev`) | - |
 
-> Astro에서 클라이언트에 노출되는 환경변수는 반드시 `PUBLIC_` 접두사가 필요하다.
+> Astro에서 클라이언트에 노출되는 환경변수는 반드시 `PUBLIC_` 접두사가 필요하다. `SITE_URL`은 빌드 시점에만 사용되므로 `PUBLIC_` 불필요.
 
 ## Docker 환경 (docker-compose.yml)
 
@@ -62,8 +73,11 @@ Docker로 실행 시 환경변수가 `docker-compose.yml`에 이미 설정되어
 | api | `DATABASE_URL` | `mysql://app:app1234@mysql-writer:3306/fearless_tasting` |
 | api | `DATABASE_READER_URL` | `mysql://app:app1234@mysql-reader:3306/fearless_tasting` |
 | api | `KAKAO_CLIENT_ID` | `${KAKAO_CLIENT_ID}` (호스트 환경변수에서 주입) |
-| api | `KAKAO_CLIENT_SECRET` | `${KAKAO_CLIENT_SECRET}` (호스트 환경변수에서 주입) |
+| api | `KAKAO_CLIENT_SECRET` | `${KAKAO_CLIENT_SECRET}` (호스트 환경변수에서 주입, 선택) |
 | api | `KAKAO_CALLBACK_URL` | `http://localhost:4000/auth/kakao/callback` |
+| api | `NAVER_CLIENT_ID` | `${NAVER_CLIENT_ID}` (호스트 환경변수에서 주입, 선택) |
+| api | `NAVER_CLIENT_SECRET` | `${NAVER_CLIENT_SECRET}` (호스트 환경변수에서 주입, 선택) |
+| api | `NAVER_CALLBACK_URL` | `http://localhost:4000/auth/naver/callback` |
 | api | `JWT_ACCESS_SECRET` | `${JWT_ACCESS_SECRET}` (기본값: `dev-access-secret-change-in-prod`) |
 | api | `JWT_REFRESH_SECRET` | `${JWT_REFRESH_SECRET}` (기본값: `dev-refresh-secret-change-in-prod`) |
 | api | `FRONTEND_URL` | `http://localhost:4321` |

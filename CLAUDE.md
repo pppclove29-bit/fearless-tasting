@@ -18,7 +18,7 @@
 - **백엔드**: NestJS 11, Prisma, TypeScript
 - **DB**: MySQL 8.0 (Reader/Writer 분리)
 - **컨테이너**: Docker, docker-compose
-- **인증**: 카카오 OAuth + JWT (Bearer 토큰 + localStorage, payload: `{ sub }` userId만)
+- **인증**: 카카오·네이버 OAuth + JWT (Bearer 토큰 + localStorage, payload: `{ sub }` userId만)
 - **Rate Limit**: @nestjs/throttler
 
 ## 핵심 규칙
@@ -79,27 +79,30 @@ packages/types/src/
 | 모델                 | 설명                             | 주요 관계                                |
 | -------------------- | -------------------------------- | ---------------------------------------- |
 | User                 | 서비스 사용자                    | Account, Room, RoomMember, RoomKick      |
-| Account              | OAuth 계정 (카카오)              | User                                     |
-| Room                 | 공유 방 (inviteCode + shareCode) | RoomMember, RoomRestaurant, RoomKick     |
+| Account              | OAuth 계정 (카카오·네이버)        | User                                     |
+| Room                 | 공유 방 (`inviteCode`, `isPublic`, `maxMembers` 2~20, `tabXxxEnabled` 4종, `announcement`) | RoomMember, RoomRestaurant, RoomKick, RoomPoll |
 | RoomMember           | 방 멤버십 (owner/manager/member) | Room, User                               |
-| RoomRestaurant       | 방 내 식당 (폐점 여부 포함)      | Room, User, RoomVisit                    |
+| RoomRestaurant       | 방 내 식당 (폐점·위시리스트 플래그) | Room, User, RoomVisit                    |
 | RoomVisit            | 방문 기록 (visitedAt, memo, waitTime) | RoomRestaurant, User, RoomVisitParticipant, RoomReview |
 | RoomVisitParticipant | 방문 참여자 태그                 | RoomVisit, User                          |
 | RoomReview           | 방문별 리뷰 (세부 평점, 메뉴)    | RoomVisit, User                          |
 | RoomKick             | 방 강퇴 기록 (재입장 차단)       | Room, User                               |
-| RoomNotification     | 방 알림 (식당/방문/리뷰 알림)    | Room, User                               |
+| RoomNotification     | 방 알림 (식당/방문/리뷰/투표 알림) | Room, User                              |
+| RoomPoll             | 방 내 투표 (회식 등 의견 수렴)   | Room, User(생성자), RoomPollOption       |
+| RoomPollOption       | 투표 선택지 (식당 연결 옵션)     | RoomPoll, RoomRestaurant?, RoomPollVote  |
+| RoomPollVote         | 투표 참여 기록 (유저별 1표)      | RoomPollOption, User                     |
 | Inquiry              | 고객 문의                        | -                                        |
 
 ## 방(Room) 권한 체계
 
-| 역할               | 방 삭제 | 멤버 강퇴/역할 변경 | 방장 위임 | 초대 코드 재생성 | 공유 링크 관리 | 타인 식당·리뷰 삭제 | 등록 | 본인 수정·삭제 | 열람 |
-| ------------------ | :-----: | :-----------------: | :-------: | :--------------: | :------------: | :-----------------: | :--: | :------------: | :--: |
-| owner (방장)       |    O    |          O          |     O     |        O         |       O        |          O          |  O   |       O        |  O   |
-| manager (매니저)   |    X    |          X          |     X     |        X         |       O        |          O          |  O   |       O        |  O   |
-| member (멤버)      |    X    |          X          |     X     |        X         |       X        |          X          |  O   |       O        |  O   |
-| viewer (공유 링크) |    X    |          X          |     X     |        X         |       X        |          X          |  X   |       X        |  O   |
+| 역할               | 방 삭제 | 멤버 강퇴/역할 변경 | 방장 위임 | 초대 코드 재생성 | 공개 방 토글·탭 설정 | 타인 식당·리뷰 삭제 | 등록 | 본인 수정·삭제 | 열람 |
+| ------------------ | :-----: | :-----------------: | :-------: | :--------------: | :-------------------: | :-----------------: | :--: | :------------: | :--: |
+| owner (방장)       |    O    |          O          |     O     |        O         |           O           |          O          |  O   |       O        |  O   |
+| manager (매니저)   |    X    |          X          |     X     |        X         |           X           |          O          |  O   |       O        |  O   |
+| member (멤버)      |    X    |          X          |     X     |        X         |           X           |          X          |  O   |       O        |  O   |
+| viewer (공개 방)   |    X    |          X          |     X     |        X         |           X           |          X          |  X   |       X        |  O   |
 
-> viewer는 DB에 저장되지 않는 비로그인 읽기 전용 접근자. 공유 코드(`shareCode`)로 `/share/:code` 페이지를 통해 열람.
+> viewer는 DB에 저장되지 않는 비로그인 읽기 전용 접근자. `Room.isPublic = true`로 설정된 방을 `/rooms/public/:id`에서 열람.
 
 ## 초대 코드 보안
 
@@ -108,30 +111,38 @@ packages/types/src/
 - 강퇴당한 유저 재입장 → `RoomKick` 테이블 확인 → 403 거부
 - 방장이 초대 코드 재생성 가능 (새 코드 발급, 기존 코드 무효화)
 
-## 공유 링크 (비로그인 열람)
+## 공개 방 (비로그인 열람)
 
-블로그·SNS에 방 공유 링크를 게시하여 비로그인 사용자가 식당/리뷰를 읽기 전용으로 열람 가능.
+방을 **`isPublic = true`**로 전환하면 비로그인 사용자도 식당/리뷰를 읽기 전용으로 열람 가능. 블로그·SNS·검색엔진에 유통 가능.
 
-- `shareCode`: 8자 hex, nullable + unique. null = 한 번도 생성 안 한 상태
-- `shareCodeEnabled`: boolean. 비활성화 시 코드 보존, 재활성화 가능
-- 만료 없음 (무기한), 방장/매니저가 직접 비활성화·재생성
-- 공유 엔드포인트 응답에 **멤버 정보(닉네임, 프로필) 미포함** — `select`로 제한
-- 리뷰 작성자 정보 미노출 (rating, content, createdAt만 반환)
-- Guard 없는 공개 엔드포인트 (`GET /rooms/shared/:shareCode`)
-- 전역 Rate Limit(60req/60s)으로 브루트포스 방지 (8자 hex = 43억 조합)
+### 정책
+- 기본값 `isPublic = false` (비공개), **방장(owner)만 토글**
+- 토글 전 **경고 모달**로 프라이버시(전 멤버 리뷰·메모 노출)·SEO 인덱싱 고지
+- 공개 → 비공개 전환 시 `danger` 경고 (기존 링크 404 발생 안내)
+- 응답에서 **멤버 정보(닉네임/프로필) 미포함**, 리뷰 작성자 정보 미노출 (rating, content, createdAt만)
+- 목록 노출 **품질 필터**: 식당 3개 + 리뷰 3개 이상 + 90일 내 활동
+- 전역 Rate Limit(60req/60s)으로 브루트포스 방지 (방 ID는 cuid 16자)
 
-### 공유 링크 API
+### SharedRoomDetail.summary (요약 카드용)
+공개 상세 API는 `summary: { restaurantCount, totalReviews, avgRating, topCategories, topRegions }` 포함. 식당별 `avgRating`도 추가 노출.
 
-| Method  | Path                                        | Guard            | 설명                                    |
-| ------- | ------------------------------------------- | ---------------- | --------------------------------------- |
-| `GET`   | `/rooms/shared/:shareCode`                  | 없음 (공개)      | 공유 방 조회 (방 이름 + 식당 목록)      |
-| `GET`   | `/rooms/shared/:shareCode/restaurants/:rid` | 없음 (공개)      | 공유 식당 상세 (리뷰 포함, user 미노출) |
-| `PATCH` | `/rooms/:id/share-code`                     | RoomManagerGuard | 공유 코드 활성화/비활성화/재생성        |
+### 공개 방 API
 
-### 공유 링크 프론트엔드
+| Method  | Path                                       | Guard       | 설명                                  |
+| ------- | ------------------------------------------ | ----------- | ------------------------------------- |
+| `GET`   | `/rooms/public`                            | 없음        | 공개 방 목록 (품질 필터 + 페이지네이션) |
+| `GET`   | `/rooms/public/:id`                        | 없음        | 공개 방 상세 (summary + 식당 목록)    |
+| `GET`   | `/rooms/public/:id/restaurants/:rid`       | 없음        | 공개 식당 상세 (리뷰 포함, user 미노출) |
+| `GET`   | `/rooms/public/sitemap-ids`                | 없음        | sitemap용 공개 방 ID 목록             |
+| `PATCH` | `/rooms/:id/public`                        | JwtAuth (owner) | 공개/비공개 토글                  |
 
-- `/share/:code` — 비로그인 공유 전용 페이지 (동적 OG 메타 포함)
-- 방 상세(`room.astro`)에서 owner/manager에게 공유 링크 관리 UI 표시
+### 공개 방 진입 동선 (프론트)
+- `/rooms/public` — 공개 방 목록 페이지 (카드 리스트)
+- `/rooms/public/:id` — 개별 공개 방 상세 (요약 카드 · 태그 · "무료로 시작하기" CTA)
+- `/discover` 하단 "👀 다른 사람 방 구경하기" 섹션에서 연결
+- `/rooms` (내 방) **빈 상태**에 "공개 방 구경하기" CTA
+- `sitemap-public-rooms.xml`로 검색엔진 인덱싱
+- 방 설정 공유 팝오버에 "공개 방 링크" 섹션 (URL 복사 · 카카오톡 리치 공유)
 
 ## Rate Limit (어뷰저 정책)
 
@@ -140,7 +151,7 @@ packages/types/src/
 | 범위      | TTL  | 제한 | 대상                                                                                                         |
 | --------- | ---- | ---- | ------------------------------------------------------------------------------------------------------------ |
 | 전역 기본 | 60초 | 60회 | 모든 엔드포인트                                                                                              |
-| 인증      | 60초 | 5회  | `GET /auth/kakao/callback`, `POST /auth/refresh`                                                             |
+| 인증      | 60초 | 5회  | `GET /auth/kakao/callback`, `GET /auth/naver/callback`, `POST /auth/refresh`                                 |
 | 생성      | 60초 | 10회 | `POST /rooms`, `POST /rooms/join`, `POST /rooms/:id/restaurants`, `POST /rooms/:id/restaurants/:rid/visits`, `POST /rooms/:id/visits/:visitId/reviews`, `POST /rooms/:id/restaurants/:rid/quick-review` |
 
 - 초과 시 HTTP 429 (Too Many Requests) 응답
@@ -154,12 +165,13 @@ packages/types/src/
 | ----------------- | --------------------------------------------------- |
 | `/`               | 홈 — 랜딩 페이지 + 로그인 시 내 방 대시보드         |
 | `/rooms`          | 내 방 — 방 목록, 검색, 정렬, 방 생성                |
-| `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 멤버 관리, 공유 링크, 검색/페이지네이션 |
-| `/room/add`       | 식당 등록 + 리뷰 — 카카오 검색/직접 입력 → 방문·리뷰 한 번에 |
-| `/room/restaurant`| 식당 상세 — 방문 기록, 리뷰 CRUD, 세부 평점          |
-| `/share/:code`    | 공유 열람 — 비로그인, 읽기 전용 (식당/리뷰 열람, 동적 OG) |
-| `/join?code=xxx`  | 초대 링크 자동 입장 (미로그인 시 로그인 후 리다이렉트) |
-| `/login`          | 카카오 로그인                                       |
+| `/room?id=xxx`    | 방 상세 — 식당/리뷰 CRUD, 멤버 관리, 공개 링크 공유, 탭 on/off, 검색/페이지네이션 |
+| `/room/add`       | 식당 등록 + 리뷰 — 카카오/네이버 검색 또는 직접 입력 → 방문·리뷰 한 번에 |
+| `/room/restaurant`| 식당 상세 — 방문 기록, 리뷰 CRUD, 세부 평점, 외부 링크(카카오맵/네이버/구글), 유사 식당 추천 |
+| `/rooms/public`   | 공개 방 목록 — 비로그인, 품질 필터 적용 (식당 3+·리뷰 3+·90일 내) |
+| `/rooms/public/:id` | 공개 방 상세 — 비로그인, 요약 카드·식당 목록·"무료로 시작하기" CTA, 동적 OG |
+| `/join?code=xxx`  | 초대 링크 자동 입장 (미로그인 시 `/login` 경유 후 리다이렉트) |
+| `/login`          | OAuth 프로바이더 선택 (카카오·네이버)                |
 | `/discover`       | 맛집 추천 — 고평점/재방문 맛집 공개 랭킹             |
 | `/rankings`       | 유저 랭킹 — 리뷰 수/평균 평점/방문 수 기준          |
 | `/about`          | 서비스 소개 — 기능, 업적, 사용 흐름                 |
@@ -237,17 +249,84 @@ document.addEventListener('astro:page-load', initMyPage);
 ## 리뷰 입력
 
 - 리뷰 본문(content): 선택 입력 (별점만으로 리뷰 가능, 최대 2000자)
-- 세부 평점 5항목 (모두 선택, 같은 별 재클릭 시 취소):
+- **전체 평점**: 0.5 단위 별점 (half-star 지원, `20260417_half_star_ratings`)
+- **세부 평점 5항목** — **별점 + 인라인 동적 라벨** UI (기존 칩 방식에서 개편됨):
+  - 별 1~5 클릭 시 해당 점수·라벨을 별 아래에 즉시 표시, 같은 별 재클릭 시 0(취소)
+  - 호버 시 preview 표시 (PC), 모바일에선 클릭으로 바로 확인
   - 맛(tasteRating): 남겼다(1) ~ 먹는 내내 감탄했다(5)
   - 가성비(valueRating): 돈 줘도 안 먹는다(1) ~ 사장님 남는 거 맞아요?(5)
   - 서비스(serviceRating): 손님이 죄인인 줄(1) ~ 사장님이 내 팬인가보다(5)
   - 청결(cleanlinessRating): 나오면 안 될 게 나왔다(1) ~ 수술실인가?(5)
-  - 접근성(accessibilityRating): 등산인가 식사인가(1) ~ 나오자마자 바로 앞(5)
-- 재방문 의사(wouldRevisit): 또 가고 싶어요 / 글쎄요
+  - 접근성(accessibilityRating): 등산인가 식사인가(1) ~ 눈 감고도 감(5)
+- 재방문 의사(wouldRevisit): 5단계 (꼭 다시 갈 거예요 ~ 안 갈 것 같아요)
 - 또 먹고 싶은 메뉴(favoriteMenu) 입력 (선택)
 - 카테고리: 칩 셀렉터 (13종 프리셋 + "기타" 커스텀 입력)
 - 웨이팅: 칩 버튼 (없음/~10분/~30분/~1시간/1시간+)
 - 식당 목록: 10개씩 페이지네이션 ("더보기" 버튼) + 검색 (이름/주소/카테고리)
+
+## 식당 상세 외부 링크 · 유사 식당 추천
+
+식당 상세(`/room/restaurant`)에 방문 기록 위로 4개 외부 링크 칩:
+- 🗺️ **카카오맵** — 좌표 있으면 `map/<name>,<lat>,<lng>`, 없으면 `search/<name>`
+- 🧭 **네이버 지도** — `map.naver.com/p/search/<name>`
+- 📅 **예약 확인** — 네이버 예약 검색 (`m.booking.naver.com/search`)
+- 🔎 **리뷰 찾기** — 구글 검색 (`<name> <주소> 리뷰`)
+
+하단에 **"🔁 비슷한 식당"** 섹션 (같은 방 내 heuristic 추천):
+- 점수: 카테고리+지역 일치(3) > 카테고리(2) > 지역(1)
+- 평점 높은 순 tie-break, 상위 3개 표시
+- 폐점·위시리스트·현재 식당 제외
+
+## 방 생성 템플릿
+
+`/rooms` 방 만들기 모달에서 6종 템플릿 선택 가능 (`ROOM_TEMPLATES` in `rooms.astro`):
+
+| 템플릿 | 기본 이름 | 기본 탭 구성 | 특이 동작 |
+|--------|----------|-------------|----------|
+| 빈 방 | (없음) | 위시·지역 ON | — |
+| 🍻 회식 | "회식 맛집" | 투표만 ON, 나머지 OFF | 생성 직후 "🍜 오늘 뭐 먹지?" 투표 자동 시드 (한/중/일/양/분식/치킨) |
+| 💑 데이트 | "우리 데이트 맛집" | 위시·지역·통계 ON | — |
+| 🏠 신혼 | "신혼 맛집 지도" | 위시·지역 ON | — |
+| 👨‍👩‍👧 가족 | "우리 가족 맛집" | 위시·지역 ON | — |
+| 🎉 친구 | "친구들 맛집 모음" | 위시·투표 ON | — |
+
+## 방별 탭 on/off 설정
+
+`Room` 엔티티의 4개 boolean 필드로 방장이 탭 표시 여부 조절:
+
+| 탭 | 필드 | 기본값 |
+|----|------|--------|
+| 💛 위시리스트 | `tabWishlistEnabled` | `true` |
+| 📍 지역 | `tabRegionEnabled` | `true` |
+| 🗳️ 투표 | `tabPollEnabled` | `false` |
+| 📊 통계 | `tabStatsEnabled` | `false` |
+
+- 🍽️ 식당 / 📋 활동 / 👥 멤버는 **고정** (토글 불가)
+- 오너만 변경 가능 (방 설정 모달의 "탭 표시 설정" 섹션)
+- 생성 시엔 템플릿 값이 적용됨
+
+## 투표 (회식 훅)
+
+`RoomPoll`·`RoomPollOption`·`RoomPollVote` 3개 모델 + "🗳️ 투표" 탭 (방 설정에 따라 표시).
+
+### 기능
+- 투표 생성: 제목 + 2~10개 선택지. 옵션에 `restaurantId` 연결 가능 (방 식당 원클릭 추가)
+- 빠른 템플릿: "🍜 오늘 뭐 먹지?"(한/중/일/양/분식/치킨 자동), "🍽️ 방 식당에서 고르기"(최근 6개)
+- 단일 선택 (변경 가능, 재클릭 시 해제)
+- 마감: 생성자만 수동 마감, 또는 `endsAt` 지나면 자동 마감 (`getPolls` 조회 시)
+- 우승 식당 CTA: 마감 후 최다득표 옵션이 `restaurantId` 있으면 "방문 기록 남기기" 버튼 (식당 상세 이동)
+- 동점 시 🤝 동점 배지 + 안내 토스트
+- 활성 투표는 방 상단 **배너**에 표시 (참여율/내 참여 여부 노출), 클릭 시 탭 이동
+- 알림: `poll_created` 타입으로 방 멤버에 생성 알림
+
+### API
+
+| Method  | Path                               | Guard           | 설명         |
+| ------- | ---------------------------------- | --------------- | ------------ |
+| `POST`  | `/rooms/:id/polls`                 | RoomMemberGuard | 투표 생성    |
+| `GET`   | `/rooms/:id/polls`                 | RoomMemberGuard | 투표 목록 (자동 마감 반영) |
+| `POST`  | `/rooms/:id/polls/:pollId/vote`    | RoomMemberGuard | 옵션에 투표  |
+| `PATCH` | `/rooms/:id/polls/:pollId/close`   | RoomMemberGuard | 투표 마감 (생성자) |
 
 ## 식당 등록 UI
 

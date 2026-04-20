@@ -72,6 +72,11 @@ KAKAO_CLIENT_ID=your_kakao_client_id
 KAKAO_CLIENT_SECRET=your_kakao_client_secret
 KAKAO_CALLBACK_URL=http://localhost:4000/auth/kakao/callback
 
+# 네이버 OAuth (아래 "네이버 OAuth 설정" 섹션 참고, 선택)
+NAVER_CLIENT_ID=your_naver_client_id
+NAVER_CLIENT_SECRET=your_naver_client_secret
+NAVER_CALLBACK_URL=http://localhost:4000/auth/naver/callback
+
 # JWT
 JWT_ACCESS_SECRET=dev-access-secret-change-in-prod
 JWT_REFRESH_SECRET=dev-refresh-secret-change-in-prod
@@ -89,6 +94,17 @@ FRONTEND_URL=http://localhost:4321
 5. **카카오 로그인** → **활성화 설정** → ON
 6. **카카오 로그인** → **Redirect URI**에 `http://localhost:4000/auth/kakao/callback` 등록
 7. **동의항목** → **닉네임**, **프로필 사진**, **카카오계정(이메일)** 필수/선택 동의 설정
+
+### 네이버 OAuth 설정 (선택 — 네이버 로그인을 테스트하려면)
+
+1. [네이버 개발자 센터](https://developers.naver.com)에 로그인
+2. **Application** → **애플리케이션 등록**
+3. **사용 API** → **네이버 로그인** 선택
+4. **환경** → **PC 웹** 추가, **Callback URL**에 `http://localhost:4000/auth/naver/callback` 등록
+5. **Client ID** → `NAVER_CLIENT_ID`, **Client Secret** → `NAVER_CLIENT_SECRET`에 설정
+6. **동의항목** → **이름**, **프로필 사진**, **이메일 주소** 설정
+
+> 네이버 OAuth 미설정 시 네이버 로그인 버튼이 비활성화된다. 카카오 로그인만 단독 사용 가능.
 
 ---
 
@@ -146,11 +162,15 @@ pnpm install
 pnpm --filter @repo/api exec prisma generate
 ```
 
-### DB 마이그레이션
+### DB 스키마 동기화
 
 ```bash
-pnpm --filter @repo/api exec prisma migrate dev
+# 로컬 직접 실행 환경에서는 db push로 스키마 동기화
+pnpm --filter @repo/api exec prisma db push
 ```
+
+> Docker 환경에서는 `docker compose up` 시 컨테이너가 자동으로 `prisma db push`를 실행한다.
+> 새 마이그레이션 파일을 생성할 때는 `prisma migrate dev --name <이름>`을 사용한다.
 
 ### 개발 서버 실행
 

@@ -19,29 +19,18 @@ const result = await this.prisma.write.$queryRawUnsafe(
 
 ## 인증/인가
 
-### 카카오 OAuth + JWT
+### 카카오 / 네이버 OAuth + JWT
 
-- **카카오 OAuth 2.0**으로 로그인, **JWT**로 세션 관리
-- Access Token (15분) + Refresh Token (7일), **httpOnly Cookie**에 저장
-- Refresh Token은 **bcrypt 해싱** 후 Account 테이블에 저장
+- **카카오 OAuth 2.0** 및 **네이버 OAuth 2.0**으로 로그인, **JWT**로 세션 관리
+- Access Token (15분): localStorage 저장, 모든 API 요청에 `Authorization: Bearer <AT>` 헤더로 전송
+- Refresh Token (7일): localStorage 저장 + DB에 **bcrypt 해시로 저장** (평문 저장 금지)
 - 자세한 인증 아키텍처는 [authentication.md](authentication.md) 참고
-
-### 쿠키 보안 설정
-
-```typescript
-{
-  httpOnly: true,                              // JS에서 접근 불가 (XSS 방어)
-  secure: process.env.NODE_ENV === 'production', // 프로덕션에서 HTTPS만 허용
-  sameSite: 'lax',                             // CSRF 기본 방어
-  path: '/',
-}
-```
 
 ### Guard 적용
 
 - 인증이 필요한 엔드포인트에 `@UseGuards(JwtAuthGuard)`를 적용한다
-- Guard가 쿠키에서 AT를 추출 → 검증 → `request.user`에 payload 세팅
-- `@CurrentUser()` 데코레이터로 컨트롤러에서 유저 정보를 받는다
+- Guard가 `Authorization` 헤더에서 Bearer AT를 추출 → 검증 → `request.user`에 `{ id: string }` 세팅
+- `@CurrentUser()` 데코레이터로 컨트롤러에서 유저 정보를 받는다 (`payload.sub` → `user.id`)
 
 ```typescript
 @Post()
@@ -55,30 +44,39 @@ create(@CurrentUser() user: { id: string }, @Body() dto: CreateReviewDto) {
 
 | 엔드포인트 | 인증 필요 |
 |-----------|----------|
-| `POST /restaurants` | O |
-| `POST /reviews` | O |
-| `GET /auth/me` | O |
-| `POST /auth/logout` | O |
-| `GET /restaurants`, `GET /areas/counts` | X (공개) |
-| `GET /reviews` | X (공개) |
+| `POST /rooms` | O (JwtAuthGuard) |
+| `POST /rooms/join` | O (JwtAuthGuard) |
+| `POST /rooms/:id/restaurants` | O (RoomMemberGuard) |
+| `POST /rooms/:id/restaurants/:rid/visits` | O (RoomMemberGuard) |
+| `POST /rooms/:id/visits/:visitId/reviews` | O (RoomMemberGuard) |
+| `PATCH /rooms/:id/restaurants/:rid` | O (RoomMemberGuard) |
+| `PATCH /rooms/:id/visits/:visitId` | O (RoomMemberGuard) |
+| `GET /rooms/:id/stats` | O (RoomMemberGuard) |
+| `GET /auth/me` | O (JwtAuthGuard) |
+| `POST /auth/logout` | O (JwtAuthGuard) |
+| `GET /rooms/public` | X (공개) |
+| `GET /rooms/public/:id` | X (공개) |
+| `GET /rooms/public/:id/restaurants/:rid` | X (공개) |
 | `POST /inquiries` | X (공개) |
-| `GET /inquiries` | O (관리자, AdminGuard) |
+| `GET /inquiries` | O (AdminGuard) |
 
 ### 역할 기반 접근 제어
 
 - User 모델에 `role` 필드 (`'user'` | `'admin'`, 기본값 `'user'`)
-- `JwtAuthGuard`: 로그인 여부만 확인 (JWT 토큰 검증)
+- `JwtAuthGuard`: 로그인 여부만 확인 (JWT AT 검증)
 - `AdminGuard`: JwtAuthGuard를 먼저 실행 후 `role === 'admin'` 확인
-- role은 JWT 토큰 payload에 포함되어 있음
+- 방 내 권한: `RoomMemberGuard`(멤버 여부), `RoomManagerGuard`(owner/manager 여부) 별도 Guard
 
 ## 민감 정보 보호
 
 - 응답에 패스워드, 토큰, 내부 키 등을 포함하지 않는다
 - 에러 메시지에 DB 쿼리, 스택 트레이스 등 내부 정보를 노출하지 않는다
 - `.env` 파일은 절대 Git에 커밋하지 않는다
+- 공개 방(`/rooms/public/:id`) 응답에 멤버 정보 및 리뷰 작성자 정보를 포함하지 않는다
 
 ## 입력 검증
 
 - 모든 사용자 입력은 DTO + `class-validator`로 검증한다
 - 파일 업로드 시 확장자, 크기를 제한한다
 - URL 파라미터도 타입 검증한다 (예: `@Param('id') id: string`)
+- 정수 검증은 `@IsInt()` 사용 (`@IsNumber()` 금지 — 소수점 허용 방지)

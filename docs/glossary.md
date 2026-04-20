@@ -8,13 +8,15 @@
 
 | 용어 | 설명 |
 |------|------|
-| **방 (Room)** | 맛집 리뷰를 공유하는 그룹 공간. 초대 코드로 입장, 공유 링크로 비로그인 열람 가능 |
+| **방 (Room)** | 맛집 리뷰를 공유하는 그룹 공간. 초대 코드로 입장. `isPublic: true`이면 비로그인 사용자가 `/rooms/public/:id`로 열람 가능 |
+| **공개 방 (isPublic)** | `Room.isPublic` 필드. `true`이면 공개 엔드포인트(`GET /rooms/public/:id`)로 비로그인 열람 가능. 방장/매니저가 `PATCH /:id/public`으로 토글 |
 | **방 식당 (RoomRestaurant)** | 방 내에 등록된 음식점. 이름, 주소, 카테고리, 대기시간(waitTime)을 갖는다 |
 | **방문 (RoomVisit)** | 방 식당에 대한 방문 기록. 방문일(visitedAt), 메모(memo), 참여자 태그를 포함한다 |
 | **방문 참여자 (RoomVisitParticipant)** | 방문에 함께한 멤버 태그. RoomVisit과 User를 연결한다 |
-| **리뷰 (RoomReview)** | 방문별 리뷰. 종합 평점, 세부 평점(맛/가성비/서비스/청결/접근성), 재방문 의사, 추천 메뉴, 다음에 먹을 메뉴를 포함한다 |
+| **리뷰 (RoomReview)** | 방문별 리뷰. 종합 평점(0.5 단위 Float), 세부 평점(맛/가성비/서비스/청결/접근성, 1~5 정수), 재방문 의사(`wouldRevisit`), 추천 메뉴(`favoriteMenu`), 다음에 먹을 메뉴(`tryNextMenu`)를 포함한다 |
 | **카테고리 (Category)** | 식당의 음식 종류 (예: 한식, 일식, 중식, 양식, 카페 등) |
-| **평점 (Rating)** | 1~5 정수값. 5가 최고점. 종합 평점 외 세부 평점(tasteRating, valueRating 등)도 있다 |
+| **종합 평점 (rating)** | 0.5~5 Float값. 0.5 단위 반별점 지원. `20260417_half_star_ratings` 마이그레이션부터 적용 |
+| **세부 평점** | 맛(tasteRating), 가성비(valueRating), 서비스(serviceRating), 청결(cleanlinessRating), 접근성(accessibilityRating). 1~5 정수값 |
 | **문의 (Inquiry)** | 고객이 보내는 문의/피드백. 지역 추가 요청, 버그 신고, 피드백, 기타로 분류된다 |
 
 ## 기술 용어

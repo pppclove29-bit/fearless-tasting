@@ -101,10 +101,10 @@ WHERE, JOIN, ORDER BY에 사용되는 컬럼은 `@@index`가 있는지 `schema.p
 ## 마이그레이션
 
 ```bash
-# 스키마 변경 후 마이그레이션 생성
+# 스키마 변경 후 마이그레이션 생성 (개발)
 pnpm --filter @repo/api exec prisma migrate dev --name <migration-name>
 
-# 프로덕션 배포 시
+# 프로덕션 배포 시 (권장)
 pnpm --filter @repo/api exec prisma migrate deploy
 
 # Prisma Client 재생성
@@ -113,3 +113,32 @@ pnpm --filter @repo/api exec prisma generate
 # DB GUI 열기
 pnpm --filter @repo/api exec prisma studio
 ```
+
+### 컨테이너(Docker) 실행 방식과의 차이
+
+`Dockerfile` CMD 및 `docker-compose.yml`은 `prisma db push --accept-data-loss`를 사용한다. 이는 빠른 배포를 위한 현실적 타협이나, 데이터 손실 위험이 있다. 정식 마이그레이션 이력 관리가 필요한 경우에는 `prisma migrate deploy`를 사용한다.
+
+| 환경 | 명령 | 비고 |
+|------|------|------|
+| 로컬 개발 | `prisma migrate dev` | 마이그레이션 파일 생성, 이력 관리 |
+| Docker (현재) | `prisma db push --accept-data-loss` | 스키마 즉시 동기화, 이력 없음 |
+| 프로덕션 권장 | `prisma migrate deploy` | 마이그레이션 이력 기반 안전 배포 |
+
+### 마이그레이션 이력
+
+| 마이그레이션 | 내용 |
+|-------------|------|
+| `0_init` | 초기 스키마 baseline |
+| `20260309_add_notice` | 공지사항 모델 추가 |
+| `20260309_add_poll_notification` | 투표·알림 모델 추가 |
+| `20260330_add_notice_sort_order` | 공지사항 정렬 순서 필드 추가 |
+| `20260330_add_visit_is_delivery` | 방문 배달 여부 필드 추가 |
+| `20260408_add_user_push_enabled` | 유저 푸시 알림 설정 필드 추가 |
+| `20260411_restaurant_images_array` | 식당 이미지 배열 구조로 변경 |
+| `20260413_room_announcement` | 방 공지 필드 추가 |
+| `20260416_post_comment_likes` | 게시글·댓글 좋아요 추가 |
+| `20260417_half_star_ratings` | 반별점(0.5 단위) 지원 |
+| `20260417_revisit_level` | 재방문 의향 레벨 필드 추가 |
+| `20260419_add_user_tutorial_progress` | 유저 튜토리얼 진행 상태 추가 |
+| `20260419_restaurant_unique_name_address` | 식당 이름+주소 유니크 제약 추가 |
+| `20260420_add_room_tab_settings` | 방 탭 설정 필드 추가 (위시리스트·지역·투표·통계) |

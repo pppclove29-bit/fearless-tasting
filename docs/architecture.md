@@ -3,48 +3,69 @@
 ## 시스템 구성도
 
 ```
-┌──────────────┐     HTTP      ┌──────────────┐     Prisma    ┌─────────────────┐
-│              │  ──────────>  │              │  ──────────>  │  MySQL Writer    │
-│  Astro Web   │  (쿠키 포함)   │  NestJS API  │     Write     │  (포트 3306)      │
-│  (포트 4321)  │  <──────────  │  (포트 4000)  │               └─────────────────┘
-│              │     JSON      │              │     Read      ┌─────────────────┐
-└──────────────┘               └──────┬───────┘  ──────────>  │  MySQL Reader    │
-                                      │                       │  (포트 3307)      │
-                                      │ OAuth                 └─────────────────┘
+┌──────────────┐   Bearer JWT   ┌──────────────┐     Prisma    ┌─────────────────┐
+│              │  ──────────>   │              │  ──────────>  │  MySQL Writer    │
+│  Astro Web   │                │  NestJS API  │     Write     │  (TiDB / 3306)   │
+│  (포트 4321)  │  <──────────   │  (포트 4000)  │               └─────────────────┘
+│              │     JSON       │              │     Read      ┌─────────────────┐
+└──────┬───────┘                └──────┬───────┘  ──────────>  │  MySQL Reader    │
+       │                               │                       │  (TiDB / 3307)   │
+       │ 이미지 업로드                   │ OAuth (Kakao·Naver)    └─────────────────┘
+       ▼                               ▼
+┌──────────────┐               ┌──────────────┐
+│ Cloudflare R2 │               │ 카카오/네이버   │
+│  (이미지 스토리지)│               │   Identity    │
+└──────────────┘               └──────────────┘
+                                      │ FCM 푸시
                                       ▼
                                ┌──────────────┐
-                               │  카카오 API    │
+                               │  Firebase Messaging │
                                └──────────────┘
 ```
 
 ## 인증 흐름
 
 ```
-[카카오 로그인 버튼] → GET /auth/kakao → 카카오 동의 화면
+[카카오/네이버 시작하기] → GET /auth/{kakao|naver} → 프로바이더 동의 화면
                                               ↓
-Frontend ← 302 /login?success ← GET /auth/kakao/callback ← 카카오 redirect
-(httpOnly 쿠키에 Access Token / Refresh Token 설정)
+Frontend ← 302 /login?access_token=...&refresh_token=... ← GET /auth/{kakao|naver}/callback
+                                              ↓
+         (프론트에서 localStorage 저장 → login_redirect 경로로 이동)
 ```
+
+- **토큰 저장**: localStorage (`access_token`, `refresh_token`)
+- **전송 방식**: `Authorization: Bearer <token>` 헤더
+- **cross-origin**: `credentials: 'omit'` (쿠키 미사용)
+- 선제 갱신: AT 만료 1분 전 자동 refresh (JWT exp 디코딩)
+- 401 처리: refresh 1회 재시도 → 실패 시 localStorage 클리어 + `/login` 리다이렉트
+- refresh mutex: 동시 401 발생 시 refresh 요청 1회만 실행
 
 ## 앱 역할
 
 ### apps/web (Astro)
 - 사용자에게 보여지는 프론트엔드
-- SSG/SSR 지원
-- 방(Room) 기반 식당/방문/리뷰 관리 UI, 공유 링크 열람
-- API 서버와 HTTP 통신 (쿠키 기반 인증, `credentials: 'include'`)
+- SSG + 동적 라우트(`/rooms/public/[id]` 등은 SSR, `prerender = false`)
+- 방(Room) 기반 식당/방문/리뷰 관리 UI, 공개 방 열람, 공유 OG 메타
+- API 서버와 HTTP 통신 (**Bearer 토큰 + localStorage**, `credentials: 'omit'`)
+- View Transitions 적용 (`astro:page-load` 기반 초기화 패턴)
 
 ### apps/api (NestJS)
 - REST API 제공
 - 비즈니스 로직 처리
-- MySQL 데이터베이스 연동 (Prisma ORM, Reader/Writer 분리)
-- 카카오 OAuth + JWT 인증/인가 처리
+- MySQL(TiDB) 데이터베이스 연동 (Prisma ORM, Reader/Writer 분리)
+- 카카오 · 네이버 OAuth + JWT 인증/인가 처리
+- Cloudflare R2 presigned URL 발급 (이미지 업로드)
+- FCM 푸시 알림
 
 ## 공유 패키지
 
 ### @repo/types
 - 프론트엔드와 백엔드 간 공유 타입 정의
-- `User`, `Room`, `RoomMember`, `RoomRestaurant`, `RoomVisit`, `RoomReview`, `SharedRoom*` 인터페이스
+- `User`, `AuthUser`, `Room`, `RoomMember`, `RoomRestaurant`, `RoomVisit`, `RoomReview`
+- `SharedRoomDetail`(summary 포함), `SharedRoomRestaurant`, `SharedRoomSummary`
+- `Poll`, `PollOption`, `AppNotification`, `TimelineItem`
+- `RankingUser`, `RankingsResponse`, `DiscoverResponse`, `PlatformStats`, `RoomStats`
+- `Inquiry`, `Notice`
 - 수정 시 양쪽에 자동 반영
 
 ### @repo/utils
