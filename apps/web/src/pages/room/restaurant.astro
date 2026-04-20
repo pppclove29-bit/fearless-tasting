@@ -211,6 +211,85 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     height: 200px;
   }
 
+  /* 외부 서비스 링크 (지도·예약·리뷰 검색) */
+  .rest-ext-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1.1rem;
+  }
+  .rest-ext-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.45rem 0.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-sub);
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .rest-ext-link:hover {
+    border-color: var(--text-heading);
+    color: var(--text-heading);
+  }
+  .rest-ext-icon { font-size: 0.95rem; line-height: 1; }
+
+  /* 비슷한 식당 (같은 방 내 heuristic 추천) */
+  .similar-rest-section {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px dashed var(--border);
+  }
+  .similar-rest-heading {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin: 0 0 0.6rem;
+  }
+  .similar-rest-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+  @media (max-width: 600px) {
+    .similar-rest-grid { grid-template-columns: 1fr; }
+  }
+  .similar-rest-card {
+    display: block;
+    padding: 0.65rem 0.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .similar-rest-card:hover {
+    border-color: var(--text-heading);
+    transform: translateY(-1px);
+  }
+  .similar-rest-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .similar-rest-meta {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin: 0.15rem 0 0.25rem;
+  }
+  .similar-rest-reason {
+    font-size: 0.68rem;
+    color: var(--text-sub);
+  }
+
   /* 평점 요약 히어로 (망고플레이트 스타일) */
   .rating-hero {
     background: var(--bg-card);
@@ -2318,6 +2397,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               return imgs.length > 0 || canAdd ? `${countLabel}<div class="rest-photo-gallery">${items}${addBtn}</div>` : '';
             })()}
             ${showMap ? '<div class="rest-map-container"><div id="rest-kakao-map"></div></div>' : ''}
+            ${(() => {
+              const q = encodeURIComponent(`${detail.name} ${detail.address || ''}`.trim());
+              const kakaoUrl = hasCoords
+                ? `https://map.kakao.com/link/map/${encodeURIComponent(detail.name)},${detail.latitude},${detail.longitude}`
+                : `https://map.kakao.com/link/search/${encodeURIComponent(detail.name)}`;
+              const naverMapUrl = `https://map.naver.com/p/search/${encodeURIComponent(detail.name)}`;
+              const naverBookingUrl = `https://m.booking.naver.com/search?query=${encodeURIComponent(detail.name)}`;
+              const googleUrl = `https://www.google.com/search?q=${q}+%EB%A6%AC%EB%B7%B0`;
+              return `
+                <div class="rest-ext-links">
+                  <a class="rest-ext-link" href="${kakaoUrl}" target="_blank" rel="noopener"><span class="rest-ext-icon">🗺️</span>카카오맵</a>
+                  <a class="rest-ext-link" href="${naverMapUrl}" target="_blank" rel="noopener"><span class="rest-ext-icon">🧭</span>네이버 지도</a>
+                  <a class="rest-ext-link" href="${naverBookingUrl}" target="_blank" rel="noopener"><span class="rest-ext-icon">📅</span>예약 확인</a>
+                  <a class="rest-ext-link" href="${googleUrl}" target="_blank" rel="noopener"><span class="rest-ext-icon">🔎</span>리뷰 찾기</a>
+                </div>`;
+            })()}
             ${sortedVisits.length > 0 ? `
             <div class="visits-heading-row">
               <h3 class="visits-heading">방문 기록 (${detail.visits.length})</h3>
@@ -2332,6 +2427,38 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               </div>
             ` : ''}
             <div id="visits-list">${visitsHtml}</div>
+            ${(() => {
+              // 이 방 내 유사 식당 추천 (카테고리/지역 기반)
+              const candidates = (currentRoom.restaurants || [])
+                .filter((r) => r.id !== detail.id && !r.isClosed && !r.isWishlist)
+                .map((r) => {
+                  const sameCat = !!detail.category && r.category === detail.category;
+                  const sameRegion = (!!detail.city && r.city === detail.city)
+                    || (!!detail.neighborhood && r.neighborhood === detail.neighborhood);
+                  if (!sameCat && !sameRegion) return null;
+                  const score = (sameCat ? 2 : 0) + (sameRegion ? 1 : 0);
+                  return { r, score };
+                })
+                .filter((x): x is { r: typeof currentRoom.restaurants[number]; score: number } => x !== null)
+                .sort((a, b) => b.score - a.score || (b.r.avgRating ?? 0) - (a.r.avgRating ?? 0))
+                .slice(0, 3);
+              if (candidates.length === 0) return '';
+              const cards = candidates.map(({ r, score }) => {
+                const reason = score === 3 ? '같은 카테고리·지역' : (score === 2 ? '같은 카테고리' : '같은 지역');
+                const rating = r.avgRating != null ? `★ ${r.avgRating.toFixed(1)}` : '리뷰 없음';
+                return `
+                  <a class="similar-rest-card" href="/room/restaurant?roomId=${currentRoom.id}&id=${r.id}">
+                    <div class="similar-rest-name">${escapeHtml(r.name)}</div>
+                    <div class="similar-rest-meta">${escapeHtml(r.category || '')} · ${rating}</div>
+                    <div class="similar-rest-reason">💡 ${reason}</div>
+                  </a>`;
+              }).join('');
+              return `
+                <div class="similar-rest-section">
+                  <h3 class="similar-rest-heading">🔁 비슷한 식당</h3>
+                  <div class="similar-rest-grid">${cards}</div>
+                </div>`;
+            })()}
           </div>
         `;
 

@@ -45,3 +45,9 @@
 |------|------|
 | [policy/conventions.md](policy/conventions.md) | 코드 컨벤션, 네이밍, Git 규칙 |
 | [policy/code-review-guide.md](policy/code-review-guide.md) | PR 리뷰 체크리스트 (P1/P2/P3) |
+
+## 비즈니스 / 전략
+
+| 문서 | 설명 |
+|------|------|
+| [b2b-pivot.md](b2b-pivot.md) | B2B 피벗 설계서 (타겟·가격·로드맵·데이터 모델) |
