@@ -136,13 +136,27 @@ const description = room && summary
           ))
         )}
 
-        <section class="public-cta-section">
-          <h2 class="public-cta-title">이런 맛집 리스트, 나도 만들 수 있어요</h2>
-          <p class="public-cta-desc">
-            친구·연인·가족과 함께 우리만의 맛집 리스트를 만들어보세요.<br/>
-            카카오·네이버 로그인으로 3초 만에 시작.
-          </p>
-          <a href="/login" class="public-cta-btn">무료로 시작하기</a>
+        <section class="public-cta-section" id="public-cta-section">
+          <div id="public-cta-guest" hidden>
+            <h2 class="public-cta-title">이런 맛집 리스트, 나도 만들 수 있어요</h2>
+            <p class="public-cta-desc">
+              친구·연인·가족과 함께 우리만의 맛집 리스트를 만들어보세요.<br/>
+              카카오·네이버 로그인으로 3초 만에 시작.
+            </p>
+            <a href="/login" class="public-cta-btn">무료로 시작하기</a>
+          </div>
+          <div id="public-cta-auth" hidden>
+            <h2 class="public-cta-title">이 방에 참여해볼까요?</h2>
+            <p class="public-cta-desc">
+              방에 참여하면 식당을 함께 추가하고 리뷰를 남길 수 있어요.
+            </p>
+            <button type="button" class="public-cta-btn" id="public-join-btn">방 참여하기</button>
+          </div>
+          <div id="public-cta-member" hidden>
+            <h2 class="public-cta-title">이미 참여 중인 방이에요</h2>
+            <p class="public-cta-desc">내 방에서 바로 리뷰를 남기고 식당을 추가해보세요.</p>
+            <a href="#" class="public-cta-btn" id="public-go-room-btn">방으로 이동</a>
+          </div>
         </section>
       </div>
     )}
@@ -478,8 +492,50 @@ const description = room && summary
 </style>
 
 <script>
-  import { fetchPublicRoomRestaurantDetail } from '@/lib/api';
+  import { fetchPublicRoomRestaurantDetail, fetchCurrentUser, fetchMyRooms, joinPublicRoom } from '@/lib/api';
   import { formatRating, formatDate } from '@repo/utils';
+  import { showToast } from '@/lib/toast';
+
+  async function renderPublicRoomCta(roomId: string) {
+    const section = document.getElementById('public-cta-section');
+    if (!section) return;
+    const guestBlock = document.getElementById('public-cta-guest');
+    const authBlock = document.getElementById('public-cta-auth');
+    const memberBlock = document.getElementById('public-cta-member');
+    if (!guestBlock || !authBlock || !memberBlock) return;
+
+    const user = await fetchCurrentUser().catch(() => null);
+    if (!user) {
+      guestBlock.hidden = false;
+      return;
+    }
+
+    const myRooms = await fetchMyRooms().catch(() => []);
+    const alreadyMember = myRooms.some((r) => r.id === roomId);
+
+    if (alreadyMember) {
+      memberBlock.hidden = false;
+      const goBtn = document.getElementById('public-go-room-btn') as HTMLAnchorElement | null;
+      if (goBtn) goBtn.href = `/room?id=${roomId}`;
+      return;
+    }
+
+    authBlock.hidden = false;
+    const joinBtn = document.getElementById('public-join-btn') as HTMLButtonElement | null;
+    if (joinBtn) {
+      joinBtn.addEventListener('click', async () => {
+        joinBtn.disabled = true;
+        try {
+          await joinPublicRoom(roomId);
+          showToast('방에 참여했습니다.', 'success');
+          window.location.href = `/room?id=${roomId}`;
+        } catch (err) {
+          showToast(err instanceof Error ? err.message : '방 참여에 실패했습니다.', 'error');
+          joinBtn.disabled = false;
+        }
+      });
+    }
+  }
 
   function initPublicRoomDetailPage() {
     const detailArea = document.getElementById('restaurant-detail-area');
@@ -488,6 +544,8 @@ const description = room && summary
     const pathMatch = window.location.pathname.match(/\/rooms\/public\/([^/]+)/);
     const roomId = pathMatch?.[1];
     if (!roomId) return;
+
+    renderPublicRoomCta(roomId);
 
     function escapeHtml(text: string): string {
       const div = document.createElement('div');

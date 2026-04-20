@@ -115,6 +115,16 @@ export class RoomsController {
     return this.roomsService.findPublicRoomDetail(id);
   }
 
+  /** 공개 방 참여 (로그인 필수, 초대 코드 불필요) */
+  @Post('public/:id/join')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '공개 방 참여 (로그인 필수)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  joinPublicRoom(@Param('id') id: string, @CurrentUser() user: { id: string }) {
+    return this.roomsService.joinPublicRoom(id, user.id);
+  }
+
   /** 공개 방 식당 상세 */
   @Get('public/:id/restaurants/:rid')
   @ApiOperation({ summary: '공개 방 식당 상세 (비로그인 가능)' })

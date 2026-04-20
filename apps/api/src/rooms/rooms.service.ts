@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { FcmService } from '../fcm/fcm.service';
 import { StorageService } from '../storage/storage.service';
 import { measure } from '../common/perf';
+import { normalizeCategory } from '@repo/utils';
 
 /** 평균 평점 계산 (소수점 1자리 반올림). 빈 배열이면 null 반환. */
 function calcAvgRating(ratings: number[]): number | null {
@@ -158,6 +159,44 @@ export class RoomsService {
   }
 
   /** 초대 코드로 입장 */
+  /** 공개 방 참여 (초대 코드 불필요, 방이 isPublic인 경우만 허용) */
+  async joinPublicRoom(roomId: string, userId: string) {
+    const room = await this.prisma.read.room.findUnique({ where: { id: roomId } });
+    if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
+    if (!room.isPublic) throw new ForbiddenException('공개된 방이 아닙니다');
+
+    const [kicked, existing, userRoomCount, memberCount] = await Promise.all([
+      this.prisma.read.roomKick.findUnique({
+        where: { roomId_userId: { roomId: room.id, userId } },
+      }),
+      this.prisma.read.roomMember.findUnique({
+        where: { roomId_userId: { roomId: room.id, userId } },
+      }),
+      this.prisma.read.roomMember.count({ where: { userId } }),
+      this.prisma.read.roomMember.count({ where: { roomId: room.id } }),
+    ]);
+
+    if (kicked) throw new ForbiddenException('이 방에서 강퇴되어 재입장할 수 없습니다.');
+    if (existing) return room;
+    if (userRoomCount >= MAX_ROOMS_PER_USER) {
+      throw new ForbiddenException(`참여할 수 있는 방은 최대 ${MAX_ROOMS_PER_USER}개입니다.`);
+    }
+    if (memberCount >= room.maxMembers) {
+      throw new ForbiddenException(`방 인원이 가득 찼습니다 (최대 ${room.maxMembers}명)`);
+    }
+
+    await this.prisma.write.roomMember.create({
+      data: { role: 'member', roomId: room.id, userId },
+    });
+
+    const joinedUser = await this.prisma.read.user.findUnique({ where: { id: userId }, select: { nickname: true } });
+    if (joinedUser) {
+      this.createNotificationForRoom(room.id, userId, 'member_joined', `${joinedUser.nickname}님이 방에 참여했습니다.`).catch(() => {});
+    }
+
+    return room;
+  }
+
   async join(inviteCode: string, userId: string) {
     const room = await this.prisma.read.room.findUnique({ where: { inviteCode } });
     if (!room) throw new NotFoundException('유효하지 않은 초대 코드입니다');
@@ -462,7 +501,9 @@ export class RoomsService {
     const imageList = (images ?? []).slice(0, 3);
     const restaurant = await this.prisma.write.roomRestaurant.create({
       data: {
-        roomId, addedById, name, address, province, city, neighborhood, category, latitude, longitude,
+        roomId, addedById, name, address, province, city, neighborhood,
+        category: normalizeCategory(category),
+        latitude, longitude,
         isWishlist: isWishlist ?? false,
         images: imageList.length > 0 ? { create: imageList.map((url, i) => ({ url, sortOrder: i })) } : undefined,
       },
@@ -496,7 +537,7 @@ export class RoomsService {
 
     const updateData: Record<string, unknown> = {};
     if (data.name !== undefined) updateData.name = data.name;
-    if (data.category !== undefined) updateData.category = data.category;
+    if (data.category !== undefined) updateData.category = normalizeCategory(data.category);
     if (data.address !== undefined) {
       updateData.address = data.address;
       // 주소에서 시/도, 시/군/구, 읍/면/동 파싱
@@ -848,7 +889,7 @@ export class RoomsService {
         return {
           name: r.name,
           address: r.address,
-          category: r.category,
+          category: normalizeCategory(r.category),
           avgRating: avg,
           reviewCount: ratings.length,
           visitCount: r._count.visits,

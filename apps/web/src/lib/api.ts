@@ -397,6 +397,15 @@ export async function joinRoom(inviteCode: string): Promise<Room> {
   return res.json();
 }
 
+/** 공개 방 참여 (초대 코드 없이, 로그인 필수) */
+export async function joinPublicRoom(roomId: string): Promise<Room> {
+  const res = await apiFetch(`${API_BASE}/rooms/public/${roomId}/join`, {
+    method: 'POST',
+  });
+  await throwIfNotOk(res, '방 참여에 실패했습니다.');
+  return res.json();
+}
+
 /** 방 삭제 */
 export async function deleteRoom(id: string): Promise<void> {
   const res = await apiFetch(`${API_BASE}/rooms/${id}`, { method: 'DELETE' });
