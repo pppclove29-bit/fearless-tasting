@@ -26,6 +26,41 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
         <form id="create-form">
           <div class="modal-field">
+            <label class="modal-label">어떤 방인가요?</label>
+            <div class="template-grid" id="template-grid">
+              <button type="button" class="template-card active" data-template="empty">
+                <span class="tmpl-icon">📝</span>
+                <span class="tmpl-name">빈 방</span>
+                <span class="tmpl-desc">직접 설정</span>
+              </button>
+              <button type="button" class="template-card" data-template="meal">
+                <span class="tmpl-icon">🍻</span>
+                <span class="tmpl-name">회식</span>
+                <span class="tmpl-desc">투표로 결정</span>
+              </button>
+              <button type="button" class="template-card" data-template="couple">
+                <span class="tmpl-icon">💑</span>
+                <span class="tmpl-name">데이트</span>
+                <span class="tmpl-desc">둘만의 장소</span>
+              </button>
+              <button type="button" class="template-card" data-template="newlywed">
+                <span class="tmpl-icon">🏠</span>
+                <span class="tmpl-name">신혼</span>
+                <span class="tmpl-desc">우리 동네 단골</span>
+              </button>
+              <button type="button" class="template-card" data-template="family">
+                <span class="tmpl-icon">👨‍👩‍👧</span>
+                <span class="tmpl-name">가족</span>
+                <span class="tmpl-desc">가족 외식</span>
+              </button>
+              <button type="button" class="template-card" data-template="friends">
+                <span class="tmpl-icon">🎉</span>
+                <span class="tmpl-name">친구</span>
+                <span class="tmpl-desc">친구들과</span>
+              </button>
+            </div>
+          </div>
+          <div class="modal-field">
             <label class="modal-label" for="create-name">방 이름</label>
             <input type="text" id="create-name" class="modal-input" placeholder="예: 우리 동네 맛집" required maxlength="100" />
           </div>
@@ -209,6 +244,49 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     width: 100%;
     padding: 0.7rem;
     margin-top: 0.5rem;
+  }
+
+  /* 방 템플릿 선택 */
+  .template-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+  }
+  .template-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    padding: 0.7rem 0.3rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    font-family: inherit;
+    text-align: center;
+  }
+  .template-card:hover {
+    border-color: var(--text-muted);
+  }
+  .template-card.active {
+    border-color: var(--text-heading);
+    background: var(--bg-hover);
+  }
+  .template-card .tmpl-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+  .template-card .tmpl-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-top: 0.2rem;
+  }
+  .template-card .tmpl-desc {
+    font-size: 0.68rem;
+    color: var(--text-muted);
   }
 
   .status-msg {
@@ -435,7 +513,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <script>
-  import { fetchCurrentUser, fetchMyRooms, createRoom } from '@/lib/api';
+  import { fetchCurrentUser, fetchMyRooms, createRoom, createPoll } from '@/lib/api';
+
+  type TemplateKey = 'empty' | 'meal' | 'couple' | 'newlywed' | 'family' | 'friends';
+  interface RoomTemplate {
+    defaultName: string;
+    tabs: { wishlist: boolean; region: boolean; poll: boolean; stats: boolean };
+    seedPoll?: boolean;
+  }
+  const ROOM_TEMPLATES: Record<TemplateKey, RoomTemplate> = {
+    empty:    { defaultName: '',              tabs: { wishlist: true,  region: true,  poll: false, stats: false } },
+    meal:     { defaultName: '회식 맛집',     tabs: { wishlist: false, region: false, poll: true,  stats: false }, seedPoll: true },
+    couple:   { defaultName: '우리 데이트 맛집', tabs: { wishlist: true,  region: true,  poll: false, stats: true  } },
+    newlywed: { defaultName: '신혼 맛집 지도',  tabs: { wishlist: true,  region: true,  poll: false, stats: false } },
+    family:   { defaultName: '우리 가족 맛집',  tabs: { wishlist: true,  region: true,  poll: false, stats: false } },
+    friends:  { defaultName: '친구들 맛집 모음',tabs: { wishlist: true,  region: false, poll: true,  stats: false } },
+  };
   import type { RoomListItem } from '@/lib/api';
   import { runTutorial } from '@/lib/tutorial';
 
@@ -576,6 +669,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     const createPublicCheckbox = document.getElementById('create-public') as HTMLInputElement | null;
     const createMaxMembersInput = document.getElementById('create-max-members') as HTMLInputElement | null;
+    const templateGrid = document.getElementById('template-grid');
+
+    let selectedTemplate: TemplateKey = 'empty';
+
+    if (templateGrid) {
+      for (const btn of templateGrid.querySelectorAll<HTMLButtonElement>('.template-card')) {
+        btn.addEventListener('click', () => {
+          const key = btn.dataset.template as TemplateKey | undefined;
+          if (!key) return;
+          selectedTemplate = key;
+          for (const b of templateGrid.querySelectorAll('.template-card')) b.classList.remove('active');
+          btn.classList.add('active');
+          // 방 이름은 유저가 이미 입력한 값이 없을 때만 덮어씀
+          const tmpl = ROOM_TEMPLATES[key];
+          if (createNameInput && !createNameInput.value.trim() && tmpl.defaultName) {
+            createNameInput.value = tmpl.defaultName;
+          }
+        });
+      }
+    }
 
     let creating = false;
     createForm?.addEventListener('submit', async (e) => {
@@ -586,16 +699,43 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       if (!name) return;
       const isPublic = createPublicCheckbox?.checked ?? false;
       const maxMembers = createMaxMembersInput ? parseInt(createMaxMembersInput.value, 10) : undefined;
+      const tmpl = ROOM_TEMPLATES[selectedTemplate];
 
       creating = true;
       const submitBtn = createForm.querySelector<HTMLButtonElement>('button[type="submit"]');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '생성 중...'; }
 
       try {
-        await createRoom(name, isPublic, maxMembers);
+        const room = await createRoom(name, {
+          isPublic,
+          maxMembers,
+          tabWishlistEnabled: tmpl.tabs.wishlist,
+          tabRegionEnabled: tmpl.tabs.region,
+          tabPollEnabled: tmpl.tabs.poll,
+          tabStatsEnabled: tmpl.tabs.stats,
+        });
+
+        // 회식 템플릿: "오늘 뭐 먹지?" 투표 자동 시드
+        if (tmpl.seedPoll && room) {
+          try {
+            await createPoll(room.id, {
+              title: '오늘 뭐 먹지?',
+              options: [
+                { label: '🍚 한식' }, { label: '🍜 중식' }, { label: '🍣 일식' },
+                { label: '🍝 양식' }, { label: '🍡 분식' }, { label: '🍗 치킨' },
+              ],
+            });
+          } catch { /* 투표 시드 실패는 방 생성 성공에 영향 없음 */ }
+        }
+
         if (createNameInput) createNameInput.value = '';
         if (createPublicCheckbox) createPublicCheckbox.checked = false;
         if (createMaxMembersInput) createMaxMembersInput.value = '4';
+        selectedTemplate = 'empty';
+        if (templateGrid) {
+          for (const b of templateGrid.querySelectorAll('.template-card')) b.classList.remove('active');
+          templateGrid.querySelector('.template-card[data-template="empty"]')?.classList.add('active');
+        }
         if (createModal) createModal.hidden = true;
         allRooms = await fetchMyRooms();
         updateSearchVisibility();

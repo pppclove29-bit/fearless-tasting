@@ -9,6 +9,10 @@ export interface Room {
   isPublic: boolean;
   maxMembers: number;
   announcement?: string | null;
+  tabWishlistEnabled: boolean;
+  tabRegionEnabled: boolean;
+  tabPollEnabled: boolean;
+  tabStatsEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -423,6 +423,30 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   /* 설정 텍스트영역 */
   .stg-row-col { flex-direction: column; align-items: stretch; }
+  .stg-tab-toggles {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+  }
+  .stg-tab-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    color: var(--text);
+    cursor: pointer;
+    background: var(--bg-input);
+  }
+  .stg-tab-toggle input { cursor: pointer; accent-color: var(--text-heading); }
+  .stg-tab-toggle:has(input:checked) {
+    border-color: var(--text-heading);
+    background: var(--bg-hover);
+  }
+  .stg-row-col .stg-sub { margin-top: 0.4rem; }
   .stg-textarea {
     width: 100%;
     padding: 0.5rem 0.65rem;
@@ -2949,6 +2973,28 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 <span class="stg-lbl">공지사항</span>
                 <textarea id="settings-announcement" class="stg-textarea" maxlength="500" placeholder="방 멤버에게 알릴 내용을 입력하세요">${escapeHtml(currentRoom.announcement || '')}</textarea>
               </div>
+              <div class="stg-row stg-row-col">
+                <span class="stg-lbl">탭 표시 설정</span>
+                <div class="stg-tab-toggles">
+                  <label class="stg-tab-toggle">
+                    <input type="checkbox" id="settings-tab-wishlist" ${currentRoom.tabWishlistEnabled ? 'checked' : ''} />
+                    <span>💛 위시리스트</span>
+                  </label>
+                  <label class="stg-tab-toggle">
+                    <input type="checkbox" id="settings-tab-region" ${currentRoom.tabRegionEnabled ? 'checked' : ''} />
+                    <span>📍 지역</span>
+                  </label>
+                  <label class="stg-tab-toggle">
+                    <input type="checkbox" id="settings-tab-poll" ${currentRoom.tabPollEnabled ? 'checked' : ''} />
+                    <span>🗳️ 투표</span>
+                  </label>
+                  <label class="stg-tab-toggle">
+                    <input type="checkbox" id="settings-tab-stats" ${currentRoom.tabStatsEnabled ? 'checked' : ''} />
+                    <span>📊 통계</span>
+                  </label>
+                </div>
+                <span class="stg-sub">식당·멤버·활동 탭은 항상 표시됩니다</span>
+              </div>
               <button type="button" class="stg-save" id="settings-save-btn">저장</button>
             </div>
           </div>` : ''}
@@ -3037,20 +3083,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       <div class="room-tab-bar">
         <button type="button" class="room-tab-btn active" data-tab="restaurants">🍽️ 식당</button>
-        <button type="button" class="room-tab-btn" data-tab="wishlist">💛 위시리스트</button>
-        <button type="button" class="room-tab-btn" data-tab="region">📍 지역</button>
+        ${currentRoom.tabWishlistEnabled ? '<button type="button" class="room-tab-btn" data-tab="wishlist">💛 위시리스트</button>' : ''}
+        ${currentRoom.tabRegionEnabled ? '<button type="button" class="room-tab-btn" data-tab="region">📍 지역</button>' : ''}
         <button type="button" class="room-tab-btn" data-tab="timeline">📋 활동</button>
-        <button type="button" class="room-tab-btn" data-tab="poll">🗳️ 투표</button>
-        <!-- <button type="button" class="room-tab-btn" data-tab="stats">📊 통계</button> -->
+        ${currentRoom.tabPollEnabled ? '<button type="button" class="room-tab-btn" data-tab="poll">🗳️ 투표</button>' : ''}
+        ${currentRoom.tabStatsEnabled ? '<button type="button" class="room-tab-btn" data-tab="stats">📊 통계</button>' : ''}
         <button type="button" class="room-tab-btn" data-tab="members">👥 멤버 (${currentRoom.members.length}/${currentRoom.maxMembers})</button>
       </div>
 
       <div id="tab-restaurants" class="room-tab-panel"></div>
-      <div id="tab-wishlist" class="room-tab-panel" hidden></div>
-      <div id="tab-region" class="room-tab-panel" hidden></div>
+      ${currentRoom.tabWishlistEnabled ? '<div id="tab-wishlist" class="room-tab-panel" hidden></div>' : ''}
+      ${currentRoom.tabRegionEnabled ? '<div id="tab-region" class="room-tab-panel" hidden></div>' : ''}
       <div id="tab-timeline" class="room-tab-panel" hidden></div>
-      <div id="tab-poll" class="room-tab-panel" hidden></div>
-      <div id="tab-stats" class="room-tab-panel" hidden></div>
+      ${currentRoom.tabPollEnabled ? '<div id="tab-poll" class="room-tab-panel" hidden></div>' : ''}
+      ${currentRoom.tabStatsEnabled ? '<div id="tab-stats" class="room-tab-panel" hidden></div>' : ''}
       <div id="tab-members" class="room-tab-panel" hidden></div>
     `;
 
@@ -3059,11 +3105,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     attachTabHandlers();
     initMainMap();
     renderRestaurantsTab().catch((err) => console.error('[restaurants] unhandled:', err));
-    renderRegionTab();
+    if (currentRoom.tabRegionEnabled) renderRegionTab();
     renderTimelineTab();
-    renderStatsTab().catch((err) => console.error('[stats] unhandled:', err));
+    if (currentRoom.tabStatsEnabled) {
+      renderStatsTab().catch((err) => console.error('[stats] unhandled:', err));
+    }
     renderMembersTab();
-    renderActivePollBanner().catch((err) => console.error('[poll-banner] unhandled:', err));
+    if (currentRoom.tabPollEnabled) {
+      renderActivePollBanner().catch((err) => console.error('[poll-banner] unhandled:', err));
+    }
   }
 
   // 방 상단: 진행 중인 투표 요약 배너
@@ -3415,6 +3465,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const maxInput = document.getElementById('settings-max-members') as HTMLInputElement | null;
       const publicCb = document.getElementById('settings-public') as HTMLInputElement | null;
       const announcementInput = document.getElementById('settings-announcement') as HTMLTextAreaElement | null;
+      const tabWishlistCb = document.getElementById('settings-tab-wishlist') as HTMLInputElement | null;
+      const tabRegionCb = document.getElementById('settings-tab-region') as HTMLInputElement | null;
+      const tabPollCb = document.getElementById('settings-tab-poll') as HTMLInputElement | null;
+      const tabStatsCb = document.getElementById('settings-tab-stats') as HTMLInputElement | null;
       const newName = nameInput?.value.trim();
       const newMax = maxInput ? parseInt(maxInput.value, 10) : undefined;
       const newPublic = publicCb?.checked;
@@ -3425,6 +3479,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       if (newMax && newMax !== currentRoom.maxMembers) updates.maxMembers = newMax;
       if (newPublic !== undefined && newPublic !== currentRoom.isPublic) updates.isPublic = newPublic;
       if (newAnnouncement !== (currentRoom.announcement || null)) updates.announcement = newAnnouncement;
+      if (tabWishlistCb && tabWishlistCb.checked !== currentRoom.tabWishlistEnabled) updates.tabWishlistEnabled = tabWishlistCb.checked;
+      if (tabRegionCb && tabRegionCb.checked !== currentRoom.tabRegionEnabled) updates.tabRegionEnabled = tabRegionCb.checked;
+      if (tabPollCb && tabPollCb.checked !== currentRoom.tabPollEnabled) updates.tabPollEnabled = tabPollCb.checked;
+      if (tabStatsCb && tabStatsCb.checked !== currentRoom.tabStatsEnabled) updates.tabStatsEnabled = tabStatsCb.checked;
 
       if (Object.keys(updates).length === 0) {
         if (settingsModal) settingsModal.hidden = true;
@@ -3432,7 +3490,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       }
 
       try {
-        await updateRoom(currentRoom.id, updates as { name?: string; maxMembers?: number; isPublic?: boolean; announcement?: string | null });
+        await updateRoom(currentRoom.id, updates);
         currentRoom = await fetchRoom(currentRoom.id);
         if (settingsModal) settingsModal.hidden = true;
         renderPage();
@@ -3629,18 +3687,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   function attachTabHandlers() {
     const restaurantsPanel = document.getElementById('tab-restaurants');
-    const wishlistPanel = document.getElementById('tab-wishlist');
-    const regionPanel = document.getElementById('tab-region');
-    const statsPanel = document.getElementById('tab-stats');
     const membersPanel = document.getElementById('tab-members');
-    if (!restaurantsPanel || !wishlistPanel || !regionPanel || !statsPanel || !membersPanel) return;
+    if (!restaurantsPanel || !membersPanel) return;
+    // 선택적 탭 패널 (방 설정에 따라 DOM에 없을 수 있음)
     const panels: Record<string, HTMLElement> = {
       restaurants: restaurantsPanel,
-      wishlist: wishlistPanel,
-      region: regionPanel,
-      stats: statsPanel,
       members: membersPanel,
     };
+    const wishlistPanel = document.getElementById('tab-wishlist');
+    if (wishlistPanel) panels.wishlist = wishlistPanel;
+    const regionPanel = document.getElementById('tab-region');
+    if (regionPanel) panels.region = regionPanel;
+    const statsPanel = document.getElementById('tab-stats');
+    if (statsPanel) panels.stats = statsPanel;
     const timelinePanel = document.getElementById('tab-timeline');
     if (timelinePanel) panels.timeline = timelinePanel;
     const pollPanel = document.getElementById('tab-poll');

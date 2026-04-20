@@ -199,8 +199,20 @@ export async function deleteAccount(): Promise<void> {
   await throwIfNotOk(res, '탈퇴에 실패했습니다.');
 }
 
-/** 방 수정 (이름, 최대 인원 등) */
-export async function updateRoom(id: string, data: string | { name?: string; maxMembers?: number; announcement?: string | null }): Promise<void> {
+/** 방 수정 (이름, 최대 인원, 탭 설정 등) */
+export async function updateRoom(
+  id: string,
+  data: string | {
+    name?: string;
+    maxMembers?: number;
+    isPublic?: boolean;
+    announcement?: string | null;
+    tabWishlistEnabled?: boolean;
+    tabRegionEnabled?: boolean;
+    tabPollEnabled?: boolean;
+    tabStatsEnabled?: boolean;
+  },
+): Promise<void> {
   const body = typeof data === 'string' ? { name: data } : data;
   const res = await apiFetch(`${API_BASE}/rooms/${id}`, {
     method: 'PATCH',
@@ -353,9 +365,18 @@ export async function fetchRoom(id: string): Promise<RoomDetailResponse> {
 }
 
 /** 방 생성 */
-export async function createRoom(name: string, isPublic = false, maxMembers?: number): Promise<Room> {
-  const body: Record<string, unknown> = { name, isPublic };
-  if (maxMembers !== undefined) body.maxMembers = maxMembers;
+export async function createRoom(
+  name: string,
+  options?: {
+    isPublic?: boolean;
+    maxMembers?: number;
+    tabWishlistEnabled?: boolean;
+    tabRegionEnabled?: boolean;
+    tabPollEnabled?: boolean;
+    tabStatsEnabled?: boolean;
+  },
+): Promise<Room> {
+  const body: Record<string, unknown> = { name, ...(options ?? {}) };
   const res = await apiFetch(`${API_BASE}/rooms`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

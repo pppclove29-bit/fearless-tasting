@@ -42,7 +42,14 @@ export class RoomsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '방 생성' })
   create(@CurrentUser() user: { id: string }, @Body() dto: CreateRoomDto) {
-    return this.roomsService.create(dto.name, user.id, dto.isPublic, dto.maxMembers);
+    return this.roomsService.create(dto.name, user.id, {
+      isPublic: dto.isPublic,
+      maxMembers: dto.maxMembers,
+      tabWishlistEnabled: dto.tabWishlistEnabled,
+      tabRegionEnabled: dto.tabRegionEnabled,
+      tabPollEnabled: dto.tabPollEnabled,
+      tabStatsEnabled: dto.tabStatsEnabled,
+    });
   }
 
   /** 내 방 목록 */
@@ -153,6 +160,10 @@ export class RoomsController {
       maxMembers: dto.maxMembers,
       isPublic: dto.isPublic,
       announcement: dto.announcement,
+      tabWishlistEnabled: dto.tabWishlistEnabled,
+      tabRegionEnabled: dto.tabRegionEnabled,
+      tabPollEnabled: dto.tabPollEnabled,
+      tabStatsEnabled: dto.tabStatsEnabled,
     });
   }
 

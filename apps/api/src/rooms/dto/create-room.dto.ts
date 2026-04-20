@@ -19,4 +19,24 @@ export class CreateRoomDto {
   @Min(2)
   @Max(20)
   maxMembers?: number;
+
+  @ApiProperty({ description: '위시리스트 탭 표시', required: false })
+  @IsOptional()
+  @IsBoolean()
+  tabWishlistEnabled?: boolean;
+
+  @ApiProperty({ description: '지역 탭 표시', required: false })
+  @IsOptional()
+  @IsBoolean()
+  tabRegionEnabled?: boolean;
+
+  @ApiProperty({ description: '투표 탭 표시', required: false })
+  @IsOptional()
+  @IsBoolean()
+  tabPollEnabled?: boolean;
+
+  @ApiProperty({ description: '통계 탭 표시', required: false })
+  @IsOptional()
+  @IsBoolean()
+  tabStatsEnabled?: boolean;
 }

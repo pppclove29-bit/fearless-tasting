@@ -893,7 +893,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '생성 중...'; }
 
       try {
-        await createRoom(name, isPublic, maxMembers);
+        await createRoom(name, { isPublic, maxMembers });
         if (createNameInput) createNameInput.value = '';
         if (createPublicCheckbox) createPublicCheckbox.checked = false;
         if (createMaxMembersInput) createMaxMembersInput.value = '4';

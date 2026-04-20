@@ -40,7 +40,18 @@ export class RoomsService {
   }
 
   /** 방 생성 (생성자 = owner) */
-  async create(name: string, ownerId: string, isPublic?: boolean, maxMembers?: number) {
+  async create(
+    name: string,
+    ownerId: string,
+    options?: {
+      isPublic?: boolean;
+      maxMembers?: number;
+      tabWishlistEnabled?: boolean;
+      tabRegionEnabled?: boolean;
+      tabPollEnabled?: boolean;
+      tabStatsEnabled?: boolean;
+    },
+  ) {
     const joinedCount = await measure('room.create.countRooms', () =>
       this.prisma.read.roomMember.count({ where: { userId: ownerId } }),
     );
@@ -49,6 +60,7 @@ export class RoomsService {
     }
 
     const inviteCode = await this.generateInviteCode();
+    const o = options ?? {};
 
     return measure('room.create.transaction', () =>
       this.prisma.write.$transaction(async (tx) => {
@@ -57,8 +69,12 @@ export class RoomsService {
             name,
             inviteCode,
             ownerId,
-            ...(isPublic !== undefined && { isPublic }),
-            ...(maxMembers !== undefined && { maxMembers }),
+            ...(o.isPublic !== undefined && { isPublic: o.isPublic }),
+            ...(o.maxMembers !== undefined && { maxMembers: o.maxMembers }),
+            ...(o.tabWishlistEnabled !== undefined && { tabWishlistEnabled: o.tabWishlistEnabled }),
+            ...(o.tabRegionEnabled !== undefined && { tabRegionEnabled: o.tabRegionEnabled }),
+            ...(o.tabPollEnabled !== undefined && { tabPollEnabled: o.tabPollEnabled }),
+            ...(o.tabStatsEnabled !== undefined && { tabStatsEnabled: o.tabStatsEnabled }),
           },
         });
 
@@ -181,7 +197,20 @@ export class RoomsService {
   }
 
   /** 방 설정 수정 (owner만) */
-  async updateRoom(roomId: string, userId: string, updates: { name?: string; maxMembers?: number; isPublic?: boolean; announcement?: string | null }) {
+  async updateRoom(
+    roomId: string,
+    userId: string,
+    updates: {
+      name?: string;
+      maxMembers?: number;
+      isPublic?: boolean;
+      announcement?: string | null;
+      tabWishlistEnabled?: boolean;
+      tabRegionEnabled?: boolean;
+      tabPollEnabled?: boolean;
+      tabStatsEnabled?: boolean;
+    },
+  ) {
     const room = await this.prisma.read.room.findUnique({ where: { id: roomId } });
     if (!room) throw new NotFoundException('방을 찾을 수 없습니다');
     if (room.ownerId !== userId) throw new ForbiddenException('방장만 방 설정을 변경할 수 있습니다');
@@ -199,6 +228,10 @@ export class RoomsService {
     if (updates.maxMembers !== undefined) data.maxMembers = updates.maxMembers;
     if (updates.isPublic !== undefined) data.isPublic = updates.isPublic;
     if (updates.announcement !== undefined) data.announcement = updates.announcement;
+    if (updates.tabWishlistEnabled !== undefined) data.tabWishlistEnabled = updates.tabWishlistEnabled;
+    if (updates.tabRegionEnabled !== undefined) data.tabRegionEnabled = updates.tabRegionEnabled;
+    if (updates.tabPollEnabled !== undefined) data.tabPollEnabled = updates.tabPollEnabled;
+    if (updates.tabStatsEnabled !== undefined) data.tabStatsEnabled = updates.tabStatsEnabled;
 
     return this.prisma.write.room.update({
       where: { id: roomId },
