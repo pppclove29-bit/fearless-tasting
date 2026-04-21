@@ -184,6 +184,7 @@ const resolvedOgImage = ogImage
           <strong>앱처럼 사용하기</strong>
           <span class="pwa-banner-desc" id="pwa-desc"></span>
         </div>
+        <button type="button" class="pwa-banner-install" id="pwa-install" hidden>설치</button>
         <button type="button" class="pwa-banner-close" id="pwa-close" aria-label="닫기">&times;</button>
       </div>
     </div>
@@ -816,6 +817,22 @@ const resolvedOgImage = ogImage
     color: var(--text-heading);
   }
 
+  .pwa-banner-install {
+    background: var(--text-heading);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0.45rem 0.9rem;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+  }
+
+  .pwa-banner-install:hover { opacity: 0.88; }
+  .pwa-banner-install:disabled { opacity: 0.5; cursor: not-allowed; }
+
 </style>
 
 <script>
@@ -1065,38 +1082,5 @@ const resolvedOgImage = ogImage
   })();
 
   // PWA 설치 안내 배너
-  (() => {
-    const DISMISS_KEY = 'pwa_banner_dismissed';
-    const banner = document.getElementById('pwa-banner');
-    const desc = document.getElementById('pwa-desc');
-    const closeBtn = document.getElementById('pwa-close');
-    if (!banner || !desc || !closeBtn) return;
-
-    // 이미 설치된 상태 (standalone) 또는 이미 닫은 경우 표시 안 함
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-      || (navigator as Record<string, boolean>).standalone === true;
-    if (isStandalone) return;
-    if (localStorage.getItem(DISMISS_KEY)) return;
-
-    // OS 판별
-    const ua = navigator.userAgent;
-    const isIOS = /iPhone|iPad|iPod/.test(ua);
-    const isAndroid = /Android/.test(ua);
-
-    if (isIOS) {
-      desc.innerHTML = '하단 <strong>공유 버튼(□↑)</strong>을 누른 뒤 <strong>"홈 화면에 추가"</strong>를 선택하세요.';
-    } else if (isAndroid) {
-      desc.innerHTML = '브라우저 메뉴(<strong>⋮</strong>)에서 <strong>"홈 화면에 추가"</strong> 또는 <strong>"앱 설치"</strong>를 선택하세요.';
-    } else {
-      // 데스크톱은 표시하지 않음
-      return;
-    }
-
-    banner.hidden = false;
-
-    closeBtn.addEventListener('click', () => {
-      banner.hidden = true;
-      localStorage.setItem(DISMISS_KEY, '1');
-    });
-  })();
+  import('@/lib/pwa-install').then(({ initPwaInstall }) => initPwaInstall());
 </script>
