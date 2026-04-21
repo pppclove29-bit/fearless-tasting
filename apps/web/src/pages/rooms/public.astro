@@ -8,6 +8,7 @@ const siteUrl = (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '');
 interface PublicRoomListItem {
   id: string;
   name: string;
+  memberCount: number;
   restaurantCount: number;
   reviewCount: number;
   avgRating: number | null;
@@ -56,13 +57,29 @@ try {
   <div class="public-rooms-page">
     <a href="/discover" class="public-rooms-back">&larr; 맛집 추천으로</a>
     <section class="public-rooms-hero">
-      <h1>공개 맛집 방</h1>
-      <p class="public-rooms-desc">다른 사람들의 맛집 리스트를 구경하세요</p>
+      <span class="public-rooms-badge">실제 유저들의 진짜 맛집 리스트</span>
+      <h1>공개 맛집 방 구경하기</h1>
+      <p class="public-rooms-desc">
+        커플·친구·가족·회사 팀이 직접 기록한 맛집 리스트입니다.<br/>
+        원하는 방에 들어가 식당과 리뷰를 둘러보세요.
+      </p>
+      <div class="public-rooms-hero-cta" id="public-rooms-hero-cta">
+        <a href="/login" class="public-rooms-cta-btn" id="public-rooms-cta-guest" hidden>
+          내 맛집 방 만들러 가기
+        </a>
+        <a href="/rooms" class="public-rooms-cta-btn" id="public-rooms-cta-auth" hidden>
+          내 방으로 이동 →
+        </a>
+      </div>
     </section>
 
     <div id="public-rooms-content">
       {!initialData || initialData.data.length === 0 ? (
-        <p class="public-rooms-empty">아직 공개된 방이 없습니다.</p>
+        <div class="public-rooms-empty-state">
+          <p class="public-rooms-empty">아직 공개된 방이 없어요.</p>
+          <p class="public-rooms-empty-sub">첫 번째로 공개 방을 만들어보시겠어요?</p>
+          <a href="/login" class="public-rooms-cta-btn">시작하기</a>
+        </div>
       ) : (
         <div id="public-rooms-grid" class="public-rooms-grid">
           {initialData.data.map((room) => (
@@ -77,13 +94,15 @@ try {
                 }
               </div>
               <div class="public-room-stats">
-                <span>식당 {room.restaurantCount}곳</span>
+                <span>🍽️ {room.restaurantCount}</span>
                 <span class="public-room-stat-dot">&middot;</span>
-                <span>리뷰 {room.reviewCount}개</span>
+                <span>📝 {room.reviewCount}</span>
+                <span class="public-room-stat-dot">&middot;</span>
+                <span>👥 {room.memberCount}</span>
                 {room.avgRating !== null && (
                   <>
                     <span class="public-room-stat-dot">&middot;</span>
-                    <span class="public-room-avg-rating">{room.avgRating.toFixed(1)}</span>
+                    <span class="public-room-avg-rating">★ {room.avgRating.toFixed(1)}</span>
                   </>
                 )}
               </div>
@@ -119,26 +138,78 @@ try {
 
   .public-rooms-hero {
     text-align: center;
-    padding: 1rem 0 1.5rem;
+    padding: 2rem 1.25rem 2rem;
+    background: var(--bg-hover);
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+  }
+
+  .public-rooms-badge {
+    display: inline-block;
+    padding: 0.35rem 0.9rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 100px;
+    margin-bottom: 0.9rem;
+    letter-spacing: 0.01em;
   }
 
   .public-rooms-hero h1 {
-    font-size: 1.6rem;
-    font-weight: 700;
+    font-size: 1.75rem;
+    font-weight: 800;
     color: var(--text-heading);
+    line-height: 1.3;
+    letter-spacing: -0.02em;
   }
 
   .public-rooms-desc {
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     color: var(--text-sub);
-    margin-top: 0.3rem;
+    margin: 0.5rem 0 1.25rem;
+    line-height: 1.6;
+  }
+
+  .public-rooms-hero-cta {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .public-rooms-cta-btn {
+    display: inline-block;
+    padding: 0.7rem 1.6rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .public-rooms-cta-btn:hover { opacity: 0.88; }
+
+  .public-rooms-empty-state {
+    text-align: center;
+    padding: 2.5rem 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
   }
 
   .public-rooms-empty {
-    text-align: center;
-    padding: 3rem;
-    color: var(--text-muted);
-    font-size: 0.9rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin: 0 0 0.25rem;
+  }
+
+  .public-rooms-empty-sub {
+    font-size: 0.85rem;
+    color: var(--text-sub);
+    margin: 0 0 1rem;
   }
 
   .public-rooms-grid {
@@ -246,7 +317,7 @@ try {
 </style>
 
 <script>
-  import { fetchPublicRooms } from '@/lib/api';
+  import { fetchPublicRooms, fetchCurrentUser } from '@/lib/api';
   import type { PaginatedPublicRooms, PublicRoomListItem } from '@/lib/api';
 
   function initPublicRoomsPage() {
@@ -254,6 +325,17 @@ try {
     const loadMoreBtn = document.getElementById('load-more-btn');
     const contentEl = document.getElementById('public-rooms-content');
     if (!contentEl) return;
+
+    // 로그인 여부에 따라 히어로 CTA 분기
+    fetchCurrentUser().then((user) => {
+      const guestCta = document.getElementById('public-rooms-cta-guest');
+      const authCta = document.getElementById('public-rooms-cta-auth');
+      if (user && authCta) authCta.hidden = false;
+      else if (!user && guestCta) guestCta.hidden = false;
+    }).catch(() => {
+      const guestCta = document.getElementById('public-rooms-cta-guest');
+      if (guestCta) guestCta.hidden = false;
+    });
 
     let currentPage = 1;
     const pageSize = 12;
@@ -269,16 +351,18 @@ try {
         ? room.topCategories.map((c) => `<span class="public-room-cat-badge">${escapeHtml(c)}</span>`).join('')
         : '<span class="public-room-cat-badge">-</span>';
       const avgRatingHtml = room.avgRating !== null
-        ? `<span class="public-room-stat-dot">&middot;</span><span class="public-room-avg-rating">${room.avgRating.toFixed(1)}</span>`
+        ? `<span class="public-room-stat-dot">&middot;</span><span class="public-room-avg-rating">★ ${room.avgRating.toFixed(1)}</span>`
         : '';
       return `
         <a href="/rooms/public/${room.id}" class="public-room-card">
           <div class="public-room-name">${escapeHtml(room.name)}</div>
           <div class="public-room-categories">${cats}</div>
           <div class="public-room-stats">
-            <span>식당 ${room.restaurantCount}곳</span>
+            <span>🍽️ ${room.restaurantCount}</span>
             <span class="public-room-stat-dot">&middot;</span>
-            <span>리뷰 ${room.reviewCount}개</span>
+            <span>📝 ${room.reviewCount}</span>
+            <span class="public-room-stat-dot">&middot;</span>
+            <span>👥 ${room.memberCount}</span>
             ${avgRatingHtml}
           </div>
         </a>

@@ -266,6 +266,7 @@ export interface CompareReviewsResponse {
 export interface PublicRoomListItem {
   id: string;
   name: string;
+  memberCount: number;
   restaurantCount: number;
   reviewCount: number;
   avgRating: number | null;

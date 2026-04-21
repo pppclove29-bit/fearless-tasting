@@ -8,6 +8,10 @@
 import { completeOnboarding, apiFetch, showPermissionDeniedGuide } from './api';
 import { registerPushToken } from './firebase';
 import { trackEvent } from './analytics';
+import { getVariant } from './ab-test';
+
+const ONBOARDING_VARIANTS = ['full', 'minimal'] as const;
+type OnboardingVariant = typeof ONBOARDING_VARIANTS[number];
 
 interface Step {
   id: string;
@@ -23,7 +27,9 @@ export async function startOnboarding(): Promise<void> {
   // 이미 열려있으면 중복 방지
   if (document.getElementById('onboarding-overlay')) return;
 
-  const steps: Step[] = [
+  const variant: OnboardingVariant = getVariant('onboarding', ONBOARDING_VARIANTS);
+
+  const allSteps: Step[] = [
     {
       id: 'intro',
       icon: '🍽️',
@@ -38,7 +44,7 @@ export async function startOnboarding(): Promise<void> {
       title: '방을 만들거나 참여하세요',
       description:
         '내 방은 언제든 홈 화면에서 확인할 수 있어요. 초대 코드를 받으셨다면 "방 참여"로 바로 들어올 수 있습니다.',
-      actionLabel: '다음',
+      actionLabel: variant === 'minimal' ? '시작하기' : '다음',
     },
     {
       id: 'notification',
@@ -60,7 +66,10 @@ export async function startOnboarding(): Promise<void> {
     },
   ];
 
-  trackEvent('onboarding_started', { total_steps: steps.length });
+  // minimal: intro + room 2단계만. 알림/위치는 나중에 자연스러운 트리거(리뷰 작성 등)에서 요청
+  const steps: Step[] = variant === 'minimal' ? allSteps.slice(0, 2) : allSteps;
+
+  trackEvent('onboarding_started', { total_steps: steps.length, variant });
 
   let currentStep = 0;
 
@@ -96,11 +105,11 @@ export async function startOnboarding(): Promise<void> {
     const dy = t.clientY - touchStartY;
     if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
     if (dx < 0 && currentStep < steps.length - 1) {
-      trackEvent('onboarding_step_swiped', { step_index: currentStep, direction: 'next' });
+      trackEvent('onboarding_step_swiped', { step_index: currentStep, direction: 'next', variant });
       currentStep++;
       render();
     } else if (dx > 0 && currentStep > 0) {
-      trackEvent('onboarding_step_swiped', { step_index: currentStep, direction: 'prev' });
+      trackEvent('onboarding_step_swiped', { step_index: currentStep, direction: 'prev', variant });
       currentStep--;
       render();
     }
@@ -134,7 +143,7 @@ export async function startOnboarding(): Promise<void> {
     `;
 
     // 스텝 노출 시점 추적
-    trackEvent('onboarding_step_viewed', { step_index: currentStep, step_id: s.id });
+    trackEvent('onboarding_step_viewed', { step_index: currentStep, step_id: s.id, variant });
 
     modal.querySelector('.ob-action')?.addEventListener('click', async () => {
       const btn = modal.querySelector<HTMLButtonElement>('.ob-action');
@@ -148,13 +157,14 @@ export async function startOnboarding(): Promise<void> {
       trackEvent('onboarding_step_completed', {
         step_index: currentStep,
         step_id: s.id,
+        variant,
         ...(result ? { permission_result: result } : {}),
       });
       nextStep();
     });
 
     modal.querySelector('.ob-skip')?.addEventListener('click', () => {
-      trackEvent('onboarding_skipped', { at_step: currentStep, step_id: s.id });
+      trackEvent('onboarding_skipped', { at_step: currentStep, step_id: s.id, variant });
       finish('skipped');
     });
   }
@@ -169,7 +179,7 @@ export async function startOnboarding(): Promise<void> {
   }
 
   async function finish(reason: 'completed' | 'skipped') {
-    trackEvent('onboarding_finished', { reason, last_step: currentStep });
+    trackEvent('onboarding_finished', { reason, last_step: currentStep, variant });
     try {
       await completeOnboarding();
     } catch {
