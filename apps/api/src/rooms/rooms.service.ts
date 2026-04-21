@@ -924,8 +924,8 @@ export class RoomsService {
 
   /** 투표 생성 */
   async createPoll(roomId: string, userId: string, title: string, options: { label: string; restaurantId?: string }[], endsAt?: string) {
-    return this.prisma.write.$transaction(async (tx) => {
-      const poll = await tx.roomPoll.create({
+    const { poll, recipientIds } = await this.prisma.write.$transaction(async (tx) => {
+      const created = await tx.roomPoll.create({
         data: {
           title,
           roomId,
@@ -941,17 +941,29 @@ export class RoomsService {
         include: { options: { include: { votes: true } } },
       });
 
-      // 방 멤버에게 알림 생성 (생성자 제외)
       const members = await tx.roomMember.findMany({ where: { roomId }, select: { userId: true } });
-      const notifications = members
-        .filter((m) => m.userId !== userId)
-        .map((m) => ({ roomId, userId: m.userId, type: 'poll_created', message: `새 투표: ${title}` }));
-      if (notifications.length > 0) {
-        await tx.roomNotification.createMany({ data: notifications });
+      const recipients = members.filter((m) => m.userId !== userId);
+      if (recipients.length > 0) {
+        await tx.roomNotification.createMany({
+          data: recipients.map((m) => ({ roomId, userId: m.userId, type: 'poll_created', message: `새 투표: ${title}` })),
+        });
       }
 
-      return poll;
+      return { poll: created, recipientIds: recipients.map((m) => m.userId) };
     });
+
+    // FCM 푸시 발송 (트랜잭션 바깥, fire-and-forget)
+    if (recipientIds.length > 0) {
+      const room = await this.prisma.read.room.findUnique({ where: { id: roomId }, select: { name: true } });
+      this.fcmService.sendToUsers(
+        recipientIds,
+        room?.name ?? '무모한 시식가',
+        `🗳️ 새 투표: ${title}`,
+        { roomId, link: `/room?id=${roomId}&tab=poll` },
+      ).catch(() => {});
+    }
+
+    return poll;
   }
 
   /** 투표 목록 조회 */

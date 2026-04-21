@@ -6173,6 +6173,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       currentRoom = room;
       loadingMsg.hidden = true;
       renderPage();
+
+      // 쿼리 파라미터 ?tab=xxx 로 초기 탭 전환 (푸시 알림 deep link용)
+      const tabParam = params.get('tab');
+      if (tabParam) {
+        const btn = document.querySelector<HTMLButtonElement>(`.room-tab-btn[data-tab="${tabParam}"]`);
+        if (btn) btn.click();
+      }
     } catch (err) {
       console.error('[room] load failed:', err);
       loadingMsg.hidden = true;
