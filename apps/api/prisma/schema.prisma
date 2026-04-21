@@ -170,7 +170,7 @@ model RoomRestaurant {
   /// 식당 이름
   name         String      @db.VarChar(200)
   /// 도로명/지번 주소
-  address      String      @db.VarChar(500)
+  address      String      @db.VarChar(300)
   /// 시/도
   province     String      @db.VarChar(50)
   /// 시/군/구
