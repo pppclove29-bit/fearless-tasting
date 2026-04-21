@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
+
+// satori/resvg는 네이티브 바이너리 로드에 실패해도 앱 기동은 막지 않도록 lazy import.
 
 @Injectable()
 export class OgService {
@@ -52,6 +52,10 @@ export class OgService {
       : null;
 
     const font = await this.loadFont();
+
+    // 네이티브 바이너리를 쓰므로 요청 시점에만 로드 (앱 기동 차단 방지)
+    const { default: satori } = await import('satori');
+    const { Resvg } = await import('@resvg/resvg-js');
 
     const svg = await satori(
       {
