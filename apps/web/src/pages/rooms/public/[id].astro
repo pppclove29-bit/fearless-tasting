@@ -59,6 +59,15 @@ const description = room && summary
             "name": r.name,
             "address": r.address,
             "servesCuisine": r.category,
+            ...(r.avgRating !== null && r.reviewCount > 0 ? {
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": r.avgRating,
+                "reviewCount": r.reviewCount,
+                "bestRating": 5,
+                "worstRating": 0.5,
+              }
+            } : {}),
           },
         })),
       })} />

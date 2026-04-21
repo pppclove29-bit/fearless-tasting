@@ -2,6 +2,29 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import AdSlot from '@/components/AdSlot.astro';
 export const prerender = false;
+
+const siteUrl = (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '');
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+
+interface DiscoverItem {
+  name: string;
+  address: string;
+  category: string;
+  avgRating: number;
+  reviewCount: number;
+  roomId: string;
+}
+
+let topRated: DiscoverItem[] = [];
+try {
+  const res = await fetch(`${API_BASE}/rooms/discover`);
+  if (res.ok) {
+    const data = await res.json() as { topRated?: DiscoverItem[] };
+    topRated = data.topRated ?? [];
+  }
+} catch {
+  /* fallback */
+}
 ---
 
 <BaseLayout title="맛집 추천 — 광고 없는 실제 방문 데이터 기반 맛집 리스트" description="실제 유저 방문 데이터로 선정한 맛집 추천. 고평점 맛집, 재방문율 높은 맛집 리스트를 확인하고 나만의 맛집 기록을 시작하세요." ogImageAlt="무모한 시식가 맛집 추천 — 실제 방문 데이터 기반 고평점 맛집과 재방문 맛집 리스트">
@@ -17,10 +40,39 @@ export const prerender = false;
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "홈", "item": (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '') },
-        { "@type": "ListItem", "position": 2, "name": "맛집 추천", "item": (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '') + "/discover" },
+        { "@type": "ListItem", "position": 1, "name": "홈", "item": siteUrl },
+        { "@type": "ListItem", "position": 2, "name": "맛집 추천", "item": siteUrl + "/discover" },
       ]
     })} />
+    {topRated.length > 0 && (
+      <script type="application/ld+json" set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": "고평점 맛집 추천",
+        "itemListOrder": "https://schema.org/ItemListOrderDescending",
+        "numberOfItems": topRated.slice(0, 12).length,
+        "itemListElement": topRated.slice(0, 12).map((r, i) => ({
+          "@type": "ListItem",
+          "position": i + 1,
+          "item": {
+            "@type": "FoodEstablishment",
+            "name": r.name,
+            "address": r.address,
+            "servesCuisine": r.category,
+            "url": `${siteUrl}/rooms/public/${r.roomId}`,
+            ...(r.reviewCount > 0 ? {
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": r.avgRating,
+                "reviewCount": r.reviewCount,
+                "bestRating": 5,
+                "worstRating": 0.5,
+              }
+            } : {}),
+          },
+        })),
+      })} />
+    )}
   </Fragment>
 
   <div class="discover-page">
