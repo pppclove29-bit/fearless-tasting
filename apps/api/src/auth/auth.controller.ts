@@ -91,6 +91,51 @@ export class AuthController {
     res.redirect(`${frontendUrl}/login?${params.toString()}`);
   }
 
+  /** Apple OAuth 시작: Apple 인가 페이지로 리다이렉트 */
+  @Get('apple')
+  @ApiOperation({
+    summary: 'Apple 로그인',
+    description: 'Apple Sign In 인가 페이지로 302 리다이렉트합니다.',
+  })
+  appleLogin(@Res() res: Response) {
+    const url = this.authService.getAppleAuthUrl();
+    res.redirect(url);
+  }
+
+  /** Apple OAuth 콜백: id_token 검증 → JWT 발급 → 프론트 리다이렉트 (form_post) */
+  @Post('apple/callback')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @ApiExcludeEndpoint()
+  async appleCallback(
+    @Body() body: { id_token?: string; user?: string; state?: string },
+    @Res() res: Response,
+  ) {
+    const idToken = body?.id_token;
+    if (!idToken) {
+      throw new UnauthorizedException('id_token이 없습니다');
+    }
+
+    const idPayload = await this.authService.verifyAppleIdToken(idToken);
+    // user 필드는 최초 로그인에만 전달됨 (JSON 문자열)
+    let userPayload: { name?: { firstName?: string; lastName?: string }; email?: string } | undefined;
+    if (body.user) {
+      try {
+        userPayload = JSON.parse(body.user);
+      } catch {
+        userPayload = undefined;
+      }
+    }
+    const user = await this.authService.findOrCreateFromApple(idPayload, userPayload);
+    const tokens = await this.authService.generateTokens(user.id);
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4321';
+    const params = new URLSearchParams({
+      access_token: tokens.accessToken,
+      refresh_token: tokens.refreshToken,
+    });
+    res.redirect(`${frontendUrl}/login?${params.toString()}`);
+  }
+
   /** 현재 로그인 유저 정보 */
   @Get('me')
   @Throttle({ default: { ttl: 60000, limit: 120 } })

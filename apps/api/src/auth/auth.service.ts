@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { PrismaService } from '../prisma/prisma.service';
 import { measure } from '../common/perf';
 import { toImageUrl } from '../common/image-url';
@@ -48,6 +49,23 @@ interface NaverUserResponse {
 interface JwtPayload {
   sub: string;
 }
+
+interface AppleIdTokenPayload {
+  sub: string;
+  email?: string;
+  email_verified?: boolean | string;
+  is_private_email?: boolean | string;
+}
+
+interface AppleUserPayload {
+  name?: {
+    firstName?: string;
+    lastName?: string;
+  };
+  email?: string;
+}
+
+const APPLE_JWKS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
 
 @Injectable()
 export class AuthService {
@@ -208,6 +226,80 @@ export class AuthService {
         nickname: await this.ensureUniqueNickname(nickname),
         accounts: {
           create: { provider: 'naver', providerId },
+        },
+      },
+    });
+  }
+
+  /** Apple 인가 URL 생성 (form_post 응답 모드 — name·email scope 요청 시 필수) */
+  getAppleAuthUrl(): string {
+    const clientId = process.env.APPLE_CLIENT_ID;
+    const callbackUrl = process.env.APPLE_CALLBACK_URL;
+    const state = Math.random().toString(36).slice(2);
+    const params = new URLSearchParams({
+      response_type: 'code id_token',
+      response_mode: 'form_post',
+      client_id: clientId!,
+      redirect_uri: callbackUrl!,
+      scope: 'name email',
+      state,
+    });
+    return `https://appleid.apple.com/auth/authorize?${params.toString()}`;
+  }
+
+  /** Apple id_token 검증 (JWKS 서명·iss·aud·exp 확인) */
+  async verifyAppleIdToken(idToken: string): Promise<AppleIdTokenPayload> {
+    return measure('auth.verifyAppleIdToken', async () => {
+      const clientId = process.env.APPLE_CLIENT_ID;
+      if (!clientId) throw new UnauthorizedException('Apple 로그인 설정이 누락되었습니다');
+      try {
+        const { payload } = await jwtVerify(idToken, APPLE_JWKS, {
+          issuer: 'https://appleid.apple.com',
+          audience: clientId,
+        });
+        if (!payload.sub) throw new Error('sub 없음');
+        return payload as AppleIdTokenPayload;
+      } catch {
+        throw new UnauthorizedException('Apple id_token 검증 실패');
+      }
+    });
+  }
+
+  /** Apple 유저 정보로 계정 조회 또는 생성 */
+  async findOrCreateFromApple(idPayload: AppleIdTokenPayload, userPayload?: AppleUserPayload) {
+    const providerId = idPayload.sub;
+    const email = idPayload.email || userPayload?.email || `apple_${providerId.slice(0, 8)}@apple.user`;
+    const nameFromPayload = [userPayload?.name?.lastName, userPayload?.name?.firstName].filter(Boolean).join('');
+    const nickname = nameFromPayload || `user_${providerId.slice(0, 8)}`;
+
+    const existingAccount = await this.prisma.read.account.findUnique({
+      where: { provider_providerId: { provider: 'apple', providerId } },
+      include: { user: true },
+    });
+
+    if (existingAccount) {
+      return existingAccount.user;
+    }
+
+    // 같은 이메일로 가입된 카카오·네이버 계정이 있으면 동일 유저에 Apple 계정 연결
+    if (idPayload.email) {
+      const userByEmail = await this.prisma.read.user.findUnique({
+        where: { email: idPayload.email },
+      });
+      if (userByEmail) {
+        await this.prisma.write.account.create({
+          data: { provider: 'apple', providerId, userId: userByEmail.id },
+        });
+        return userByEmail;
+      }
+    }
+
+    return this.prisma.write.user.create({
+      data: {
+        email,
+        nickname: await this.ensureUniqueNickname(nickname),
+        accounts: {
+          create: { provider: 'apple', providerId },
         },
       },
     });
