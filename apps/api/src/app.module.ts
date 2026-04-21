@@ -15,6 +15,7 @@ import { StorageModule } from './storage/storage.module';
 import { AdminModule } from './admin/admin.module';
 import { BoardsModule } from './boards/boards.module';
 import { PlacesModule } from './places/places.module';
+import { OgModule } from './og/og.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { PlacesModule } from './places/places.module';
     AdminModule,
     BoardsModule,
     PlacesModule,
+    OgModule,
   ],
   providers: [
     {

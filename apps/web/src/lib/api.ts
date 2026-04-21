@@ -357,6 +357,26 @@ export async function fetchMyRooms(): Promise<RoomListItem[]> {
   return res.json();
 }
 
+export interface RevisitSuggestion {
+  restaurantId: string;
+  name: string;
+  address: string;
+  category: string;
+  roomId: string;
+  roomName: string;
+  lastVisit: string;
+  daysAgo: number;
+  avgRating: number;
+  visitCount: number;
+}
+
+/** 재방문 추천 식당 — 내 방의 60일 이상 안 간 고평점 식당 */
+export async function fetchRevisitSuggestions(): Promise<RevisitSuggestion[]> {
+  const res = await apiFetch(`${API_BASE}/rooms/revisit-suggestions`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
 /** 방 상세 */
 export async function fetchRoom(id: string): Promise<RoomDetailResponse> {
   const res = await apiFetch(`${API_BASE}/rooms/${id}`);

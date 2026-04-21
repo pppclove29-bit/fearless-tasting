@@ -60,6 +60,14 @@ export class RoomsController {
     return this.roomsService.findMyRooms(user.id);
   }
 
+  /** 재방문 추천 — 내 방의 식당 중 60일 이상 안 간 고평점 식당 */
+  @Get('revisit-suggestions')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '재방문 추천 식당' })
+  getRevisitSuggestions(@CurrentUser() user: { id: string }) {
+    return this.roomsService.getRevisitSuggestions(user.id);
+  }
+
   /** 초대 코드로 입장 */
   @Post('join')
   @Throttle({ default: { ttl: 60000, limit: 10 } })

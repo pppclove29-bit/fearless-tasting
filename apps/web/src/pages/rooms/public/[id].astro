@@ -38,6 +38,7 @@ const description = room && summary
 <BaseLayout
   title={title}
   description={description}
+  ogImage={room ? `${API_BASE}/og/public-rooms/${id}.png` : undefined}
   ogImageAlt={room ? `${room.name} 맛집 리스트 — ${room.restaurants.length}곳` : '공개 맛집 방'}
   noindex={!room}
 >

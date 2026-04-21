@@ -1126,6 +1126,102 @@ export class RoomsService {
     }
   }
 
+  // ──────────────── 재방문 추천 ────────────────
+
+  /**
+   * 유저가 예전에 다녀온 식당 중 재방문할 만한 후보 추천.
+   * 조건: 내 방의 식당 + 본인 또는 멤버가 방문한 지 60일 이상 경과 + 폐점 아님 + 평점 4점 이상.
+   */
+  async getRevisitSuggestions(userId: string, limit = 6) {
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    // 내가 속한 방 목록
+    const myRooms = await this.prisma.read.roomMember.findMany({
+      where: { userId },
+      select: { roomId: true },
+    });
+    const roomIds = myRooms.map((m) => m.roomId);
+    if (roomIds.length === 0) return [];
+
+    // 내가 방문 기록을 만든 식당들
+    const restaurants = await this.prisma.read.roomRestaurant.findMany({
+      where: {
+        roomId: { in: roomIds },
+        isClosed: false,
+        visits: { some: { createdById: userId } },
+      },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        category: true,
+        roomId: true,
+        room: { select: { name: true } },
+        visits: {
+          where: { createdById: userId },
+          select: { visitedAt: true },
+          orderBy: { visitedAt: 'desc' },
+          take: 1,
+        },
+        _count: { select: { visits: true } },
+      },
+      take: 100,
+    });
+
+    // 각 식당의 평균 평점 조회 (전체 방문 기준)
+    const restIds = restaurants.map((r) => r.id);
+    const ratingStats = await this.prisma.read.roomReview.groupBy({
+      by: ['visitId'],
+      where: { visit: { restaurantId: { in: restIds } } },
+      _avg: { rating: true },
+    });
+    const visitRatingMap = new Map(ratingStats.map((r) => [r.visitId, r._avg.rating ?? 0]));
+
+    // 식당별 모든 방문에 대한 평균
+    const allVisits = await this.prisma.read.roomVisit.findMany({
+      where: { restaurantId: { in: restIds } },
+      select: { id: true, restaurantId: true },
+    });
+    const restRatings = new Map<string, number[]>();
+    for (const v of allVisits) {
+      const avg = visitRatingMap.get(v.id);
+      if (avg !== undefined) {
+        if (!restRatings.has(v.restaurantId)) restRatings.set(v.restaurantId, []);
+        restRatings.get(v.restaurantId)!.push(avg);
+      }
+    }
+
+    const suggestions = restaurants
+      .map((r) => {
+        const lastVisit = r.visits[0]?.visitedAt;
+        if (!lastVisit || lastVisit > sixtyDaysAgo) return null;
+        const ratings = restRatings.get(r.id) ?? [];
+        const avgRating = ratings.length > 0
+          ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
+          : 0;
+        if (avgRating < 4) return null;
+        const daysAgo = Math.floor((Date.now() - lastVisit.getTime()) / (24 * 60 * 60 * 1000));
+        return {
+          restaurantId: r.id,
+          name: r.name,
+          address: r.address,
+          category: r.category,
+          roomId: r.roomId,
+          roomName: r.room.name,
+          lastVisit: lastVisit.toISOString(),
+          daysAgo,
+          avgRating,
+          visitCount: r._count.visits,
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null)
+      .sort((a, b) => b.daysAgo - a.daysAgo)
+      .slice(0, limit);
+
+    return suggestions;
+  }
+
   // ──────────────── 리뷰 비교 ────────────────
 
   /** 같은 식당에 대한 멤버별 리뷰 비교 */

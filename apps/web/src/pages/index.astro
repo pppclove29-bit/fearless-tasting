@@ -79,6 +79,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <span class="empty-text">참여 중인 방이 없습니다</span>
       <span class="empty-sub">위에서 방을 만들거나 초대받은 방에 입장하세요</span>
     </p>
+
+    <!-- 재방문 추천 섹션 (60일 이상 안 간 고평점 식당) -->
+    <section id="revisit-section" class="revisit-section" hidden>
+      <h3 class="revisit-title">🔄 다시 가볼 만한 곳</h3>
+      <p class="revisit-subtitle">오래 안 가신 우리 방의 고평점 식당들</p>
+      <div id="revisit-list" class="revisit-list"></div>
+    </section>
   </div>
 
   <!-- 랜딩 (기본 표시, 로그인 시 숨김) -->
@@ -769,6 +776,85 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: #166534 !important;
     border-color: #bbf7d0 !important;
   }
+
+  /* 재방문 추천 섹션 */
+  .revisit-section {
+    margin-top: 2rem;
+    padding: 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .revisit-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    margin: 0 0 0.25rem;
+  }
+  .revisit-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 0 0 1rem;
+  }
+  .revisit-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.6rem;
+  }
+  .revisit-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.85rem 1rem;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .revisit-card:hover { border-color: var(--text-heading); }
+  .revisit-card:active { transform: scale(0.99); }
+  .revisit-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+  }
+  .revisit-cat {
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-sub);
+    font-weight: 500;
+  }
+  .revisit-days {
+    color: #b45309;
+    font-weight: 700;
+  }
+  [data-theme="dark"] .revisit-days { color: #fbbf24; }
+  .revisit-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .revisit-meta {
+    font-size: 0.75rem;
+    color: var(--text-sub);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .revisit-room {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
   [data-theme="dark"] .room-invite-btn-copied {
     background: #14532d !important;
     color: #bbf7d0 !important;
@@ -781,7 +867,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <script>
-  import { fetchCurrentUser, getCachedUser, fetchMyRooms, createRoom, fetchNotices, showToast } from '@/lib/api';
+  import { fetchCurrentUser, getCachedUser, fetchMyRooms, createRoom, fetchNotices, showToast, fetchRevisitSuggestions } from '@/lib/api';
   import type { RoomListItem } from '@/lib/api';
   import { formatDate } from '@repo/utils';
 
@@ -1018,6 +1104,38 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         allRooms = [];
       }
       applyAndRenderHome();
+
+      // 재방문 추천 섹션 (방이 있을 때만 로드)
+      if (allRooms.length > 0) {
+        loadRevisitSuggestions();
+      }
+    }
+  }
+
+  async function loadRevisitSuggestions() {
+    const section = document.getElementById('revisit-section');
+    const listEl = document.getElementById('revisit-list');
+    if (!section || !listEl) return;
+    try {
+      const suggestions = await fetchRevisitSuggestions();
+      if (suggestions.length === 0) return;
+      const escape = (t: string) => { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+      listEl.innerHTML = suggestions.map((s) => {
+        const shortAddr = s.address.replace(/^(\S+[시도])\s+(\S+[시군구]).*$/, '$1 $2');
+        return `
+          <a href="/room/restaurant?id=${s.roomId}&rid=${s.restaurantId}" class="revisit-card">
+            <div class="revisit-card-top">
+              <span class="revisit-cat">${escape(s.category)}</span>
+              <span class="revisit-days">${s.daysAgo}일 만</span>
+            </div>
+            <div class="revisit-name">${escape(s.name)}</div>
+            <div class="revisit-meta">${escape(shortAddr)} · ★ ${s.avgRating.toFixed(1)}</div>
+            <div class="revisit-room">📍 ${escape(s.roomName)}</div>
+          </a>`;
+      }).join('');
+      section.hidden = false;
+    } catch {
+      // 조용히 실패
     }
   }
 
