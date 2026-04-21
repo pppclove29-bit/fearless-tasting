@@ -512,7 +512,7 @@ export class RoomsService {
     // 알림: 식당 등록
     const user = await this.prisma.read.user.findUnique({ where: { id: addedById }, select: { nickname: true } });
     if (user) {
-      this.createNotificationForRoom(roomId, addedById, 'restaurant_added', `${user.nickname}님이 "${name}" 식당을 등록했습니다.`).catch(() => {});
+      this.createNotificationForRoom(roomId, addedById, 'restaurant_added', `${user.nickname}님이 "${name}" 식당을 등록했습니다.`, { restaurantId: restaurant.id }).catch(() => {});
     }
 
     return restaurant;
@@ -692,7 +692,7 @@ export class RoomsService {
 
     // 알림: 방문 기록 추가
     if (visit.createdBy) {
-      this.createNotificationForRoom(roomId, userId, 'visit_added', `${visit.createdBy.nickname}님이 "${restaurant.name}" 방문을 기록했습니다.`).catch(() => {});
+      this.createNotificationForRoom(roomId, userId, 'visit_added', `${visit.createdBy.nickname}님이 "${restaurant.name}" 방문을 기록했습니다.`, { restaurantId }).catch(() => {});
     }
 
     return visit;
@@ -782,7 +782,7 @@ export class RoomsService {
     // 알림: 리뷰 작성
     const reviewer = await this.prisma.read.user.findUnique({ where: { id: userId }, select: { nickname: true } });
     if (reviewer) {
-      this.createNotificationForRoom(visit.restaurant.roomId, userId, 'review_added', `${reviewer.nickname}님이 "${visit.restaurant.name}"에 리뷰를 남겼습니다. (${rating}점)`).catch(() => {});
+      this.createNotificationForRoom(visit.restaurant.roomId, userId, 'review_added', `${reviewer.nickname}님이 "${visit.restaurant.name}"에 리뷰를 남겼습니다. (${rating}점)`, { restaurantId: visit.restaurantId }).catch(() => {});
     }
 
     return review;
@@ -1099,12 +1099,12 @@ export class RoomsService {
     return { count };
   }
 
-  /** 알림 생성 헬퍼 (방 멤버 전체에게, 본인 제외). members를 전달하면 DB 조회 생략 */
+  /** 알림 생성 헬퍼 (방 멤버 전체에게, 본인 제외). link/restaurantId로 deep link 커스터마이즈 가능 */
   async createNotificationForRoom(
     roomId: string, excludeUserId: string, type: string, message: string,
-    members?: { userId: string }[],
+    opts?: { members?: { userId: string }[]; restaurantId?: string; tab?: string },
   ) {
-    const memberList = members ?? await this.prisma.read.roomMember.findMany({ where: { roomId }, select: { userId: true } });
+    const memberList = opts?.members ?? await this.prisma.read.roomMember.findMany({ where: { roomId }, select: { userId: true } });
     const recipients = memberList.filter((m) => m.userId !== excludeUserId);
     const data = recipients.map((m) => ({ roomId, userId: m.userId, type, message }));
     if (data.length > 0) {
@@ -1112,11 +1112,16 @@ export class RoomsService {
 
       // FCM 푸시 발송 (fire-and-forget)
       const room = await this.prisma.read.room.findUnique({ where: { id: roomId }, select: { name: true } });
+      const link = opts?.restaurantId
+        ? `/room/restaurant?id=${roomId}&rid=${opts.restaurantId}`
+        : opts?.tab
+          ? `/room?id=${roomId}&tab=${opts.tab}`
+          : `/room?id=${roomId}`;
       this.fcmService.sendToUsers(
         recipients.map((m) => m.userId),
         room?.name ?? '무모한 시식가',
         message,
-        { roomId, link: `/room?id=${roomId}` },
+        { roomId, link },
       ).catch(() => {});
     }
   }

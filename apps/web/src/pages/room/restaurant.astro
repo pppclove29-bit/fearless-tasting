@@ -176,9 +176,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     background: rgba(255,255,255,0.7);
     border-radius: 10px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 0.5rem;
     z-index: 10;
+  }
+
+  .photo-loading-label {
+    font-size: 0.78rem;
+    color: var(--text-sub);
+    font-weight: 600;
   }
 
   [data-theme="dark"] .photo-loading-overlay {
@@ -1858,6 +1866,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import type { RoomReviewWithUser, RoomVisitWithDetails } from '@repo/types';
   import { formatRating, formatDate } from '@repo/utils';
   import { uploadImage } from '@/lib/image-upload';
+  import { maybeRequestPushAfterCommit } from '@/lib/push-onboard';
 
   function initRestaurantPage() {
     const loadingMsg = document.getElementById('loading-msg');
@@ -2497,25 +2506,29 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           });
         });
 
-        // 갤러리 로딩 오버레이
+        // 갤러리 로딩 오버레이 (단계·퍼센트 표시)
         const gallery = area.querySelector<HTMLElement>('.rest-photo-gallery');
         let photoLock = false;
-        function setPhotoLoading(on: boolean) {
+        function setPhotoLoading(on: boolean, label?: string) {
           photoLock = on;
           if (!gallery) return;
           let overlay = gallery.querySelector<HTMLElement>('.photo-loading-overlay');
-          if (on && !overlay) {
-            overlay = document.createElement('div');
-            overlay.className = 'photo-loading-overlay';
-            overlay.innerHTML = '<span class="photo-loading-spinner"></span>';
-            gallery.style.position = 'relative';
-            gallery.appendChild(overlay);
-          } else if (!on && overlay) {
+          if (on) {
+            if (!overlay) {
+              overlay = document.createElement('div');
+              overlay.className = 'photo-loading-overlay';
+              overlay.innerHTML = '<span class="photo-loading-spinner"></span><span class="photo-loading-label"></span>';
+              gallery.style.position = 'relative';
+              gallery.appendChild(overlay);
+            }
+            const labelEl = overlay.querySelector<HTMLElement>('.photo-loading-label');
+            if (labelEl) labelEl.textContent = label ?? '';
+          } else if (overlay) {
             overlay.remove();
           }
         }
 
-        // 식당 사진 업로드 (최대 3개)
+        // 식당 사진 업로드 (최대 3개, 로컬 프리뷰 + 진행률)
         const restPhotoInput = document.getElementById('rest-photo-input') as HTMLInputElement | null;
         if (restPhotoInput) {
           restPhotoInput.addEventListener('change', async () => {
@@ -2527,9 +2540,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               showToast('이미지는 식당당 최대 3개까지 등록할 수 있습니다.', 'info');
               return;
             }
-            setPhotoLoading(true);
+            setPhotoLoading(true, '압축 중...');
             try {
-              const { imageUrl } = await uploadImage(file, 'restaurants', restaurantId);
+              const { imageUrl } = await uploadImage(file, 'restaurants', restaurantId, (p) => {
+                if (p.stage === 'compressing') setPhotoLoading(true, '압축 중...');
+                else if (p.stage === 'uploading' && p.percent !== null) setPhotoLoading(true, `업로드 ${p.percent}%`);
+              });
               const newImages = [...currentImgs, imageUrl];
               await updateRoomRestaurant(currentRoom.id, restaurantId, { images: newImages });
               currentRoom = await fetchRoom(currentRoom.id);
@@ -2834,6 +2850,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           currentRoom = await fetchRoom(currentRoom.id);
           await loadRestaurantDetail();
           showToast('리뷰가 작성되었습니다.', 'success');
+          maybeRequestPushAfterCommit('review_create_detail').catch(() => {});
         }).catch((err) => showToast(err instanceof Error ? err.message : '리뷰 작성에 실패했습니다.')));
       }
 

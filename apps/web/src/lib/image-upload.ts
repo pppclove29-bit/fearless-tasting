@@ -14,16 +14,24 @@ interface UploadResult {
   key: string;
 }
 
+export type UploadStage = 'compressing' | 'uploading' | 'done';
+
+export interface UploadProgress {
+  stage: UploadStage;
+  /** 업로드 단계에서만 유효 (0~100). 다른 단계에서는 null */
+  percent: number | null;
+}
+
 /**
- * 이미지 파일을 압축 후 R2에 업로드.
- * @returns 공개 이미지 URL + R2 key
+ * 이미지 파일을 압축 후 R2에 업로드. onProgress 콜백으로 단계·퍼센트 전달.
  */
 export async function uploadImage(
   file: File,
   folder: ImageFolder,
   targetId?: string,
+  onProgress?: (p: UploadProgress) => void,
 ): Promise<UploadResult> {
-  // 1. 브라우저에서 압축
+  onProgress?.({ stage: 'compressing', percent: null });
   const compressed = await imageCompression(file, {
     maxSizeMB: 0.5,
     maxWidthOrHeight: 1200,
@@ -31,7 +39,6 @@ export async function uploadImage(
     fileType: 'image/webp',
   });
 
-  // 2. Presigned URL 발급
   const res = await apiFetch(`${API_BASE}/upload/presigned-url`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -50,34 +57,44 @@ export async function uploadImage(
     key: string;
   };
 
-  // 3. R2에 직접 업로드
-  const uploadRes = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'image/webp' },
-    body: compressed,
-  });
-
-  if (!uploadRes.ok) throw new Error('이미지 업로드 실패');
+  onProgress?.({ stage: 'uploading', percent: 0 });
+  await uploadWithProgress(uploadUrl, compressed, (p) => onProgress?.({ stage: 'uploading', percent: p }));
+  onProgress?.({ stage: 'done', percent: 100 });
 
   return { imageUrl, key };
 }
 
+function uploadWithProgress(url: string, blob: Blob, onPercent: (p: number) => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type', 'image/webp');
+    xhr.upload.addEventListener('progress', (e) => {
+      if (!e.lengthComputable) return;
+      onPercent(Math.round((e.loaded / e.total) * 100));
+    });
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error('이미지 업로드 실패'));
+    };
+    xhr.onerror = () => reject(new Error('이미지 업로드 네트워크 오류'));
+    xhr.send(blob);
+  });
+}
+
 /**
- * 여러 이미지를 순차 업로드 (최대 maxCount장)
+ * 여러 이미지 병렬 업로드 (최대 maxCount장).
+ * onProgress는 인덱스별 진행 상황 전달.
  */
 export async function uploadImages(
   files: File[],
   folder: ImageFolder,
   maxCount = 3,
   targetId?: string,
+  onProgress?: (index: number, p: UploadProgress) => void,
 ): Promise<UploadResult[]> {
   const limited = files.slice(0, maxCount);
-  const results: UploadResult[] = [];
-
-  for (const file of limited) {
-    const result = await uploadImage(file, folder, targetId);
-    results.push(result);
-  }
-
-  return results;
+  return Promise.all(limited.map((file, i) =>
+    uploadImage(file, folder, targetId, (p) => onProgress?.(i, p)),
+  ));
 }
