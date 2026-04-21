@@ -2,9 +2,98 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import AdSlot from '@/components/AdSlot.astro';
 export const prerender = false;
+
+const { slug, postId } = Astro.params;
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+const siteUrl = (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '');
+
+interface PostForSeo {
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  author: { nickname: string; profileImageUrl?: string | null };
+  comments: Array<{
+    content: string;
+    createdAt: string;
+    isDeleted?: boolean;
+    author?: { nickname: string } | null;
+  }>;
+  _count?: { likes?: number; views?: number };
+}
+
+let ssrPost: PostForSeo | null = null;
+try {
+  const res = await fetch(`${API_BASE}/boards/${slug}/posts/${postId}`);
+  if (res.ok) ssrPost = await res.json();
+} catch {
+  /* client-side will handle */
+}
+
+const pageTitle = ssrPost ? `${ssrPost.title} — 커뮤니티` : '게시글 — 커뮤니티';
+const pageDescription = ssrPost
+  ? (ssrPost.content || '').replace(/\s+/g, ' ').slice(0, 160)
+  : '무모한 시식가 커뮤니티 게시글';
+const canonicalUrl = `${siteUrl}/community/${slug}/${postId}`;
 ---
 
-<BaseLayout title="게시글 — 커뮤니티">
+<BaseLayout title={pageTitle} description={pageDescription}>
+  {ssrPost && (
+    <Fragment slot="head">
+      <script type="application/ld+json" set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "DiscussionForumPosting",
+        "mainEntityOfPage": canonicalUrl,
+        "headline": ssrPost.title,
+        "text": ssrPost.content,
+        "datePublished": ssrPost.createdAt,
+        "dateModified": ssrPost.updatedAt,
+        "author": {
+          "@type": "Person",
+          "name": ssrPost.author?.nickname ?? '익명',
+        },
+        "url": canonicalUrl,
+        "interactionStatistic": [
+          {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/LikeAction",
+            "userInteractionCount": ssrPost._count?.likes ?? 0,
+          },
+          {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/CommentAction",
+            "userInteractionCount": ssrPost.comments?.length ?? 0,
+          },
+          {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/ViewAction",
+            "userInteractionCount": ssrPost._count?.views ?? 0,
+          },
+        ],
+        "comment": (ssrPost.comments || [])
+          .filter((c) => !c.isDeleted && c.content)
+          .slice(0, 20)
+          .map((c) => ({
+            "@type": "Comment",
+            "text": c.content,
+            "datePublished": c.createdAt,
+            "author": {
+              "@type": "Person",
+              "name": c.author?.nickname ?? '익명',
+            },
+          })),
+      })} />
+      <script type="application/ld+json" set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "홈", "item": siteUrl },
+          { "@type": "ListItem", "position": 2, "name": "커뮤니티", "item": `${siteUrl}/community` },
+          { "@type": "ListItem", "position": 3, "name": ssrPost.title, "item": canonicalUrl },
+        ],
+      })} />
+    </Fragment>
+  )}
   <div class="post-page">
     <a href="#" class="back-link" id="post-back">&lt; 목록으로</a>
 
