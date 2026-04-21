@@ -1,0 +1,241 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+const siteUrl = (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '');
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+---
+
+<BaseLayout
+  title="커플 맛집 리스트 앱 비교 | 노션·구글맵·TimeTree·식신 vs 무모한 시식가"
+  description="커플끼리 맛집 저장하는 앱 뭐가 제일 좋을까? 노션·구글맵·TimeTree·식신을 각각 써보고 맛집 기록 목적에 어느 쪽이 맞는지 비교 정리했습니다."
+  ogImageAlt="커플 맛집 앱 비교 — 노션·구글맵·TimeTree·식신 vs 무모한 시식가"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "커플 맛집 리스트 앱 비교 — 노션·구글맵·TimeTree·식신 vs 무모한 시식가",
+      "description": "커플이 함께 맛집을 저장·관리할 때 많이 쓰이는 4개 앱을 목적별로 비교",
+      "url": siteUrl + "/guide/couple-app-comparison",
+      "author": { "@type": "Organization", "name": "무모한 시식가" },
+      "keywords": "커플 맛집 앱, 노션 대신, 구글맵 맛집 저장, 커플 맛집 앱 비교, 맛집 저장 앱, TimeTree 맛집, 식신 커플",
+    })} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "홈", "item": siteUrl },
+        { "@type": "ListItem", "position": 2, "name": "가이드", "item": siteUrl + "/guide/couple-app-comparison" },
+        { "@type": "ListItem", "position": 3, "name": "커플 맛집 앱 비교", "item": siteUrl + "/guide/couple-app-comparison" },
+      ]
+    })} />
+  </Fragment>
+
+  <div class="guide-page">
+    <nav class="guide-breadcrumb">
+      <a href="/">홈</a> &rsaquo; <span>가이드</span> &rsaquo; <span>커플 맛집 앱 비교</span>
+    </nav>
+
+    <section class="guide-hero">
+      <span class="guide-badge">커플 맛집 앱 비교</span>
+      <h1>노션·구글맵·TimeTree 다 써보고<br/>내린 결론</h1>
+      <p class="guide-sub">
+        "커플끼리 맛집 저장하고 싶은데 뭐가 제일 좋을까?" 검색했을 때 흔히 추천되는 4개 앱을
+        각각 실제 써보고 목적별로 뭐가 맞는지 정리했습니다.
+      </p>
+    </section>
+
+    <section class="guide-section">
+      <h2>한 장 비교표</h2>
+      <div class="compare-table-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>기능</th>
+              <th>노션</th>
+              <th>구글맵 저장</th>
+              <th>TimeTree</th>
+              <th>식신</th>
+              <th class="highlight">무모한 시식가</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>커플 공유</td><td>△ 협업 제한</td><td>○</td><td>◎</td><td>×</td><td class="highlight">◎</td></tr>
+            <tr><td>별점·세부 평점</td><td>× 직접 설계</td><td>×</td><td>×</td><td>△ 공개 리뷰</td><td class="highlight">◎ 5축 세부</td></tr>
+            <tr><td>방문 기록</td><td>△ 수동</td><td>×</td><td>△ 일정형</td><td>×</td><td class="highlight">◎ 자동</td></tr>
+            <tr><td>통계·분석</td><td>△ 수동 집계</td><td>×</td><td>×</td><td>×</td><td class="highlight">◎ 자동</td></tr>
+            <tr><td>지도 기반 탐색</td><td>×</td><td>◎</td><td>×</td><td>◎</td><td class="highlight">○</td></tr>
+            <tr><td>프라이빗</td><td>○</td><td>○</td><td>○</td><td>× 공개</td><td class="highlight">◎ 우리끼리</td></tr>
+            <tr><td>초기 세팅 난이도</td><td>× DB 직접</td><td>◎ 즉시</td><td>○</td><td>◎</td><td class="highlight">◎ 템플릿</td></tr>
+            <tr><td>무료 제한</td><td>△ 블록 수</td><td>없음</td><td>없음</td><td>없음</td><td class="highlight">없음</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="guide-section">
+      <h2>📘 노션 — 정리력은 최고, 실사용은 귀찮음</h2>
+      <p>
+        커스텀 DB로 "맛집 속성" 완벽히 짤 수 있다는 게 강점. 속성·뷰·템플릿 다 자유.
+      </p>
+      <p>
+        <strong>한계</strong>: 커플이 공유 편집하려면 유료 플랜 필요하거나 블록 수 제한에 걸림.
+        모바일에서 별점·카테고리 입력하려면 매번 DB 열고 속성 수정. 식당 하나 등록에 1분 이상.
+        "검색하고 바로 저장" 속도가 안 나옴.
+      </p>
+      <p class="guide-quote">
+        <strong>이런 커플에게</strong>: DB 설계 자체가 재미있는 커플. 사진·글·일기까지 통합 정리 원하는 커플.
+      </p>
+    </section>
+
+    <section class="guide-section">
+      <h2>🗺️ Google Maps 저장 리스트 — 제일 간편, 대신 데이터 없음</h2>
+      <p>
+        "저장" 버튼 하나로 리스트에 추가. 리스트 공유하면 상대도 볼 수 있음. 지도 기반이라 "근처 저장한 곳" 바로 보임.
+      </p>
+      <p>
+        <strong>한계</strong>: <strong>별점 못 남김, 리뷰 못 씀, 방문 기록 없음</strong>. "갔었나?" "맛있었나?" "또 갈까?"
+        같은 질문에 답을 못 줌. 저장했던 곳은 영원히 "언젠가 갈 곳"으로 남음.
+      </p>
+      <p class="guide-quote">
+        <strong>이런 커플에게</strong>: 맛집 정보는 그냥 "찍어두기"만 하면 되고, 평가·리뷰는 굳이 필요 없는 커플.
+      </p>
+    </section>
+
+    <section class="guide-section">
+      <h2>📅 TimeTree — 일정 앱이지 맛집 앱이 아님</h2>
+      <p>
+        커플 공유 캘린더가 메인. 일정에 메모·댓글 달 수 있어서 "이 날 여기 가기로 함" 정도는 기록 가능.
+      </p>
+      <p>
+        <strong>한계</strong>: <strong>맛집 목록 기능 자체가 없음</strong>. 일정으로만 쌓여서 나중에
+        "강남에서 갔던 한식집" 같은 필터링 불가. "데이트 계획"에 최적이지 "맛집 기록"엔 부적합.
+      </p>
+      <p class="guide-quote">
+        <strong>이런 커플에게</strong>: 맛집보다 "기념일·약속 관리"가 메인인 커플. 기록보단 계획 중심.
+      </p>
+    </section>
+
+    <section class="guide-section">
+      <h2>🔍 식신 — 발견용, 우리끼리 리스트 아님</h2>
+      <p>
+        공개 리뷰 기반 맛집 발견 앱. 근처 인기 맛집 탐색하기 좋음.
+      </p>
+      <p>
+        <strong>한계</strong>: <strong>커플 전용 프라이빗 리스트 기능이 없음</strong>. 북마크는 개인용이고,
+        상대와 공유·공동 편집 불가. 공개 리뷰라 "우리끼리 솔직한 후기" 남기기 어색.
+      </p>
+      <p class="guide-quote">
+        <strong>이런 커플에게</strong>: "리스트 관리"보다 "새 맛집 발견"이 목적인 커플.
+      </p>
+    </section>
+
+    <section class="guide-section">
+      <h2>🍽️ 무모한 시식가 — 우리끼리 + 리뷰 + 통계 + 제로 세팅</h2>
+      <p>
+        커플 전용 방 만들고, 다녀온 식당 검색·등록, 별점과 세부 평점(맛/가성비/서비스/청결/접근성)까지 1분 안에 기록.
+        우리 커플만 보는 리스트. 공개 전환도 가능.
+      </p>
+      <p>
+        <strong>강점</strong>: 노션처럼 DB 설계할 필요 없고(템플릿 1클릭), Google Maps처럼 정보 빈약하지 않고(별점·리뷰·통계),
+        TimeTree처럼 일정에 묶이지 않고, 식신처럼 공개로 노출되지 않음.
+      </p>
+      <p>
+        <strong>실제 쓰는 법</strong>: <a href="/use/couples" class="guide-link">커플용 사용 가이드</a> ·
+        <a href="/use/templates" class="guide-link">템플릿 6종</a> ·
+        <a href="/guide/couple-restaurant-list" class="guide-link">커플 맛집 리스트 시작 4단계</a>
+      </p>
+    </section>
+
+    <section class="guide-section">
+      <h2>어떻게 고르지? — 목적별 추천</h2>
+
+      <div class="guide-step">
+        <span class="guide-step-num">1</span>
+        <div>
+          <h3>"일정 + 맛집 둘 다 관리"가 목적</h3>
+          <p>TimeTree(일정 주력) + 무모한 시식가(맛집 주력) 조합. 각자 잘하는 거만 시키기.</p>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <span class="guide-step-num">2</span>
+        <div>
+          <h3>"리뷰·평점·재방문 판단" 원함</h3>
+          <p>무모한 시식가 단독. 별점·세부 평점·통계·재방문 추천까지 다 됨. Google Maps 저장은 데이터가 없어 한계.</p>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <span class="guide-step-num">3</span>
+        <div>
+          <h3>"새 맛집 탐색"이 메인</h3>
+          <p>식신·네이버 지도·카카오맵이 맞음. 맛집 기록·관리는 별도 앱이 나음.</p>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <span class="guide-step-num">4</span>
+        <div>
+          <h3>"정리 자체가 취미"</h3>
+          <p>노션. 자유도 최고. 대신 모바일 UX·공유 한계는 감수.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-cta">
+      <h2>일단 5분 써보고 판단하세요</h2>
+      <p>카카오 로그인 3초 → 커플 템플릿 선택 → 바로 시작.</p>
+      <a href={`${apiUrl}/auth/kakao`} class="guide-cta-btn">무료로 시작하기</a>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .compare-table-wrap {
+    overflow-x: auto;
+    margin: 0.5rem 0;
+  }
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    min-width: 600px;
+  }
+  .compare-table th, .compare-table td {
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-sub);
+  }
+  .compare-table th {
+    background: var(--bg-hover);
+    color: var(--text-heading);
+    font-weight: 700;
+    font-size: 0.78rem;
+  }
+  .compare-table td:first-child {
+    text-align: left;
+    color: var(--text-heading);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .compare-table th.highlight, .compare-table td.highlight {
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 700;
+  }
+  [data-theme="dark"] .compare-table th.highlight,
+  [data-theme="dark"] .compare-table td.highlight {
+    background: #422006;
+    color: #fde68a;
+  }
+  .guide-quote {
+    margin-top: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    background: var(--bg-hover);
+    border-left: 3px solid var(--text-heading);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: var(--text-sub);
+  }
+</style>
