@@ -32,6 +32,14 @@ const month = now.getMonth() + 1;
       <span class="rankings-badge">{year}년 {month}월 기준</span>
       <h1>맛집 랭킹</h1>
       <p class="rankings-desc">사용자 평가와 리뷰를 기반으로 선정된 최고의 맛집들</p>
+      <div class="rankings-hero-cta">
+        <a href="/login" class="rankings-cta-btn" id="rankings-cta-guest" hidden>
+          내 맛집 랭킹 만들기
+        </a>
+        <a href="/rooms" class="rankings-cta-btn" id="rankings-cta-auth" hidden>
+          내 방으로 이동 →
+        </a>
+      </div>
     </section>
 
     <div id="rankings-loading" class="loading-msg">불러오는 중...</div>
@@ -84,7 +92,28 @@ const month = now.getMonth() + 1;
   .rankings-desc {
     font-size: 0.9rem;
     color: var(--text-sub);
+    margin-bottom: 1rem;
   }
+
+  .rankings-hero-cta {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+  .rankings-cta-btn {
+    display: inline-block;
+    padding: 0.65rem 1.5rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    font-weight: 700;
+    font-size: 0.88rem;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .rankings-cta-btn:hover { opacity: 0.88; }
 
   .loading-msg, .error-msg {
     text-align: center;
@@ -314,13 +343,24 @@ const month = now.getMonth() + 1;
 </style>
 
 <script>
-  import { fetchDiscover, fetchPlatformStats } from '@/lib/api';
+  import { fetchDiscover, fetchPlatformStats, fetchCurrentUser } from '@/lib/api';
 
   async function initRankingsPage() {
     const loadingEl = document.getElementById('rankings-loading');
     const errorEl = document.getElementById('rankings-error');
     const contentEl = document.getElementById('rankings-content');
     if (!loadingEl || !errorEl || !contentEl) return;
+
+    // 로그인 여부에 따라 히어로 CTA 분기
+    fetchCurrentUser().then((user) => {
+      const guestCta = document.getElementById('rankings-cta-guest');
+      const authCta = document.getElementById('rankings-cta-auth');
+      if (user && authCta) authCta.hidden = false;
+      else if (!user && guestCta) guestCta.hidden = false;
+    }).catch(() => {
+      const guestCta = document.getElementById('rankings-cta-guest');
+      if (guestCta) guestCta.hidden = false;
+    });
 
     try {
       const [discoverData, platformStats] = await Promise.all([

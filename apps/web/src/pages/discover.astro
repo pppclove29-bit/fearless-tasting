@@ -25,9 +25,20 @@ export const prerender = false;
 
   <div class="discover-page">
     <section class="discover-hero">
-      <span class="discover-badge">엄선된 맛집 리스트</span>
-      <h1>맛집 목록</h1>
-      <p class="discover-desc">지역별, 카테고리별 최고의 맛집을 찾아보세요</p>
+      <span class="discover-badge">광고 없는 실유저 추천</span>
+      <h1>진짜 후기 기반 맛집</h1>
+      <p class="discover-desc">
+        친구·가족·팀이 실제로 다녀오고 남긴 솔직한 리뷰로 선정된 맛집.<br/>
+        광고·협찬 없이 방문 데이터만으로 만든 리스트입니다.
+      </p>
+      <div class="discover-hero-cta" id="discover-hero-cta">
+        <a href="/login" class="discover-cta-btn" id="discover-cta-guest" hidden>
+          내 맛집 리스트 만들기
+        </a>
+        <a href="/rooms" class="discover-cta-btn" id="discover-cta-auth" hidden>
+          내 방으로 이동 →
+        </a>
+      </div>
     </section>
 
     <div class="discover-filters" id="discover-filters">
@@ -99,7 +110,28 @@ export const prerender = false;
   .discover-desc {
     font-size: 0.9rem;
     color: var(--text-sub);
+    line-height: 1.6;
+    margin: 0 0 1.25rem;
   }
+
+  .discover-hero-cta {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .discover-cta-btn {
+    display: inline-block;
+    padding: 0.7rem 1.6rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .discover-cta-btn:hover { opacity: 0.88; }
 
   .discover-filters {
     display: flex;
@@ -373,13 +405,24 @@ export const prerender = false;
 </style>
 
 <script>
-  import { fetchDiscover, fetchPublicRooms } from '@/lib/api';
+  import { fetchDiscover, fetchPublicRooms, fetchCurrentUser } from '@/lib/api';
   import type { DiscoverResponse } from '@/lib/api';
 
   async function initDiscoverPage() {
     const contentEl = document.getElementById('discover-content');
     const filtersEl = document.getElementById('discover-filters');
     if (!contentEl || !filtersEl) return;
+
+    // 로그인 여부에 따라 히어로 CTA 분기
+    fetchCurrentUser().then((user) => {
+      const guestCta = document.getElementById('discover-cta-guest');
+      const authCta = document.getElementById('discover-cta-auth');
+      if (user && authCta) authCta.hidden = false;
+      else if (!user && guestCta) guestCta.hidden = false;
+    }).catch(() => {
+      const guestCta = document.getElementById('discover-cta-guest');
+      if (guestCta) guestCta.hidden = false;
+    });
 
     let data: DiscoverResponse | null = null;
     let currentCategory = '전체';
