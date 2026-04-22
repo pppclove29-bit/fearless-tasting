@@ -125,6 +125,23 @@ const resolvedOgImage = ogImage
         </script>
       </>
     )}
+    {import.meta.env.PUBLIC_NAVER_ANALYTICS_ID && (
+      <script is:inline async src={`//wcs.naver.net/wcslog.js`}></script>
+      <script is:inline define:vars={{ wcsId: import.meta.env.PUBLIC_NAVER_ANALYTICS_ID }}>
+        /* 네이버 애널리틱스 — View Transitions마다 페이지뷰 전송 */
+        (function() {
+          function sendNaverPageView() {
+            var w = window;
+            if (!w.wcs) return;
+            if (!w.wcs_add) w.wcs_add = {};
+            w.wcs_add.wa = wcsId;
+            w.wcs.inflow('musikga.kr');
+            w.wcs_do();
+          }
+          document.addEventListener('astro:page-load', sendNaverPageView);
+        })();
+      </script>
+    )}
     <slot name="head" />
     <ViewTransitions />
     <title>{fullTitle}</title>
