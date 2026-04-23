@@ -1,14 +1,39 @@
+# 모든 봇 기본 규칙
 User-agent: *
-Allow: /
-Allow: /rooms/public
 Disallow: /admin
 Disallow: /login
 Disallow: /room
-Disallow: /rooms
 Disallow: /profile
 Disallow: /join
+Disallow: /cs
+Allow: /
 
+# 구글 AI 학습용 데이터 수집 차단
 User-agent: Google-Extended
 Disallow: /
+
+# 네이버 검색 봇 (Yeti) — 명시 규칙
+User-agent: Yeti
+Disallow: /admin
+Disallow: /login
+Disallow: /room
+Disallow: /profile
+Disallow: /join
+Disallow: /cs
+Allow: /
+Allow: /rooms/public
+Allow: /discover
+Allow: /rankings
+Allow: /about
+Allow: /guide
+
+# 다음 검색 봇
+User-agent: Daum
+Disallow: /admin
+Disallow: /login
+Disallow: /room
+Disallow: /profile
+Disallow: /join
+Allow: /
 
 Sitemap: https://musikga.kr/sitemap.xml
