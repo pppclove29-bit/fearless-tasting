@@ -177,8 +177,12 @@ model RoomRestaurant {
   city         String      @db.VarChar(50)
   /// 읍/면/동
   neighborhood String      @db.VarChar(100)
-  /// 카테고리
+  /// 표시용 카테고리 (매핑 완료 시 Category.name, 미매핑 시 원본 입력값)
   category     String      @db.VarChar(100)
+  /// 매핑된 카테고리 (null = 관리자 매핑 대기)
+  categoryRef  Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  /// 카테고리 ID (FK, nullable)
+  categoryId   Int?
   /// 위도 (카카오맵 좌표)
   latitude     Float?
   /// 경도 (카카오맵 좌표)
@@ -208,6 +212,50 @@ model RoomRestaurant {
   @@unique([roomId, name, address])
   @@index([roomId])
   @@index([addedById])
+  @@index([categoryId])
+}
+
+/// 식당 카테고리 (관리자 CMS에서 관리, 13개 기본값 시드 후 자유롭게 추가/비활성)
+model Category {
+  /// 고유 식별자
+  id            Int                @id @default(autoincrement())
+  /// 카테고리 이름 (예: "양식")
+  name          String             @unique @db.VarChar(50)
+  /// 이모지 (UI 표시용, 예: "🍝")
+  emoji         String?            @db.VarChar(10)
+  /// 정렬 순서 (작을수록 앞)
+  displayOrder  Int                @default(0)
+  /// 활성 여부 (비활성 시 공개 UI에서 숨김)
+  isActive      Boolean            @default(true)
+  /// 매핑 규칙 (동의어 → 이 카테고리)
+  mappings      CategoryMapping[]
+  /// 이 카테고리로 분류된 식당
+  restaurants   RoomRestaurant[]
+  /// 생성일
+  createdAt     DateTime           @default(now())
+  /// 최종 수정일
+  updatedAt     DateTime           @updatedAt
+
+  @@index([isActive, displayOrder])
+}
+
+/// 카테고리 매핑 규칙 (원본 문자열 → Category)
+/// 예: "맥도날드" → 양식, "커피전문점" → 카페
+model CategoryMapping {
+  /// 고유 식별자
+  id          Int      @id @default(autoincrement())
+  /// 원본 문자열 (카카오맵/네이버/유저 입력값)
+  rawInput    String   @unique @db.VarChar(200)
+  /// 매핑 대상 카테고리
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  /// 카테고리 ID (FK)
+  categoryId  Int
+  /// 생성일
+  createdAt   DateTime @default(now())
+  /// 최종 수정일
+  updatedAt   DateTime @updatedAt
+
+  @@index([categoryId])
 }
 
 /// 식당 이미지 (1:N, 식당당 최대 3개)

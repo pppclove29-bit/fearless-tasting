@@ -1183,3 +1183,99 @@ export async function addRequestComment(issueNumber: number, comment: string): P
   await throwIfNotOk(res, '댓글 작성에 실패했습니다.');
 }
 
+// ─── 카테고리 ───
+
+export interface CategoryPublic {
+  id: number;
+  name: string;
+  emoji: string | null;
+}
+
+export interface CategoryAdmin extends CategoryPublic {
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CategoryMappingItem {
+  id: number;
+  rawInput: string;
+  categoryId: number;
+  category: { id: number; name: string; emoji: string | null };
+}
+
+export interface UnmappedCategoryItem {
+  rawInput: string;
+  count: number;
+}
+
+/** 활성 카테고리 목록 (공개) */
+export async function fetchActiveCategories(): Promise<CategoryPublic[]> {
+  const res = await fetch(`${API_BASE}/categories`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+/** 관리자: 전체 카테고리 */
+export async function fetchAllCategories(): Promise<CategoryAdmin[]> {
+  const res = await apiFetch(`${API_BASE}/admin/categories`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function createCategory(data: { name: string; emoji?: string; displayOrder?: number; isActive?: boolean }): Promise<CategoryAdmin> {
+  const res = await apiFetch(`${API_BASE}/admin/categories`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  await throwIfNotOk(res, '카테고리 생성에 실패했습니다.');
+  return res.json();
+}
+
+export async function updateCategory(id: number, data: Partial<{ name: string; emoji: string | null; displayOrder: number; isActive: boolean }>): Promise<CategoryAdmin> {
+  const res = await apiFetch(`${API_BASE}/admin/categories/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  await throwIfNotOk(res, '카테고리 수정에 실패했습니다.');
+  return res.json();
+}
+
+export async function deleteCategory(id: number): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/admin/categories/${id}`, { method: 'DELETE' });
+  await throwIfNotOk(res, '카테고리 삭제에 실패했습니다.');
+}
+
+/** 관리자: 미매핑 원본 값 목록 */
+export async function fetchUnmappedCategories(): Promise<UnmappedCategoryItem[]> {
+  const res = await apiFetch(`${API_BASE}/admin/categories/unmapped`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+/** 관리자: 매핑 규칙 목록 */
+export async function fetchCategoryMappings(): Promise<CategoryMappingItem[]> {
+  const res = await apiFetch(`${API_BASE}/admin/categories/mappings`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+/** 관리자: 매핑 생성/수정 (+ 기존 식당 일괄 반영) */
+export async function upsertCategoryMapping(rawInput: string, categoryId: number): Promise<{ mapping: CategoryMappingItem; updatedRestaurants: number }> {
+  const res = await apiFetch(`${API_BASE}/admin/categories/mappings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rawInput, categoryId }),
+  });
+  await throwIfNotOk(res, '매핑 저장에 실패했습니다.');
+  return res.json();
+}
+
+export async function deleteCategoryMapping(id: number): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/admin/categories/mappings/${id}`, { method: 'DELETE' });
+  await throwIfNotOk(res, '매핑 삭제에 실패했습니다.');
+}
+

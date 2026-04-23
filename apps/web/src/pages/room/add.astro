@@ -516,8 +516,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     toggleRestaurantWishlist, searchNaverPlaces,
     RestaurantDuplicateError,
     showToast,
+    fetchActiveCategories,
   } from '@/lib/api';
-  import type { AuthUser, RoomDetailResponse } from '@/lib/api';
+  import type { AuthUser, RoomDetailResponse, CategoryPublic } from '@/lib/api';
   import { maybeRequestPushAfterCommit } from '@/lib/push-onboard';
 
   function initAddPage() {
@@ -550,14 +551,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   async function init() {
     try {
-      const [user, room] = await Promise.all([
+      const [user, room, categoryList] = await Promise.all([
         fetchCurrentUser(),
         fetchRoom(roomId!),
+        fetchActiveCategories(),
       ]);
       if (!user) { location.href = '/login'; return; }
       loadingMsg.hidden = true;
       content.hidden = false;
-      renderWizard(user, room);
+      renderWizard(user, room, categoryList);
     } catch (err) {
       console.error('[add] init 실패:', err);
       loadingMsg.hidden = true;
@@ -570,11 +572,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  function renderWizard(_user: AuthUser, room: RoomDetailResponse) {
+  function renderWizard(_user: AuthUser, room: RoomDetailResponse, categoryList: CategoryPublic[]) {
     // 카카오 SDK가 defer로 로드되므로 아직 없을 수 있음 — 설정만 있으면 true
     const kakaoMapKey = document.querySelector<HTMLMetaElement>('meta[name="kakao-app-key"]')?.content;
     const hasKakaoMap = !!kakaoMapKey;
-    const categories = ['한식','중식','일식','양식','카페','분식','치킨','피자','고기','해산물','술집','베이커리','기타'];
     const waitOptions = ['없음','~10분','~30분','~1시간','1시간+'];
     const today = new Date().toISOString().split('T')[0];
 
@@ -646,9 +647,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="form-group">
             <label class="form-label">카테고리</label>
             <div class="cat-chips" id="manual-cat-chips">
-              ${categories.map((c) => `<button type="button" class="cat-chip" data-cat="${c}">${c}</button>`).join('')}
+              ${categoryList.map((c) => `<button type="button" class="cat-chip" data-cat="${escapeHtml(c.name)}">${c.emoji ? escapeHtml(c.emoji) + ' ' : ''}${escapeHtml(c.name)}</button>`).join('')}
+              <button type="button" class="cat-chip" data-cat="__custom__">✏️ 직접 입력</button>
             </div>
-            <input type="text" class="form-input" id="manual-cat-custom" placeholder="직접 입력" hidden style="margin-top:0.4rem" />
+            <input type="text" class="form-input" id="manual-cat-custom" placeholder="직접 입력 (예: 패스트푸드)" hidden style="margin-top:0.4rem" />
           </div>
         </div>
 
@@ -1112,7 +1114,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         chip.classList.add('active');
         const val = chip.dataset.cat!;
         const customInput = document.getElementById('manual-cat-custom') as HTMLInputElement;
-        if (val === '기타') {
+        if (val === '__custom__') {
           customInput.hidden = false;
           customInput.focus();
           selectedCategory = customInput.value.trim();

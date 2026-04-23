@@ -18,6 +18,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <button type="button" class="tab-btn" data-tab="demo">가계정</button>
         <button type="button" class="tab-btn" data-tab="users">유저</button>
         <button type="button" class="tab-btn" data-tab="boards">게시판</button>
+        <button type="button" class="tab-btn" data-tab="categories">카테고리</button>
         <button type="button" class="tab-btn" data-tab="requests">요구사항</button>
       </div>
 
@@ -27,6 +28,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <div id="tab-demo" class="tab-panel" hidden></div>
       <div id="tab-users" class="tab-panel" hidden></div>
       <div id="tab-boards" class="tab-panel" hidden></div>
+      <div id="tab-categories" class="tab-panel" hidden></div>
       <div id="tab-requests" class="tab-panel" hidden></div>
     </div>
   </div>
@@ -968,11 +970,121 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
     margin-top: 0.25rem;
   }
+
+  /* 카테고리 관리 */
+  .cat-tabbar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .cat-subtab {
+    padding: 0.5rem 0.9rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  .cat-subtab.active {
+    color: var(--text-heading);
+    font-weight: 600;
+    border-bottom-color: var(--text-heading);
+  }
+
+  .cat-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.4rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    flex-wrap: wrap;
+  }
+
+  .cat-row-emoji {
+    font-size: 1.2rem;
+    width: 1.6rem;
+    text-align: center;
+  }
+
+  .cat-field {
+    padding: 0.35rem 0.55rem;
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background: var(--bg-input, var(--bg-card));
+    color: var(--text-heading);
+  }
+
+  .cat-field.cat-name { flex: 1 1 140px; min-width: 100px; }
+  .cat-field.cat-emoji { width: 70px; }
+  .cat-field.cat-order { width: 70px; }
+  .cat-field.cat-map-target { flex: 1 1 180px; min-width: 140px; }
+
+  .cat-toggle {
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+  }
+
+  .cat-create-form {
+    background: var(--bg-hover);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+  }
+
+  .cat-create-form h3 {
+    margin: 0 0 0.6rem;
+    font-size: 0.95rem;
+    color: var(--text-heading);
+  }
+
+  .cat-help {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .cat-unmapped-name {
+    flex: 1 1 140px;
+    font-weight: 600;
+    color: var(--text-heading);
+  }
+
+  .cat-unmapped-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding: 0.15rem 0.5rem;
+    background: var(--bg-hover);
+    border-radius: 4px;
+  }
+
+  .cat-mapping-raw {
+    flex: 0 0 auto;
+    font-weight: 500;
+    color: var(--text-heading);
+    padding: 0.2rem 0.5rem;
+    background: var(--bg-hover);
+    border-radius: 4px;
+  }
+
+  .cat-mapping-arrow {
+    color: var(--text-muted);
+    font-weight: 600;
+  }
 </style>
 
 <script>
-  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice, fetchDemoAccounts, createDemoAccount, updateDemoAccount, deleteDemoAccount, loginAsDemoAccount, saveTokens, searchUserByEmail, updateUserRole, fetchAllBoards, createBoard, updateBoard, deleteBoard, createFeatureRequest, fetchFeatureRequests, fetchRequestComments, addRequestComment, fetchAdminDashboard } from '@/lib/api';
-  import type { Notice, DemoAccount, AdminUserInfo, Board, FeatureRequestItem, AdminDashboard } from '@/lib/api';
+  import { fetchCurrentUser, fetchInquiries, fetchAllNotices, createNotice, updateNotice, deleteNotice, fetchDemoAccounts, createDemoAccount, updateDemoAccount, deleteDemoAccount, loginAsDemoAccount, saveTokens, searchUserByEmail, updateUserRole, fetchAllBoards, createBoard, updateBoard, deleteBoard, createFeatureRequest, fetchFeatureRequests, fetchRequestComments, addRequestComment, fetchAdminDashboard, fetchAllCategories, createCategory, updateCategory, deleteCategory, fetchUnmappedCategories, fetchCategoryMappings, upsertCategoryMapping, deleteCategoryMapping } from '@/lib/api';
+  import type { Notice, DemoAccount, AdminUserInfo, Board, FeatureRequestItem, AdminDashboard, CategoryAdmin, CategoryMappingItem, UnmappedCategoryItem } from '@/lib/api';
   import { formatDate } from '@repo/utils';
 
   function initAdminPage() {
@@ -986,8 +1098,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const demoPanel = document.getElementById('tab-demo');
     const usersPanel = document.getElementById('tab-users');
     const boardsPanel = document.getElementById('tab-boards');
+    const categoriesPanel = document.getElementById('tab-categories');
     const requestsPanel = document.getElementById('tab-requests');
-    if (!loadingMsg || !accessDenied || !adminTabs || !statsPanel || !noticesPanel || !inquiriesPanel || !demoPanel || !usersPanel || !boardsPanel || !requestsPanel) return;
+    if (!loadingMsg || !accessDenied || !adminTabs || !statsPanel || !noticesPanel || !inquiriesPanel || !demoPanel || !usersPanel || !boardsPanel || !categoriesPanel || !requestsPanel) return;
 
     function escapeHtml(text: string): string {
       const div = document.createElement('div');
@@ -1003,7 +1116,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     };
 
     // 탭 전환
-    const panels: Record<string, HTMLElement> = { stats: statsPanel, notices: noticesPanel, inquiries: inquiriesPanel, demo: demoPanel, users: usersPanel, boards: boardsPanel, requests: requestsPanel };
+    const panels: Record<string, HTMLElement> = { stats: statsPanel, notices: noticesPanel, inquiries: inquiriesPanel, demo: demoPanel, users: usersPanel, boards: boardsPanel, categories: categoriesPanel, requests: requestsPanel };
     for (const btn of document.querySelectorAll<HTMLButtonElement>('.tab-btn')) {
       btn.addEventListener('click', () => {
         for (const b of document.querySelectorAll('.tab-btn')) b.classList.remove('active');
@@ -1015,6 +1128,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         if (tab === 'demo' && demoPanel.innerHTML === '') loadDemoAccounts();
         if (tab === 'users' && usersPanel.innerHTML === '') initUsersTab();
         if (tab === 'boards' && boardsPanel.innerHTML === '') loadBoardsAdmin();
+        if (tab === 'categories' && categoriesPanel.innerHTML === '') initCategoriesTab();
         if (tab === 'requests' && requestsPanel.innerHTML === '') loadFeatureRequestsTab();
       });
     }
@@ -1763,6 +1877,229 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           }
         });
       }
+    }
+
+    // ─── 카테고리 탭 ───
+
+    function initCategoriesTab() {
+      categoriesPanel.innerHTML = `
+        <div class="cat-tabbar">
+          <button type="button" class="cat-subtab active" data-subtab="list">카테고리 관리</button>
+          <button type="button" class="cat-subtab" data-subtab="unmapped">매핑 대기</button>
+          <button type="button" class="cat-subtab" data-subtab="mappings">매핑 규칙</button>
+        </div>
+        <div id="cat-sub-list" class="cat-sub-panel"></div>
+        <div id="cat-sub-unmapped" class="cat-sub-panel" hidden></div>
+        <div id="cat-sub-mappings" class="cat-sub-panel" hidden></div>
+      `;
+
+      const listPanel = document.getElementById('cat-sub-list')!;
+      const unmappedPanel = document.getElementById('cat-sub-unmapped')!;
+      const mappingsPanel = document.getElementById('cat-sub-mappings')!;
+      const subPanels: Record<string, HTMLElement> = { list: listPanel, unmapped: unmappedPanel, mappings: mappingsPanel };
+
+      for (const btn of categoriesPanel.querySelectorAll<HTMLButtonElement>('.cat-subtab')) {
+        btn.addEventListener('click', () => {
+          for (const b of categoriesPanel.querySelectorAll('.cat-subtab')) b.classList.remove('active');
+          btn.classList.add('active');
+          const sub = btn.dataset.subtab!;
+          for (const [k, p] of Object.entries(subPanels)) p.hidden = k !== sub;
+          if (sub === 'list') loadCategoryList();
+          if (sub === 'unmapped') loadUnmappedList();
+          if (sub === 'mappings') loadMappingsList();
+        });
+      }
+
+      let categoryCache: CategoryAdmin[] = [];
+
+      async function loadCategoryList() {
+        listPanel.innerHTML = '<p class="empty-msg">로딩 중...</p>';
+        try {
+          categoryCache = await fetchAllCategories();
+          renderCategoryList();
+        } catch (e) {
+          listPanel.innerHTML = `<p class="empty-msg">${e instanceof Error ? escapeHtml(e.message) : '로드 실패'}</p>`;
+        }
+      }
+
+      function renderCategoryList() {
+        const rows = categoryCache.map((c) => `
+          <div class="cat-row" data-id="${c.id}">
+            <span class="cat-row-emoji">${c.emoji ? escapeHtml(c.emoji) : '📦'}</span>
+            <input type="text" class="cat-field cat-name" value="${escapeHtml(c.name)}" />
+            <input type="text" class="cat-field cat-emoji" value="${c.emoji ? escapeHtml(c.emoji) : ''}" placeholder="이모지" maxlength="4" />
+            <input type="number" class="cat-field cat-order" value="${c.displayOrder}" min="0" title="정렬 순서" />
+            <label class="cat-toggle"><input type="checkbox" class="cat-active" ${c.isActive ? 'checked' : ''} /> 활성</label>
+            <button type="button" class="btn-primary-sm cat-save">저장</button>
+            <button type="button" class="btn-danger-sm cat-delete">삭제</button>
+          </div>
+        `).join('');
+
+        listPanel.innerHTML = `
+          <div class="cat-create-form">
+            <h3>새 카테고리 추가</h3>
+            <div class="cat-row">
+              <input type="text" id="cat-new-name" placeholder="이름 (예: 패스트푸드)" maxlength="50" />
+              <input type="text" id="cat-new-emoji" placeholder="이모지 🍔" maxlength="4" />
+              <input type="number" id="cat-new-order" placeholder="순서" value="999" min="0" />
+              <button type="button" class="btn-primary-sm" id="cat-new-btn">추가</button>
+            </div>
+          </div>
+          <h3 style="margin-top:1.5rem;">카테고리 목록 (${categoryCache.length})</h3>
+          ${rows || '<p class="empty-msg">카테고리가 없습니다.</p>'}
+        `;
+
+        document.getElementById('cat-new-btn')?.addEventListener('click', async () => {
+          const name = (document.getElementById('cat-new-name') as HTMLInputElement).value.trim();
+          const emoji = (document.getElementById('cat-new-emoji') as HTMLInputElement).value.trim();
+          const order = parseInt((document.getElementById('cat-new-order') as HTMLInputElement).value, 10) || 999;
+          if (!name) { alert('이름을 입력하세요.'); return; }
+          try {
+            await createCategory({ name, emoji: emoji || undefined, displayOrder: order });
+            await loadCategoryList();
+          } catch (e) {
+            alert(e instanceof Error ? e.message : '생성 실패');
+          }
+        });
+
+        for (const row of listPanel.querySelectorAll<HTMLDivElement>('.cat-row[data-id]')) {
+          const id = parseInt(row.dataset.id!, 10);
+          row.querySelector<HTMLButtonElement>('.cat-save')?.addEventListener('click', async () => {
+            const name = row.querySelector<HTMLInputElement>('.cat-name')!.value.trim();
+            const emojiStr = row.querySelector<HTMLInputElement>('.cat-emoji')!.value.trim();
+            const order = parseInt(row.querySelector<HTMLInputElement>('.cat-order')!.value, 10) || 0;
+            const active = row.querySelector<HTMLInputElement>('.cat-active')!.checked;
+            try {
+              await updateCategory(id, { name, emoji: emojiStr || null, displayOrder: order, isActive: active });
+              await loadCategoryList();
+            } catch (e) {
+              alert(e instanceof Error ? e.message : '수정 실패');
+            }
+          });
+          row.querySelector<HTMLButtonElement>('.cat-delete')?.addEventListener('click', async () => {
+            if (!confirm('삭제하시겠습니까? 연결된 식당의 카테고리는 미분류로 전환됩니다.')) return;
+            try {
+              await deleteCategory(id);
+              await loadCategoryList();
+            } catch (e) {
+              alert(e instanceof Error ? e.message : '삭제 실패');
+            }
+          });
+        }
+      }
+
+      async function loadUnmappedList() {
+        unmappedPanel.innerHTML = '<p class="empty-msg">로딩 중...</p>';
+        try {
+          const [items, cats] = await Promise.all([fetchUnmappedCategories(), fetchAllCategories()]);
+          categoryCache = cats;
+          renderUnmappedList(items);
+        } catch (e) {
+          unmappedPanel.innerHTML = `<p class="empty-msg">${e instanceof Error ? escapeHtml(e.message) : '로드 실패'}</p>`;
+        }
+      }
+
+      function renderUnmappedList(items: UnmappedCategoryItem[]) {
+        if (items.length === 0) {
+          unmappedPanel.innerHTML = '<p class="empty-msg">매핑 대기 중인 항목이 없습니다.</p>';
+          return;
+        }
+        const options = categoryCache
+          .filter((c) => c.isActive)
+          .map((c) => `<option value="${c.id}">${c.emoji ? escapeHtml(c.emoji) + ' ' : ''}${escapeHtml(c.name)}</option>`)
+          .join('');
+        const rows = items.map((it) => `
+          <div class="cat-row" data-raw="${escapeHtml(it.rawInput)}">
+            <span class="cat-unmapped-name">${escapeHtml(it.rawInput || '(빈 값)')}</span>
+            <span class="cat-unmapped-count">${it.count}건</span>
+            <select class="cat-field cat-map-target"><option value="">카테고리 선택</option>${options}</select>
+            <button type="button" class="btn-primary-sm cat-map-save">매핑</button>
+          </div>
+        `).join('');
+        unmappedPanel.innerHTML = `
+          <p class="cat-help">원본 입력값을 카테고리로 매핑하면 같은 값을 가진 모든 식당이 일괄 업데이트됩니다.</p>
+          ${rows}
+        `;
+        for (const row of unmappedPanel.querySelectorAll<HTMLDivElement>('.cat-row[data-raw]')) {
+          const raw = row.dataset.raw!;
+          row.querySelector<HTMLButtonElement>('.cat-map-save')?.addEventListener('click', async () => {
+            const sel = row.querySelector<HTMLSelectElement>('.cat-map-target')!;
+            const cid = parseInt(sel.value, 10);
+            if (!cid) { alert('카테고리를 선택하세요.'); return; }
+            try {
+              const result = await upsertCategoryMapping(raw, cid);
+              alert(`${result.updatedRestaurants}건의 식당이 업데이트되었습니다.`);
+              await loadUnmappedList();
+            } catch (e) {
+              alert(e instanceof Error ? e.message : '매핑 실패');
+            }
+          });
+        }
+      }
+
+      async function loadMappingsList() {
+        mappingsPanel.innerHTML = '<p class="empty-msg">로딩 중...</p>';
+        try {
+          const [maps, cats] = await Promise.all([fetchCategoryMappings(), fetchAllCategories()]);
+          categoryCache = cats;
+          renderMappingsList(maps);
+        } catch (e) {
+          mappingsPanel.innerHTML = `<p class="empty-msg">${e instanceof Error ? escapeHtml(e.message) : '로드 실패'}</p>`;
+        }
+      }
+
+      function renderMappingsList(maps: CategoryMappingItem[]) {
+        const options = categoryCache
+          .filter((c) => c.isActive)
+          .map((c) => `<option value="${c.id}">${c.emoji ? escapeHtml(c.emoji) + ' ' : ''}${escapeHtml(c.name)}</option>`)
+          .join('');
+        if (maps.length === 0) {
+          mappingsPanel.innerHTML = '<p class="empty-msg">매핑 규칙이 없습니다.</p>';
+          return;
+        }
+        const rows = maps.map((m) => `
+          <div class="cat-row" data-id="${m.id}" data-raw="${escapeHtml(m.rawInput)}">
+            <span class="cat-mapping-raw">${escapeHtml(m.rawInput)}</span>
+            <span class="cat-mapping-arrow">→</span>
+            <select class="cat-field cat-map-target">
+              ${categoryCache.filter((c) => c.isActive).map((c) => `<option value="${c.id}" ${c.id === m.categoryId ? 'selected' : ''}>${c.emoji ? escapeHtml(c.emoji) + ' ' : ''}${escapeHtml(c.name)}</option>`).join('')}
+            </select>
+            <button type="button" class="btn-primary-sm cat-map-save">수정</button>
+            <button type="button" class="btn-danger-sm cat-map-delete">삭제</button>
+          </div>
+        `).join('');
+        mappingsPanel.innerHTML = `
+          <p class="cat-help">기존 매핑 규칙 ${maps.length}건. 규칙을 변경하면 동일 원본을 가진 식당이 즉시 재분류됩니다.</p>
+          ${rows}
+        `;
+        for (const row of mappingsPanel.querySelectorAll<HTMLDivElement>('.cat-row[data-id]')) {
+          const id = parseInt(row.dataset.id!, 10);
+          const raw = row.dataset.raw!;
+          row.querySelector<HTMLButtonElement>('.cat-map-save')?.addEventListener('click', async () => {
+            const sel = row.querySelector<HTMLSelectElement>('.cat-map-target')!;
+            const cid = parseInt(sel.value, 10);
+            if (!cid) return;
+            try {
+              const result = await upsertCategoryMapping(raw, cid);
+              alert(`${result.updatedRestaurants}건 업데이트 완료`);
+              await loadMappingsList();
+            } catch (e) {
+              alert(e instanceof Error ? e.message : '수정 실패');
+            }
+          });
+          row.querySelector<HTMLButtonElement>('.cat-map-delete')?.addEventListener('click', async () => {
+            if (!confirm('매핑 규칙을 삭제하시겠습니까? (기존 식당 분류는 유지됨)')) return;
+            try {
+              await deleteCategoryMapping(id);
+              await loadMappingsList();
+            } catch (e) {
+              alert(e instanceof Error ? e.message : '삭제 실패');
+            }
+          });
+        }
+      }
+
+      loadCategoryList();
     }
 
     async function init() {

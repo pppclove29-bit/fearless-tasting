@@ -16,6 +16,7 @@ import { AdminModule } from './admin/admin.module';
 import { BoardsModule } from './boards/boards.module';
 import { PlacesModule } from './places/places.module';
 import { OgModule } from './og/og.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { OgModule } from './og/og.module';
     BoardsModule,
     PlacesModule,
     OgModule,
+    CategoriesModule,
   ],
   providers: [
     {

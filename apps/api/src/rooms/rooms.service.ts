@@ -3,8 +3,8 @@ import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { FcmService } from '../fcm/fcm.service';
 import { StorageService } from '../storage/storage.service';
+import { CategoriesService } from '../categories/categories.service';
 import { measure } from '../common/perf';
-import { normalizeCategory } from '../common/category';
 
 /** 평균 평점 계산 (소수점 1자리 반올림). 빈 배열이면 null 반환. */
 function calcAvgRating(ratings: number[]): number | null {
@@ -24,6 +24,7 @@ export class RoomsService {
     private readonly prisma: PrismaService,
     private readonly fcmService: FcmService,
     private readonly storageService: StorageService,
+    private readonly categoriesService: CategoriesService,
   ) {}
 
   private isOwnerOrManager(role: string): boolean {
@@ -499,10 +500,12 @@ export class RoomsService {
     }
 
     const imageList = (images ?? []).slice(0, 3);
+    const resolved = await this.categoriesService.resolve(category);
     const restaurant = await this.prisma.write.roomRestaurant.create({
       data: {
         roomId, addedById, name, address, province, city, neighborhood,
-        category: normalizeCategory(category),
+        category: resolved.displayName || category,
+        categoryId: resolved.categoryId,
         latitude, longitude,
         isWishlist: isWishlist ?? false,
         images: imageList.length > 0 ? { create: imageList.map((url, i) => ({ url, sortOrder: i })) } : undefined,
@@ -537,7 +540,11 @@ export class RoomsService {
 
     const updateData: Record<string, unknown> = {};
     if (data.name !== undefined) updateData.name = data.name;
-    if (data.category !== undefined) updateData.category = normalizeCategory(data.category);
+    if (data.category !== undefined) {
+      const resolved = await this.categoriesService.resolve(data.category);
+      updateData.category = resolved.displayName || data.category;
+      updateData.categoryId = resolved.categoryId;
+    }
     if (data.address !== undefined) {
       updateData.address = data.address;
       // 주소에서 시/도, 시/군/구, 읍/면/동 파싱
@@ -889,7 +896,7 @@ export class RoomsService {
         return {
           name: r.name,
           address: r.address,
-          category: normalizeCategory(r.category),
+          category: r.category,
           avgRating: avg,
           reviewCount: ratings.length,
           visitCount: r._count.visits,
