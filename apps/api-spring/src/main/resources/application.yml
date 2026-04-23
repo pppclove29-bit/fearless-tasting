@@ -1,0 +1,112 @@
+spring:
+  application:
+    name: fearless-tasting-api
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  jackson:
+    # Nest/Prisma 응답 호환:
+    #  - default-property-inclusion=always: null 필드를 응답에 포함 (프론트의 optional chaining 전제)
+    #  - write-dates-as-timestamps=false: LocalDateTime을 ISO-8601 문자열로 직렬화
+    #  - fail-on-empty-beans=false: 빈 객체도 {} 로 직렬화
+    default-property-inclusion: always
+    serialization:
+      write-dates-as-timestamps: false
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
+    time-zone: Asia/Seoul
+
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000
+      pool-name: writer-pool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      naming:
+        # @Table/@Column 이름을 그대로 사용 (Spring 기본은 snake_case로 변환 → Linux MySQL에서 case-sensitive 오류)
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        default_batch_fetch_size: 100
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+
+server:
+  # Render는 PORT 환경변수를 자동 주입. 로컬은 기본 8080.
+  port: ${PORT:${SERVER_PORT:8080}}
+  compression:
+    enabled: true
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+  api-docs:
+    path: /v3/api-docs
+
+app:
+  jwt:
+    access-secret: ${JWT_ACCESS_SECRET:change-me-access-secret-min-32-bytes-for-hmac256}
+    refresh-secret: ${JWT_REFRESH_SECRET:change-me-refresh-secret-min-32-bytes-for-hmac256}
+    access-ttl-seconds: 900           # 15분
+    refresh-ttl-seconds: 604800       # 7일
+
+  oauth:
+    kakao:
+      client-id: ${KAKAO_CLIENT_ID:}
+      client-secret: ${KAKAO_CLIENT_SECRET:}
+      redirect-uri: ${KAKAO_REDIRECT_URI:}
+    naver:
+      client-id: ${NAVER_CLIENT_ID:}
+      client-secret: ${NAVER_CLIENT_SECRET:}
+
+  frontend-url: ${FRONTEND_URL:http://localhost:4321}
+
+  rate-limit:
+    default-capacity: 60
+    default-refill-seconds: 60
+
+  storage:
+    endpoint: ${STORAGE_ENDPOINT:}
+    region: ${STORAGE_REGION:auto}
+    bucket: ${STORAGE_BUCKET:fearless-tasting}
+    access-key: ${STORAGE_ACCESS_KEY:}
+    secret-key: ${STORAGE_SECRET_KEY:}
+    public-base-url: ${STORAGE_PUBLIC_BASE_URL:}
+    presign-expire-seconds: 600
+
+logging:
+  level:
+    root: INFO
+    com.fearlesstasting: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.springframework.security: INFO

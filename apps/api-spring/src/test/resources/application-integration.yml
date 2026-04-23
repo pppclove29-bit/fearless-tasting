@@ -1,0 +1,38 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    locations: classpath:db/migration
+
+app:
+  jwt:
+    access-secret: integration-access-secret-min-32-bytes-hmac256
+    refresh-secret: integration-refresh-secret-min-32-bytes-hmac256
+    access-ttl-seconds: 900
+    refresh-ttl-seconds: 604800
+  oauth:
+    kakao:
+      client-id: integration
+      redirect-uri: http://localhost/it
+    naver:
+      client-id: integration
+  frontend-url: http://localhost:4321
+  rate-limit:
+    default-capacity: 1000
+    default-refill-seconds: 60
+  storage:
+    endpoint: ""
+    region: "auto"
+    bucket: "it-bucket"
+    access-key: ""
+    secret-key: ""
+    public-base-url: ""
+    presign-expire-seconds: 600
+
+logging:
+  level:
+    org.hibernate.SQL: INFO

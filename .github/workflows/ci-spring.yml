@@ -1,0 +1,52 @@
+name: CI (Spring)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/api-spring/**'
+      - '.github/workflows/ci-spring.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api-spring/**'
+      - '.github/workflows/ci-spring.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api-spring
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Bootstrap Gradle wrapper
+        # 체크아웃 시점에 wrapper jar이 없을 수 있어 system gradle로 생성
+        run: |
+          if [ ! -f gradlew ]; then
+            gradle wrapper --gradle-version 8.10.2
+          fi
+
+      - name: Compile
+        run: ./gradlew assemble --no-daemon
+
+      - name: Test (unit + integration with Testcontainers MySQL)
+        run: ./gradlew test --no-daemon
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spring-test-reports
+          path: apps/api-spring/build/reports/tests/
+          retention-days: 7

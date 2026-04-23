@@ -1,0 +1,23 @@
+spring:
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  # 프로덕션 TiDB에는 이미 Prisma가 만든 테이블이 있음.
+  # Flyway는 현재 스키마를 "이미 적용된 상태"로 인식하고 다음 버전부터만 실행하도록 설정.
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: "2"              # V1__baseline.sql, V2__... 둘 다 스킵
+    baseline-description: "Prisma-managed production schema"
+    validate-on-migrate: false          # 이미 적용된 V1/V2는 SQL 체크섬 검증 생략
+    locations: classpath:db/migration
+    # 운영 중인 스키마를 변경하지 않음. 앞으로 스키마 변경은 V3부터 새 파일로 추가.
+
+logging:
+  level:
+    root: WARN
+    com.fearlesstasting: INFO
+    org.hibernate.SQL: WARN

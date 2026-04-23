@@ -1,0 +1,39 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  flyway:
+    enabled: false
+
+app:
+  jwt:
+    access-secret: test-access-secret-min-32-bytes-for-hmac256-xx
+    refresh-secret: test-refresh-secret-min-32-bytes-for-hmac256-x
+  oauth:
+    kakao:
+      client-id: test
+      redirect-uri: http://localhost/test
+    naver:
+      client-id: test
+  frontend-url: http://localhost:4321
+  rate-limit:
+    default-capacity: 1000
+    default-refill-seconds: 60
+  storage:
+    endpoint: ""
+    region: "auto"
+    bucket: "test-bucket"
+    access-key: ""
+    secret-key: ""
+    public-base-url: ""
+    presign-expire-seconds: 600
