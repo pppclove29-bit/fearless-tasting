@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, MaxLength, IsArray, ArrayMaxSize } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, MaxLength, IsArray, ArrayMaxSize, ValidateIf } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateRoomRestaurantDto {
@@ -20,15 +20,17 @@ export class UpdateRoomRestaurantDto {
   @MaxLength(500)
   address?: string;
 
-  @ApiPropertyOptional({ description: '위도' })
+  @ApiPropertyOptional({ description: '위도 (null로 좌표 제거 가능)' })
   @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
   @IsNumber()
-  latitude?: number;
+  latitude?: number | null;
 
-  @ApiPropertyOptional({ description: '경도' })
+  @ApiPropertyOptional({ description: '경도 (null로 좌표 제거 가능)' })
   @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
   @IsNumber()
-  longitude?: number;
+  longitude?: number | null;
 
   @ApiPropertyOptional({ description: '폐점 여부' })
   @IsOptional()

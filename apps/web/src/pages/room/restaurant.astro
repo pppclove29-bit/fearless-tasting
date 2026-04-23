@@ -2634,33 +2634,46 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             try {
               const updateData: Parameters<typeof updateRoomRestaurant>[2] = { name: newName, category: newCategory, isClosed: newIsClosed, ...(newAddress && { address: newAddress }) };
 
-              // 주소가 변경되면 카카오 지오코딩으로 좌표 갱신
-              if (newAddress && newAddress !== detail.address && 'kakao' in window) {
-                try {
-                  const coords = await new Promise<{ lat: number; lng: number } | null>((resolve) => {
-                    const maps = (window as Record<string, unknown>).kakao as { maps: { load: (cb: () => void) => void; services: { Geocoder: new () => { addressSearch: (addr: string, cb: (result: { y: string; x: string }[], status: string) => void) => void }; Status: { OK: string } } } };
-                    maps.maps.load(() => {
-                      const geocoder = new maps.maps.services.Geocoder();
+              // 주소가 변경되면 카카오 지오코딩으로 좌표 갱신 (실패 시 null로 클리어 — 지도 숨김)
+              if (newAddress && newAddress !== detail.address) {
+                const coords = await new Promise<{ lat: number; lng: number } | null>((resolve) => {
+                  const kakaoWin = (window as { kakao?: { maps?: { load: (cb: () => void) => void; services?: { Geocoder: new () => { addressSearch: (addr: string, cb: (result: { y: string; x: string }[], status: string) => void) => void }; Status: { OK: string } } } } }).kakao;
+                  if (!kakaoWin?.maps) { resolve(null); return; }
+                  try {
+                    kakaoWin.maps.load(() => {
+                      const services = kakaoWin.maps?.services;
+                      if (!services) { resolve(null); return; }
+                      const geocoder = new services.Geocoder();
                       geocoder.addressSearch(newAddress, (result, status) => {
-                        if (status === maps.maps.services.Status.OK && result.length > 0) {
+                        if (status === services.Status.OK && result.length > 0) {
                           resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
                         } else {
                           resolve(null);
                         }
                       });
                     });
-                  });
-                  if (coords) {
-                    updateData.latitude = coords.lat;
-                    updateData.longitude = coords.lng;
-                  }
-                } catch { /* 지오코딩 실패 시 좌표 없이 주소만 업데이트 */ }
+                  } catch { resolve(null); }
+                });
+                if (coords) {
+                  updateData.latitude = coords.lat;
+                  updateData.longitude = coords.lng;
+                } else {
+                  // 지오코딩 실패: 이전 좌표가 새 주소와 불일치하므로 제거
+                  updateData.latitude = null;
+                  updateData.longitude = null;
+                }
               }
 
               await updateRoomRestaurant(currentRoom.id, restaurantId, updateData);
               currentRoom = await fetchRoom(currentRoom.id);
               await loadRestaurantDetail();
-              showToast('식당 정보가 수정되었습니다.', 'success');
+              const coordsChanged = updateData.latitude !== undefined;
+              const coordsCleared = updateData.latitude === null;
+              if (coordsChanged && coordsCleared) {
+                showToast('식당 정보가 수정되었습니다. 주소를 찾지 못해 지도 위치가 제거되었습니다.', 'info');
+              } else {
+                showToast('식당 정보가 수정되었습니다.', 'success');
+              }
             } catch { showToast('식당 수정에 실패했습니다.'); }
           });
         });

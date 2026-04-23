@@ -527,7 +527,7 @@ export class RoomsService {
     restaurantId: string,
     userId: string,
     memberRole: 'owner' | 'manager' | 'member',
-    data: { name?: string; category?: string; address?: string; latitude?: number; longitude?: number; isClosed?: boolean; images?: string[] },
+    data: { name?: string; category?: string; address?: string; latitude?: number | null; longitude?: number | null; isClosed?: boolean; images?: string[] },
   ) {
     const restaurant = await this.prisma.read.roomRestaurant.findUnique({ where: { id: restaurantId } });
     if (!restaurant || restaurant.roomId !== roomId) {
