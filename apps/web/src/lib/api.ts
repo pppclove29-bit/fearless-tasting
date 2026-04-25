@@ -193,6 +193,14 @@ export async function updatePushEnabled(enabled: boolean): Promise<{ id: string;
   return res.json();
 }
 
+/** 본인에게 테스트 푸시 발송 (FCM 동작 확인용) */
+export async function sendTestPush(): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/users/me/push-test`, {
+    method: 'POST',
+  });
+  await throwIfNotOk(res, '테스트 푸시 발송에 실패했습니다.');
+}
+
 /** 회원 탈퇴 */
 export async function deleteAccount(): Promise<void> {
   const res = await apiFetch(`${API_BASE}/users/me`, { method: 'DELETE' });

@@ -49,6 +49,9 @@ export const prerender = false;
           <button type="button" class="theme-switch-btn" data-push="off">끄기</button>
         </div>
       </div>
+      <div class="push-test-row">
+        <button type="button" class="btn-secondary-sm" id="push-test-btn">🔔 테스트 푸시 보내기</button>
+      </div>
     </section>
 
     <section class="profile-section">
@@ -444,7 +447,7 @@ export const prerender = false;
 </style>
 
 <script>
-  import { fetchCurrentUser, updateNickname, updatePushEnabled, logout, clearTokens, showToast, apiFetch, showPermissionExplainer, showPermissionDeniedGuide } from '@/lib/api';
+  import { fetchCurrentUser, updateNickname, updatePushEnabled, sendTestPush, logout, clearTokens, showToast, apiFetch, showPermissionExplainer, showPermissionDeniedGuide } from '@/lib/api';
   import { registerPushToken } from '@/lib/firebase';
   import { uploadImage } from '@/lib/image-upload';
 
@@ -632,6 +635,22 @@ export const prerender = false;
           }
         });
       }
+    }
+
+    // 푸시 테스트 버튼
+    const pushTestBtn = document.getElementById('push-test-btn');
+    if (pushTestBtn) {
+      pushTestBtn.addEventListener('click', async () => {
+        if (pushTestBtn instanceof HTMLButtonElement) pushTestBtn.disabled = true;
+        try {
+          await sendTestPush();
+          showToast('테스트 푸시를 보냈습니다. 잠시 뒤 알림을 확인하세요.');
+        } catch (err) {
+          showToast(err instanceof Error ? err.message : '발송 실패');
+        } finally {
+          if (pushTestBtn instanceof HTMLButtonElement) pushTestBtn.disabled = false;
+        }
+      });
     }
 
     // 로그아웃

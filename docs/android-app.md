@@ -1,6 +1,8 @@
 # Android 앱 (Capacitor APK) 빌드 가이드
 
-무모한 시식가 안드로이드 앱은 **Capacitor 기반 WebView 래퍼**입니다. 운영 사이트(`https://fearless-tasting.pages.dev`)를 그대로 로드하고, FCM 푸시만 네이티브로 받는 구조입니다.
+무모한 시식가 안드로이드 앱은 **Capacitor 기반 WebView 래퍼**입니다. 운영 사이트(`https://musikga.kr`)를 그대로 로드하고, FCM 푸시만 네이티브로 받는 구조입니다.
+
+> 참고: `fearless-tasting.pages.dev`는 `musikga.kr`로 301 리다이렉트되므로 Capacitor `server.url`은 반드시 최종 도메인(`musikga.kr`)을 직접 가리켜야 합니다. 리다이렉트 도메인을 쓰면 WebView가 외부 브라우저로 빠집니다.
 
 ## 아키텍처
 

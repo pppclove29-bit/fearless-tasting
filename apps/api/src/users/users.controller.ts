@@ -94,6 +94,20 @@ export class UsersController {
     return this.fcmService.removeToken(body.token);
   }
 
+  /** 셀프 푸시 테스트: 본인에게 즉시 알림 발송 */
+  @Post('me/push-test')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '본인에게 테스트 푸시 발송' })
+  async testPush(@CurrentUser() user: { id: string }) {
+    await this.fcmService.sendToUsers(
+      [user.id],
+      '🔔 푸시 테스트',
+      '푸시가 정상 작동합니다!',
+      { link: '/profile' },
+    );
+    return { ok: true };
+  }
+
   /** 푸시 알림 on/off 토글 */
   @Patch('me/push-enabled')
   @UseGuards(JwtAuthGuard)
