@@ -29,11 +29,30 @@ export class FcmService implements OnModuleInit {
 
     try {
       const parsed = JSON.parse(credentials);
-      // 환경변수로 주입된 private_key는 \n이 literal 백슬래시-n으로 들어오는 경우가 많아
-      // PEM 파서가 ERR_OSSL_UNSUPPORTED를 던진다. 실제 개행으로 복원.
-      const privateKey = typeof parsed.private_key === 'string'
-        ? parsed.private_key.replace(/\\n/g, '\n')
-        : parsed.private_key;
+      // 환경변수로 주입된 private_key는 다양한 형태로 들어올 수 있음 (literal \n, CRLF, 양끝 따옴표 등).
+      // 모든 케이스를 정리해서 PEM 디코더가 받을 수 있는 형태로 복원.
+      let privateKey = String(parsed.private_key ?? '');
+      // 양끝 따옴표가 통째로 들어온 경우 제거
+      if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+        privateKey = privateKey.slice(1, -1);
+      }
+      privateKey = privateKey
+        .replace(/\\n/g, '\n')      // literal \n → 개행
+        .replace(/\\r/g, '')        // literal \r 제거
+        .replace(/\r\n/g, '\n')     // CRLF → LF
+        .replace(/\r/g, '\n')       // CR → LF
+        .trim();
+
+      // 진단 로그: 어떤 형태인지 확인 (값 자체는 노출 안 함)
+      const head = privateKey.slice(0, 30).replace(/\n/g, '\\n');
+      const tail = privateKey.slice(-30).replace(/\n/g, '\\n');
+      this.logger.debug(`[FCM] privateKey len=${privateKey.length} head="${head}" tail="${tail}"`);
+
+      if (!privateKey.includes('BEGIN PRIVATE KEY') && !privateKey.includes('BEGIN RSA PRIVATE KEY')) {
+        this.logger.error('FCM private_key가 PEM 형식이 아닙니다. FIREBASE_SERVICE_ACCOUNT 환경변수를 확인하세요.');
+        return;
+      }
+
       this.serviceAccount = {
         project_id: parsed.project_id,
         client_email: parsed.client_email,
