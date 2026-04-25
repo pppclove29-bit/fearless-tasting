@@ -42,8 +42,13 @@ export class FcmService implements OnModuleInit {
         .replace(/\r\n/g, '\n')     // CRLF → LF
         .replace(/\r/g, '\n')       // CR → LF
         // 스마트 punctuation(em/en dash) → 일반 hyphen.
-        // macOS 자동변환 등으로 PEM 헤더의 ----- 가 ——/–– 로 바뀌면 OpenSSL이 거부.
         .replace(/[‐-―−]/g, '-')
+        // macOS 자동변환은 lossy(-- → —)라 dash 개수가 줄어듦.
+        // BEGIN/END 마커를 정확히 5개 hyphen으로 강제 복원.
+        .replace(/-*\s*BEGIN\s+PRIVATE\s+KEY\s*-*/g, '-----BEGIN PRIVATE KEY-----')
+        .replace(/-*\s*END\s+PRIVATE\s+KEY\s*-*/g, '-----END PRIVATE KEY-----')
+        .replace(/-*\s*BEGIN\s+RSA\s+PRIVATE\s+KEY\s*-*/g, '-----BEGIN RSA PRIVATE KEY-----')
+        .replace(/-*\s*END\s+RSA\s+PRIVATE\s+KEY\s*-*/g, '-----END RSA PRIVATE KEY-----')
         .trim();
 
       // 진단 로그: 어떤 형태인지 확인 (값 자체는 노출 안 함)
