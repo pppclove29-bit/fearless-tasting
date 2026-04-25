@@ -420,7 +420,7 @@ document.addEventListener('astro:page-load', initMyPage);
 - **refresh mutex**: 동시 401 발생 시 refresh 요청 1회만 실행
 - **fetchCurrentUser 캐싱**: 같은 페이지 내 중복 호출 방지, View Transitions 전환 시 `resetUserCache()` 호출
 - **로그아웃**: 즉시 localStorage/쿠키 삭제, 서버 DB 무효화는 fire-and-forget
-- Access Token 만료: 15분, Refresh Token 만료: 7일
+- Access Token 만료: 15분, Refresh Token 만료: 365일 (앱/웹 동일, 로그인 유지 UX 우선)
 
 ## 프론트엔드 유틸리티
 

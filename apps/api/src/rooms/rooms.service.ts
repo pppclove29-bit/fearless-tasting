@@ -113,7 +113,7 @@ export class RoomsService {
   }
 
   /** 방 상세 조회 */
-  async findOne(roomId: string, _userId?: string) {
+  async findOne(roomId: string, userId?: string) {
     const room = await measure('room.findOne.query', () =>
       // writer에서 읽어 수정 직후 재조회 시 replication lag 방지
       this.prisma.write.room.findUnique({
@@ -131,7 +131,7 @@ export class RoomsService {
               images: { select: { url: true }, orderBy: { sortOrder: 'asc' } },
               visits: {
                 include: {
-                  reviews: { select: { rating: true } },
+                  reviews: { select: { rating: true, userId: true } },
                 },
               },
               _count: { select: { visits: true } },
@@ -148,11 +148,14 @@ export class RoomsService {
       ...room,
       members: room.members.map((m) => ({ ...m, user: withProfileImage(m.user) })),
       restaurants: room.restaurants.map(({ visits, images, ...rest }) => {
-        const allRatings = visits.flatMap((v) => v.reviews.map((r) => r.rating));
+        const allReviews = visits.flatMap((v) => v.reviews);
+        const allRatings = allReviews.map((r) => r.rating);
+        const hasMyReview = userId ? allReviews.some((r) => r.userId === userId) : false;
         return {
           ...rest,
           images: images.map((img) => toImageUrl(img.url)),
           avgRating: calcAvgRating(allRatings),
+          hasMyReview,
           _count: { ...rest._count, reviews: allRatings.length },
         };
       }),
@@ -388,7 +391,7 @@ export class RoomsService {
   /** 방 내 식당 목록 */
   async findRestaurants(
     roomId: string,
-    _userId: string | undefined,
+    userId: string | undefined,
     options: {
       page?: number;
       pageSize?: number;
@@ -396,6 +399,7 @@ export class RoomsService {
       category?: string;
       sort?: string;
       wishlist?: string;
+      unreviewedOnly?: string;
     } = {},
   ) {
     const page = Math.max(1, options.page ?? 1);
@@ -421,6 +425,9 @@ export class RoomsService {
 
     // DB 레벨 정렬 가능한 필드만 orderBy로 설정
     const isDbSort = !options.sort || options.sort === 'name' || options.sort === 'oldest';
+    const wantsUnreviewedOnly = options.unreviewedOnly === 'true' && !!userId;
+    // hasMyReview는 visits를 메모리에서 집계해야 하므로 unreviewedOnly 필터 시엔 전체 fetch
+    const useDbPagination = isDbSort && !wantsUnreviewedOnly;
     let orderBy: Record<string, string> = { createdAt: 'desc' };
     switch (options.sort) {
       case 'name': orderBy = { name: 'asc' }; break;
@@ -428,32 +435,40 @@ export class RoomsService {
     }
 
     // 계산 필드 정렬 시 전체 fetch 후 메모리 정렬 → 페이지네이션
-    const [restaurants, total] = await measure('restaurants.list.query', () =>
+    const [restaurants, totalRaw] = await measure('restaurants.list.query', () =>
       Promise.all([
         this.prisma.read.roomRestaurant.findMany({
           where,
           include: {
             addedBy: { select: { id: true, nickname: true } },
             images: { select: { url: true }, orderBy: { sortOrder: 'asc' } },
-            visits: { include: { reviews: { select: { rating: true } } } },
+            visits: { include: { reviews: { select: { rating: true, userId: true } } } },
             _count: { select: { visits: true } },
           },
           orderBy,
-          ...(isDbSort ? { skip, take: pageSize } : {}),
+          ...(useDbPagination ? { skip, take: pageSize } : {}),
         }),
         this.prisma.read.roomRestaurant.count({ where }),
       ]),
     );
 
     let data = restaurants.map(({ visits, images, ...rest }) => {
-      const allRatings = visits.flatMap((v) => v.reviews.map((r) => r.rating));
+      const allReviews = visits.flatMap((v) => v.reviews);
+      const allRatings = allReviews.map((r) => r.rating);
+      const hasMyReview = userId ? allReviews.some((r) => r.userId === userId) : false;
       return {
         ...rest,
         images: images.map((img) => toImageUrl(img.url)),
         avgRating: calcAvgRating(allRatings),
+        hasMyReview,
         _count: { ...rest._count, reviews: allRatings.length },
       };
     });
+
+    // unreviewedOnly 필터: 내 리뷰가 없는 식당만
+    if (wantsUnreviewedOnly) {
+      data = data.filter((r) => !r.hasMyReview);
+    }
 
     // 계산 필드 정렬: 전체 데이터에서 정렬 후 페이지네이션 적용
     if (!isDbSort) {
@@ -463,6 +478,10 @@ export class RoomsService {
         case 'reviews': data.sort((a, b) => b._count.reviews - a._count.reviews); break;
         case 'visits': data.sort((a, b) => b._count.visits - a._count.visits); break;
       }
+    }
+
+    const total = wantsUnreviewedOnly ? data.length : totalRaw;
+    if (!useDbPagination) {
       data = data.slice(skip, skip + pageSize);
     }
 

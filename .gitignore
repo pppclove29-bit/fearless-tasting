@@ -42,3 +42,15 @@ apps/api/prisma/*.db
 # Claude Code
 .claude/settings.local.json
 .claude/settings.json
+
+# Capacitor / Android
+apps/web/android/.gradle/
+apps/web/android/build/
+apps/web/android/app/build/
+apps/web/android/local.properties
+apps/web/android/app/google-services.json
+apps/web/android/app/release/
+apps/web/android/app/*.keystore
+apps/web/android/app/*.jks
+apps/web/android/captured/
+apps/web/android/.idea/

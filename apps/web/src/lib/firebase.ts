@@ -62,12 +62,82 @@ async function registerTokenWithServer(
   }
 }
 
+/** Capacitor 네이티브 환경 감지 (APK 등) */
+function isNativePlatform(): boolean {
+  const cap = (window as Record<string, unknown>).Capacitor as
+    | { isNativePlatform?: () => boolean }
+    | undefined;
+  return cap?.isNativePlatform?.() ?? false;
+}
+
+/**
+ * Capacitor 네이티브 FCM 등록 (Android APK 전용 경로).
+ * @capacitor-firebase/messaging 플러그인이 시스템 레벨에서 토큰을 발급받는다.
+ */
+async function registerNativePushToken(
+  apiFetch: (input: string, init?: RequestInit) => Promise<Response>,
+): Promise<string | null> {
+  try {
+    const { FirebaseMessaging } = await import('@capacitor-firebase/messaging');
+
+    const perm = await FirebaseMessaging.checkPermissions();
+    let display = perm.receive;
+    if (display === 'prompt' || display === 'prompt-with-rationale') {
+      const req = await FirebaseMessaging.requestPermissions();
+      display = req.receive;
+    }
+    if (display !== 'granted') return null;
+
+    const { token } = await FirebaseMessaging.getToken();
+    if (!token) return null;
+
+    await registerTokenWithServer(apiFetch, token);
+    localStorage.setItem(FCM_TOKEN_KEY, token);
+
+    // 포그라운드 알림 수신 시 뱃지 갱신
+    FirebaseMessaging.addListener('notificationReceived', () => {
+      const badge = document.querySelector('.notif-badge') as HTMLElement | null;
+      if (badge) badge.hidden = false;
+    });
+
+    // 알림 클릭 시 딥링크 (data.link → 해당 경로로 이동)
+    FirebaseMessaging.addListener('notificationActionPerformed', (event) => {
+      const link = event.notification?.data?.link;
+      if (typeof link === 'string' && link.length > 0) {
+        location.href = link;
+      }
+    });
+
+    // 토큰 자동 회전 시 서버에 재등록
+    FirebaseMessaging.addListener('tokenReceived', (event) => {
+      if (event.token && event.token !== localStorage.getItem(FCM_TOKEN_KEY)) {
+        localStorage.setItem(FCM_TOKEN_KEY, event.token);
+        registerTokenWithServer(apiFetch, event.token);
+      }
+    });
+
+    return token;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * 알림 권한 요청 → FCM 토큰 발급 → 서버에 등록.
  * localStorage에 캐싱하여 매번 Firebase 토큰 요청을 방지.
  * 토큰은 캐시됐지만 서버 등록이 실패한 경우엔 재등록 시도.
  */
 export async function registerPushToken(apiFetch: (input: string, init?: RequestInit) => Promise<Response>): Promise<string | null> {
+  // 네이티브(Capacitor) 환경이면 Firebase Messaging 플러그인 사용
+  if (isNativePlatform()) {
+    const cached = localStorage.getItem(FCM_TOKEN_KEY);
+    const registered = localStorage.getItem(FCM_REGISTERED_KEY);
+    if (cached && registered !== cached) {
+      await registerTokenWithServer(apiFetch, cached);
+    }
+    return registerNativePushToken(apiFetch);
+  }
+
   if (!('Notification' in window) || !('serviceWorker' in navigator)) return null;
 
   // 캐시된 토큰이 있는데 서버 등록이 아직 안 됐으면 재등록 시도

@@ -506,7 +506,7 @@ export async function createRoomRestaurant(
 /** 방 내 식당 목록 (페이지네이션) */
 export async function fetchRoomRestaurants(
   roomId: string,
-  params: { page?: number; pageSize?: number; search?: string; category?: string; sort?: string; wishlist?: boolean } = {},
+  params: { page?: number; pageSize?: number; search?: string; category?: string; sort?: string; wishlist?: boolean; unreviewedOnly?: boolean } = {},
 ): Promise<PaginatedRestaurants> {
   const qs = new URLSearchParams();
   if (params.page) qs.set('page', String(params.page));
@@ -516,6 +516,7 @@ export async function fetchRoomRestaurants(
   if (params.sort) qs.set('sort', params.sort);
   if (params.wishlist === true) qs.set('wishlist', 'true');
   else if (params.wishlist === false) qs.set('wishlist', 'false');
+  if (params.unreviewedOnly) qs.set('unreviewedOnly', 'true');
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants?${qs}`);
   await throwIfNotOk(res, '식당 목록 조회에 실패했습니다.');
   return res.json();

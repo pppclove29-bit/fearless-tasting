@@ -9,11 +9,17 @@
     "preview": "astro preview",
     "lint": "eslint .",
     "typecheck": "astro check && tsc --noEmit",
-    "clean": "rm -rf dist .astro"
+    "clean": "rm -rf dist .astro",
+    "cap:add:android": "cap add android",
+    "cap:sync": "cap sync android",
+    "cap:open:android": "cap open android"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.12",
     "@astrojs/sitemap": "^3.7.0",
+    "@capacitor-firebase/messaging": "^8.2.0",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/core": "^8.3.1",
     "@repo/types": "workspace:*",
     "@repo/utils": "workspace:*",
     "astro": "^5.18.0",
@@ -23,6 +29,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.0",
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/cli": "^8.3.1",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "eslint": "^9.0.0",

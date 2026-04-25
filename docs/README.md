@@ -46,6 +46,12 @@
 | [policy/conventions.md](policy/conventions.md) | 코드 컨벤션, 네이밍, Git 규칙 |
 | [policy/code-review-guide.md](policy/code-review-guide.md) | PR 리뷰 체크리스트 (P1/P2/P3) |
 
+## 모바일
+
+| 문서 | 설명 |
+|------|------|
+| [android-app.md](android-app.md) | Android APK (Capacitor) 빌드 / Firebase 셋업 / Play Store 등록 가이드 |
+
 ## 비즈니스 / 전략
 
 | 문서 | 설명 |

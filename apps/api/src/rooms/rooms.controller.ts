@@ -287,6 +287,7 @@ export class RoomsController {
     @Query('category') category?: string,
     @Query('sort') sort?: string,
     @Query('wishlist') wishlist?: string,
+    @Query('unreviewedOnly') unreviewedOnly?: string,
   ) {
     return this.roomsService.findRestaurants(id, user.id, {
       page: page ? parseInt(page, 10) : undefined,
@@ -295,6 +296,7 @@ export class RoomsController {
       category,
       sort,
       wishlist,
+      unreviewedOnly,
     });
   }
 

@@ -192,6 +192,7 @@ export interface RoomMemberInfo {
 export interface RoomRestaurantInfo extends RoomRestaurant {
   addedBy: { id: string; nickname: string } | null;
   avgRating: number | null;
+  hasMyReview?: boolean;
 }
 
 export interface RoomDetailResponse extends Room {

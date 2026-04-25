@@ -400,7 +400,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .room-card:hover { border-color: var(--border-mid); }
 
   .room-info { min-width: 0; flex: 1; }
-  .room-name { font-size: 0.95rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .room-name { display: flex; align-items: center; gap: 0.35rem; font-size: 0.95rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.2rem; min-width: 0; }
+  .room-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .room-lock { color: var(--text-muted); flex-shrink: 0; }
   .room-meta { font-size: 0.8rem; color: var(--text-muted); }
   .room-right { display: flex; align-items: center; gap: 0.6rem; margin-left: 0.75rem; flex-shrink: 0; }
 
@@ -629,10 +631,31 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       if (emptyMsg) emptyMsg.hidden = true;
       if (roomsToolbar) roomsToolbar.hidden = false;
       if (roomsCount) roomsCount.textContent = `${rooms.length}개의 방`;
+      const lockIcon = `
+        <svg
+          class="room-lock"
+          width="13"
+          height="13"
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-label="비공개 방"
+        >
+          <path
+            d="M4.5 7V5a3.5 3.5 0 1 1 7 0v2M3.5 7h9v6.5a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V7Z"
+            stroke="currentColor"
+            stroke-width="1.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      `;
       roomsList.innerHTML = rooms.map((r) => `
         <a href="/room?id=${r.id}" class="room-card">
           <div class="room-info">
-            <div class="room-name">${escapeHtml(r.name)}</div>
+            <div class="room-name">
+              ${!r.isPublic ? lockIcon : ''}
+              <span>${escapeHtml(r.name)}</span>
+            </div>
             <div class="room-meta">멤버 ${r.memberCount}/${r.maxMembers}명 · 식당 ${r.restaurantCount}개</div>
           </div>
           <div class="room-right">

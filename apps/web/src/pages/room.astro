@@ -745,6 +745,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     vertical-align: middle;
   }
 
+  .unreviewed-badge {
+    display: inline-block;
+    background: var(--accent-soft, rgba(255, 193, 7, 0.15));
+    color: #b45309;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    vertical-align: middle;
+  }
+  [data-theme='dark'] .unreviewed-badge { color: #fbbf24; background: rgba(251, 191, 36, 0.15); }
+
   .room-rest-top {
     display: flex;
     justify-content: space-between;
@@ -2918,11 +2930,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   function renderRestaurantCard(r: RoomRestaurantInfo): string {
     const closedBadge = r.isClosed ? '<span class="closed-badge">폐점</span> ' : '';
+    const unreviewedBadge = r.hasMyReview === false
+      ? '<span class="unreviewed-badge" title="아직 내 리뷰가 없는 식당">📝 미작성</span> '
+      : '';
     return `
       <div class="room-restaurant-card${r.isClosed ? ' is-closed' : ''}" data-rid="${r.id}">
         <div class="room-rest-top">
           <div class="room-rest-info">
-            <div class="room-rest-name">${closedBadge}${escapeHtml(r.name)}</div>
+            <div class="room-rest-name">${closedBadge}${unreviewedBadge}${escapeHtml(r.name)}</div>
             <div class="room-rest-address">${escapeHtml(r.address)}</div>
             <div class="room-rest-category">· ${escapeHtml(r.category)}</div>
           </div>
@@ -4760,6 +4775,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   let sortOrder = 'latest'; // 'latest' | 'rating-high' | 'rating-low' | 'reviews' | 'visits' | 'name'
   let categoryList: CategoryPublic[] = [];
   let restViewportFilter = false;
+  let restUnreviewedOnly = false;
   let wishlistViewportFilter = false;
   const REST_PAGE_SIZE = 10;
   let restPage = 1;
@@ -4857,6 +4873,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${hasKakaoMap ? `<button type="button" class="viewport-filter-btn${restViewportFilter ? ' active' : ''}" id="rest-viewport-filter">
             🗺 지도 영역만
           </button>` : ''}
+          <button type="button" class="viewport-filter-btn${restUnreviewedOnly ? ' active' : ''}" id="rest-unreviewed-filter" title="아직 내 리뷰가 없는 식당만">
+            📝 내 미작성만
+          </button>
           <button type="button" class="sort-trigger-btn" id="rest-sort-trigger">
             ${restSortLabels[sortOrder] || '최신순'}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -4874,6 +4893,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     attachSearchHandler();
     attachSortHandler();
     attachRestViewportFilterHandler();
+    attachRestUnreviewedFilterHandler();
 
     // 지도가 준비되면 idle 리스너 연결 (지도 비동기 로딩 고려 → retry)
     for (const delay of [0, 200, 800, 2000]) {
@@ -5324,6 +5344,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         category: activeCategory || undefined,
         sort: sortOrder,
         wishlist: false,
+        unreviewedOnly: restUnreviewedOnly || undefined,
       });
       restData = result.data;
       restTotal = result.total;
@@ -5399,6 +5420,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     if (displayTotal === 0) {
       if (usingViewportFilter) {
         listEl.innerHTML = '<p class="empty-text">지도 영역에 등록된 식당이 없어요.<br/>지도를 움직여 다른 영역을 탐색해 보세요.</p>';
+      } else if (restUnreviewedOnly) {
+        listEl.innerHTML = '<p class="empty-text">🎉 모든 식당에 리뷰를 작성했어요!</p>';
       } else if (searchQuery || activeCategory) {
         listEl.innerHTML = '<p class="empty-text">검색 결과가 없습니다.</p>';
       } else {
@@ -5434,6 +5457,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           category: activeCategory || undefined,
           sort: sortOrder,
           wishlist: false,
+          unreviewedOnly: restUnreviewedOnly || undefined,
         });
         restData = [...restData, ...result.data];
         // currentRoom.restaurants도 업데이트 (다른 탭 호환)
@@ -5495,6 +5519,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     btn.addEventListener('click', async () => {
       restViewportFilter = !restViewportFilter;
       btn.classList.toggle('active', restViewportFilter);
+      restPage = 1;
+      await loadRestaurants();
+    });
+  }
+
+  function attachRestUnreviewedFilterHandler() {
+    const btn = document.getElementById('rest-unreviewed-filter');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      restUnreviewedOnly = !restUnreviewedOnly;
+      btn.classList.toggle('active', restUnreviewedOnly);
       restPage = 1;
       await loadRestaurants();
     });
