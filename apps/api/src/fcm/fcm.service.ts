@@ -41,6 +41,9 @@ export class FcmService implements OnModuleInit {
         .replace(/\\r/g, '')        // literal \r 제거
         .replace(/\r\n/g, '\n')     // CRLF → LF
         .replace(/\r/g, '\n')       // CR → LF
+        // 스마트 punctuation(em/en dash) → 일반 hyphen.
+        // macOS 자동변환 등으로 PEM 헤더의 ----- 가 ——/–– 로 바뀌면 OpenSSL이 거부.
+        .replace(/[‐-―−]/g, '-')
         .trim();
 
       // 진단 로그: 어떤 형태인지 확인 (값 자체는 노출 안 함)
