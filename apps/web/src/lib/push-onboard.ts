@@ -10,6 +10,18 @@ const EXPLAINER_KEY = 'push_explainer_shown';
  * - 한 번 노출 후 재노출 안 함 (거부했어도 프로필에서 다시 켤 수 있음)
  */
 export async function maybeRequestPushAfterCommit(context: string): Promise<void> {
+  const cap = (window as Record<string, unknown>).Capacitor as { isNativePlatform?: () => boolean } | undefined;
+  const isNative = cap?.isNativePlatform?.() ?? false;
+
+  if (isNative) {
+    // 네이티브: 별도 설명 모달 없이 시스템 권한 요청 + 등록
+    if (localStorage.getItem(EXPLAINER_KEY)) return;
+    localStorage.setItem(EXPLAINER_KEY, '1');
+    const token = await registerPushToken(apiFetch);
+    if (token) trackEvent('push_token_registered', { context });
+    return;
+  }
+
   if (!('Notification' in window)) return;
   if (Notification.permission !== 'default') return;
   if (localStorage.getItem(EXPLAINER_KEY)) return;

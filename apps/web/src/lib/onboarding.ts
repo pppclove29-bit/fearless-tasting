@@ -200,6 +200,15 @@ export async function startOnboarding(): Promise<void> {
 }
 
 async function requestNotificationPermission(): Promise<'granted' | 'denied' | 'unsupported'> {
+  const cap = (window as Record<string, unknown>).Capacitor as { isNativePlatform?: () => boolean } | undefined;
+  const isNative = cap?.isNativePlatform?.() ?? false;
+
+  if (isNative) {
+    // 네이티브: registerPushToken 내부에서 시스템 권한 요청까지 처리
+    const token = await registerPushToken(apiFetch);
+    return token ? 'granted' : 'denied';
+  }
+
   if (!('Notification' in window) || !('serviceWorker' in navigator)) return 'unsupported';
   if (Notification.permission === 'denied') {
     showPermissionDeniedGuide('notification');

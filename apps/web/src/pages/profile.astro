@@ -591,36 +591,43 @@ export const prerender = false;
           const enabled = btn.dataset.push === 'on';
           if (enabled === user.pushEnabled) return;
 
-          // "켜기": 브라우저 지원 + 알림 권한 확인 후 FCM 토큰 등록까지 수행
+          // "켜기": 권한 확인 후 FCM 토큰 등록까지 수행
           if (enabled) {
-            if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-              showToast('이 브라우저에서는 푸시 알림을 지원하지 않습니다.');
-              return;
-            }
-            if (Notification.permission === 'denied') {
-              showPermissionDeniedGuide('notification');
-              return;
-            }
-            if (Notification.permission === 'default') {
-              // 브라우저 팝업 전에 설명 모달로 맥락 제공 (반사적 거부 방지)
-              const ok = await showPermissionExplainer({
-                title: '친구 활동을 알림으로 받아볼까요?',
-                description: '방에 새 맛집, 방문, 리뷰가 등록되면 바로 알려드려요. 원치 않으면 프로필에서 언제든 끌 수 있습니다.',
-                icon: '🔔',
-                allowText: '알림 허용하기',
-              });
-              if (!ok) return;
-              const perm = await Notification.requestPermission();
-              if (perm === 'denied') {
+            const cap = (window as Record<string, unknown>).Capacitor as { isNativePlatform?: () => boolean } | undefined;
+            const isNative = cap?.isNativePlatform?.() ?? false;
+
+            if (!isNative) {
+              // 웹: ServiceWorker + Notification API 필수
+              if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+                showToast('이 브라우저에서는 푸시 알림을 지원하지 않습니다.');
+                return;
+              }
+              if (Notification.permission === 'denied') {
                 showPermissionDeniedGuide('notification');
                 return;
               }
-              if (perm !== 'granted') return;
+              if (Notification.permission === 'default') {
+                // 브라우저 팝업 전에 설명 모달로 맥락 제공 (반사적 거부 방지)
+                const ok = await showPermissionExplainer({
+                  title: '친구 활동을 알림으로 받아볼까요?',
+                  description: '방에 새 맛집, 방문, 리뷰가 등록되면 바로 알려드려요. 원치 않으면 프로필에서 언제든 끌 수 있습니다.',
+                  icon: '🔔',
+                  allowText: '알림 허용하기',
+                });
+                if (!ok) return;
+                const perm = await Notification.requestPermission();
+                if (perm === 'denied') {
+                  showPermissionDeniedGuide('notification');
+                  return;
+                }
+                if (perm !== 'granted') return;
+              }
             }
-            // 권한 granted 상태 → FCM 토큰 발급 + 서버 등록
+
+            // 네이티브: registerPushToken 내부에서 Capacitor 권한 요청 처리
             const token = await registerPushToken(apiFetch);
             if (!token) {
-              showToast('푸시 토큰 발급에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+              showToast('푸시 토큰 발급에 실패했습니다. 알림 권한을 허용해 주세요.');
               return;
             }
           }
