@@ -29,10 +29,15 @@ export class FcmService implements OnModuleInit {
 
     try {
       const parsed = JSON.parse(credentials);
+      // 환경변수로 주입된 private_key는 \n이 literal 백슬래시-n으로 들어오는 경우가 많아
+      // PEM 파서가 ERR_OSSL_UNSUPPORTED를 던진다. 실제 개행으로 복원.
+      const privateKey = typeof parsed.private_key === 'string'
+        ? parsed.private_key.replace(/\\n/g, '\n')
+        : parsed.private_key;
       this.serviceAccount = {
         project_id: parsed.project_id,
         client_email: parsed.client_email,
-        private_key: parsed.private_key,
+        private_key: privateKey,
       };
       this.logger.log('FCM 초기화 완료 (HTTP v1)');
     } catch (err) {
