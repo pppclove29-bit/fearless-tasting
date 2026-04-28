@@ -6,6 +6,7 @@ Disallow: /room
 Disallow: /profile
 Disallow: /join
 Disallow: /cs
+Disallow: /privacy
 Allow: /
 
 # 구글 AI 학습용 데이터 수집 차단
@@ -20,6 +21,7 @@ Disallow: /room
 Disallow: /profile
 Disallow: /join
 Disallow: /cs
+Disallow: /privacy
 Allow: /
 Allow: /rooms/public
 Allow: /discover
@@ -34,6 +36,7 @@ Disallow: /login
 Disallow: /room
 Disallow: /profile
 Disallow: /join
+Disallow: /privacy
 Allow: /
 
 Sitemap: https://musikga.kr/sitemap.xml

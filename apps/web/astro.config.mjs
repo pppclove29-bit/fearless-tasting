@@ -19,7 +19,9 @@ export default defineConfig({
           !path.startsWith('/profile') &&
           !path.startsWith('/join') &&
           !path.startsWith('/404') &&
-          !path.startsWith('/map')
+          !path.startsWith('/map') &&
+          !path.startsWith('/privacy') &&
+          !path.startsWith('/cs')
         );
       },
       serialize: (item) => {
