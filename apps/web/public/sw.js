@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fearless-tasting-v8';
+const CACHE_NAME = 'fearless-tasting-v9';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(['/'])));
@@ -88,12 +88,20 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
   const data = event.notification.data || {};
-  const url = data.link || '/';
+  const rawUrl = data.link || '/';
+  // iOS Safari PWA 등 일부 환경은 clients.openWindow에 상대경로를 주면
+  // 빈 페이지 / 에러 페이지로 빠지는 경우가 있어 SW scope 기준 절대 URL로 정규화.
+  let url;
+  try {
+    url = new URL(rawUrl, self.registration.scope).toString();
+  } catch {
+    url = self.registration.scope;
+  }
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url.includes(url) && 'focus' in client) {
+        if (client.url === url && 'focus' in client) {
           return client.focus();
         }
       }

@@ -174,6 +174,14 @@ export class FcmService implements OnModuleInit {
 
     const url = `https://fcm.googleapis.com/v1/projects/${this.serviceAccount.project_id}/messages:send`;
     const invalidTokens: string[] = [];
+    // 절대 URL 보정: iOS Safari PWA 등 일부 환경은 상대경로 link로 알림 클릭 시
+    // 빈 페이지 / 에러 페이지로 빠지는 경우가 있어 절대 URL을 강제.
+    const frontendBase = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
+    const rawLink = data?.['link'] ?? '/';
+    const absoluteLink = rawLink.startsWith('http')
+      ? rawLink
+      : `${frontendBase}${rawLink.startsWith('/') ? '' : '/'}${rawLink}`;
+    const dataWithLink = { ...(data ?? {}), link: absoluteLink };
 
     // 각 토큰에 개별 발송 (HTTP v1은 multicast 미지원)
     const results = await Promise.allSettled(
@@ -188,8 +196,8 @@ export class FcmService implements OnModuleInit {
             message: {
               token,
               notification: { title, body },
-              data,
-              webpush: { fcmOptions: { link: data?.['link'] ?? '/' } },
+              data: dataWithLink,
+              webpush: { fcmOptions: { link: absoluteLink } },
             },
           }),
         });
