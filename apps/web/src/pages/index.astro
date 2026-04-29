@@ -3,8 +3,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
 
 <BaseLayout
-  title="맛집 기록 · 맛집리스트 정리 앱 | 무모한 시식가"
-  description="맛집 기록, 이렇게 정리하세요. 친구·연인·가족끼리 비공개 방을 만들어 다녀온 맛집 리스트를 정리하고, 방문 기록·솔직한 리뷰·평점 통계까지 한 번에. 무료로 시작."
+  title="무모한 시식가 — 맛집 기록 · 맛집리스트 정리 앱"
+  description="무모한 시식가는 친구·연인·가족끼리 비공개 방에서 다녀온 맛집을 기록하고 솔직한 리뷰를 나누는 프라이빗 맛집 리뷰 플랫폼입니다. 방문 기록·평점 통계·재방문 추천까지 무료로 시작."
   ogImageAlt="무모한 시식가 — 맛집 기록·맛집리스트 정리 앱"
 >
   <Fragment slot="head">
@@ -91,8 +91,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   <!-- 랜딩 (기본 표시, 로그인 시 숨김) -->
   <div id="landing">
     <section class="hero">
+      <p class="hero-eyebrow">무모한 시식가</p>
       <h1 class="hero-title">우리끼리 솔직한<br/>맛집 리뷰</h1>
-      <p class="hero-sub">방 만들고, 같이 기록하고, 비교하세요</p>
+      <p class="hero-sub">
+        무모한 시식가는 친구·연인·가족끼리 비공개 방에서 다녀온 맛집을 기록하고
+        솔직한 리뷰를 나누는 <strong>프라이빗 맛집 리뷰 플랫폼</strong>입니다.
+        방 만들고, 같이 기록하고, 비교하세요.
+      </p>
       <div class="hero-cta-group login-only-cta">
         <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`} class="hero-cta hero-cta-kakao">카카오로 시작하기</a>
         <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/naver`} class="hero-cta hero-cta-naver"><span class="naver-logo">N</span>네이버로 시작하기</a>
@@ -106,6 +111,71 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <div class="step"><span class="step-num">2</span><span>친구 초대</span></div>
       <div class="step-arrow"></div>
       <div class="step"><span class="step-num">3</span><span>맛집 등록 & 리뷰</span></div>
+    </section>
+
+    <section class="why-section">
+      <h2 class="section-title">왜 무모한 시식가인가요?</h2>
+      <div class="why-grid">
+        <article class="why-card">
+          <div class="why-icon">🔒</div>
+          <h3>우리끼리만 보는 비공개 방</h3>
+          <p>친구·연인·가족 등 가까운 사람끼리만 초대 코드로 입장하는 비공개 방에서 솔직한 맛집 후기를 나눕니다. 광고·협찬 없는 진짜 리뷰만 모입니다.</p>
+        </article>
+        <article class="why-card">
+          <div class="why-icon">📒</div>
+          <h3>방문 기록과 리뷰가 한 곳에</h3>
+          <p>식당 등록부터 방문 날짜·웨이팅·메뉴·세부 평점까지 한 번에 기록하세요. 같은 식당을 여러 번 방문해도 멤버별 리뷰가 따로 누적됩니다.</p>
+        </article>
+        <article class="why-card">
+          <div class="why-icon">📊</div>
+          <h3>방마다 통계와 인사이트</h3>
+          <p>카테고리·지역 분포, 평점 레이더, 멤버별 행동 분석, 재방문 TOP 식당까지. 방의 취향을 데이터로 한눈에 확인할 수 있어요.</p>
+        </article>
+        <article class="why-card">
+          <div class="why-icon">🔁</div>
+          <h3>재방문할 맛집 자동 추천</h3>
+          <p>오래 안 간 고평점 식당, 가까운 위시리스트를 자동으로 띄워줍니다. "어디 갈지 모를 때" 무모한 시식가가 우리 방의 맛집 중에서 골라드려요.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="usage-section">
+      <h2 class="section-title">이렇게 사용하세요</h2>
+      <ol class="usage-list">
+        <li>
+          <strong>1. 방 만들기 — </strong>
+          데이트 / 가족 / 친구 / 회식 등 <strong>6종 템플릿</strong> 중 골라 30초 만에 방을 만듭니다.
+          최대 20명까지 초대 가능합니다.
+        </li>
+        <li>
+          <strong>2. 초대 코드로 친구 합류 — </strong>
+          만들어진 8자리 초대 코드를 카카오톡으로 공유하면, 친구가 무모한 시식가에 가입하고 같은 방에 입장합니다.
+        </li>
+        <li>
+          <strong>3. 식당 등록 + 방문 기록 — </strong>
+          카카오 지도와 연동된 검색으로 식당을 등록하고 방문 날짜·메뉴·웨이팅을 함께 남깁니다.
+          가본 곳, 가고 싶은 곳(위시리스트)을 함께 관리하세요.
+        </li>
+        <li>
+          <strong>4. 솔직한 리뷰 작성 — </strong>
+          별점은 0.5 단위, 맛·가성비·서비스·청결·접근성 다섯 가지 세부 평점과
+          "또 먹고 싶은 메뉴"를 메모하면 우리 방만의 진짜 맛집 데이터가 쌓입니다.
+        </li>
+        <li>
+          <strong>5. 통계 · 추천 · 회식 투표까지 — </strong>
+          방의 활동을 기반으로 평점 분포, 인기 메뉴, 멤버별 취향을 분석합니다.
+          "🍜 오늘 뭐 먹지?" 빠른 투표로 회식 메뉴도 한 번에 정합니다.
+        </li>
+      </ol>
+    </section>
+
+    <section class="closing-cta">
+      <h2 class="section-title">지금 무료로 시작하세요</h2>
+      <p>회원가입 없이 카카오 또는 네이버 계정으로 3초 만에 시작합니다. 무모한 시식가는 사용에 비용이 들지 않습니다.</p>
+      <div class="hero-cta-group login-only-cta">
+        <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/kakao`} class="hero-cta hero-cta-kakao">카카오로 시작하기</a>
+        <a href={`${import.meta.env.PUBLIC_API_URL || 'http://localhost:4000'}/auth/naver`} class="hero-cta hero-cta-naver"><span class="naver-logo">N</span>네이버로 시작하기</a>
+      </div>
     </section>
   </div>
 
@@ -191,6 +261,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     background: var(--bg-hover);
     border-radius: 16px;
     margin-bottom: 2rem;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text-sub);
+    margin-bottom: 0.6rem;
+    text-transform: none;
   }
 
   .hero-title {
@@ -323,11 +402,102 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .bottom-cta-btn:hover { opacity: 0.85; }
   .bottom-cta-btn:active { transform: scale(0.98); }
 
+  /* ─── why / usage / closing CTA ─── */
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text-heading);
+    margin-bottom: 1.25rem;
+    text-align: center;
+  }
+
+  .why-section {
+    padding: 2rem 0 3rem;
+  }
+
+  .why-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
+  }
+
+  .why-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem 1.1rem;
+  }
+
+  .why-icon {
+    font-size: 1.6rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .why-card h3 {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.01em;
+  }
+
+  .why-card p {
+    font-size: 0.85rem;
+    color: var(--text-sub);
+    line-height: 1.6;
+  }
+
+  .usage-section {
+    padding: 2rem 0 3rem;
+  }
+
+  .usage-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.7rem;
+  }
+
+  .usage-list li {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.65;
+  }
+
+  .usage-list li strong:first-child {
+    color: var(--text-heading);
+  }
+
+  .closing-cta {
+    text-align: center;
+    padding: 3rem 1rem 2rem;
+    background: var(--bg-hover);
+    border-radius: 16px;
+    margin: 1rem 0 2rem;
+  }
+
+  .closing-cta p {
+    font-size: 0.92rem;
+    color: var(--text-sub);
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   @media (max-width: 600px) {
     .hero { padding: 2.5rem 1rem 2rem; }
     .hero-title { font-size: 1.8rem; }
     .hero-sub { font-size: 0.9rem; }
     .features { grid-template-columns: 1fr; gap: 0.5rem; }
+    .why-grid { grid-template-columns: 1fr; }
   }
 
   /* ─── 대시보드 (방 목록) ─── */
