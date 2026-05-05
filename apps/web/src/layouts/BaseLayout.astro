@@ -495,9 +495,10 @@ const resolvedOgImage = ogImage
   }
 
   .notif-item {
+    position: relative;
     display: flex;
     gap: 0.65rem;
-    padding: 0.7rem 0.65rem;
+    padding: 0.7rem 0.65rem 0.7rem 1.1rem;
     border-radius: 10px;
     transition: background 0.15s;
     cursor: pointer;
@@ -507,6 +508,25 @@ const resolvedOgImage = ogImage
   }
 
   .notif-item:hover { background: var(--bg-hover); }
+
+  /* 안 읽음 표시 점 — 왼쪽 인디케이터 */
+  .notif-item.unread::before {
+    content: '';
+    position: absolute;
+    left: 0.4rem;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #dc2626;
+    transform: translateY(-50%);
+  }
+
+  .notif-item:not(.unread) {
+    opacity: 0.62;
+  }
+
+  .notif-item:not(.unread):hover { opacity: 1; }
 
   .notif-icon {
     width: 32px;
@@ -981,7 +1001,12 @@ const resolvedOgImage = ogImage
             if (existing) { existing.remove(); dropdownOpen = false; return; }
 
             dropdownOpen = true;
-            const notifications: Notification[] = await fetchMyNotifications();
+            const rawNotifications: Notification[] = await fetchMyNotifications();
+            // 안 읽음 우선, 같은 그룹 내 최신순
+            const notifications: Notification[] = [...rawNotifications].sort((a, b) => {
+              if (a.isRead !== b.isRead) return a.isRead ? 1 : -1;
+              return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
 
             const dropdown = document.createElement('div');
             dropdown.className = 'notif-dropdown';
