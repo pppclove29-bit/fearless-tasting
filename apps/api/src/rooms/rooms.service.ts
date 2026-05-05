@@ -338,6 +338,15 @@ export class RoomsService {
     if (!member) throw new NotFoundException('해당 멤버를 찾을 수 없습니다');
 
     await this.prisma.write.$transaction(async (tx) => {
+      // 1. 이 방에 강퇴된 멤버가 만든 방문 삭제 (cascade로 RoomReview, RoomVisitParticipant 동반 삭제)
+      await tx.roomVisit.deleteMany({
+        where: { createdById: targetUserId, restaurant: { roomId } },
+      });
+      // 2. 다른 사람의 방문에 참여자로 태그된 흔적 삭제
+      await tx.roomVisitParticipant.deleteMany({
+        where: { userId: targetUserId, visit: { restaurant: { roomId } } },
+      });
+      // 3. 멤버십 삭제 + 재입장 차단 기록
       await tx.roomMember.delete({ where: { id: member.id } });
       await tx.roomKick.upsert({
         where: { roomId_userId: { roomId, userId: targetUserId } },
