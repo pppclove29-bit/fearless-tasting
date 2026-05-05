@@ -103,6 +103,7 @@ try {
       <h2>유저 활동 기반 맛집 랭킹</h2>
       <p>무모한 시식가에서 활동하는 유저들의 실제 방문 기록과 리뷰를 기반으로 선정된 맛집 랭킹입니다.
         평점과 리뷰 수를 종합적으로 고려하여 순위를 매깁니다.</p>
+      <p><strong>공개로 설정된 방</strong>의 데이터만 집계되며, 비공개 방의 활동은 절대 포함되지 않습니다. 작성자 정보도 노출되지 않습니다.</p>
     </section>
   </div>
 </BaseLayout>
@@ -124,8 +125,9 @@ try {
   .rankings-badge {
     display: inline-block;
     padding: 0.35rem 1rem;
-    background: var(--text-heading);
-    color: var(--bg);
+    background: var(--bg-card);
+    color: var(--text-heading);
+    border: 1px solid var(--border);
     font-size: 0.78rem;
     font-weight: 700;
     border-radius: 100px;

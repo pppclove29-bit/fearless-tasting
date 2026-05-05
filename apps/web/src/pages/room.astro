@@ -949,6 +949,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   .add-rest-fab:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
 
+  /* 다크모드: 카드와 같은 어두운 톤이 되어 묻히지 않도록 명시적 반전 + 외곽선 */
+  [data-theme="dark"] .add-rest-fab {
+    background: #fff;
+    color: #111;
+    box-shadow: 0 0 0 1px var(--border-mid), 0 2px 12px rgba(0, 0, 0, 0.4);
+  }
+  [data-theme="dark"] .add-rest-fab:hover {
+    opacity: 1;
+    background: #f4f4f5;
+    box-shadow: 0 0 0 1px var(--text-heading), 0 4px 16px rgba(0, 0, 0, 0.5);
+  }
+
   /* 비어있을 때 유도 펄스 */
   .add-rest-fab.attn {
     animation: fab-pulse 1.8s ease-in-out infinite;
