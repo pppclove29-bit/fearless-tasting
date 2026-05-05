@@ -12,7 +12,9 @@
     "clean": "rm -rf dist .astro",
     "cap:add:android": "cap add android",
     "cap:sync": "cap sync android",
-    "cap:open:android": "cap open android"
+    "cap:open:android": "cap open android",
+    "android:bundle": "cd android && .\\gradlew.bat bundleRelease",
+    "android:release": "pnpm build && pnpm cap:sync && pnpm android:bundle"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.12",
