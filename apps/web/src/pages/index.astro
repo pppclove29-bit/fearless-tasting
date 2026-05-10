@@ -1293,7 +1293,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       listEl.innerHTML = suggestions.map((s) => {
         const shortAddr = s.address.replace(/^(\S+[시도])\s+(\S+[시군구]).*$/, '$1 $2');
         return `
-          <a href="/room/restaurant?id=${s.roomId}&rid=${s.restaurantId}" class="revisit-card">
+          <a href="/room/restaurant?roomId=${s.roomId}&id=${s.restaurantId}" class="revisit-card">
             <div class="revisit-card-top">
               <span class="revisit-cat">${escape(s.category)}</span>
               <span class="revisit-days">${s.daysAgo}일 만</span>

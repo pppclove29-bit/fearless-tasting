@@ -1148,7 +1148,7 @@ export class RoomsService {
       // FCM 푸시 발송 (fire-and-forget)
       const room = await this.prisma.read.room.findUnique({ where: { id: roomId }, select: { name: true } });
       const link = opts?.restaurantId
-        ? `/room/restaurant?id=${roomId}&rid=${opts.restaurantId}`
+        ? `/room/restaurant?roomId=${roomId}&id=${opts.restaurantId}`
         : opts?.tab
           ? `/room?id=${roomId}&tab=${opts.tab}`
           : `/room?id=${roomId}`;
