@@ -32,6 +32,13 @@ function isStandalone(): boolean {
     || (navigator as unknown as { standalone?: boolean }).standalone === true;
 }
 
+function isNativeApp(): boolean {
+  const cap = (window as unknown as Record<string, unknown>).Capacitor as
+    | { isNativePlatform?: () => boolean }
+    | undefined;
+  return cap?.isNativePlatform?.() === true;
+}
+
 function isDismissed(): boolean {
   const until = Number(localStorage.getItem(DISMISS_UNTIL_KEY) || '0');
   return until > Date.now();
@@ -49,7 +56,7 @@ function detectOS(): 'ios' | 'android' | 'desktop' {
 }
 
 export function initPwaInstall(): void {
-  if (isStandalone()) return;
+  if (isStandalone() || isNativeApp()) return;
 
   const visitCount = bumpVisitCount();
   const os = detectOS();
