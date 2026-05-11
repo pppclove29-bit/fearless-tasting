@@ -17,6 +17,8 @@ model User {
   nickname            String                 @unique
   /// 프로필 이미지 URL
   profileImageUrl     String?                @db.VarChar(500)
+  /// 프로필 이미지 캐시 버스팅용 버전 (이미지 변경 시 +1)
+  profileImageVersion Int                    @default(0)
   /// 역할 ('user' | 'admin')
   role                String                 @default("user") @db.VarChar(10)
   /// 연결된 OAuth 계정 (카카오 등)

@@ -121,7 +121,7 @@ export class RoomsService {
         include: {
           members: {
             include: {
-              user: { select: { id: true, nickname: true, profileImageUrl: true } },
+              user: { select: { id: true, nickname: true, profileImageUrl: true, profileImageVersion: true } },
             },
             orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
           },
@@ -660,10 +660,10 @@ export class RoomsService {
             include: {
               createdBy: { select: { id: true, nickname: true } },
               participants: {
-                include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+                include: { user: { select: { id: true, nickname: true, profileImageUrl: true, profileImageVersion: true } } },
               },
               reviews: {
-                include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+                include: { user: { select: { id: true, nickname: true, profileImageUrl: true, profileImageVersion: true } } },
                 orderBy: { createdAt: 'desc' },
               },
               _count: { select: { reviews: true } },
@@ -715,10 +715,10 @@ export class RoomsService {
         include: {
           createdBy: { select: { id: true, nickname: true } },
           participants: {
-            include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+            include: { user: { select: { id: true, nickname: true, profileImageUrl: true, profileImageVersion: true } } },
           },
           reviews: {
-            include: { user: { select: { id: true, nickname: true, profileImageUrl: true } } },
+            include: { user: { select: { id: true, nickname: true, profileImageUrl: true, profileImageVersion: true } } },
           },
           _count: { select: { reviews: true } },
         },

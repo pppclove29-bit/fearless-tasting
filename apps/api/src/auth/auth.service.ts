@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { measure } from '../common/perf';
-import { toImageUrl } from '../common/image-url';
+import { withProfileImage } from '../common/image-url';
 
 /** bcrypt salt rounds: 8 ≈ ~0.3s (vs 10 ≈ ~1.4s). 2^8 = 256 iterations — 충분한 보안 수준 */
 const BCRYPT_SALT_ROUNDS = 8;
@@ -324,11 +324,11 @@ export class AuthService {
     const user = await measure('auth.getUserProfile', () =>
       this.prisma.read.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true, pushEnabled: true, onboardingCompletedAt: true },
+        select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true, profileImageVersion: true, pushEnabled: true, onboardingCompletedAt: true },
       }),
     );
     if (!user) return null;
-    return { ...user, profileImageUrl: toImageUrl(user.profileImageUrl) };
+    return withProfileImage(user);
   }
 
   /** Access Token에서 유저 정보 추출 */

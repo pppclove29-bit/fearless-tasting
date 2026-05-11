@@ -6,9 +6,20 @@ export function toImageUrl(path: string | null | undefined): string | null {
   return base ? `${base}/${path}` : path;
 }
 
-/** user 객체의 profileImageUrl을 절대 URL로 변환 */
-export function withProfileImage<T extends { profileImageUrl: string | null }>(
-  user: T,
-): T {
-  return { ...user, profileImageUrl: toImageUrl(user.profileImageUrl) };
+// 프로필 이미지는 profiles/{userId}.webp 고정 키라 URL이 안 바뀐다.
+// 브라우저·CDN 캐시를 무효화하기 위해 ?v=<version>을 붙인다.
+function withVersion(url: string | null, version: number | null | undefined): string | null {
+  if (!url) return null;
+  if (!version) return url;
+  return url.includes('?') ? `${url}&v=${version}` : `${url}?v=${version}`;
+}
+
+/** user 객체의 profileImageUrl을 절대 URL + 캐시 버스터로 변환 */
+export function withProfileImage<
+  T extends { profileImageUrl: string | null; profileImageVersion?: number | null },
+>(user: T): T {
+  return {
+    ...user,
+    profileImageUrl: withVersion(toImageUrl(user.profileImageUrl), user.profileImageVersion),
+  };
 }

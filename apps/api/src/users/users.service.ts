@@ -42,15 +42,22 @@ export class UsersService {
       throw new ConflictException('이미 사용 중인 닉네임입니다');
     }
 
-    const data: { nickname: string; profileImageUrl?: string } = { nickname };
+    const data: {
+      nickname: string;
+      profileImageUrl?: string;
+      profileImageVersion?: { increment: number };
+    } = { nickname };
     if (profileImageUrl !== undefined) {
       data.profileImageUrl = profileImageUrl;
+      // 같은 키(profiles/{userId}.webp)에 덮어쓰므로 URL이 변하지 않는다.
+      // 브라우저/CDN 캐시 무효화를 위해 버전을 증분한다.
+      data.profileImageVersion = { increment: 1 };
     }
 
     const user = await this.prisma.write.user.update({
       where: { id: userId },
       data,
-      select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true },
+      select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true, profileImageVersion: true },
     });
     return withProfileImage(user);
   }
@@ -135,6 +142,7 @@ export class UsersService {
         id: true,
         nickname: true,
         profileImageUrl: true,
+        profileImageVersion: true,
         createdVisits: {
           select: {
             id: true,
@@ -316,10 +324,11 @@ export class UsersService {
       if (ownedRoomCount >= 3) achievements.push({ id: 'room-builder', name: '방 빌더', icon: '🏗️', description: '방 3개 이상 개설' });
       if (maxMembersInOwnedRoom >= 5) achievements.push({ id: 'inviter', name: '초대왕', icon: '📨', description: '방에 5명 이상 초대' });
 
+      const { profileImageUrl } = withProfileImage(user);
       return {
         userId: user.id,
         nickname: user.nickname,
-        profileImageUrl: user.profileImageUrl,
+        profileImageUrl,
         reviewCount,
         visitCount,
         restaurantCount,
