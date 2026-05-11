@@ -293,10 +293,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-muted);
     margin: 0.15rem 0 0.25rem;
   }
-  .similar-rest-reason {
-    font-size: 0.68rem;
-    color: var(--text-sub);
-  }
 
   /* 평점 요약 히어로 (망고플레이트 스타일) */
   .rating-hero {
@@ -2437,36 +2433,55 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             ` : ''}
             <div id="visits-list">${visitsHtml}</div>
             ${(() => {
-              // 이 방 내 유사 식당 추천 (카테고리/지역 기반)
-              const candidates = (currentRoom.restaurants || [])
-                .filter((r) => r.id !== detail.id && !r.isClosed && !r.isWishlist)
-                .map((r) => {
-                  const sameCat = !!detail.category && r.category === detail.category;
-                  const sameRegion = (!!detail.city && r.city === detail.city)
-                    || (!!detail.neighborhood && r.neighborhood === detail.neighborhood);
-                  if (!sameCat && !sameRegion) return null;
-                  const score = (sameCat ? 2 : 0) + (sameRegion ? 1 : 0);
-                  return { r, score };
-                })
-                .filter((x): x is { r: typeof currentRoom.restaurants[number]; score: number } => x !== null)
-                .sort((a, b) => b.score - a.score || (b.r.avgRating ?? 0) - (a.r.avgRating ?? 0))
+              // 이 방 내 유사 식당 추천: 같은 카테고리 / 근처 두 섹션으로 분리
+              type Rest = typeof currentRoom.restaurants[number];
+              const pool = (currentRoom.restaurants || [])
+                .filter((r) => r.id !== detail.id && !r.isClosed && !r.isWishlist);
+
+              const sameCategory = !detail.category ? [] : pool
+                .filter((r) => r.category === detail.category)
+                .sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0))
                 .slice(0, 3);
-              if (candidates.length === 0) return '';
-              const cards = candidates.map(({ r, score }) => {
-                const reason = score === 3 ? '같은 카테고리·지역' : (score === 2 ? '같은 카테고리' : '같은 지역');
+
+              const sameCategoryIds = new Set(sameCategory.map((r) => r.id));
+              const nearby = pool
+                .filter((r) => !sameCategoryIds.has(r.id))
+                .filter((r) => (!!detail.neighborhood && r.neighborhood === detail.neighborhood)
+                  || (!!detail.city && r.city === detail.city))
+                .sort((a, b) => {
+                  const aNeigh = !!detail.neighborhood && a.neighborhood === detail.neighborhood ? 1 : 0;
+                  const bNeigh = !!detail.neighborhood && b.neighborhood === detail.neighborhood ? 1 : 0;
+                  return (bNeigh - aNeigh) || ((b.avgRating ?? 0) - (a.avgRating ?? 0));
+                })
+                .slice(0, 3);
+
+              if (sameCategory.length === 0 && nearby.length === 0) return '';
+
+              const renderCard = (r: Rest) => {
                 const rating = r.avgRating != null ? `★ ${r.avgRating.toFixed(1)}` : '리뷰 없음';
                 return `
                   <a class="similar-rest-card" href="/room/restaurant?roomId=${currentRoom.id}&id=${r.id}">
                     <div class="similar-rest-name">${escapeHtml(r.name)}</div>
                     <div class="similar-rest-meta">${escapeHtml(r.category || '')} · ${rating}</div>
-                    <div class="similar-rest-reason">💡 ${reason}</div>
                   </a>`;
-              }).join('');
-              return `
-                <div class="similar-rest-section">
-                  <h3 class="similar-rest-heading">🔁 비슷한 식당</h3>
-                  <div class="similar-rest-grid">${cards}</div>
-                </div>`;
+              };
+
+              const sections: string[] = [];
+              if (sameCategory.length > 0) {
+                sections.push(`
+                  <div class="similar-rest-section">
+                    <h3 class="similar-rest-heading">🍽️ 같은 카테고리 식당</h3>
+                    <div class="similar-rest-grid">${sameCategory.map(renderCard).join('')}</div>
+                  </div>`);
+              }
+              if (nearby.length > 0) {
+                sections.push(`
+                  <div class="similar-rest-section">
+                    <h3 class="similar-rest-heading">📍 근처 식당 둘러보기</h3>
+                    <div class="similar-rest-grid">${nearby.map(renderCard).join('')}</div>
+                  </div>`);
+              }
+              return sections.join('');
             })()}
           </div>
         `;
