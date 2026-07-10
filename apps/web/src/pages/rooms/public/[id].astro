@@ -33,6 +33,34 @@ const description = room && summary
       '실제 방문자의 리얼 리뷰를 확인하세요.',
     ].filter(Boolean).join(' · ')
   : '공개 맛집 방을 확인하세요';
+
+// AEO(답변 엔진 최적화)용 FAQ — AI 검색이 Q&A 형태로 발췌하기 쉽게 구성.
+// summary 데이터로 규칙 기반 생성 (값 없으면 해당 문항 생략).
+const faqItems: { q: string; a: string }[] = [];
+if (room && summary) {
+  faqItems.push({
+    q: `'${room.name}'에는 어떤 맛집이 있나요?`,
+    a: summary.summaryText,
+  });
+  if (summary.topRegions.length > 0) {
+    faqItems.push({
+      q: `'${room.name}' 맛집은 주로 어느 지역에 있나요?`,
+      a: `${summary.topRegions.join(', ')} 지역의 맛집 ${summary.restaurantCount}곳이 등록되어 있습니다.`,
+    });
+  }
+  if (summary.topMenus.length > 0) {
+    faqItems.push({
+      q: `'${room.name}'에서 인기 있는 메뉴는 무엇인가요?`,
+      a: `방문자들이 또 먹고 싶은 메뉴로 ${summary.topMenus.join(', ')} 등을 꼽았습니다.`,
+    });
+  }
+  if (summary.avgRating != null && summary.totalReviews > 0) {
+    faqItems.push({
+      q: `'${room.name}' 맛집들의 평점은 어떤가요?`,
+      a: `실제 방문자 리뷰 ${summary.totalReviews}개 기준 평균 평점은 ★${summary.avgRating.toFixed(1)}점입니다.`,
+    });
+  }
+}
 ---
 
 <BaseLayout
@@ -68,6 +96,19 @@ const description = room && summary
                 "worstRating": 0.5,
               }
             } : {}),
+            ...(r.topReviews?.length ? {
+              "review": r.topReviews.map((rv) => ({
+                "@type": "Review",
+                "reviewRating": {
+                  "@type": "Rating",
+                  "ratingValue": rv.rating,
+                  "bestRating": 5,
+                  "worstRating": 0.5,
+                },
+                "reviewBody": rv.content,
+                "datePublished": rv.createdAt,
+              })),
+            } : {}),
           },
         })),
       })} />
@@ -81,6 +122,17 @@ const description = room && summary
           { "@type": "ListItem", "position": 2, "name": "공개 맛집 방", "item": siteUrl + "/rooms/public" },
           { "@type": "ListItem", "position": 3, "name": room.name, "item": siteUrl + `/rooms/public/${id}` },
         ]
+      })} />
+    )}
+    {room && faqItems.length > 0 && (
+      <script type="application/ld+json" set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": faqItems.map((f) => ({
+          "@type": "Question",
+          "name": f.q,
+          "acceptedAnswer": { "@type": "Answer", "text": f.a },
+        })),
       })} />
     )}
   </Fragment>
@@ -125,6 +177,18 @@ const description = room && summary
               </div>
             )}
           </div>
+        )}
+
+        {room.summary.summaryText && (
+          <section class="public-aeo-summary">
+            <h2 class="public-aeo-title">한눈에 보는 {room.name}</h2>
+            <p class="public-aeo-text">{room.summary.summaryText}</p>
+            {room.summary.topMenus.length > 0 && (
+              <p class="public-aeo-menus">
+                <strong>인기 메뉴</strong> {room.summary.topMenus.join(' · ')}
+              </p>
+            )}
+          </section>
         )}
 
         <div id="restaurant-detail-area"></div>
@@ -268,6 +332,38 @@ const description = room && summary
     font-size: 0.75rem;
     color: var(--text-sub);
     font-weight: 500;
+  }
+
+  /* AEO 자연어 요약 (AI 검색 발췌용, 사람에게도 노출) */
+  .public-aeo-summary {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .public-aeo-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.01em;
+  }
+  .public-aeo-text {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text-sub);
+    margin: 0;
+  }
+  .public-aeo-menus {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 0.6rem 0 0;
+  }
+  .public-aeo-menus strong {
+    color: var(--text-sub);
+    font-weight: 700;
+    margin-right: 0.35rem;
   }
 
   /* 공개 방 요약 카드 */

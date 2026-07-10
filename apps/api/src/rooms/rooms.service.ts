@@ -1420,7 +1420,17 @@ export class RoomsService {
             latitude: true,
             longitude: true,
             visits: {
-              select: { reviews: { select: { id: true, rating: true } } },
+              select: {
+                reviews: {
+                  select: {
+                    id: true,
+                    rating: true,
+                    content: true,
+                    favoriteMenu: true,
+                    createdAt: true,
+                  },
+                },
+              },
             },
           },
           orderBy: { createdAt: 'desc' },
@@ -1430,16 +1440,34 @@ export class RoomsService {
 
     if (!room) throw new NotFoundException('공개 방을 찾을 수 없습니다');
 
+    // 방 전역 인기 메뉴 집계용 (AEO 자연어 요약에 사용)
+    const allFavoriteMenus: string[] = [];
+
     const restaurants = room.restaurants.map(({ visits, images, ...r }) => {
-      const ratings = visits.flatMap((v) => v.reviews.map((rv) => rv.rating));
+      const reviews = visits.flatMap((v) => v.reviews);
+      const ratings = reviews.map((rv) => rv.rating);
       const avgRating = ratings.length > 0
         ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
         : null;
+      for (const rv of reviews) {
+        if (rv.favoriteMenu) allFavoriteMenus.push(rv.favoriteMenu.trim());
+      }
+      // 구조화 데이터(Review 마크업)용: 본문 있는 리뷰 평점순 상위 2개
+      const topReviews = reviews
+        .filter((rv) => rv.content && rv.content.trim().length > 0)
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, 2)
+        .map((rv) => ({
+          rating: rv.rating,
+          content: rv.content,
+          createdAt: rv.createdAt.toISOString(),
+        }));
       return {
         ...r,
         images: images.map((img) => toImageUrl(img.url)),
         reviewCount: ratings.length,
         avgRating,
+        topReviews,
       };
     });
 
@@ -1463,6 +1491,19 @@ export class RoomsService {
       restaurants.map((r) => [r.city, r.neighborhood].filter(Boolean).join(' ').trim()),
       3,
     );
+    const topMenus = pickTop(allFavoriteMenus, 3);
+
+    // AEO(답변 엔진 최적화)용 자연어 요약 — AI 검색이 그대로 발췌·인용하기 쉬운 문단.
+    // 규칙 기반 생성(LLM 불필요). 데이터 없는 항목은 문장에서 자연스럽게 생략.
+    const summaryText = this.buildPublicRoomSummaryText({
+      name: room.name,
+      restaurantCount: restaurants.length,
+      totalReviews,
+      avgRating,
+      topCategories,
+      topRegions,
+      topMenus,
+    });
 
     return {
       ...room,
@@ -1473,8 +1514,41 @@ export class RoomsService {
         avgRating,
         topCategories,
         topRegions,
+        topMenus,
+        summaryText,
       },
     };
+  }
+
+  /** 공개 방 자연어 요약 문장 생성 (AEO) — 규칙 기반, 빈 데이터는 생략 */
+  private buildPublicRoomSummaryText(s: {
+    name: string;
+    restaurantCount: number;
+    totalReviews: number;
+    avgRating: number | null;
+    topCategories: string[];
+    topRegions: string[];
+    topMenus: string[];
+  }): string {
+    const parts: string[] = [];
+    const region = s.topRegions[0];
+    const cats = s.topCategories.slice(0, 3).join('·');
+    const lead =
+      region && cats
+        ? `'${s.name}'은(는) ${region} 등지의 ${cats} 맛집 ${s.restaurantCount}곳을 모은 리스트입니다.`
+        : cats
+          ? `'${s.name}'은(는) ${cats} 맛집 ${s.restaurantCount}곳을 모은 리스트입니다.`
+          : `'${s.name}'은(는) 맛집 ${s.restaurantCount}곳을 모은 리스트입니다.`;
+    parts.push(lead);
+
+    if (s.totalReviews > 0) {
+      const ratingStr = s.avgRating != null ? `, 평균 평점은 ★${s.avgRating.toFixed(1)}점` : '';
+      parts.push(`실제 방문자가 직접 남긴 리뷰는 ${s.totalReviews}개${ratingStr}입니다.`);
+    }
+    if (s.topMenus.length > 0) {
+      parts.push(`인기 메뉴로는 ${s.topMenus.join(', ')} 등이 꼽힙니다.`);
+    }
+    return parts.join(' ');
   }
 
   /** 공개 방 식당 상세 (비로그인 가능, 유저 정보 미포함) */

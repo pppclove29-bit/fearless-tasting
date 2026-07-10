@@ -117,6 +117,12 @@ export interface RoomDetail extends Room {
 
 // ─── 공유 링크용 타입 (멤버 정보 제외) ───
 
+export interface SharedRoomTopReview {
+  rating: number;
+  content: string;
+  createdAt: string;
+}
+
 export interface SharedRoomRestaurant {
   id: string;
   name: string;
@@ -130,6 +136,8 @@ export interface SharedRoomRestaurant {
   longitude?: number | null;
   reviewCount: number;
   avgRating: number | null;
+  // 구조화 데이터(Review 마크업)용 대표 리뷰 (본문 있는 평점순 상위 2개)
+  topReviews: SharedRoomTopReview[];
 }
 
 export interface SharedRoomVisit {
@@ -164,6 +172,10 @@ export interface SharedRoomSummary {
   avgRating: number | null;
   topCategories: string[];
   topRegions: string[];
+  // 인기 메뉴 (리뷰 favoriteMenu 빈도 상위 3) — AEO 요약/노출용
+  topMenus: string[];
+  // AEO(답변 엔진 최적화) 자연어 요약 문단 — AI 검색 발췌·인용용
+  summaryText: string;
 }
 
 export interface SharedRoomDetail {

@@ -16,6 +16,7 @@ export type {
   SharedRoomDetail,
   SharedRoomSummary,
   SharedRoomRestaurant,
+  SharedRoomTopReview,
   SharedRoomRestaurantDetail,
   SharedRoomVisit,
   SharedRoomReview,
