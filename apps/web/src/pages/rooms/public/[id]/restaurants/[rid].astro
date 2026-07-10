@@ -84,6 +84,24 @@ const favoriteMenus = [
   ...new Set(allReviews.map((r) => r.favoriteMenu?.trim()).filter(Boolean)),
 ].slice(0, 5) as string[];
 
+const images = restaurant?.images ?? [];
+const region = restaurant
+  ? [restaurant.city, restaurant.neighborhood].filter(Boolean).join(' ').trim()
+  : '';
+const kakaoKey = import.meta.env.PUBLIC_KAKAO_MAP_KEY;
+const showMap = !!(restaurant?.latitude != null && restaurant?.longitude != null && kakaoKey);
+
+// AEO 답변 우선(첫 문단 직답) — AI 검색이 그대로 발췌하기 쉬운 40~60자 요약
+const restaurantLead = restaurant
+  ? [
+      `${restaurant.name}은(는) ${region ? region + ' ' : ''}${restaurant.category} 맛집입니다.`,
+      allReviews.length > 0
+        ? `실제 방문자 리뷰 ${allReviews.length}개${avgRating != null ? `, 평균 ★${avgRating.toFixed(1)}점` : ''}.`
+        : null,
+      favoriteMenus.length > 0 ? `인기 메뉴는 ${favoriteMenus.slice(0, 3).join(', ')} 등입니다.` : null,
+    ].filter(Boolean).join(' ')
+  : '';
+
 const revisitLabels: Record<number, string> = {
   5: '꼭 재방문', 4: '또 가고 싶어요', 3: '가까우면 갈만', 2: '사주면 갈게요', 1: '안 갈 것 같아요',
 };
@@ -118,6 +136,7 @@ const pageUrl = `${siteUrl}/rooms/public/${id}/restaurants/${rid}`;
         "address": restaurant.address,
         "servesCuisine": restaurant.category,
         "url": pageUrl,
+        ...(images.length > 0 ? { "image": images } : {}),
         ...(restaurant.latitude != null && restaurant.longitude != null ? {
           "geo": {
             "@type": "GeoCoordinates",
@@ -183,7 +202,32 @@ const pageUrl = `${siteUrl}/rooms/public/${id}/restaurants/${rid}`;
             )}
             <span class="pub-rest-review-count">리뷰 {allReviews.length}개</span>
           </div>
+          {restaurantLead && <p class="pub-rest-lead">{restaurantLead}</p>}
         </header>
+
+        {images.length > 0 && (
+          <section class="pub-rest-gallery" aria-label={`${restaurant.name} 사진`}>
+            {images.slice(0, 12).map((src, i) => (
+              <img
+                src={src}
+                alt={`${restaurant.name} ${restaurant.category} 사진 ${i + 1}`}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+              />
+            ))}
+          </section>
+        )}
+
+        {showMap && (
+          <section class="pub-rest-map-wrap" aria-label={`${restaurant.name} 위치`}>
+            <div
+              id="pub-rest-map"
+              class="pub-rest-map"
+              data-lat={restaurant.latitude}
+              data-lng={restaurant.longitude}
+            ></div>
+          </section>
+        )}
 
         {(detailRatingRows.length > 0 || favoriteMenus.length > 0) && (
           <section class="pub-rest-summary">
@@ -327,6 +371,36 @@ const pageUrl = `${siteUrl}/rooms/public/${id}/restaurants/${rid}`;
     display: inline-block; padding: 0.2rem 0.6rem; border-radius: 100px;
     font-size: 0.75rem; font-weight: 600; background: var(--bg-hover); color: var(--text-sub);
   }
+  .pub-rest-lead {
+    font-size: 0.9rem; line-height: 1.6; color: var(--text-sub);
+    margin: 0.85rem 0 0; padding-top: 0.75rem; border-top: 1px dashed var(--border);
+  }
+
+  /* 사진 갤러리 (네이버 이미지 신호 + 체류시간) */
+  .pub-rest-gallery {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.4rem; margin-bottom: 1rem;
+  }
+  .pub-rest-gallery img {
+    width: 100%; aspect-ratio: 4 / 3; object-fit: cover;
+    border-radius: 10px; border: 1px solid var(--border);
+    cursor: zoom-in; background: var(--bg-hover);
+  }
+  .pub-rest-gallery img:first-child {
+    grid-column: span 2; aspect-ratio: 16 / 9;
+  }
+
+  .pub-rest-map-wrap { margin-bottom: 1rem; }
+  .pub-rest-map {
+    width: 100%; height: 240px; border-radius: 12px;
+    border: 1px solid var(--border); overflow: hidden;
+  }
+
+  .pub-lightbox {
+    position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.85);
+    display: flex; align-items: center; justify-content: center; cursor: zoom-out;
+  }
+  .pub-lightbox img { max-width: 92vw; max-height: 88vh; border-radius: 8px; }
 
   .pub-rest-summary {
     background: var(--bg-card); border: 1px solid var(--border);
@@ -436,3 +510,58 @@ const pageUrl = `${siteUrl}/rooms/public/${id}/restaurants/${rid}`;
     .revisit-no { background: #7f1d1d; color: #fca5a5; }
   }
 </style>
+
+<script>
+  function initPublicRestaurantPage() {
+    // 카카오 지도 (SDK는 BaseLayout에서 전역 로드, autoload=false)
+    const mapEl = document.getElementById('pub-rest-map');
+    if (mapEl && !mapEl.dataset.inited) {
+      const lat = parseFloat(mapEl.dataset.lat || '');
+      const lng = parseFloat(mapEl.dataset.lng || '');
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+        let tries = 0;
+        const tryInit = () => {
+          const kakao = (window as Record<string, unknown>).kakao as Record<string, unknown> | undefined;
+          if (!kakao || !kakao.maps) {
+            if (tries++ < 50) setTimeout(tryInit, 100);
+            return;
+          }
+          const maps = kakao.maps as Record<string, unknown>;
+          (maps.load as (cb: () => void) => void)(() => {
+            const LatLng = maps.LatLng as new (a: number, b: number) => unknown;
+            const MapCtor = maps.Map as new (el: HTMLElement, o: Record<string, unknown>) => unknown;
+            const MarkerCtor = maps.Marker as new (o: Record<string, unknown>) => unknown;
+            const center = new LatLng(lat, lng);
+            const map = new MapCtor(mapEl, { center, level: 3 });
+            new MarkerCtor({ map, position: center });
+            mapEl.dataset.inited = '1';
+          });
+        };
+        tryInit();
+      }
+    }
+
+    // 사진 클릭 → 라이트박스 확대
+    const gallery = document.querySelector('.pub-rest-gallery');
+    if (gallery && !gallery.getAttribute('data-lb')) {
+      gallery.setAttribute('data-lb', '1');
+      gallery.addEventListener('click', (e) => {
+        const img = e.target as HTMLImageElement;
+        if (img.tagName !== 'IMG') return;
+        const overlay = document.createElement('div');
+        overlay.className = 'pub-lightbox';
+        const big = document.createElement('img');
+        big.src = img.src;
+        big.alt = img.alt;
+        overlay.appendChild(big);
+        overlay.addEventListener('click', () => overlay.remove());
+        document.addEventListener('keydown', function onKey(ev) {
+          if (ev.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onKey); }
+        });
+        document.body.appendChild(overlay);
+      });
+    }
+  }
+
+  document.addEventListener('astro:page-load', initPublicRestaurantPage);
+</script>

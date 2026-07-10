@@ -9,9 +9,42 @@ Disallow: /cs
 Disallow: /privacy
 Allow: /
 
-# 구글 AI 학습용 데이터 수집 차단
+# ── AI 학습용 크롤러 차단 (모델 학습 데이터 수집 방지) ──
 User-agent: Google-Extended
 Disallow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Meta-ExternalAgent
+Disallow: /
+
+# ── AI 검색/인용 크롤러는 허용 (AI 답변 출처로 인용 → 유입) ──
+# OAI-SearchBot(ChatGPT 검색), OpenAI ChatGPT-User(온디맨드),
+# PerplexityBot, Perplexity-User, Claude-User(온디맨드 인용)
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Claude-User
+Allow: /
 
 # 네이버 검색 봇 (Yeti) — 명시 규칙
 User-agent: Yeti

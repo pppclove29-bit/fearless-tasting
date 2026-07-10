@@ -168,6 +168,17 @@ if (room && summary) {
           <span class="share-badge">공개 맛집 리스트 &middot; {room.summary.restaurantCount}곳</span>
         </div>
 
+        {room.summary.summaryText && (
+          <section class="public-aeo-summary">
+            <p class="public-aeo-text">{room.summary.summaryText}</p>
+            {room.summary.topMenus.length > 0 && (
+              <p class="public-aeo-menus">
+                <strong>인기 메뉴</strong> {room.summary.topMenus.join(' · ')}
+              </p>
+            )}
+          </section>
+        )}
+
         {room.summary.restaurantCount > 0 && (
           <div class="public-summary">
             <div class="public-summary-stats">
@@ -199,30 +210,29 @@ if (room && summary) {
           </div>
         )}
 
-        {room.summary.summaryText && (
-          <section class="public-aeo-summary">
-            <h2 class="public-aeo-title">한눈에 보는 {room.name}</h2>
-            <p class="public-aeo-text">{room.summary.summaryText}</p>
-            {room.summary.topMenus.length > 0 && (
-              <p class="public-aeo-menus">
-                <strong>인기 메뉴</strong> {room.summary.topMenus.join(' · ')}
-              </p>
-            )}
-          </section>
-        )}
-
         {room.restaurants.length === 0 ? (
           <p class="empty-text">등록된 식당이 없습니다.</p>
         ) : (
           room.restaurants.map((r) => (
             <a class="share-restaurant-card" href={`/rooms/public/${id}/restaurants/${r.id}`}>
-              <div class="share-rest-name">{r.name}</div>
-              <div class="share-rest-meta">{r.address} &middot; {r.category}</div>
-              <div class="share-rest-footer">
-                {r.avgRating != null && (
-                  <span class="share-rest-rating">★ {r.avgRating.toFixed(1)}</span>
-                )}
-                <span class="share-rest-reviews-count">리뷰 {r.reviewCount}개</span>
+              {r.images && r.images.length > 0 && (
+                <img
+                  class="share-rest-thumb"
+                  src={r.images[0]}
+                  alt={`${r.name} ${r.category} 사진`}
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+              <div class="share-rest-body">
+                <div class="share-rest-name">{r.name}</div>
+                <div class="share-rest-meta">{r.address} &middot; {r.category}</div>
+                <div class="share-rest-footer">
+                  {r.avgRating != null && (
+                    <span class="share-rest-rating">★ {r.avgRating.toFixed(1)}</span>
+                  )}
+                  <span class="share-rest-reviews-count">리뷰 {r.reviewCount}개</span>
+                </div>
               </div>
             </a>
           ))
@@ -334,7 +344,9 @@ if (room && summary) {
   }
 
   .share-restaurant-card {
-    display: block;
+    display: flex;
+    gap: 0.85rem;
+    align-items: stretch;
     text-decoration: none;
     color: inherit;
     background: var(--bg-card);
@@ -344,6 +356,22 @@ if (room && summary) {
     margin-bottom: 0.6rem;
     cursor: pointer;
     transition: border-color 0.15s, transform 0.1s;
+  }
+  .share-rest-thumb {
+    width: 76px;
+    height: 76px;
+    flex-shrink: 0;
+    object-fit: cover;
+    border-radius: 10px;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+  }
+  .share-rest-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   .share-restaurant-card:hover { border-color: var(--border-mid); }
