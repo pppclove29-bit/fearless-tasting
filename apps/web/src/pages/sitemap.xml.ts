@@ -2,8 +2,9 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 
-export const GET: APIRoute = async () => {
-  const SITE_URL = import.meta.env.SITE_URL || 'https://musikga.kr';
+export const GET: APIRoute = async ({ site, url }) => {
+  // SSR 런타임엔 import.meta.env.SITE_URL 미노출 → site(빌드타임)/요청 origin 우선
+  const SITE_URL = (site?.href ?? url.origin ?? import.meta.env.SITE_URL ?? 'https://musikga.kr').replace(/\/$/, '');
   const today = new Date().toISOString().split('T')[0];
 
   const children = [

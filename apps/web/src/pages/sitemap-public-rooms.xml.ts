@@ -2,9 +2,11 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ site, url }) => {
   const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
-  const SITE_URL = import.meta.env.SITE_URL || 'http://localhost:4321';
+  // SITE_URL은 SSR 런타임에 import.meta.env로 노출 안 됨(PUBLIC_ 접두사만).
+  // astro.config의 site(빌드타임 확정) → 없으면 요청 origin. 마지막 폴백만 env.
+  const SITE_URL = (site?.href ?? url.origin ?? import.meta.env.SITE_URL ?? 'https://musikga.kr').replace(/\/$/, '');
 
   let ids: string[] = [];
   let restaurantEntries: { roomId: string; restaurantId: string }[] = [];

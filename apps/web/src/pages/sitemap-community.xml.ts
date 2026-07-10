@@ -2,9 +2,10 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ site, url }) => {
   const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
-  const SITE_URL = import.meta.env.SITE_URL || 'https://musikga.kr';
+  // SSR 런타임엔 import.meta.env.SITE_URL 미노출 → site(빌드타임)/요청 origin 우선
+  const SITE_URL = (site?.href ?? url.origin ?? import.meta.env.SITE_URL ?? 'https://musikga.kr').replace(/\/$/, '');
 
   let boards: string[] = [];
   let posts: { id: string; slug: string; updatedAt: string }[] = [];
