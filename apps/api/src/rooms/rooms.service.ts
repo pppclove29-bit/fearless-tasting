@@ -1650,4 +1650,52 @@ export class RoomsService {
       })
       .map((room) => room.id);
   }
+
+  /**
+   * 공개 방 식당 sitemap 항목 (roomId + restaurantId).
+   * 방 품질 필터(식당 3+·리뷰 3+·90일 내) 통과 + 리뷰 1개 이상인 식당만.
+   * 식당 단위 색인용(long-tail SEO).
+   */
+  async findPublicRoomRestaurantSitemapEntries(): Promise<
+    { roomId: string; restaurantId: string }[]
+  > {
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    const rooms = await this.prisma.read.room.findMany({
+      where: {
+        isPublic: true,
+        updatedAt: { gte: ninetyDaysAgo },
+      },
+      select: {
+        id: true,
+        _count: { select: { restaurants: true } },
+        restaurants: {
+          select: {
+            id: true,
+            visits: {
+              select: {
+                _count: { select: { reviews: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const entries: { roomId: string; restaurantId: string }[] = [];
+    for (const room of rooms) {
+      const roomReviewCount = room.restaurants.reduce(
+        (sum, r) => sum + r.visits.reduce((vSum, v) => vSum + v._count.reviews, 0),
+        0,
+      );
+      if (room._count.restaurants < 3 || roomReviewCount < 3) continue;
+
+      for (const r of room.restaurants) {
+        const rReviewCount = r.visits.reduce((s, v) => s + v._count.reviews, 0);
+        if (rReviewCount >= 1) entries.push({ roomId: room.id, restaurantId: r.id });
+      }
+    }
+    return entries;
+  }
 }

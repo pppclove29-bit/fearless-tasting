@@ -73,6 +73,17 @@ try {
       </div>
     </section>
 
+    {initialData && initialData.total > 0 && (
+      <section class="public-rooms-intro">
+        <h2>공개 맛집 방이란?</h2>
+        <p>
+          현재 {initialData.total}개의 공개 맛집 방이 열려 있습니다. 각 방은 커플·친구·가족·회사 팀이
+          직접 방문하고 남긴 실제 리뷰로 채워져 있어, 광고가 아닌 진짜 후기를 확인할 수 있습니다.
+          방을 열면 식당 목록과 세부 평점(맛·가성비·서비스·청결·접근성), 또 먹고 싶은 메뉴까지 볼 수 있습니다.
+        </p>
+      </section>
+    )}
+
     <div id="public-rooms-content">
       {!initialData || initialData.data.length === 0 ? (
         <div class="public-rooms-empty-state">
@@ -210,6 +221,23 @@ try {
     font-size: 0.85rem;
     color: var(--text-sub);
     margin: 0 0 1rem;
+  }
+
+  .public-rooms-intro {
+    margin-bottom: 1.25rem;
+  }
+  .public-rooms-intro h2 {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.01em;
+  }
+  .public-rooms-intro p {
+    font-size: 0.86rem;
+    line-height: 1.65;
+    color: var(--text-sub);
+    margin: 0;
   }
 
   .public-rooms-grid {

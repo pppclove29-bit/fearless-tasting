@@ -11,6 +11,11 @@
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
 
+# 공개 방/식당 페이지: 비로그인 읽기 전용 SSR → 엣지 캐시로 LCP·크롤 속도 개선
+# 브라우저는 매번 재검증(max-age=0), CF 엣지는 5분 캐시 + 백그라운드 갱신
+/rooms/public/*
+  Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=600
+
 /sitemap-index.xml
   X-Robots-Tag: noai
   Cache-Control: public, max-age=3600

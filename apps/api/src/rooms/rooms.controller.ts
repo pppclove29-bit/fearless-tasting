@@ -115,6 +115,13 @@ export class RoomsController {
     return this.roomsService.findPublicRoomIds();
   }
 
+  /** 공개 방 식당 sitemap용 목록 (roomId + restaurantId) */
+  @Get('public/sitemap-restaurant-ids')
+  @ApiOperation({ summary: '공개 방 식당 목록 (sitemap용, 비로그인 가능)' })
+  getPublicRoomRestaurantSitemapIds() {
+    return this.roomsService.findPublicRoomRestaurantSitemapEntries();
+  }
+
   /** 공개 방 상세 */
   @Get('public/:id')
   @ApiOperation({ summary: '공개 방 상세 (비로그인 가능)' })
