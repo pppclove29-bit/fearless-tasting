@@ -39,4 +39,6 @@ Disallow: /join
 Disallow: /privacy
 Allow: /
 
-Sitemap: https://musikga.kr/sitemap.xml
+Sitemap: https://musikga.kr/sitemap-index.xml
+Sitemap: https://musikga.kr/sitemap-public-rooms.xml
+Sitemap: https://musikga.kr/sitemap-community.xml

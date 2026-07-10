@@ -108,6 +108,9 @@ const resolvedOgImage = ogImage
     {import.meta.env.PUBLIC_GSC_VERIFICATION && (
       <meta name="google-site-verification" content={import.meta.env.PUBLIC_GSC_VERIFICATION} />
     )}
+    {import.meta.env.PUBLIC_NAVER_VERIFICATION && (
+      <meta name="naver-site-verification" content={import.meta.env.PUBLIC_NAVER_VERIFICATION} />
+    )}
     {import.meta.env.PUBLIC_GA_ID && (
       <>
         <script async src={`https://www.googletagmanager.com/gtag/js?id=${import.meta.env.PUBLIC_GA_ID}`}></script>
