@@ -1,0 +1,159 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+const siteUrl = (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '');
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+---
+
+<BaseLayout
+  title="카카오맵 맛집 리스트 만들고 공유하는 법 | 즐겨찾기의 아쉬움 해결"
+  description="카카오맵 즐겨찾기는 혼자만 보고, 별점도 남길 수 없죠. 카카오맵 검색으로 맛집을 담아 별점·리뷰를 남기고 친구와 리스트를 공유하는 방법을 정리했습니다."
+  ogImageAlt="카카오맵 맛집 리스트 만들고 공유하는 법"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "카카오맵 맛집 리스트 만들고 공유하는 법",
+      "description": "카카오맵 검색으로 맛집을 담아 별점·리뷰를 남기고 함께 공유하는 방법",
+      "url": siteUrl + "/guide/kakaomap-restaurant-list",
+      "step": [
+        { "@type": "HowToStep", "name": "방 만들기", "text": "맛집 리스트를 담을 방을 만듭니다." },
+        { "@type": "HowToStep", "name": "카카오맵으로 식당 검색·추가", "text": "카카오맵 검색으로 식당을 찾아 추가하면 좌표까지 저장됩니다." },
+        { "@type": "HowToStep", "name": "별점·리뷰 남기기", "text": "즐겨찾기와 달리 방문 별점과 세부 평점을 남길 수 있습니다." },
+        { "@type": "HowToStep", "name": "리스트 공유하기", "text": "초대 링크나 공개 방으로 리스트를 친구와 공유합니다." }
+      ]
+    })} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "홈", "item": siteUrl },
+        { "@type": "ListItem", "position": 2, "name": "가이드", "item": siteUrl + "/guide/kakaomap-restaurant-list" },
+        { "@type": "ListItem", "position": 3, "name": "카카오맵 맛집 리스트 만들기", "item": siteUrl + "/guide/kakaomap-restaurant-list" },
+      ]
+    })} />
+  </Fragment>
+
+  <div class="guide-page">
+    <nav class="guide-breadcrumb">
+      <a href="/">홈</a> &rsaquo; <span>가이드</span> &rsaquo; <span>카카오맵 맛집 리스트 만들기</span>
+    </nav>
+
+    <section class="guide-hero">
+      <span class="guide-badge">카카오맵 맛집 리스트 공유</span>
+      <h1>카카오맵 즐겨찾기,<br/>이제 별점까지 남기세요</h1>
+      <p class="guide-sub">
+        카카오맵 즐겨찾기는 혼자만 보고 별점도 못 남깁니다. 카카오맵 검색으로 맛집을 담아
+        <strong>별점·리뷰를 기록하고 친구와 공유</strong>하는 방법을 정리했습니다.
+      </p>
+    </section>
+
+    <section class="guide-section">
+      <h2>카카오맵 즐겨찾기의 아쉬운 점</h2>
+      <p>
+        카카오맵 즐겨찾기는 위치를 저장하기엔 좋지만 <strong>내가 얼마나 만족했는지</strong>는 남길 수 없습니다.
+        별점·세부 평가도 없고, 친구와 목록을 함께 채울 수도 없죠. "가고 싶은 곳"과 "가봤는데 좋았던 곳"이 뒤섞이기도 합니다.
+      </p>
+      <p>
+        무모한 시식가는 <strong>카카오맵 검색을 그대로 쓰면서</strong>, 거기에 방문 기록·별점·리뷰·위시리스트·공유를 얹습니다.
+      </p>
+    </section>
+
+    <section class="guide-section">
+      <h2>카카오맵 맛집 리스트 만드는 법</h2>
+      <div class="guide-step">
+        <span class="guide-step-num">1</span>
+        <div>
+          <h3>맛집 방 만들기</h3>
+          <p>리스트를 담을 방을 만듭니다. <a href="/use/templates" class="guide-link">템플릿</a>으로 용도별 세팅을 자동으로 맞출 수 있어요.</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <span class="guide-step-num">2</span>
+        <div>
+          <h3>카카오맵 검색으로 식당 추가</h3>
+          <p>식당 이름을 검색하면 카카오맵 결과에서 바로 선택해 추가됩니다. <strong>좌표가 함께 저장</strong>돼 식당 상세에서 카카오맵으로 바로 열 수 있어요. 가고 싶은 곳은 위시리스트로 따로 담습니다.</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <span class="guide-step-num">3</span>
+        <div>
+          <h3>별점·리뷰 남기기</h3>
+          <p>즐겨찾기와 다른 핵심. 방문 후 별점(0.5 단위)과 맛·가성비·서비스·청결·접근성 세부 평점, "또 먹고 싶은 메뉴"까지 기록합니다.</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <span class="guide-step-num">4</span>
+        <div>
+          <h3>리스트 공유하기</h3>
+          <p>초대 링크로 친구와 함께 채우거나, 공개 방으로 전환해 <a href="/rooms/public" class="guide-link">누구나 볼 수 있는 리스트</a>로 만듭니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section">
+      <h2>자주 묻는 질문</h2>
+      <details class="guide-faq">
+        <summary>카카오맵 앱이 따로 필요한가요?</summary>
+        <p>아니요. 검색은 서비스 안에서 이뤄지고, 지도로 열고 싶을 때만 카카오맵/네이버 지도 링크로 연결됩니다.</p>
+      </details>
+      <details class="guide-faq">
+        <summary>검색에 안 나오는 식당은요?</summary>
+        <p>이름·주소·카테고리를 직접 입력해 추가할 수 있습니다.</p>
+      </details>
+      <details class="guide-faq">
+        <summary>무료인가요?</summary>
+        <p>전 기능 무료입니다.</p>
+      </details>
+    </section>
+
+    <section class="guide-cta">
+      <h2>카카오맵 맛집 리스트 시작하기</h2>
+      <p>카카오 로그인 3초면 됩니다.</p>
+      <a href={`${apiUrl}/auth/kakao`} class="guide-cta-btn">무료로 시작하기</a>
+    </section>
+
+    <nav class="guide-related">
+      <a href="/guide/restaurant-map-share">🗺️ 맛집 공유지도 만드는 법</a>
+      <a href="/guide/friends-restaurant-share">👥 친구끼리 맛집 공유하는 법</a>
+    </nav>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  .guide-page { max-width: 720px; margin: 0 auto; padding: 0 1rem 3rem; }
+  .guide-breadcrumb { font-size: 0.8rem; color: var(--text-muted); margin: 0.75rem 0 1rem; }
+  .guide-breadcrumb a { color: inherit; text-decoration: none; }
+  .guide-breadcrumb a:hover { color: var(--text-heading); }
+  .guide-hero { text-align: center; padding: 2rem 0 1.5rem; }
+  .guide-badge {
+    display: inline-block; padding: 0.35rem 0.9rem; background: var(--text-heading);
+    color: var(--bg); font-size: 0.75rem; font-weight: 700; border-radius: 100px; margin-bottom: 0.9rem;
+  }
+  .guide-hero h1 { font-size: 1.85rem; font-weight: 900; color: var(--text-heading); line-height: 1.3; letter-spacing: -0.03em; }
+  .guide-sub { font-size: 0.95rem; color: var(--text-sub); line-height: 1.7; margin: 0.75rem 0 0; word-break: keep-all; }
+  .guide-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; margin-bottom: 1rem; }
+  .guide-section h2 { font-size: 1.1rem; font-weight: 800; color: var(--text-heading); margin: 0 0 0.75rem; letter-spacing: -0.01em; }
+  .guide-section p { font-size: 0.92rem; color: var(--text-sub); line-height: 1.75; margin: 0 0 0.6rem; word-break: keep-all; }
+  .guide-section p:last-child { margin-bottom: 0; }
+  .guide-step { display: flex; gap: 0.85rem; align-items: flex-start; padding: 0.85rem; background: var(--bg-hover); border-radius: 10px; margin-top: 0.6rem; }
+  .guide-step-num { flex-shrink: 0; width: 26px; height: 26px; background: var(--text-heading); color: var(--bg); font-size: 0.82rem; font-weight: 800; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .guide-step h3 { font-size: 0.95rem; font-weight: 700; color: var(--text-heading); margin: 0 0 0.3rem; }
+  .guide-step p { font-size: 0.85rem; line-height: 1.65; margin: 0; }
+  .guide-link { color: var(--text-heading); font-weight: 600; text-decoration: underline; }
+  .guide-faq { background: var(--bg-hover); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem 0.9rem; margin-top: 0.5rem; }
+  .guide-faq summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--text-heading); }
+  .guide-faq p { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--text-sub); line-height: 1.65; }
+  .guide-cta { text-align: center; padding: 2rem 1.5rem; background: var(--bg-card); border: 1px solid var(--text-heading); border-radius: 14px; margin-top: 1.5rem; }
+  .guide-cta h2 { font-size: 1.15rem; font-weight: 800; color: var(--text-heading); margin: 0 0 0.35rem; }
+  .guide-cta p { font-size: 0.88rem; color: var(--text-sub); margin: 0 0 1rem; }
+  .guide-cta-btn { display: inline-block; padding: 0.8rem 2rem; background: #FEE500; color: #191919; font-weight: 700; font-size: 0.95rem; border-radius: 12px; text-decoration: none; }
+  .guide-cta-btn:hover { background: #F5DC00; }
+  .guide-related { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; }
+  .guide-related a {
+    flex: 1; min-width: 200px; text-align: center; padding: 0.75rem 1rem;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+    font-size: 0.85rem; font-weight: 600; color: var(--text-sub); text-decoration: none;
+  }
+  .guide-related a:hover { border-color: var(--border-mid); color: var(--text-heading); }
+</style>

@@ -1,0 +1,160 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+const siteUrl = (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '');
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+---
+
+<BaseLayout
+  title="친구끼리 맛집 공유하는 법 | 단톡방 대신 맛집 리스트로"
+  description="'거기 어디였지?' 단톡방에 흩어진 맛집 추천, 이제 한곳에 모으세요. 친구들과 함께 맛집을 쌓고 별점·리뷰까지 공유하는 방법과 투표로 갈 곳 정하는 법까지 정리했습니다."
+  ogImageAlt="친구끼리 맛집 공유하는 법"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "친구끼리 맛집 공유하는 법",
+      "description": "단톡방에 흩어진 맛집 추천을 한곳에 모아 함께 관리하는 방법",
+      "url": siteUrl + "/guide/friends-restaurant-share",
+      "step": [
+        { "@type": "HowToStep", "name": "친구 방 만들기", "text": "친구 그룹용 맛집 방을 만듭니다." },
+        { "@type": "HowToStep", "name": "단톡방에 초대 링크 공유", "text": "초대 링크를 단톡방에 올리면 친구들이 함께 참여합니다." },
+        { "@type": "HowToStep", "name": "각자 아는 맛집 등록", "text": "멤버 모두가 맛집을 추가하고 별점·리뷰를 남깁니다." },
+        { "@type": "HowToStep", "name": "투표로 갈 곳 정하기", "text": "'오늘 뭐 먹지?' 투표로 다음 모임 장소를 정합니다." }
+      ]
+    })} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "홈", "item": siteUrl },
+        { "@type": "ListItem", "position": 2, "name": "가이드", "item": siteUrl + "/guide/friends-restaurant-share" },
+        { "@type": "ListItem", "position": 3, "name": "친구끼리 맛집 공유하는 법", "item": siteUrl + "/guide/friends-restaurant-share" },
+      ]
+    })} />
+  </Fragment>
+
+  <div class="guide-page">
+    <nav class="guide-breadcrumb">
+      <a href="/">홈</a> &rsaquo; <span>가이드</span> &rsaquo; <span>친구끼리 맛집 공유하는 법</span>
+    </nav>
+
+    <section class="guide-hero">
+      <span class="guide-badge">친구끼리 맛집 공유하는 법</span>
+      <h1>단톡방에 흩어진 맛집,<br/>한 리스트로 모으세요</h1>
+      <p class="guide-sub">
+        "저번에 너가 말한 그 집 어디야?" 매번 단톡방을 거슬러 올라가지 마세요.
+        친구들과 함께 맛집을 쌓고 별점·리뷰까지 나누는 방법을 정리했습니다.
+      </p>
+    </section>
+
+    <section class="guide-section">
+      <h2>단톡방 공유의 한계</h2>
+      <p>
+        단톡방 링크는 <strong>시간이 지나면 사라집니다</strong>. 누가 어디를 추천했는지, 실제로 갔는지, 맛있었는지도 기록되지 않죠.
+        각자 카카오맵에 저장해도 서로의 목록을 볼 수 없습니다.
+      </p>
+      <p>
+        친구용 맛집 방을 쓰면 <strong>모두가 같은 리스트에 맛집을 쌓고</strong>, 다녀온 사람이 별점·리뷰를 남깁니다.
+        취향이 겹치는 친구의 추천이 특히 잘 맞기 마련이죠.
+      </p>
+    </section>
+
+    <section class="guide-section">
+      <h2>이렇게 시작하세요</h2>
+      <div class="guide-step">
+        <span class="guide-step-num">1</span>
+        <div>
+          <h3>친구 그룹용 방 만들기</h3>
+          <p>"친구들 맛집 모음" 같은 이름으로 방을 만듭니다. <a href="/use/friends" class="guide-link">친구 템플릿</a>을 쓰면 위시리스트·투표 탭이 자동으로 켜집니다.</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <span class="guide-step-num">2</span>
+        <div>
+          <h3>단톡방에 초대 링크 올리기</h3>
+          <p>방 초대 링크를 복사해 단톡방에 붙여넣기만 하면 됩니다. 링크로 들어온 친구는 바로 맛집을 추가할 수 있어요.</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <span class="guide-step-num">3</span>
+        <div>
+          <h3>각자 아는 맛집 등록 + 별점</h3>
+          <p>멤버 누구나 맛집을 추가하고 방문 기록·별점(맛·가성비·서비스·청결·접근성)을 남깁니다. 누가 등록했는지도 표시돼요.</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <span class="guide-step-num">4</span>
+        <div>
+          <h3>투표로 오늘 갈 곳 정하기</h3>
+          <p>"🍜 오늘 뭐 먹지?" 투표를 만들어 모임 장소를 정합니다. 방에 등록된 식당을 옵션으로 바로 넣을 수 있어요. <a href="/guide/company-lunch-vote" class="guide-link">회식 투표 가이드</a>도 참고하세요.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section">
+      <h2>자주 묻는 질문</h2>
+      <details class="guide-faq">
+        <summary>몇 명까지 들어올 수 있나요?</summary>
+        <p>방마다 최대 20명까지 설정할 수 있습니다(기본 4명). 방장이 언제든 조정 가능해요.</p>
+      </details>
+      <details class="guide-faq">
+        <summary>다른 사람 맛집 리스트도 구경할 수 있나요?</summary>
+        <p>네. <a href="/rooms/public" class="guide-link">공개 맛집 방</a>에서 다른 사람들이 공개한 맛집 리스트를 로그인 없이 볼 수 있습니다.</p>
+      </details>
+      <details class="guide-faq">
+        <summary>무료인가요?</summary>
+        <p>전 기능 무료입니다.</p>
+      </details>
+    </section>
+
+    <section class="guide-cta">
+      <h2>친구들과 맛집 리스트 시작하기</h2>
+      <p>카카오 로그인 3초, 링크만 뿌리면 끝.</p>
+      <a href={`${apiUrl}/auth/kakao`} class="guide-cta-btn">무료로 시작하기</a>
+    </section>
+
+    <nav class="guide-related">
+      <a href="/guide/restaurant-map-share">🗺️ 맛집 공유지도 만드는 법</a>
+      <a href="/guide/how-to-record">📝 맛집 기록 방법 가이드</a>
+    </nav>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  .guide-page { max-width: 720px; margin: 0 auto; padding: 0 1rem 3rem; }
+  .guide-breadcrumb { font-size: 0.8rem; color: var(--text-muted); margin: 0.75rem 0 1rem; }
+  .guide-breadcrumb a { color: inherit; text-decoration: none; }
+  .guide-breadcrumb a:hover { color: var(--text-heading); }
+  .guide-hero { text-align: center; padding: 2rem 0 1.5rem; }
+  .guide-badge {
+    display: inline-block; padding: 0.35rem 0.9rem; background: var(--text-heading);
+    color: var(--bg); font-size: 0.75rem; font-weight: 700; border-radius: 100px; margin-bottom: 0.9rem;
+  }
+  .guide-hero h1 { font-size: 1.85rem; font-weight: 900; color: var(--text-heading); line-height: 1.3; letter-spacing: -0.03em; }
+  .guide-sub { font-size: 0.95rem; color: var(--text-sub); line-height: 1.7; margin: 0.75rem 0 0; word-break: keep-all; }
+  .guide-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; margin-bottom: 1rem; }
+  .guide-section h2 { font-size: 1.1rem; font-weight: 800; color: var(--text-heading); margin: 0 0 0.75rem; letter-spacing: -0.01em; }
+  .guide-section p { font-size: 0.92rem; color: var(--text-sub); line-height: 1.75; margin: 0 0 0.6rem; word-break: keep-all; }
+  .guide-section p:last-child { margin-bottom: 0; }
+  .guide-step { display: flex; gap: 0.85rem; align-items: flex-start; padding: 0.85rem; background: var(--bg-hover); border-radius: 10px; margin-top: 0.6rem; }
+  .guide-step-num { flex-shrink: 0; width: 26px; height: 26px; background: var(--text-heading); color: var(--bg); font-size: 0.82rem; font-weight: 800; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .guide-step h3 { font-size: 0.95rem; font-weight: 700; color: var(--text-heading); margin: 0 0 0.3rem; }
+  .guide-step p { font-size: 0.85rem; line-height: 1.65; margin: 0; }
+  .guide-link { color: var(--text-heading); font-weight: 600; text-decoration: underline; }
+  .guide-faq { background: var(--bg-hover); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem 0.9rem; margin-top: 0.5rem; }
+  .guide-faq summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--text-heading); }
+  .guide-faq p { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--text-sub); line-height: 1.65; }
+  .guide-cta { text-align: center; padding: 2rem 1.5rem; background: var(--bg-card); border: 1px solid var(--text-heading); border-radius: 14px; margin-top: 1.5rem; }
+  .guide-cta h2 { font-size: 1.15rem; font-weight: 800; color: var(--text-heading); margin: 0 0 0.35rem; }
+  .guide-cta p { font-size: 0.88rem; color: var(--text-sub); margin: 0 0 1rem; }
+  .guide-cta-btn { display: inline-block; padding: 0.8rem 2rem; background: #FEE500; color: #191919; font-weight: 700; font-size: 0.95rem; border-radius: 12px; text-decoration: none; }
+  .guide-cta-btn:hover { background: #F5DC00; }
+  .guide-related { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; }
+  .guide-related a {
+    flex: 1; min-width: 200px; text-align: center; padding: 0.75rem 1rem;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+    font-size: 0.85rem; font-weight: 600; color: var(--text-sub); text-decoration: none;
+  }
+  .guide-related a:hover { border-color: var(--border-mid); color: var(--text-heading); }
+</style>
