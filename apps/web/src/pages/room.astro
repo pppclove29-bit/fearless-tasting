@@ -566,6 +566,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     color: var(--text-heading);
   }
 
+  .member-invite-btn {
+    flex-shrink: 0;
+    padding: 0.4rem 0.85rem;
+    background: #FEE500;
+    color: #191919;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .member-invite-btn:hover { background: #F5DC00; }
+
   .btn-invite {
     display: inline-flex;
     align-items: center;
@@ -3630,6 +3645,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         sharePopover.hidden = false;
         sharePopover.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
+      // 방 생성 직후(created=1) 진입 시 초대 팝오버 자동 오픈 — 최고 인텐트 순간에 초대 노출
+      if (new URLSearchParams(location.search).get('created') === '1') {
+        sharePopover.hidden = false;
+        setTimeout(() => sharePopover.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350);
+      }
       document.getElementById('share-popover-close')?.addEventListener('click', () => {
         sharePopover.hidden = true;
       });
@@ -3921,6 +3941,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     panel.innerHTML = `
       <div class="member-header">
         <span class="member-count">멤버 ${currentRoom.members.length}/${currentRoom.maxMembers}</span>
+        ${currentRoom.members.length < currentRoom.maxMembers
+          ? `<button type="button" class="member-invite-btn" id="member-invite-btn">+ 친구 초대</button>`
+          : ''}
       </div>
       <div class="member-list">${sortedMembers
       .map((m) => {

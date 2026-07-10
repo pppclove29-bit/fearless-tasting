@@ -1213,7 +1213,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '생성 중...'; }
 
       try {
-        await createRoom(name, { isPublic, maxMembers });
+        const room = await createRoom(name, { isPublic, maxMembers });
+        // 생성 직후 방으로 이동 + 초대 유도(created=1)
+        if (room) {
+          window.location.href = `/room?id=${room.id}&created=1`;
+          return;
+        }
         if (createNameInput) createNameInput.value = '';
         if (createPublicCheckbox) createPublicCheckbox.checked = false;
         if (createMaxMembersInput) createMaxMembersInput.value = '4';

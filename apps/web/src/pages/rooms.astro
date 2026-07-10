@@ -764,6 +764,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           } catch { /* 투표 시드 실패는 방 생성 성공에 영향 없음 */ }
         }
 
+        // 생성 직후 방으로 이동 + 초대 유도(created=1) — 혼자 방 이탈 방지, 초대 훅 노출
+        if (room) {
+          window.location.href = `/room?id=${room.id}&created=1`;
+          return;
+        }
         if (createNameInput) createNameInput.value = '';
         if (createPublicCheckbox) createPublicCheckbox.checked = false;
         if (createMaxMembersInput) createMaxMembersInput.value = '4';
