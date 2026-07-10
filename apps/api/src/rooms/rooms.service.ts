@@ -1326,7 +1326,11 @@ export class RoomsService {
   }
 
   /** 공개 방 목록 (비로그인 가능, 품질 필터 적용) */
-  async findPublicRooms(page: number, pageSize: number) {
+  /**
+   * 품질 필터(식당 3+·리뷰 3+·90일 내) 통과한 공개 방 목록 아이템.
+   * findPublicRooms(페이지네이션) / findRelatedPublicRooms(관련 방)에서 공용.
+   */
+  private async getQualityPublicRoomItems() {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
@@ -1357,7 +1361,7 @@ export class RoomsService {
     });
 
     // 품질 필터: 식당 3개 이상 AND 리뷰 3개 이상
-    const filtered = rooms
+    return rooms
       .map((room) => {
         const restaurantCount = room.restaurants.length;
         const allRatings = room.restaurants.flatMap((r) =>
@@ -1392,12 +1396,44 @@ export class RoomsService {
         };
       })
       .filter((r): r is NonNullable<typeof r> => r !== null);
+  }
 
+  async findPublicRooms(page: number, pageSize: number) {
+    const filtered = await this.getQualityPublicRoomItems();
     const total = filtered.length;
     const skip = (page - 1) * pageSize;
     const data = filtered.slice(skip, skip + pageSize);
 
     return { data, total, page, pageSize };
+  }
+
+  /**
+   * 관련 공개 방 추천 — 현재 방과 카테고리 겹침 순.
+   * 품질 필터 통과 방 중 현재 방 제외, 카테고리 교집합 많은 순 + 평점 tie-break.
+   */
+  async findRelatedPublicRooms(roomId: string, limit = 4) {
+    const current = await this.prisma.read.room.findFirst({
+      where: { id: roomId, isPublic: true },
+      select: { restaurants: { select: { category: true } } },
+    });
+    if (!current) return [];
+
+    const currentCats = new Set(
+      current.restaurants.map((r) => r.category).filter((c): c is string => !!c),
+    );
+    if (currentCats.size === 0) return [];
+
+    const items = await this.getQualityPublicRoomItems();
+    return items
+      .filter((it) => it.id !== roomId)
+      .map((it) => ({
+        it,
+        overlap: it.topCategories.filter((c) => currentCats.has(c)).length,
+      }))
+      .filter((x) => x.overlap > 0)
+      .sort((a, b) => b.overlap - a.overlap || (b.it.avgRating ?? 0) - (a.it.avgRating ?? 0))
+      .slice(0, limit)
+      .map((x) => x.it);
   }
 
   /** 공개 방 상세 (비로그인 가능, 멤버 정보 미포함) */

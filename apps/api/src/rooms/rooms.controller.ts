@@ -130,6 +130,14 @@ export class RoomsController {
     return this.roomsService.findPublicRoomDetail(id);
   }
 
+  /** 관련 공개 방 추천 (카테고리 겹침 순) */
+  @Get('public/:id/related')
+  @ApiOperation({ summary: '관련 공개 방 추천 (비로그인 가능)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  findRelatedPublicRooms(@Param('id') id: string) {
+    return this.roomsService.findRelatedPublicRooms(id);
+  }
+
   /** 공개 방 참여 (로그인 필수, 초대 코드 불필요) */
   @Post('public/:id/join')
   @Throttle({ default: { ttl: 60000, limit: 10 } })

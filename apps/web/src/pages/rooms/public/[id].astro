@@ -8,7 +8,17 @@ const { id } = Astro.params;
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
 const siteUrl = (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '');
 
+interface RelatedRoom {
+  id: string;
+  name: string;
+  restaurantCount: number;
+  reviewCount: number;
+  avgRating: number | null;
+  topCategories: string[];
+}
+
 let room: SharedRoomDetail | null = null;
+let relatedRooms: RelatedRoom[] = [];
 let error = '';
 
 try {
@@ -20,6 +30,16 @@ try {
   }
 } catch {
   error = '서버에 연결할 수 없습니다.';
+}
+
+// 관련 공개 방 (실패해도 페이지는 렌더)
+if (room) {
+  try {
+    const relRes = await fetch(`${API_BASE}/rooms/public/${id}/related`);
+    if (relRes.ok) relatedRooms = await relRes.json();
+  } catch {
+    // 무시
+  }
 }
 
 const title = room ? `${room.name} 맛집 리스트` : '공개 맛집 방';
@@ -206,6 +226,32 @@ if (room && summary) {
               </div>
             </a>
           ))
+        )}
+
+        {relatedRooms.length > 0 && (
+          <section class="public-related">
+            <h2>이런 맛집 방은 어때요?</h2>
+            <div class="public-related-list">
+              {relatedRooms.map((rr) => (
+                <a class="public-related-card" href={`/rooms/public/${rr.id}`}>
+                  <div class="public-related-name">{rr.name}</div>
+                  {rr.topCategories.length > 0 && (
+                    <div class="public-related-cats">
+                      {rr.topCategories.map((c) => (
+                        <span class="public-related-cat">{c}</span>
+                      ))}
+                    </div>
+                  )}
+                  <div class="public-related-stats">
+                    <span>🍽️ {rr.restaurantCount}</span>
+                    <span>📝 {rr.reviewCount}</span>
+                    {rr.avgRating != null && <span class="public-related-rating">★ {rr.avgRating.toFixed(1)}</span>}
+                  </div>
+                </a>
+              ))}
+            </div>
+            <a class="public-related-all" href="/rooms/public">공개 맛집 방 전체 보기 →</a>
+          </section>
         )}
 
         <section class="public-cta-section" id="public-cta-section">
@@ -409,6 +455,41 @@ if (room && summary) {
     border-radius: 100px;
   }
   .public-tag-region { color: var(--text-heading); }
+
+  /* 관련 공개 방 (내부 링크) */
+  .public-related { margin-top: 1.5rem; }
+  .public-related > h2 {
+    font-size: 1.05rem; font-weight: 800; color: var(--text-heading); margin: 0 0 0.75rem;
+  }
+  .public-related-list {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem;
+  }
+  .public-related-card {
+    display: block; background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 0.9rem 1rem; text-decoration: none; color: inherit;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .public-related-card:hover { border-color: var(--border-mid); }
+  .public-related-card:active { transform: scale(0.99); }
+  .public-related-name {
+    font-size: 0.9rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.4rem;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .public-related-cats { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 0.45rem; }
+  .public-related-cat {
+    font-size: 0.7rem; padding: 0.12rem 0.45rem; border-radius: 100px;
+    background: var(--bg-hover); color: var(--text-sub);
+  }
+  .public-related-stats {
+    font-size: 0.76rem; color: var(--text-muted);
+    display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;
+  }
+  .public-related-rating { color: #e6a817; font-weight: 600; }
+  .public-related-all {
+    display: inline-block; margin-top: 0.75rem; font-size: 0.83rem; font-weight: 600;
+    color: var(--text-sub); text-decoration: none;
+  }
+  .public-related-all:hover { color: var(--text-heading); }
 
   /* 신규 유저 전환 CTA */
   .public-cta-section {
