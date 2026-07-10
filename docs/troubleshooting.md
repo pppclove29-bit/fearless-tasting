@@ -166,6 +166,36 @@ pnpm --filter @repo/api exec prisma generate
 
 ---
 
+## 배포 (CF Pages)
+
+### 프로덕션에 커밋이 반영 안 됨 / 구버전 서빙 (배포 조용히 실패)
+**증상:** `git push`는 되는데 musikga.kr에 변경이 안 뜸. CF Pages 대시보드에
+`No deployment available` + ⚠️ 가 여러 커밋에 걸쳐 표시. 마지막 성공 배포가 과거에 멈춤.
+
+**근본 원인 (실제 사례, 2개월간 미배포):**
+```
+ERR_PNPM_OUTDATED_LOCKFILE  pnpm-lock.yaml is not up to date with apps/web/package.json
+* 1 dependencies were added: @capacitor/assets@^3.0.5
+```
+`package.json`에 의존성을 추가하고 **`pnpm-lock.yaml`을 갱신·커밋하지 않음**.
+CF Pages는 `pnpm install`을 **`--frozen-lockfile` 기본**으로 돌려서 즉시 실패 →
+빌드가 안 되니 운영은 계속 **직전 성공 빌드**를 서빙(그래서 "왜 반영 안 되지"가 오래 감).
+- API(Dockerfile)는 `pnpm install --frozen-lockfile || pnpm install` 폴백이 있어
+  배포가 되므로, 프론트만 멈춰도 눈치채기 어려움.
+- CI(`ci.yml`)는 **PR에서만** frozen install 검증 → main 직푸시는 게이트를 우회.
+
+**해결:**
+```bash
+pnpm install --lockfile-only        # 락파일만 재생성 (packageManager 버전=CI와 동일)
+pnpm install --frozen-lockfile      # CI와 똑같이 검증 (exit 0 확인)
+git add pnpm-lock.yaml && git commit && git push
+```
+
+**예방 규칙:**
+- 의존성 추가/변경 시 **반드시 `pnpm-lock.yaml`을 같은 커밋에 포함**.
+- 배포 후 CF Pages 대시보드에서 초록 체크 + 실제 배포 URL 확인. 푸시 성공 ≠ 배포 성공.
+- `fearless-tasting.pages.dev`는 musikga.kr로 301 (같은 CF 프로젝트). 배포 로그는 여기서 봄.
+
 ## 빌드 관련
 
 ### `turbo run build` 실패
