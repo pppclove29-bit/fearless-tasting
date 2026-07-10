@@ -3986,10 +3986,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       })
       .join('')}</div>`;
 
-    // 멤버 초대 버튼 → 공유 팝오버 열기
+    // 멤버 초대 버튼 → 공유 팝오버 열고 스크롤(헤더에 있어 안 보이면 눌러도 반응 없어 보임)
     document.getElementById('member-invite-btn')?.addEventListener('click', () => {
       const popover = document.getElementById('share-popover');
-      if (popover) popover.hidden = false;
+      if (popover) {
+        popover.hidden = false;
+        popover.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     });
 
     // 역할 변경
