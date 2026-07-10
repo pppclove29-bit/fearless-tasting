@@ -179,3 +179,37 @@ pnpm build
 ### Astro 빌드 시 API 호출 실패
 **원인:** 빌드 시점에 API 서버가 실행되지 않고 있을 때 (SSG 페이지에서 API 호출하는 경우)
 **해결:** 빌드 전에 API 서버를 먼저 실행하거나, SSR 모드로 전환
+
+---
+
+## SEO / 사이트맵
+
+### SSR 사이트맵의 `<loc>` 도메인이 localhost로 나옴 (프로덕션)
+**증상:** `/sitemap-public-rooms.xml` 등 SSR 사이트맵(`.xml.ts`, `prerender=false`)의
+URL이 `http://localhost:4321/...`로 배포됨. 검색엔진이 localhost 링크를 수집 → 색인 무효.
+
+**근본 원인:** `import.meta.env.SITE_URL` 참조가 SSR 런타임에서 `undefined`.
+- Astro/Vite는 **`PUBLIC_` 접두사 env만** `import.meta.env`로 노출한다.
+  `SITE_URL`(비-PUBLIC)은 런타임 코드에서 `undefined` → `|| 'localhost'` 폴백으로 떨어짐.
+- 반면 `astro.config.mjs`의 `site: process.env.SITE_URL`는 **Node 빌드 컨텍스트**라 정상 →
+  빌드타임 생성물(`sitemap-0.xml`)만 도메인이 맞아 문제가 가려졌음.
+
+**해결 (env 의존 금지):** 요청 컨텍스트에서 도메인을 도출한다.
+```ts
+export const GET: APIRoute = async ({ site, url }) => {
+  // site = astro.config의 site(빌드타임 확정), url.origin = 실제 요청 도메인
+  const SITE_URL = (site?.href ?? url.origin).replace(/\/$/, '');
+};
+```
+
+**예방 규칙:**
+- SSR 라우트(`.astro`/`.xml.ts`)에서 도메인이 필요하면 `import.meta.env.SITE_URL` 쓰지 말 것.
+  `Astro.site`(페이지) 또는 APIRoute의 `{ site, url }`를 사용.
+- 런타임에 꼭 env가 필요하면 이름을 `PUBLIC_` 접두사로 지을 것.
+- 배포 후 `curl https://musikga.kr/sitemap-public-rooms.xml | grep loc`로 도메인 확인.
+
+### robots.txt의 Sitemap 경로 주의
+- 완전한 인덱스는 **커스텀 `/sitemap.xml`**(SSR, `sitemap.xml.ts`) — sitemap-0 +
+  public-rooms + community 전부 참조. robots는 이걸 가리켜야 함.
+- Astro 자동 생성 `sitemap-index.xml`은 **정적 페이지(sitemap-0)만** 포함 →
+  공개 방/식당 등 SSR 커스텀 사이트맵이 빠짐. robots 대상으로 쓰지 말 것.
