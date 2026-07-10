@@ -200,7 +200,7 @@ if (room && summary) {
             {(room.summary.topCategories.length > 0 || room.summary.topRegions.length > 0) && (
               <div class="public-summary-tags">
                 {room.summary.topCategories.map((c) => (
-                  <span class="public-tag">#{c}</span>
+                  <a class="public-tag public-tag-link" href={`/rooms/public/category/${encodeURIComponent(c)}`}>#{c}</a>
                 ))}
                 {room.summary.topRegions.map((r) => (
                   <span class="public-tag public-tag-region">📍 {r}</span>
@@ -483,6 +483,8 @@ if (room && summary) {
     border-radius: 100px;
   }
   .public-tag-region { color: var(--text-heading); }
+  .public-tag-link { text-decoration: none; transition: background 0.15s; }
+  .public-tag-link:hover { background: var(--border-mid); color: var(--text-heading); }
 
   /* 관련 공개 방 (내부 링크) */
   .public-related { margin-top: 1.5rem; }

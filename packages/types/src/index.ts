@@ -18,6 +18,8 @@ export type {
   SharedRoomRestaurant,
   SharedRoomTopReview,
   SharedRoomRestaurantDetail,
+  PublicFacetRestaurant,
+  PublicFacet,
   SharedRoomVisit,
   SharedRoomReview,
   RoomListItem,

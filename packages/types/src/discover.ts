@@ -1,4 +1,5 @@
 export interface DiscoverRestaurant {
+  restaurantId: string;
   name: string;
   address: string;
   category: string;

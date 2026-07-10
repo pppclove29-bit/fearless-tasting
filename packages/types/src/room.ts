@@ -185,6 +185,27 @@ export interface SharedRoomDetail {
   summary: SharedRoomSummary;
 }
 
+// ─── 카테고리/지역 허브 (topic cluster) ───
+
+export interface PublicFacetRestaurant {
+  roomId: string;
+  id: string;
+  name: string;
+  address: string;
+  category: string;
+  city: string;
+  neighborhood: string;
+  reviewCount: number;
+  avgRating: number | null;
+  image: string | null;
+}
+
+export interface PublicFacet {
+  type: 'category' | 'region';
+  value: string;
+  count: number;
+}
+
 // ─── API 응답 타입 ───
 
 export interface RoomListItem extends Room {

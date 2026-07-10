@@ -10,13 +10,16 @@ export const GET: APIRoute = async ({ site, url }) => {
 
   let ids: string[] = [];
   let restaurantEntries: { roomId: string; restaurantId: string }[] = [];
+  let facets: { type: 'category' | 'region'; value: string; count: number }[] = [];
   try {
-    const [roomRes, restRes] = await Promise.all([
+    const [roomRes, restRes, facetRes] = await Promise.all([
       fetch(`${API_BASE}/rooms/public/sitemap-ids`),
       fetch(`${API_BASE}/rooms/public/sitemap-restaurant-ids`),
+      fetch(`${API_BASE}/rooms/public/facets`),
     ]);
     if (roomRes.ok) ids = await roomRes.json();
     if (restRes.ok) restaurantEntries = await restRes.json();
+    if (facetRes.ok) facets = await facetRes.json();
   } catch {
     // API 실패 시 빈 사이트맵 반환
   }
@@ -32,7 +35,13 @@ export const GET: APIRoute = async ({ site, url }) => {
     <loc>${SITE_URL}/rooms/public/${roomId}/restaurants/${restaurantId}</loc>
     <lastmod>${today}</lastmod>
   </url>`).join('');
-  const urls = roomUrls + restaurantUrls;
+  // 카테고리·지역 허브 (thin content 방지로 백엔드에서 식당 3+ facet만 반환)
+  const facetUrls = facets.map(({ type, value }) => `
+  <url>
+    <loc>${SITE_URL}/rooms/public/${type === 'region' ? 'region' : 'category'}/${encodeURIComponent(value)}</loc>
+    <lastmod>${today}</lastmod>
+  </url>`).join('');
+  const urls = roomUrls + restaurantUrls + facetUrls;
 
   return new Response(
     `<?xml version="1.0" encoding="UTF-8"?>

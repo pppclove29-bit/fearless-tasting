@@ -922,6 +922,7 @@ export class RoomsService {
         const ratings = r.visits.flatMap((v) => v.reviews.map((rev) => rev.rating));
         const avg = ratings.length > 0 ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10 : 0;
         return {
+          restaurantId: r.id,
           name: r.name,
           address: r.address,
           category: r.category,
@@ -1434,6 +1435,104 @@ export class RoomsService {
       .sort((a, b) => b.overlap - a.overlap || (b.it.avgRating ?? 0) - (a.it.avgRating ?? 0))
       .slice(0, limit)
       .map((x) => x.it);
+  }
+
+  /** 허브(카테고리·지역) 페이지 sitemap/색인 최소 식당 수 — thin content 방지 */
+  private static readonly HUB_MIN_RESTAURANTS = 3;
+
+  /**
+   * 품질 필터 통과 공개 방의 리뷰 있는 식당(허브 집계용).
+   * 카테고리/지역 허브 페이지·facet 목록의 공통 소스.
+   */
+  private async getPublicQualityRestaurants() {
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    const rooms = await this.prisma.read.room.findMany({
+      where: { isPublic: true, updatedAt: { gte: ninetyDaysAgo } },
+      select: {
+        id: true,
+        _count: { select: { restaurants: true } },
+        restaurants: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            category: true,
+            city: true,
+            neighborhood: true,
+            images: { select: { url: true }, orderBy: { sortOrder: 'asc' }, take: 1 },
+            visits: { select: { reviews: { select: { rating: true } } } },
+          },
+        },
+      },
+    });
+
+    const out: {
+      roomId: string;
+      id: string;
+      name: string;
+      address: string;
+      category: string;
+      city: string;
+      neighborhood: string;
+      reviewCount: number;
+      avgRating: number | null;
+      image: string | null;
+    }[] = [];
+
+    for (const room of rooms) {
+      const roomReviewCount = room.restaurants.reduce(
+        (s, r) => s + r.visits.reduce((a, v) => a + v.reviews.length, 0),
+        0,
+      );
+      if (room._count.restaurants < 3 || roomReviewCount < 3) continue;
+
+      for (const r of room.restaurants) {
+        const ratings = r.visits.flatMap((v) => v.reviews.map((rv) => rv.rating));
+        if (ratings.length < 1) continue;
+        out.push({
+          roomId: room.id,
+          id: r.id,
+          name: r.name,
+          address: r.address,
+          category: r.category,
+          city: r.city,
+          neighborhood: r.neighborhood,
+          reviewCount: ratings.length,
+          avgRating: Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10,
+          image: r.images[0] ? toImageUrl(r.images[0].url) : null,
+        });
+      }
+    }
+    return out;
+  }
+
+  /** 카테고리/지역 허브 — 해당 facet의 식당 목록 (평점순) */
+  async findPublicRestaurantsByFacet(type: 'category' | 'region', value: string) {
+    const all = await this.getPublicQualityRestaurants();
+    const matched = all.filter((r) => (type === 'category' ? r.category === value : r.city === value));
+    return matched.sort(
+      (a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0) || b.reviewCount - a.reviewCount,
+    );
+  }
+
+  /**
+   * 허브 facet 목록 (sitemap·색인용). thin content 방지로 식당 HUB_MIN 이상만.
+   */
+  async findPublicFacets(): Promise<{ type: 'category' | 'region'; value: string; count: number }[]> {
+    const all = await this.getPublicQualityRestaurants();
+    const catMap = new Map<string, number>();
+    const regionMap = new Map<string, number>();
+    for (const r of all) {
+      if (r.category) catMap.set(r.category, (catMap.get(r.category) ?? 0) + 1);
+      if (r.city) regionMap.set(r.city, (regionMap.get(r.city) ?? 0) + 1);
+    }
+    const min = RoomsService.HUB_MIN_RESTAURANTS;
+    const facets: { type: 'category' | 'region'; value: string; count: number }[] = [];
+    for (const [value, count] of catMap) if (count >= min) facets.push({ type: 'category', value, count });
+    for (const [value, count] of regionMap) if (count >= min) facets.push({ type: 'region', value, count });
+    return facets;
   }
 
   /** 공개 방 상세 (비로그인 가능, 멤버 정보 미포함) */

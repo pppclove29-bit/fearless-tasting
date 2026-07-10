@@ -1,0 +1,203 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import type { PublicFacetRestaurant } from '@repo/types';
+
+interface Props {
+  facetType: 'category' | 'region';
+  value: string;
+}
+
+const { facetType, value } = Astro.props;
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+const siteUrl = (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '');
+
+let restaurants: PublicFacetRestaurant[] = [];
+let error = '';
+
+if (value) {
+  try {
+    const res = await fetch(
+      `${API_BASE}/rooms/public/facet?type=${facetType}&value=${encodeURIComponent(value)}`,
+    );
+    if (res.ok) restaurants = await res.json();
+  } catch {
+    error = '서버에 연결할 수 없습니다.';
+  }
+}
+
+// thin content 가드: 식당 3개 미만이면 색인 제외(noindex). 공개 방 늘면 자동 색인.
+const HUB_MIN = 3;
+const isThin = restaurants.length < HUB_MIN;
+
+const facetLabel = facetType === 'category' ? '카테고리' : '지역';
+const typeSlug = facetType === 'category' ? 'category' : 'region';
+const pageUrl = `${siteUrl}/rooms/public/${typeSlug}/${encodeURIComponent(value)}`;
+
+const reviewTotal = restaurants.reduce((s, r) => s + r.reviewCount, 0);
+const ratedList = restaurants.filter((r) => r.avgRating != null);
+const avgRating = ratedList.length > 0
+  ? Math.round((ratedList.reduce((s, r) => s + (r.avgRating ?? 0), 0) / ratedList.length) * 10) / 10
+  : null;
+
+const title = `${value} 맛집 리뷰 모음`;
+const lead = restaurants.length > 0
+  ? [
+      `${value} ${facetLabel}의 맛집 ${restaurants.length}곳을 실제 방문자 리뷰와 함께 모았습니다.`,
+      reviewTotal > 0
+        ? `총 리뷰 ${reviewTotal}개${avgRating != null ? `, 평균 ★${avgRating.toFixed(1)}점` : ''}.`
+        : null,
+    ].filter(Boolean).join(' ')
+  : `${value} 맛집을 준비 중입니다.`;
+const description = restaurants.length > 0
+  ? `${value} 맛집 ${restaurants.length}곳 · 실제 방문자 리뷰 ${reviewTotal}개${avgRating != null ? ` · 평균 ★${avgRating.toFixed(1)}` : ''}. 광고 아닌 진짜 후기.`
+  : `${value} 맛집 리뷰 모음`;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  ogImageAlt={`${value} 맛집 리뷰 모음`}
+  noindex={isThin}
+>
+  <Fragment slot="head">
+    {restaurants.length > 0 && (
+      <script type="application/ld+json" set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": title,
+        "description": description,
+        "url": pageUrl,
+        "numberOfItems": restaurants.length,
+        "itemListElement": restaurants.slice(0, 30).map((r, i) => ({
+          "@type": "ListItem",
+          "position": i + 1,
+          "item": {
+            "@type": "FoodEstablishment",
+            "name": r.name,
+            "address": r.address,
+            "servesCuisine": r.category,
+            "url": `${siteUrl}/rooms/public/${r.roomId}/restaurants/${r.id}`,
+            ...(r.avgRating != null && r.reviewCount > 0 ? {
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": r.avgRating,
+                "reviewCount": r.reviewCount,
+                "bestRating": 5,
+                "worstRating": 0.5,
+              },
+            } : {}),
+          },
+        })),
+      })} />
+    )}
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "홈", "item": siteUrl },
+        { "@type": "ListItem", "position": 2, "name": "공개 맛집 방", "item": siteUrl + "/rooms/public" },
+        { "@type": "ListItem", "position": 3, "name": title, "item": pageUrl },
+      ],
+    })} />
+  </Fragment>
+
+  <div class="facet-hub-page">
+    <a href="/rooms/public" class="back-link">&larr; 공개 맛집 방</a>
+
+    <header class="facet-hub-header">
+      <h1>{title}</h1>
+      <p class="facet-hub-lead">{lead}</p>
+    </header>
+
+    {error && <p class="status-msg error">{error}</p>}
+
+    {restaurants.length === 0 && !error && (
+      <p class="empty-text">아직 이 {facetLabel}의 맛집이 충분하지 않습니다.</p>
+    )}
+
+    {restaurants.length > 0 && (
+      <div class="facet-hub-list">
+        {restaurants.map((r) => (
+          <a class="facet-rest-card" href={`/rooms/public/${r.roomId}/restaurants/${r.id}`}>
+            {r.image && (
+              <img class="facet-rest-thumb" src={r.image} alt={`${r.name} ${r.category} 사진`} loading="lazy" decoding="async" />
+            )}
+            <div class="facet-rest-body">
+              <div class="facet-rest-name">{r.name}</div>
+              <div class="facet-rest-meta">{r.address} &middot; {r.category}</div>
+              <div class="facet-rest-footer">
+                {r.avgRating != null && <span class="facet-rest-rating">★ {r.avgRating.toFixed(1)}</span>}
+                <span class="facet-rest-reviews">리뷰 {r.reviewCount}개</span>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
+
+    <section class="public-cta-section">
+      <h2 class="public-cta-title">우리만의 맛집 리스트, 직접 만들어보세요</h2>
+      <p class="public-cta-desc">카카오·네이버 로그인으로 3초 만에 시작.</p>
+      <a href="/login" class="public-cta-btn">무료로 시작하기</a>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .status-msg { text-align: center; padding: 2rem 1rem; color: #dc2626; font-size: 0.9rem; }
+  .back-link {
+    display: inline-block; margin-bottom: 1rem; font-size: 0.85rem;
+    color: var(--text-sub); text-decoration: none;
+  }
+  .back-link:hover { color: var(--text-heading); }
+</style>
+
+<style is:global>
+  .facet-hub-page { max-width: 720px; margin: 0 auto; padding: 0 1rem; }
+  .facet-hub-header {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.5rem; margin-bottom: 1rem;
+  }
+  .facet-hub-header h1 {
+    font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;
+    margin: 0 0 0.5rem; color: var(--text-heading);
+  }
+  .facet-hub-lead { font-size: 0.9rem; line-height: 1.6; color: var(--text-sub); margin: 0; }
+
+  .facet-hub-list { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.5rem; }
+  .facet-rest-card {
+    display: flex; gap: 0.85rem; align-items: stretch;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.1rem 1.25rem; text-decoration: none; color: inherit;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .facet-rest-card:hover { border-color: var(--border-mid); }
+  .facet-rest-card:active { transform: scale(0.99); }
+  .facet-rest-thumb {
+    width: 76px; height: 76px; flex-shrink: 0; object-fit: cover;
+    border-radius: 10px; background: var(--bg-hover); border: 1px solid var(--border);
+  }
+  .facet-rest-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+  .facet-rest-name { font-size: 0.95rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.2rem; }
+  .facet-rest-meta {
+    font-size: 0.8rem; color: var(--text-muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .facet-rest-footer { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.35rem; }
+  .facet-rest-rating { font-size: 0.78rem; font-weight: 700; color: var(--text-heading); }
+  .facet-rest-reviews { font-size: 0.75rem; color: var(--text-sub); }
+  .empty-text { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem; }
+
+  .public-cta-section {
+    text-align: center; padding: 1.75rem 1.25rem;
+    background: var(--bg-hover); border-radius: 16px; margin: 1.5rem 0 2.5rem;
+  }
+  .public-cta-title { font-size: 1.1rem; font-weight: 800; color: var(--text-heading); margin: 0 0 0.5rem; }
+  .public-cta-desc { font-size: 0.88rem; color: var(--text-sub); line-height: 1.6; margin: 0 0 1.1rem; }
+  .public-cta-btn {
+    display: inline-block; padding: 0.7rem 1.6rem; background: var(--text-heading);
+    color: var(--bg); font-weight: 700; font-size: 0.9rem; border-radius: 12px;
+    text-decoration: none; transition: opacity 0.15s;
+  }
+  .public-cta-btn:hover { opacity: 0.88; }
+</style>

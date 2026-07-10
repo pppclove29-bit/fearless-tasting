@@ -1,0 +1,9 @@
+---
+export const prerender = false;
+
+import PublicFacetHub from '@/components/PublicFacetHub.astro';
+
+const { value } = Astro.params;
+---
+
+<PublicFacetHub facetType="category" value={decodeURIComponent(value ?? '')} />

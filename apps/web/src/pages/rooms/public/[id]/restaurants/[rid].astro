@@ -196,7 +196,14 @@ const pageUrl = `${siteUrl}/rooms/public/${id}/restaurants/${rid}`;
           <h1>{restaurant.name}</h1>
           <div class="pub-rest-address">{restaurant.address}</div>
           <div class="pub-rest-meta">
-            <span class="category-badge">{restaurant.category}</span>
+            {restaurant.category ? (
+              <a class="category-badge category-badge-link" href={`/rooms/public/category/${encodeURIComponent(restaurant.category)}`}>{restaurant.category}</a>
+            ) : (
+              <span class="category-badge">{restaurant.category}</span>
+            )}
+            {restaurant.city && (
+              <a class="category-badge category-badge-link" href={`/rooms/public/region/${encodeURIComponent(restaurant.city)}`}>📍 {restaurant.city}</a>
+            )}
             {avgRating !== null && (
               <span class="pub-rest-rating">{formatRating(avgRating)} {avgRating.toFixed(1)}</span>
             )}
@@ -371,6 +378,8 @@ const pageUrl = `${siteUrl}/rooms/public/${id}/restaurants/${rid}`;
     display: inline-block; padding: 0.2rem 0.6rem; border-radius: 100px;
     font-size: 0.75rem; font-weight: 600; background: var(--bg-hover); color: var(--text-sub);
   }
+  .category-badge-link { text-decoration: none; transition: background 0.15s; }
+  .category-badge-link:hover { background: var(--border-mid); color: var(--text-heading); }
   .pub-rest-lead {
     font-size: 0.9rem; line-height: 1.6; color: var(--text-sub);
     margin: 0.85rem 0 0; padding-top: 0.75rem; border-top: 1px dashed var(--border);

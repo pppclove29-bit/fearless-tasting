@@ -122,6 +122,24 @@ export class RoomsController {
     return this.roomsService.findPublicRoomRestaurantSitemapEntries();
   }
 
+  /** 허브 facet 목록 (카테고리·지역, sitemap용) */
+  @Get('public/facets')
+  @ApiOperation({ summary: '공개 허브 facet 목록 (비로그인 가능)' })
+  getPublicFacets() {
+    return this.roomsService.findPublicFacets();
+  }
+
+  /** 카테고리/지역 허브 — 식당 목록 */
+  @Get('public/facet')
+  @ApiOperation({ summary: '카테고리/지역 허브 식당 목록 (비로그인 가능)' })
+  getPublicFacetRestaurants(
+    @Query('type') type: string,
+    @Query('value') value: string,
+  ) {
+    const facetType = type === 'region' ? 'region' : 'category';
+    return this.roomsService.findPublicRestaurantsByFacet(facetType, value ?? '');
+  }
+
   /** 공개 방 상세 */
   @Get('public/:id')
   @ApiOperation({ summary: '공개 방 상세 (비로그인 가능)' })
