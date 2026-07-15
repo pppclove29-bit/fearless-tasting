@@ -52,6 +52,12 @@
 |------|------|
 | [android-app.md](android-app.md) | Android APK (Capacitor) 빌드 / Firebase 셋업 / Play Store 등록 가이드 |
 
+## 기능 기획 (Spec)
+
+| 문서 | 설명 |
+|------|------|
+| [photo-visit-detection.md](photo-visit-detection.md) | 사진 EXIF 기반 자동 방문 감지 + 재참여/전원참여 루프 (네이티브 앱 킬러 기능, 기획) |
+
 ## 비즈니스 / 전략
 
 | 문서 | 설명 |
