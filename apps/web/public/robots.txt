@@ -1,12 +1,18 @@
 # 모든 봇 기본 규칙
+# 원칙: robots.txt = 크롤 제어 전용. 검색결과 제외는 페이지의 noindex로 처리.
+#   - /room$, /room?, /room/  → 로그인 전용 방/식당 페이지만 정확히 차단
+#   - /rooms$                 → 내 방 목록만 차단 (공개 방 /rooms/public 은 크롤 허용)
+#   - /cs, /privacy           → robots 차단 대신 페이지 noindex 사용
 User-agent: *
 Disallow: /admin
 Disallow: /login
-Disallow: /room
 Disallow: /profile
 Disallow: /join
-Disallow: /cs
-Disallow: /privacy
+Disallow: /room$
+Disallow: /room?
+Disallow: /room/
+Disallow: /rooms$
+Allow: /rooms/public
 Allow: /
 
 # ── AI 학습용 크롤러 차단 (모델 학습 데이터 수집 방지) ──
@@ -46,30 +52,30 @@ Allow: /
 User-agent: Claude-User
 Allow: /
 
-# 네이버 검색 봇 (Yeti) — 명시 규칙
+# 네이버 검색 봇 (Yeti) — $ 와일드카드 미지원 가능성 → 접두사 + 명시 Allow 조합
 User-agent: Yeti
 Disallow: /admin
 Disallow: /login
-Disallow: /room
 Disallow: /profile
 Disallow: /join
-Disallow: /cs
-Disallow: /privacy
-Allow: /
+Disallow: /room
 Allow: /rooms/public
 Allow: /discover
 Allow: /rankings
 Allow: /about
 Allow: /guide
+Allow: /use
+Allow: /community
+Allow: /
 
 # 다음 검색 봇
 User-agent: Daum
 Disallow: /admin
 Disallow: /login
-Disallow: /room
 Disallow: /profile
 Disallow: /join
-Disallow: /privacy
+Disallow: /room
+Allow: /rooms/public
 Allow: /
 
 Sitemap: https://musikga.kr/sitemap.xml

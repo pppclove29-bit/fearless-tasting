@@ -21,15 +21,19 @@ let room: SharedRoomDetail | null = null;
 let relatedRooms: RelatedRoom[] = [];
 let error = '';
 
+// 없거나 비공개인 방은 404(리소스 없음), API 장애는 503(일시적)으로 응답.
+// 200 + noindex 는 soft 404 → 크롤 예산 낭비하므로 사용하지 않는다.
 try {
   const res = await fetch(`${API_BASE}/rooms/public/${id}`);
   if (res.ok) {
     room = await res.json();
   } else {
     error = '공개 방을 찾을 수 없거나, 비공개 상태입니다.';
+    Astro.response.status = 404;
   }
 } catch {
   error = '서버에 연결할 수 없습니다.';
+  Astro.response.status = 503;
 }
 
 // 관련 공개 방 (실패해도 페이지는 렌더)
