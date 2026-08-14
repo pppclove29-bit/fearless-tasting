@@ -10,17 +10,20 @@
     "lint": "eslint .",
     "typecheck": "astro check && tsc --noEmit",
     "clean": "rm -rf dist .astro",
+    "build:app": "node scripts/build-app.mjs",
     "cap:add:android": "cap add android",
-    "cap:sync": "cap sync android",
+    "cap:sync": "pnpm build:app && cap sync android",
     "cap:open:android": "cap open android",
-    "android:bundle": "cd android && .\\gradlew.bat bundleRelease",
-    "android:release": "pnpm build && pnpm cap:sync && pnpm android:bundle"
+    "android:debug": "cd android && ./gradlew assembleDebug",
+    "android:bundle": "cd android && ./gradlew bundleRelease",
+    "android:release": "pnpm cap:sync && pnpm android:bundle"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.12",
     "@astrojs/sitemap": "^3.7.0",
     "@capacitor-firebase/messaging": "^8.2.0",
     "@capacitor/app": "^8.1.0",
+    "@capacitor/browser": "^8.0.4",
     "@capacitor/core": "^8.3.1",
     "@repo/types": "workspace:*",
     "@repo/utils": "workspace:*",

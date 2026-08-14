@@ -21,22 +21,47 @@ import { CurrentUser } from './decorators/current-user.decorator';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  /**
+   * OAuth 성공 후 돌아갈 주소.
+   * state가 'app.'으로 시작하면 네이티브 앱에서 시작한 로그인이므로
+   * 커스텀 스킴 딥링크로 보내 앱이 토큰을 받게 한다. 그 외엔 웹 프론트로.
+   */
+  private buildLoginRedirect(
+    state: string | undefined,
+    tokens: { accessToken: string; refreshToken: string },
+  ): string {
+    const params = new URLSearchParams({
+      access_token: tokens.accessToken,
+      refresh_token: tokens.refreshToken,
+    });
+    if (state?.startsWith('app.')) {
+      const scheme = process.env.APP_DEEP_LINK_SCHEME || 'kr.fearlesstasting.app';
+      return `${scheme}://login?${params.toString()}`;
+    }
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4321';
+    return `${frontendUrl}/login?${params.toString()}`;
+  }
+
   /** 카카오 OAuth 시작: 카카오 인가 페이지로 리다이렉트 */
   @Get('kakao')
   @ApiOperation({
     summary: '카카오 로그인',
-    description: '카카오 OAuth 인가 페이지로 302 리다이렉트합니다.',
+    description: '카카오 OAuth 인가 페이지로 302 리다이렉트합니다. client=app이면 앱 딥링크로 복귀합니다.',
   })
-  kakaoLogin(@Res() res: Response) {
-    const url = this.authService.getKakaoAuthUrl();
-    res.redirect(url);
+  kakaoLogin(@Query('client') client: string, @Res() res: Response) {
+    const state = this.authService.buildOAuthState(client === 'app' ? 'app' : 'web');
+    res.redirect(this.authService.getKakaoAuthUrl(state));
   }
 
   /** 카카오 OAuth 콜백: 인가 코드 → 토큰 교환 → JWT 발급 → 프론트 리다이렉트 */
   @Get('kakao/callback')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiExcludeEndpoint()
-  async kakaoCallback(@Query('code') code: string, @Res() res: Response) {
+  async kakaoCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Res() res: Response,
+  ) {
     if (!code) {
       throw new UnauthorizedException('인가 코드가 없습니다');
     }
@@ -46,12 +71,7 @@ export class AuthController {
     const user = await this.authService.findOrCreateFromKakao(kakaoUser);
     const tokens = await this.authService.generateTokens(user.id);
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4321';
-    const params = new URLSearchParams({
-      access_token: tokens.accessToken,
-      refresh_token: tokens.refreshToken,
-    });
-    res.redirect(`${frontendUrl}/login?${params.toString()}`);
+    res.redirect(this.buildLoginRedirect(state, tokens));
   }
 
   /** 네이버 OAuth 시작: 네이버 인가 페이지로 리다이렉트 */
@@ -60,9 +80,9 @@ export class AuthController {
     summary: '네이버 로그인',
     description: '네이버 OAuth 인가 페이지로 302 리다이렉트합니다.',
   })
-  naverLogin(@Res() res: Response) {
-    const url = this.authService.getNaverAuthUrl();
-    res.redirect(url);
+  naverLogin(@Query('client') client: string, @Res() res: Response) {
+    const state = this.authService.buildOAuthState(client === 'app' ? 'app' : 'web');
+    res.redirect(this.authService.getNaverAuthUrl(state));
   }
 
   /** 네이버 OAuth 콜백: 인가 코드 → 토큰 교환 → JWT 발급 → 프론트 리다이렉트 */
@@ -83,12 +103,7 @@ export class AuthController {
     const user = await this.authService.findOrCreateFromNaver(naverUser);
     const tokens = await this.authService.generateTokens(user.id);
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4321';
-    const params = new URLSearchParams({
-      access_token: tokens.accessToken,
-      refresh_token: tokens.refreshToken,
-    });
-    res.redirect(`${frontendUrl}/login?${params.toString()}`);
+    res.redirect(this.buildLoginRedirect(state, tokens));
   }
 
   /** 현재 로그인 유저 정보 */

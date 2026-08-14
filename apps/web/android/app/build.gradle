@@ -8,6 +8,10 @@ if (hasReleaseSigning) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+// 버전은 gradle 프로퍼티(-PappVersionCode=) 또는 환경변수로 주입. 기본값은 로컬 디버그용.
+def appVersionCode = (project.findProperty("appVersionCode") ?: System.getenv("APP_VERSION_CODE") ?: "1").toString().toInteger()
+def appVersionName = (project.findProperty("appVersionName") ?: System.getenv("APP_VERSION_NAME") ?: "1.0.0").toString()
+
 android {
     namespace = "kr.fearlesstasting.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -15,8 +19,8 @@ android {
         applicationId "kr.fearlesstasting.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode
+        versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

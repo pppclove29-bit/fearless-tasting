@@ -18,6 +18,25 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- OAuth 복귀용 커스텀 스킴 (API가 kr.fearlesstasting.app://login?... 으로 리다이렉트) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="kr.fearlesstasting.app" />
+            </intent-filter>
+
+            <!-- App Links: musikga.kr 초대·방 링크를 앱으로 연다.
+                 autoVerify 동작에는 https://musikga.kr/.well-known/assetlinks.json 배포가 필요하다. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- pathPrefix 를 쓰면 /rooms/public(웹 전용 SEO 페이지)까지 가로채므로 정확 경로만 claim -->
+                <data android:scheme="https" android:host="musikga.kr" android:path="/join" />
+                <data android:scheme="https" android:host="musikga.kr" android:path="/room" />
+            </intent-filter>
         </activity>
 
         <provider
@@ -32,4 +51,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+ 푸시 알림 표시 권한 (FCM) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

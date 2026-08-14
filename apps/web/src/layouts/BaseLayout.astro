@@ -889,6 +889,7 @@ const resolvedOgImage = ogImage
   import type { AuthUser, Notification } from '@/lib/api';
   import { formatDate } from '@repo/utils';
   import { registerPushToken } from '@/lib/firebase';
+  import { initNativeApp, isNativeApp } from '@/lib/native';
 
   // View Transitions 전환 시 유저 캐시 리셋
   document.addEventListener('astro:before-swap', () => {
@@ -1112,8 +1113,13 @@ const resolvedOgImage = ogImage
   // astro:page-load는 최초 로드에서도 발생
   document.addEventListener('astro:page-load', initPage);
 
+  // 네이티브 앱: 딥링크 수신(OAuth 복귀·초대 링크) + 하드웨어 뒤로가기 처리
+  initNativeApp();
+
   // PWA Service Worker 등록 + 업데이트 자동 적용
-  if ('serviceWorker' in navigator) {
+  // 네이티브 앱(Capacitor)은 번들 자체가 로컬이라 SW가 불필요하고,
+  // 앱 업데이트 후 옛 캐시를 서빙할 위험이 있어 등록하지 않는다.
+  if (!isNativeApp() && 'serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').then((reg) => {
       // 페이지 로드 시마다 업데이트 체크
       reg.update().catch(() => {});

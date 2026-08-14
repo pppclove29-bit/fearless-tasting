@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { measure } from '../common/perf';
@@ -57,10 +58,18 @@ export class AuthService {
   ) {}
 
   /** 카카오 인가 URL 생성 */
-  getKakaoAuthUrl(): string {
+  /**
+   * OAuth state 생성. CSRF 방지용 난수 앞에 클라이언트 종류를 붙여
+   * 콜백에서 웹으로 보낼지 앱(딥링크)으로 보낼지 구분한다.
+   */
+  buildOAuthState(client: 'app' | 'web'): string {
+    return `${client}.${randomBytes(8).toString('hex')}`;
+  }
+
+  getKakaoAuthUrl(state: string): string {
     const clientId = process.env.KAKAO_CLIENT_ID;
     const callbackUrl = process.env.KAKAO_CALLBACK_URL;
-    return `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(callbackUrl!)}&response_type=code`;
+    return `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(callbackUrl!)}&response_type=code&state=${encodeURIComponent(state)}`;
   }
 
   /** 카카오 인가 코드로 토큰 교환 */
@@ -128,12 +137,11 @@ export class AuthService {
   }
 
   /** 네이버 인가 URL 생성 */
-  getNaverAuthUrl(): string {
+  getNaverAuthUrl(state: string): string {
     const clientId = process.env.NAVER_CLIENT_ID;
     const callbackUrl = process.env.NAVER_CALLBACK_URL;
-    // state는 CSRF 방지용 임의 문자열 (검증은 스테이트리스로 간소화)
-    const state = Math.random().toString(36).slice(2);
-    return `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(callbackUrl!)}&state=${state}`;
+    // state는 CSRF 방지용 난수 + 클라이언트 구분자 (검증은 스테이트리스로 간소화)
+    return `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(callbackUrl!)}&state=${encodeURIComponent(state)}`;
   }
 
   /** 네이버 인가 코드로 토큰 교환 */

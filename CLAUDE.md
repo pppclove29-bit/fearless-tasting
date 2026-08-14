@@ -438,7 +438,23 @@ pnpm build                        # 전체 빌드
 pnpm lint                         # 전체 린트
 docker compose up                 # Docker 개발 서버
 docker compose up -d --build api  # API만 리빌드 (스키마 변경 시)
+
+# 안드로이드 앱 (Node 22+ 필요)
+pnpm --filter @repo/web build:app       # 앱용 정적 번들 → dist-app/
+pnpm --filter @repo/web cap:sync        # build:app + cap sync android
+pnpm --filter @repo/web android:debug   # 디버그 APK
+pnpm --filter @repo/web android:release # 릴리스 AAB (APP_VERSION_CODE 필요)
 ```
+
+## 안드로이드 앱 (Capacitor)
+
+`apps/web/android/` — 같은 모노레포 안의 Capacitor 프로젝트. **로컬 정적 번들** 방식 (원격 URL 로딩 아님).
+
+- 앱 번들: `scripts/build-app.mjs`가 `src/` → `.app-src/` 복사 후 SEO 전용 라우트 제거 + `prerender` 강제 → `astro.config.app.mjs`로 `dist-app/` 생성
+- 앱 제외 라우트: `/rooms/public/**`, `/community/**`, `/guide/**`, `/use/**`, `sitemap*.xml` → 앱에서 클릭 시 시스템 브라우저로 musikga.kr 오픈
+- 로그인: 시스템 브라우저 OAuth → `kr.fearlesstasting.app://login?access_token=...` 딥링크 복귀 (API `state=app.*` 판별, `APP_DEEP_LINK_SCHEME` 환경변수로 스킴 변경 가능)
+- 네이티브 전용 로직은 `apps/web/src/lib/native.ts` (딥링크·뒤로가기·외부 링크). 웹에선 전부 no-op
+- 상세 절차·출시 체크리스트: [docs/app-release.md](docs/app-release.md)
 
 ## 문서 구조
 
