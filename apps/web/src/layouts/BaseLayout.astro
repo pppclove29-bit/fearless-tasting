@@ -1,5 +1,6 @@
 ---
 import { ViewTransitions } from 'astro:transitions';
+import { SHOW_COMMUNITY, SHOW_PUBLIC_ROOMS, SHOW_RANKINGS } from '@/lib/features';
 
 interface Props {
   title: string;
@@ -171,9 +172,9 @@ const resolvedOgImage = ogImage
         <div class="nav-links" id="nav-links">
           <a href="/rooms" class="nav-link nav-auth-only" id="my-rooms-link" hidden>내 방</a>
           <a href="/about" class="nav-link">소개</a>
-          <a href="/rankings" class="nav-link">랭킹</a>
+          {SHOW_RANKINGS && <a href="/rankings" class="nav-link">랭킹</a>}
           <a href="/discover" class="nav-link">맛집</a>
-          <a href="/community" class="nav-link">커뮤니티</a>
+          {SHOW_COMMUNITY && <a href="/community" class="nav-link">커뮤니티</a>}
           <a href="/cs" class="nav-link">문의</a>
           <a href="/admin" class="nav-link nav-admin" id="admin-link" hidden>관리자</a>
           <div class="nav-auth" id="auth-nav">
@@ -219,9 +220,9 @@ const resolvedOgImage = ogImage
           <h4 class="footer-col-title">메뉴</h4>
           <div class="footer-col-links">
             <a href="/about">소개</a>
-            <a href="/rankings">랭킹</a>
+            {SHOW_RANKINGS && <a href="/rankings">랭킹</a>}
             <a href="/discover">맛집</a>
-            <a href="/community">커뮤니티</a>
+            {SHOW_COMMUNITY && <a href="/community">커뮤니티</a>}
             <a href="/cs">문의</a>
           </div>
         </div>
@@ -229,7 +230,7 @@ const resolvedOgImage = ogImage
           <h4 class="footer-col-title">가이드</h4>
           <div class="footer-col-links">
             <a href="/guide">전체 가이드</a>
-            <a href="/rooms/public">공개 맛집 방</a>
+            {SHOW_PUBLIC_ROOMS && <a href="/rooms/public">공개 맛집 방</a>}
             <a href="/guide/restaurant-map-share">맛집 공유지도 만들기</a>
             <a href="/guide/how-to-record">맛집 기록 방법</a>
           </div>

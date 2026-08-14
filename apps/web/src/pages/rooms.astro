@@ -99,7 +99,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <span class="empty-icon">🏠</span>
         <span class="empty-text">참여 중인 방이 없습니다</span>
         <span class="empty-sub">우측 상단 "+ 방 만들기" 버튼으로 방을 만들거나 초대받은 방에 입장하세요</span>
-        <a href="/rooms/public" class="empty-cta">👀 다른 사람 방 구경하기</a>
+        <button type="button" class="empty-cta" id="empty-create-btn">+ 첫 방 만들기</button>
       </p>
     </div>
   </div>
@@ -562,11 +562,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const createModalBtn = document.getElementById('create-room-btn');
     const createModalClose = document.getElementById('create-modal-close');
 
-    // 모달 열기/닫기
-    createModalBtn?.addEventListener('click', () => {
+    // 모달 열기/닫기 (빈 상태 CTA도 같은 모달을 연다)
+    const openCreateModal = () => {
       if (createModal) createModal.hidden = false;
       createNameInput?.focus();
-    });
+    };
+    createModalBtn?.addEventListener('click', openCreateModal);
+    document.getElementById('empty-create-btn')?.addEventListener('click', openCreateModal);
     createModalClose?.addEventListener('click', () => {
       if (createModal) createModal.hidden = true;
     });

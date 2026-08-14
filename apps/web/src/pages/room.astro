@@ -2860,6 +2860,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import type { AuthUser, RoomDetailResponse, RoomRestaurantInfo, RoomStats, Poll, TimelineItem, CategoryPublic } from '@/lib/api';
   // getCities, getNeighborhoods are defined locally below
   import { formatRating, formatDate } from '@repo/utils';
+  import { trackEvent } from '@/lib/analytics';
 
   function initRoomPage() {
 
@@ -3658,6 +3659,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       document.getElementById('copy-invite-btn')?.addEventListener('click', () => {
         const shareText = `🍽️ "${currentRoom.name}" 맛집 리스트에 초대합니다!\n우리만의 맛집을 함께 기록해요\n\n${getInviteLink()}`;
         navigator.clipboard.writeText(shareText);
+        trackEvent('invite_shared', { room_id: currentRoom.id, method: 'copy_link' });
         const btn = document.getElementById('copy-invite-btn');
         if (btn) { btn.textContent = '복사됨!'; setTimeout(() => { btn.textContent = '복사'; }, 1500); }
         showToast('초대 메시지가 복사되었습니다!', 'success');
@@ -3692,6 +3694,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               },
             }],
           });
+          trackEvent('invite_shared', { room_id: currentRoom.id, method: 'kakao' });
         } else {
           showToast('카카오톡 공유 기능을 사용할 수 없습니다.');
         }
@@ -6305,6 +6308,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       categoryList = cats;
       loadingMsg.hidden = true;
       renderPage();
+
+      // 방 건강도 스냅샷 — "활성 방", "2번째 식당 도달률", "혼자 남은 방" 판단용.
+      // 방 진입 시점의 누적 상태라 세션당 1회면 충분하다.
+      trackEvent('room_opened', {
+        room_id: room.id,
+        member_count: room.members?.length ?? 0,
+        restaurant_count: room.restaurants?.length ?? 0,
+        is_solo: (room.members?.length ?? 0) <= 1,
+      });
 
       // 쿼리 파라미터 ?tab=xxx 로 초기 탭 전환 (푸시 알림 deep link용)
       const tabParam = params.get('tab');

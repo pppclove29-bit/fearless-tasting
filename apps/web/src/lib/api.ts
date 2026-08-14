@@ -23,6 +23,10 @@ export type {
 };
 export type { AppNotification as Notification } from '@repo/types';
 
+// 활성화 퍼널 계측 — 방 생성→초대→첫 기록→반복 사용을 GA4에서 추적한다.
+// API 호출 지점에 붙여야 페이지가 늘어나도 이벤트가 새지 않는다.
+import { trackEvent } from './analytics';
+
 export { showToast, showConfirm, showDangerConfirm, showPermissionExplainer, showPermissionDeniedGuide } from './toast';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
@@ -406,7 +410,13 @@ export async function createRoom(
     body: JSON.stringify(body),
   });
   await throwIfNotOk(res, '방 생성에 실패했습니다.');
-  return res.json();
+  const room: Room = await res.json();
+  trackEvent('room_created', {
+    room_id: room.id,
+    max_members: options?.maxMembers ?? null,
+    poll_enabled: options?.tabPollEnabled ?? false,
+  });
+  return room;
 }
 
 /** 초대 코드로 입장 */
@@ -417,7 +427,9 @@ export async function joinRoom(inviteCode: string): Promise<Room> {
     body: JSON.stringify({ inviteCode }),
   });
   await throwIfNotOk(res, '입장에 실패했습니다.');
-  return res.json();
+  const room: Room = await res.json();
+  trackEvent('room_joined', { room_id: room.id, method: 'invite_code' });
+  return room;
 }
 
 /** 공개 방 참여 (초대 코드 없이, 로그인 필수) */
@@ -426,7 +438,9 @@ export async function joinPublicRoom(roomId: string): Promise<Room> {
     method: 'POST',
   });
   await throwIfNotOk(res, '방 참여에 실패했습니다.');
-  return res.json();
+  const room: Room = await res.json();
+  trackEvent('room_joined', { room_id: room.id, method: 'public' });
+  return room;
 }
 
 /** 방 삭제 */
@@ -503,7 +517,13 @@ export async function createRoomRestaurant(
     }
   }
   await throwIfNotOk(res, '식당 등록에 실패했습니다.');
-  return res.json();
+  const restaurant: RoomRestaurant = await res.json();
+  trackEvent('restaurant_added', {
+    room_id: roomId,
+    is_wishlist: !!data.isWishlist,
+    has_category: !!data.category,
+  });
+  return restaurant;
 }
 
 /** 방 내 식당 목록 (페이지네이션) */
@@ -578,7 +598,12 @@ export async function createRoomVisit(
     body: JSON.stringify(data),
   });
   await throwIfNotOk(res, '방문 기록 생성에 실패했습니다.');
-  return res.json();
+  const visit: RoomVisitWithDetails = await res.json();
+  trackEvent('visit_created', {
+    room_id: roomId,
+    with_participants: (data.participantIds?.length ?? 0) > 0,
+  });
+  return visit;
 }
 
 /** 방문 기록 삭제 */
@@ -615,7 +640,15 @@ export async function createRoomReview(
     body: JSON.stringify(data),
   });
   await throwIfNotOk(res, '리뷰 작성에 실패했습니다.');
-  return res.json();
+  const review: RoomReview = await res.json();
+  trackEvent('review_created', {
+    room_id: roomId,
+    rating: data.rating,
+    has_content: !!data.content?.trim(),
+    has_detail_rating: !!(data.tasteRating || data.valueRating || data.serviceRating
+      || data.cleanlinessRating || data.accessibilityRating),
+  });
+  return review;
 }
 
 /** 리뷰 수정 */
@@ -722,7 +755,9 @@ export async function createPoll(
     body: JSON.stringify(data),
   });
   await throwIfNotOk(res, '투표 생성에 실패했습니다.');
-  return res.json();
+  const poll: Poll = await res.json();
+  trackEvent('poll_created', { room_id: roomId, option_count: data.options.length });
+  return poll;
 }
 
 /** 투표 목록 조회 */
@@ -740,6 +775,7 @@ export async function votePoll(roomId: string, pollId: string, optionId: string)
     body: JSON.stringify({ optionId }),
   });
   await throwIfNotOk(res, '투표에 실패했습니다.');
+  trackEvent('poll_voted', { room_id: roomId });
 }
 
 /** 투표 마감 */

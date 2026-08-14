@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import AdSlot from '@/components/AdSlot.astro';
+import { SHOW_PUBLIC_ROOMS } from '@/lib/features';
 export const prerender = false;
 
 const siteUrl = (Astro.site ?? Astro.url.origin).toString().replace(/\/$/, '');
@@ -104,16 +105,18 @@ try {
 
     <AdSlot slot="discover-bottom" position="bottom" format="horizontal" />
 
-    <section class="public-rooms-section">
-      <div class="public-rooms-header">
-        <h2>👀 다른 사람 방 구경하기</h2>
-        <a href="/rooms/public" class="public-rooms-more">전체 보기 →</a>
-      </div>
-      <p class="public-rooms-desc">실제 유저가 정리한 맛집 리스트를 그대로 엿보세요.</p>
-      <div id="public-rooms-content">
-        <div class="discover-loading">불러오는 중...</div>
-      </div>
-    </section>
+    {SHOW_PUBLIC_ROOMS && (
+      <section class="public-rooms-section">
+        <div class="public-rooms-header">
+          <h2>👀 다른 사람 방 구경하기</h2>
+          <a href="/rooms/public" class="public-rooms-more">전체 보기 →</a>
+        </div>
+        <p class="public-rooms-desc">실제 유저가 정리한 맛집 리스트를 그대로 엿보세요.</p>
+        <div id="public-rooms-content">
+          <div class="discover-loading">불러오는 중...</div>
+        </div>
+      </section>
+    )}
 
     <section class="discover-seo">
       <h2>실제 방문 기반 맛집 추천</h2>

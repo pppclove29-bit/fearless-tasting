@@ -933,9 +933,18 @@ export class RoomsService {
           roomName: r.room.name,
         };
       })
-      .filter((r) => r.reviewCount >= 1)
-      .sort((a, b) => b.avgRating - a.avgRating || b.reviewCount - a.reviewCount)
-      .slice(0, 20);
+      // 리뷰 1개짜리 ★5가 상위를 점령하던 문제 → 최소 리뷰 수 + 베이지안 보정.
+      // 표본이 적을수록 평균이 사전값(3.5)으로 끌려가 신뢰도 낮은 식당이 밀린다.
+      .filter((r) => r.reviewCount >= RoomsService.DISCOVER_MIN_REVIEWS)
+      .map((r) => ({
+        ...r,
+        score:
+          (r.avgRating * r.reviewCount + 3.5 * RoomsService.DISCOVER_PRIOR_WEIGHT) /
+          (r.reviewCount + RoomsService.DISCOVER_PRIOR_WEIGHT),
+      }))
+      .sort((a, b) => b.score - a.score || b.reviewCount - a.reviewCount)
+      .slice(0, 20)
+      .map(({ score: _score, ...rest }) => rest);
 
     // 2) 공개 방 TOP (식당 수·리뷰 수 기준)
     const roomStats = await this.prisma.read.room.findMany({
@@ -1439,6 +1448,10 @@ export class RoomsService {
 
   /** 허브(카테고리·지역) 페이지 sitemap/색인 최소 식당 수 — thin content 방지 */
   private static readonly HUB_MIN_RESTAURANTS = 3;
+  /** 맛집 추천 노출 최소 리뷰 수 (신뢰도 없는 단일 리뷰 식당 제외) */
+  private static readonly DISCOVER_MIN_REVIEWS = 3;
+  /** 베이지안 평균 사전 표본 수 — 클수록 리뷰 적은 식당에 보수적 */
+  private static readonly DISCOVER_PRIOR_WEIGHT = 3;
 
   /**
    * 품질 필터 통과 공개 방의 리뷰 있는 식당(허브 집계용).
