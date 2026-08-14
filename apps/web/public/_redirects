@@ -1,2 +1,5 @@
 # 기존 도메인 → 새 도메인 301 리다이렉트
 https://fearless-tasting.pages.dev/* https://musikga.kr/:splat 301
+
+# www → apex 301 (동일 콘텐츠가 두 호스트에서 200으로 열리던 중복 해소)
+https://www.musikga.kr/* https://musikga.kr/:splat 301

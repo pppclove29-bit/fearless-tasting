@@ -5,6 +5,11 @@ import cloudflare from '@astrojs/cloudflare';
 export default defineConfig({
   site: process.env.SITE_URL || 'http://localhost:4321',
   trailingSlash: 'never',
+  // 디렉터리 형식(about/index.html)으로 내보내면 Cloudflare Pages가 /about → /about/ 로
+  // 308 리다이렉트한다. sitemap·canonical은 슬래시 없는 URL을 쓰므로 신호가 어긋나고,
+  // Search Console에 "리디렉션이 포함된 페이지"로 잡힌다. 파일 형식(about.html)이면
+  // /about 이 그대로 200 이다.
+  build: { format: 'file' },
   adapter: cloudflare(),
   integrations: [
     sitemap({
