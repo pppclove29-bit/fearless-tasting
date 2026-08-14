@@ -82,19 +82,3 @@ function uploadWithProgress(url: string, blob: Blob, onPercent: (p: number) => v
   });
 }
 
-/**
- * 여러 이미지 병렬 업로드 (최대 maxCount장).
- * onProgress는 인덱스별 진행 상황 전달.
- */
-export async function uploadImages(
-  files: File[],
-  folder: ImageFolder,
-  maxCount = 3,
-  targetId?: string,
-  onProgress?: (index: number, p: UploadProgress) => void,
-): Promise<UploadResult[]> {
-  const limited = files.slice(0, maxCount);
-  return Promise.all(limited.map((file, i) =>
-    uploadImage(file, folder, targetId, (p) => onProgress?.(i, p)),
-  ));
-}

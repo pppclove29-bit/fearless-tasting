@@ -189,24 +189,3 @@ export async function registerPushToken(apiFetch: (input: string, init?: Request
   }
 }
 
-/**
- * 로그아웃 시 서버에서 토큰 삭제 + localStorage 정리
- */
-export async function unregisterPushToken(
-  apiFetch: (input: string, init?: RequestInit) => Promise<Response>,
-) {
-  const token = localStorage.getItem(FCM_TOKEN_KEY);
-  if (!token) return;
-
-  localStorage.removeItem(FCM_TOKEN_KEY);
-  localStorage.removeItem(FCM_REGISTERED_KEY);
-  try {
-    await apiFetch(`${API_BASE}/users/me/fcm-token`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
-    });
-  } catch {
-    // 조용히 실패
-  }
-}

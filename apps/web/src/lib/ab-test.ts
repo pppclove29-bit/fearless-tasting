@@ -30,21 +30,3 @@ export function getVariant<T extends string>(experimentName: string, variants: r
     return variants[0];
   }
 }
-
-/** 수동 재할당 (디버깅용) */
-export function overrideVariant(experimentName: string, variant: string): void {
-  try {
-    localStorage.setItem(`ab_${experimentName}`, variant);
-  } catch {
-    /* ignore */
-  }
-}
-
-/** 실험 참여자 제거 (디버깅용) */
-export function clearVariant(experimentName: string): void {
-  try {
-    localStorage.removeItem(`ab_${experimentName}`);
-  } catch {
-    /* ignore */
-  }
-}

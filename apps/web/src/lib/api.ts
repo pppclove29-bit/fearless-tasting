@@ -55,11 +55,11 @@ function isTokenExpiringSoon(): boolean {
   return exp - Date.now() / 1000 < 60;
 }
 
-export function getAccessToken(): string | null {
+function getAccessToken(): string | null {
   return localStorage.getItem('access_token');
 }
 
-export function getRefreshToken(): string | null {
+function getRefreshToken(): string | null {
   return localStorage.getItem('refresh_token');
 }
 
@@ -289,11 +289,6 @@ export function fetchCurrentUser(forceRefresh = false): Promise<AuthUser | null>
 /** View Transitions 페이지 전환 시 유저 캐시 초기화 */
 export function resetUserCache() {
   currentUserCache = null;
-}
-
-/** 토큰 갱신 */
-export async function refreshToken(): Promise<boolean> {
-  return refreshTokens();
 }
 
 /** 로그아웃 — 즉시 클라이언트 토큰 삭제, 서버 DB 무효화는 fire-and-forget */
@@ -661,15 +656,6 @@ export async function fetchPlatformStats(): Promise<PlatformStats> {
   return res.json();
 }
 
-// ─── 글로벌 랭킹 ───
-
-export async function fetchRankings(): Promise<RankingsResponse> {
-  const res = await apiFetch(`${API_BASE}/users/rankings`);
-  await throwIfNotOk(res, '랭킹 조회에 실패했습니다.');
-  return res.json();
-}
-
-
 // ─── 공개 맛집 추천 ───
 
 /** 공개 맛집 추천 리스트 (비로그인 가능) */
@@ -799,20 +785,6 @@ export async function markNotificationsRead(): Promise<void> {
 export async function fetchPublicRooms(page = 1, pageSize = 12): Promise<PaginatedPublicRooms> {
   const res = await apiFetch(`${API_BASE}/rooms/public?page=${page}&pageSize=${pageSize}`);
   await throwIfNotOk(res, '공개 방 목록을 불러올 수 없습니다.');
-  return res.json();
-}
-
-/** 공개 방 상세 (비로그인 가능) */
-export async function fetchPublicRoomDetail(roomId: string): Promise<SharedRoomDetail> {
-  const res = await apiFetch(`${API_BASE}/rooms/public/${roomId}`);
-  await throwIfNotOk(res, '공개 방을 찾을 수 없습니다.');
-  return res.json();
-}
-
-/** 공개 방 식당 상세 (비로그인 가능) */
-export async function fetchPublicRoomRestaurantDetail(roomId: string, rid: string): Promise<SharedRoomRestaurantDetail> {
-  const res = await apiFetch(`${API_BASE}/rooms/public/${roomId}/restaurants/${rid}`);
-  await throwIfNotOk(res, '식당 조회에 실패했습니다.');
   return res.json();
 }
 
@@ -982,15 +954,6 @@ export async function updateUserRole(userId: string, role: string): Promise<Admi
   return res.json();
 }
 
-// ─── 리뷰 비교 ───
-
-/** 식당별 멤버 리뷰 비교 */
-export async function fetchReviewComparison(roomId: string, restaurantId: string): Promise<CompareReviewsResponse> {
-  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/restaurants/${restaurantId}/compare`);
-  await throwIfNotOk(res, '리뷰 비교 조회에 실패했습니다.');
-  return res.json();
-}
-
 // ─── 커뮤니티 (게시판) ───
 
 /** 게시판 목록 조회 */
@@ -1095,13 +1058,6 @@ export async function deleteComment(slug: string, postId: string, commentId: str
 export async function togglePostLike(slug: string, postId: string): Promise<{ liked: boolean; likeCount: number }> {
   const res = await apiFetch(`${API_BASE}/boards/${slug}/posts/${postId}/like`, { method: 'POST' });
   await throwIfNotOk(res, '추천에 실패했습니다.');
-  return res.json();
-}
-
-/** 게시글 북마크 토글 */
-export async function togglePostBookmark(slug: string, postId: string): Promise<{ bookmarked: boolean }> {
-  const res = await apiFetch(`${API_BASE}/boards/${slug}/posts/${postId}/bookmark`, { method: 'POST' });
-  await throwIfNotOk(res, '북마크에 실패했습니다.');
   return res.json();
 }
 
