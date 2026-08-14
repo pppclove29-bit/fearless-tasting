@@ -744,6 +744,25 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     transition: border-color 0.15s, transform 0.1s;
   }
 
+  .room-rest-thumb {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    object-fit: cover;
+    background: var(--bg-hover);
+    border: 1px solid var(--border-light);
+  }
+
+  .room-rest-thumb--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
   .room-restaurant-card:hover { border-color: var(--border-mid); }
   .room-restaurant-card:active { transform: scale(0.99); }
 
@@ -2956,6 +2975,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   roomSortBackdrop.addEventListener('click', closeRoomSortSheet);
 
+  /**
+   * 카드 썸네일. API가 이미 images를 내려주는데 목록에서 쓰지 않아
+   * 맛집 서비스가 텍스트 DB처럼 보이고 있었다.
+   * 사진이 없으면 카테고리 이니셜 플레이스홀더로 대체해 레이아웃을 유지한다.
+   */
+  function renderRestThumb(r: RoomRestaurantInfo): string {
+    const src = r.images?.[0];
+    if (src) {
+      return `<img class="room-rest-thumb" src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" />`;
+    }
+    const initial = (r.category || r.name || '·').trim().charAt(0);
+    return `<div class="room-rest-thumb room-rest-thumb--empty">${escapeHtml(initial)}</div>`;
+  }
+
   function renderRestaurantCard(r: RoomRestaurantInfo): string {
     const closedBadge = r.isClosed ? '<span class="closed-badge">폐점</span> ' : '';
     const unreviewedBadge = r.hasMyReview === false
@@ -2964,6 +2997,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     return `
       <div class="room-restaurant-card${r.isClosed ? ' is-closed' : ''}" data-rid="${r.id}">
         <div class="room-rest-top">
+          ${renderRestThumb(r)}
           <div class="room-rest-info">
             <div class="room-rest-name">${closedBadge}${unreviewedBadge}${escapeHtml(r.name)}</div>
             <div class="room-rest-address">${escapeHtml(r.address)}</div>
@@ -2982,6 +3016,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     return `
       <div class="room-restaurant-card is-wishlist" data-rid="${r.id}">
         <div class="room-rest-top">
+          ${renderRestThumb(r)}
           <div class="room-rest-info">
             <div class="room-rest-name">${closedBadge}${escapeHtml(r.name)}</div>
             <div class="room-rest-address">${escapeHtml(r.address)}</div>

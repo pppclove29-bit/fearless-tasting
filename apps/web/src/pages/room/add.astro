@@ -1256,8 +1256,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     // ── 제출 ──
     const submitBtn = document.getElementById('btn-submit') as HTMLButtonElement;
     submitBtn.addEventListener('click', async () => {
+      // 첫 기록의 마찰을 줄이기 위해 필수는 총점 하나만 남긴다.
+      // 재방문 의사는 미선택 시 중립값(4 = "또 가고 싶어요")으로 저장 —
+      // 식당 상세의 리뷰 폼도 같은 값을 기본 선택하고 있어 동작이 일치한다.
       if (mainRating === 0) { showToast('총점을 선택해 주세요.', 'info'); return; }
-      if (wouldRevisit === null) { showToast('재방문 의사를 선택해 주세요.', 'info'); return; }
+      const revisitValue = wouldRevisit ?? 4;
 
       submitBtn.disabled = true;
       submitBtn.textContent = '처리 중...';
@@ -1343,7 +1346,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         await createRoomReview(roomId!, visit.id, {
           rating: mainRating,
           content: reviewContent,
-          wouldRevisit: wouldRevisit!,
+          wouldRevisit: revisitValue,
           tasteRating: detailRatings.taste || null,
           valueRating: detailRatings.value || null,
           serviceRating: detailRatings.service || null,
