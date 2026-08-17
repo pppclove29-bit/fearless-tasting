@@ -1461,6 +1461,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .poll-option-pct { position: relative; z-index: 1; color: var(--text-muted); font-size: 0.75rem; white-space: nowrap; }
 
   .poll-close-btn { margin-top: 0.5rem; }
+
+  .poll-share-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--border);
+  }
+
+  .poll-share-hint {
+    flex-basis: 100%;
+    margin: 0.15rem 0 0;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
   .poll-revote-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem; }
 
   .poll-quick-templates {
@@ -4500,10 +4517,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     // 상단 배너도 함께 갱신 (create/vote/close 이후 일관성 유지)
     renderActivePollBanner().catch(() => { /* 무시 */ });
 
+    // 공유 링크로 참여한 게스트 표도 함께 센다 (멤버 표 + 게스트 표)
+    const optVotes = (opt: Poll['options'][number]) => opt.votes.length + (opt.guestVotes?.length ?? 0);
+
     const totalVoters = (poll: Poll) => {
       const voters = new Set<string>();
       for (const opt of poll.options) for (const v of opt.votes) voters.add(v.userId);
-      return voters.size;
+      const guestCount = poll.options.reduce((s, o) => s + (o.guestVotes?.length ?? 0), 0);
+      return voters.size + guestCount;
     };
 
     const myVote = (poll: Poll) => {
@@ -4559,16 +4580,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const closedPolls = polls.filter((p) => p.status === 'closed');
 
     const renderPollCard = (poll: Poll) => {
-      const total = poll.options.reduce((s, o) => s + o.votes.length, 0);
+      const total = poll.options.reduce((s, o) => s + optVotes(o), 0);
       const myChoice = myVote(poll);
       const isCreator = poll.createdBy.id === currentUser.id;
 
       // 우승 옵션 계산 (마감 + 득표 있을 때만)
       const winnerIds = new Set<string>();
       if (poll.status === 'closed' && total > 0) {
-        const maxVotes = Math.max(...poll.options.map((o) => o.votes.length));
+        const maxVotes = Math.max(...poll.options.map(optVotes));
         if (maxVotes > 0) {
-          for (const o of poll.options) if (o.votes.length === maxVotes) winnerIds.add(o.id);
+          for (const o of poll.options) if (optVotes(o) === maxVotes) winnerIds.add(o.id);
         }
       }
       const singleWinner = winnerIds.size === 1
@@ -4584,7 +4605,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="poll-card-meta">${escapeHtml(poll.createdBy.nickname)} · ${formatDate(poll.createdAt)} · ${totalVoters(poll)}명 참여</div>
           <div class="poll-options">
             ${poll.options.map((opt) => {
-              const pct = total > 0 ? Math.round((opt.votes.length / total) * 100) : 0;
+              const pct = total > 0 ? Math.round((optVotes(opt) / total) * 100) : 0;
               const isMyVote = myChoice === opt.id;
               const canVote = poll.status === 'active' && !isMyVote;
               const isWinner = winnerIds.has(opt.id);
@@ -4593,7 +4614,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                      ${canVote ? `data-poll-id="${poll.id}" data-option-id="${opt.id}"` : ''}>
                   <div class="poll-option-bar" style="width:${pct}%"></div>
                   <span class="poll-option-label">${isWinner ? '🏆 ' : ''}${escapeHtml(opt.label)}${isMyVote ? ' ✓' : ''}</span>
-                  <span class="poll-option-pct">${opt.votes.length}표 (${pct}%)</span>
+                  <span class="poll-option-pct">${optVotes(opt)}표 (${pct}%)</span>
                 </div>`;
             }).join('')}
           </div>
@@ -4602,6 +4623,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             ? `<a class="poll-winner-cta" href="/room/restaurant?roomId=${currentRoom.id}&id=${singleWinner.restaurantId}">🍽️ ${escapeHtml(singleWinner.label)}에 방문 기록 남기기</a>`
             : (winnerIds.size > 1 ? '<p class="poll-revote-hint">🤝 동점으로 마감되었습니다</p>' : '')
           }
+          ${poll.status === 'active' && poll.shareToken
+            ? `<div class="poll-share-row">
+                 <button type="button" class="btn-primary-sm poll-share-kakao" data-token="${poll.shareToken}" data-title="${escapeHtml(poll.title)}">💬 카톡으로 투표 요청</button>
+                 <button type="button" class="btn-outline-sm poll-share-copy" data-token="${poll.shareToken}">링크 복사</button>
+                 <p class="poll-share-hint">받는 사람은 가입 없이 바로 투표할 수 있어요</p>
+               </div>`
+            : ''}
           ${isCreator && poll.status === 'active' ? `<button type="button" class="btn-outline-sm poll-close-btn" data-poll-id="${poll.id}">투표 마감</button>` : ''}
         </div>`;
     };
@@ -4738,6 +4766,49 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           showToast('투표 완료!', 'success');
           renderPollTab();
         } catch (err) { showToast(err instanceof Error ? err.message : '투표에 실패했습니다.'); }
+      });
+    }
+
+    // ── 투표 공유 (비로그인 참여 링크) ──
+    // 링크로 나가는 건 투표 제목·선택지·득표수뿐이다. 방 이름·멤버·식당 목록은 포함되지 않는다.
+    const voteLink = (token: string) => `${location.origin}/vote/${token}`;
+
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('.poll-share-copy')) {
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(voteLink(btn.dataset.token!));
+        trackEvent('poll_shared', { room_id: currentRoom.id, method: 'copy_link' });
+        btn.textContent = '복사됨!';
+        setTimeout(() => { btn.textContent = '링크 복사'; }, 1500);
+        showToast('투표 링크가 복사되었습니다!', 'success');
+      });
+    }
+
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('.poll-share-kakao')) {
+      btn.addEventListener('click', () => {
+        const link = voteLink(btn.dataset.token!);
+        const title = btn.dataset.title ?? '투표';
+        const kakao = (window as Record<string, unknown>).Kakao as Record<string, unknown> | undefined;
+        if (!kakao?.Share) {
+          navigator.clipboard.writeText(`🗳️ ${title}\n${link}`);
+          showToast('카카오 공유를 쓸 수 없어 링크를 복사했습니다.', 'info');
+          return;
+        }
+        if (kakao.isInitialized && !(kakao.isInitialized as () => boolean)()) {
+          const appKey = document.querySelector('meta[name="kakao-app-key"]')?.getAttribute('content');
+          if (appKey) (kakao.init as (key: string) => void)(appKey);
+        }
+        const Share = kakao.Share as Record<string, (...args: unknown[]) => void>;
+        Share.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: `🗳️ ${title}`,
+            description: '가입 없이 바로 투표할 수 있어요',
+            imageUrl: `${location.origin}/og-image.png`,
+            link: { webUrl: link, mobileWebUrl: link },
+          },
+          buttons: [{ title: '투표하러 가기', link: { webUrl: link, mobileWebUrl: link } }],
+        });
+        trackEvent('poll_shared', { room_id: currentRoom.id, method: 'kakao' });
       });
     }
 

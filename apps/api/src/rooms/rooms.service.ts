@@ -969,6 +969,11 @@ export class RoomsService {
 
   /** 투표 생성 */
   async createPoll(roomId: string, userId: string, title: string, options: { label: string; restaurantId?: string }[], endsAt?: string) {
+    // 공유 링크는 생성 시점에 발급한다. 링크를 아는 사람만 접근 가능한 랜덤 토큰이고,
+    // 응답에는 투표 제목·선택지·득표수만 담긴다 (방 이름·멤버·식당 목록은 노출 안 함).
+    const shareToken = randomBytes(12).toString('hex');
+    const shareExpiresAt = new Date(Date.now() + RoomsService.POLL_SHARE_TTL_DAYS * 24 * 60 * 60 * 1000);
+
     const { poll, recipientIds } = await this.prisma.write.$transaction(async (tx) => {
       const created = await tx.roomPoll.create({
         data: {
@@ -976,6 +981,8 @@ export class RoomsService {
           roomId,
           createdById: userId,
           endsAt: endsAt ? new Date(endsAt) : null,
+          shareToken,
+          expiresAt: shareExpiresAt,
           options: {
             create: options.map((o) => ({
               label: o.label,
@@ -1027,6 +1034,8 @@ export class RoomsService {
         options: {
           include: {
             votes: { include: { user: { select: { id: true, nickname: true } } } },
+            // 공유 링크로 참여한 게스트 표 (이름만 노출, 식별자는 내보내지 않음)
+            guestVotes: { select: { id: true, guestName: true } },
             restaurant: { select: { id: true, name: true } },
           },
         },
@@ -1058,6 +1067,82 @@ export class RoomsService {
     });
 
     return { success: true };
+  }
+
+  /**
+   * 공유 링크로 여는 투표 (비로그인).
+   * 방 정보·멤버·식당 목록은 절대 포함하지 않는다 — 투표 제목·선택지·득표수만.
+   */
+  async getSharedPoll(shareToken: string) {
+    const poll = await this.prisma.read.roomPoll.findUnique({
+      where: { shareToken },
+      include: {
+        options: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            _count: { select: { votes: true, guestVotes: true } },
+          },
+        },
+      },
+    });
+    if (!poll) throw new NotFoundException('투표를 찾을 수 없습니다.');
+    if (poll.expiresAt && poll.expiresAt < new Date()) {
+      throw new NotFoundException('만료된 투표 링크입니다.');
+    }
+
+    // 마감 시각이 지난 투표는 조회 시점에 닫힌 것으로 취급 (방 내 목록과 동일한 규칙)
+    const isClosed = poll.status !== 'active'
+      || (poll.endsAt != null && poll.endsAt <= new Date());
+
+    const options = poll.options.map((o) => ({
+      id: o.id,
+      label: o.label,
+      voteCount: o._count.votes + o._count.guestVotes,
+    }));
+
+    return {
+      title: poll.title,
+      status: isClosed ? 'closed' : 'active',
+      endsAt: poll.endsAt,
+      expiresAt: poll.expiresAt,
+      totalVotes: options.reduce((sum, o) => sum + o.voteCount, 0),
+      options,
+    };
+  }
+
+  /**
+   * 공유 링크를 통한 비로그인 투표.
+   * guestKey는 브라우저가 만들어 보관하는 랜덤 토큰이다. 완벽한 중복 방지는 불가능하지만
+   * (쿠키 삭제·시크릿창) 점심 메뉴 투표에 그 이상의 방어는 UX만 해친다.
+   */
+  async voteSharedPoll(shareToken: string, optionId: string, guestKey: string, guestName?: string) {
+    const poll = await this.prisma.read.roomPoll.findUnique({
+      where: { shareToken },
+      include: { options: { select: { id: true } } },
+    });
+    if (!poll) throw new NotFoundException('투표를 찾을 수 없습니다.');
+    if (poll.expiresAt && poll.expiresAt < new Date()) {
+      throw new NotFoundException('만료된 투표 링크입니다.');
+    }
+    if (poll.status !== 'active' || (poll.endsAt != null && poll.endsAt <= new Date())) {
+      throw new ForbiddenException('이미 마감된 투표입니다.');
+    }
+    if (!poll.options.some((o) => o.id === optionId)) {
+      throw new NotFoundException('선택지를 찾을 수 없습니다.');
+    }
+
+    // 한 투표당 1표 (변경 가능) — 멤버 투표와 동일한 규칙
+    const allOptionIds = poll.options.map((o) => o.id);
+    await this.prisma.write.$transaction(async (tx) => {
+      await tx.roomPollGuestVote.deleteMany({
+        where: { optionId: { in: allOptionIds }, guestKey },
+      });
+      await tx.roomPollGuestVote.create({
+        data: { optionId, guestKey, guestName: guestName?.trim().slice(0, 30) || null },
+      });
+    });
+
+    return this.getSharedPoll(shareToken);
   }
 
   /** 투표 마감 */
@@ -1452,6 +1537,8 @@ export class RoomsService {
   private static readonly DISCOVER_MIN_REVIEWS = 3;
   /** 베이지안 평균 사전 표본 수 — 클수록 리뷰 적은 식당에 보수적 */
   private static readonly DISCOVER_PRIOR_WEIGHT = 3;
+  /** 투표 공유 링크 유효 기간(일) — 지나면 비로그인 열람·투표 차단 */
+  private static readonly POLL_SHARE_TTL_DAYS = 14;
 
   /**
    * 품질 필터 통과 공개 방의 리뷰 있는 식당(허브 집계용).

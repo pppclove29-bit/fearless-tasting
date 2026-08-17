@@ -36,7 +36,7 @@ export type {
 } from './room';
 export type { Inquiry } from './inquiry';
 export type { Notice } from './notice';
-export type { PollOption, Poll } from './poll';
+export type { PollOption, Poll, SharedPoll } from './poll';
 export type { AppNotification } from './notification';
 export type { TimelineItem } from './timeline';
 export type { RoomStats, PlatformStats } from './stats';

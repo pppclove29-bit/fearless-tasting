@@ -12,7 +12,7 @@ const DEEP_LINK_SCHEME = 'kr.fearlesstasting.app';
 const WEB_ORIGIN = 'https://musikga.kr';
 
 /** 앱에 번들되지 않은(웹 전용) 경로 — 시스템 브라우저로 연다 */
-const WEB_ONLY_PREFIXES = ['/rooms/public', '/community', '/guide', '/use'];
+const WEB_ONLY_PREFIXES = ['/rooms/public', '/community', '/guide', '/use', '/vote'];
 
 export function isNativeApp(): boolean {
   const cap = (window as Record<string, unknown>).Capacitor as

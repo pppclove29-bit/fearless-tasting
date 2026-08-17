@@ -4,7 +4,7 @@ import type {
   AuthUser, RoomListItem, RoomMemberInfo, RoomRestaurantInfo,
   RoomDetailResponse, RoomRestaurantDetailResponse, PaginatedRestaurants,
   ReviewData, ReviewComparison, CompareReviewsResponse,
-  Inquiry, Notice, PollOption, Poll, TimelineItem,
+  Inquiry, Notice, PollOption, Poll, SharedPoll, TimelineItem,
   AppNotification, RoomStats, PlatformStats,
   RankingUser, RankingsResponse, DiscoverRestaurant, DiscoverResponse,
   PublicRoomListItem, PaginatedPublicRooms,
@@ -15,7 +15,7 @@ export type {
   AuthUser, RoomListItem, RoomMemberInfo, RoomRestaurantInfo,
   RoomDetailResponse, RoomRestaurantDetailResponse, PaginatedRestaurants,
   ReviewData, ReviewComparison, CompareReviewsResponse,
-  Inquiry, Notice, PollOption, Poll, TimelineItem,
+  Inquiry, Notice, PollOption, Poll, SharedPoll, TimelineItem,
   RoomStats, PlatformStats, RankingUser, RankingsResponse,
   DiscoverRestaurant, DiscoverResponse,
   PublicRoomListItem, PaginatedPublicRooms,
@@ -782,6 +782,44 @@ export async function votePoll(roomId: string, pollId: string, optionId: string)
 export async function closePoll(roomId: string, pollId: string): Promise<void> {
   const res = await apiFetch(`${API_BASE}/rooms/${roomId}/polls/${pollId}/close`, { method: 'PATCH' });
   await throwIfNotOk(res, '투표 마감에 실패했습니다.');
+}
+
+// ─── 공유 투표 (비로그인) ───
+
+/**
+ * 게스트 식별 토큰. 중복 투표 방지용 랜덤값이며 브라우저에만 저장된다.
+ * 지워지면 새로 발급될 뿐이라 개인 식별 용도로는 쓰지 않는다.
+ */
+export function getGuestKey(): string {
+  const KEY = 'guest_key';
+  let key = localStorage.getItem(KEY);
+  if (!key) {
+    key = crypto.randomUUID().replace(/-/g, '');
+    localStorage.setItem(KEY, key);
+  }
+  return key;
+}
+
+/** 공유 링크로 투표 조회 (로그인 불필요 → apiFetch 대신 순수 fetch) */
+export async function fetchSharedPoll(token: string): Promise<SharedPoll> {
+  const res = await fetch(`${API_BASE}/polls/shared/${token}`);
+  await throwIfNotOk(res, '투표를 찾을 수 없습니다.');
+  return res.json();
+}
+
+/** 공유 링크로 투표 참여 (로그인 불필요) */
+export async function voteSharedPoll(
+  token: string,
+  optionId: string,
+  guestName?: string,
+): Promise<SharedPoll> {
+  const res = await fetch(`${API_BASE}/polls/shared/${token}/vote`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ optionId, guestKey: getGuestKey(), guestName }),
+  });
+  await throwIfNotOk(res, '투표에 실패했습니다.');
+  return res.json();
 }
 
 // ─── 타임라인 ───

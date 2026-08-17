@@ -27,6 +27,8 @@ const EXCLUDED_PAGES = [
   'community',
   'guide',
   'use',
+  // 공유 투표는 링크를 받은 비회원이 브라우저에서 여는 페이지 → 앱 번들에 넣지 않는다
+  'vote',
   'sitemap.xml.ts',
   'sitemap-public-rooms.xml.ts',
   'sitemap-community.xml.ts',

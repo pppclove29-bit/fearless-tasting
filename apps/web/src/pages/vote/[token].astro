@@ -1,0 +1,255 @@
+---
+export const prerender = false;
+
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import type { SharedPoll } from '@repo/types';
+
+const { token } = Astro.params;
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+
+let poll: SharedPoll | null = null;
+
+// 링크를 아는 사람만 여는 페이지 — 방 이름·멤버·식당 목록은 응답에 없다.
+try {
+  const res = await fetch(`${API_BASE}/polls/shared/${token}`);
+  if (res.ok) {
+    poll = await res.json();
+  } else {
+    Astro.response.status = 404;
+  }
+} catch {
+  Astro.response.status = 503;
+}
+
+const title = poll ? poll.title : '투표';
+---
+
+<BaseLayout
+  title={title}
+  description="링크를 받은 사람이면 누구나 가입 없이 바로 투표할 수 있습니다."
+  noindex
+>
+  <div class="vote-page">
+    {poll ? (
+      <div class="vote-card" data-token={token} data-status={poll.status}>
+        <span class="vote-badge">🗳️ 투표</span>
+        <h1 class="vote-title">{poll.title}</h1>
+        <p class="vote-sub" id="vote-sub">
+          {poll.status === 'closed' ? '마감된 투표입니다' : '가입 없이 바로 참여할 수 있어요'}
+        </p>
+
+        <div class="vote-options" id="vote-options">
+          {poll.options.map((o) => (
+            <button type="button" class="vote-option" data-option-id={o.id} disabled={poll.status === 'closed'}>
+              <span class="vote-option-label">{o.label}</span>
+              <span class="vote-option-count" data-count={o.voteCount}>{o.voteCount}표</span>
+              <span class="vote-option-bar" style={`width:${poll.totalVotes ? Math.round((o.voteCount / poll.totalVotes) * 100) : 0}%`}></span>
+            </button>
+          ))}
+        </div>
+
+        <p class="vote-total" id="vote-total">총 {poll.totalVotes}표</p>
+
+        <div class="vote-cta">
+          <p class="vote-cta-text">
+            먹고 나서 후기도 남겨보세요.<br />
+            친구들과 우리만의 맛집 리스트가 쌓입니다.
+          </p>
+          <a href="/login" class="vote-cta-btn">무료로 시작하기</a>
+        </div>
+      </div>
+    ) : (
+      <div class="vote-card vote-card--error">
+        <h1 class="vote-title">투표를 찾을 수 없습니다</h1>
+        <p class="vote-sub">링크가 만료되었거나 잘못된 주소입니다.</p>
+        <a href="/" class="vote-cta-btn">홈으로</a>
+      </div>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .vote-page {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .vote-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.75rem 1.5rem;
+  }
+
+  .vote-badge {
+    display: inline-block;
+    background: var(--accent-bg);
+    color: var(--text-sub);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+  }
+
+  .vote-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-heading);
+    margin: 0.75rem 0 0.35rem;
+    line-height: 1.35;
+  }
+
+  .vote-sub {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0 0 1.25rem;
+  }
+
+  .vote-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .vote-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.9rem 1rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    overflow: hidden;
+    text-align: left;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+
+  .vote-option:hover:not(:disabled) { border-color: var(--border-mid); }
+  .vote-option:active:not(:disabled) { transform: scale(0.99); }
+  .vote-option:disabled { cursor: default; }
+
+  .vote-option.is-mine {
+    border-color: var(--text-heading);
+    background: var(--accent-bg);
+  }
+
+  .vote-option-label {
+    position: relative;
+    z-index: 1;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-heading);
+  }
+
+  .vote-option-count {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .vote-option-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: var(--accent-bg);
+    transition: width 0.3s ease;
+  }
+
+  .vote-total {
+    margin: 0.85rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: right;
+  }
+
+  .vote-cta {
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-light);
+    text-align: center;
+  }
+
+  .vote-cta-text {
+    font-size: 0.9rem;
+    color: var(--text-sub);
+    line-height: 1.6;
+    margin: 0 0 0.9rem;
+  }
+
+  .vote-cta-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: var(--text-heading);
+    color: var(--bg);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+</style>
+
+<script>
+  import { voteSharedPoll, showToast } from '@/lib/api';
+  import { trackEvent } from '@/lib/analytics';
+
+  const VOTED_KEY_PREFIX = 'voted_poll_';
+
+  function renderCounts(options: { id: string; voteCount: number }[], total: number, myOptionId: string | null) {
+    for (const el of document.querySelectorAll<HTMLElement>('.vote-option')) {
+      const found = options.find((o) => o.id === el.dataset.optionId);
+      if (!found) continue;
+      const countEl = el.querySelector<HTMLElement>('.vote-option-count');
+      const barEl = el.querySelector<HTMLElement>('.vote-option-bar');
+      if (countEl) countEl.textContent = `${found.voteCount}표`;
+      if (barEl) barEl.style.width = `${total ? Math.round((found.voteCount / total) * 100) : 0}%`;
+      el.classList.toggle('is-mine', el.dataset.optionId === myOptionId);
+    }
+    const totalEl = document.getElementById('vote-total');
+    if (totalEl) totalEl.textContent = `총 ${total}표`;
+  }
+
+  function initVotePage() {
+    const card = document.querySelector<HTMLElement>('.vote-card[data-token]');
+    if (!card) return;
+
+    const token = card.dataset.token!;
+    const closed = card.dataset.status === 'closed';
+    // 내가 어디에 투표했는지는 로컬에만 남긴다 (서버는 게스트 신원을 저장하지 않음)
+    const myOptionId = localStorage.getItem(VOTED_KEY_PREFIX + token);
+    if (myOptionId) {
+      document.querySelector(`.vote-option[data-option-id="${myOptionId}"]`)?.classList.add('is-mine');
+    }
+    if (closed) return;
+
+    trackEvent('shared_poll_viewed', { token });
+
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('.vote-option')) {
+      btn.addEventListener('click', async () => {
+        const optionId = btn.dataset.optionId!;
+        for (const b of document.querySelectorAll<HTMLButtonElement>('.vote-option')) b.disabled = true;
+        try {
+          const updated = await voteSharedPoll(token, optionId);
+          localStorage.setItem(VOTED_KEY_PREFIX + token, optionId);
+          renderCounts(updated.options, updated.totalVotes, optionId);
+          const sub = document.getElementById('vote-sub');
+          if (sub) sub.textContent = '투표 완료! 다른 선택지를 눌러 변경할 수 있어요';
+          trackEvent('shared_poll_voted', { token });
+        } catch (err) {
+          showToast(err instanceof Error ? err.message : '투표에 실패했습니다.');
+        } finally {
+          for (const b of document.querySelectorAll<HTMLButtonElement>('.vote-option')) b.disabled = false;
+        }
+      });
+    }
+  }
+
+  document.addEventListener('astro:page-load', initVotePage);
+</script>

@@ -5,12 +5,13 @@ import { CategoriesModule } from '../categories/categories.module';
 import { RoomsService } from './rooms.service';
 import { RoomStatsService } from './room-stats.service';
 import { RoomsController } from './rooms.controller';
+import { PollsController } from './polls.controller';
 import { RoomMemberGuard } from './guards/room-member.guard';
 import { RoomManagerGuard } from './guards/room-manager.guard';
 
 @Module({
   imports: [PrismaModule, AuthModule, CategoriesModule],
-  controllers: [RoomsController],
+  controllers: [RoomsController, PollsController],
   providers: [RoomsService, RoomStatsService, RoomMemberGuard, RoomManagerGuard],
 })
 export class RoomsModule {}

@@ -427,6 +427,10 @@ model RoomPoll {
   endsAt      DateTime?
   /// 상태 ('active' | 'closed')
   status      String           @default("active") @db.VarChar(10)
+  /// 공유 링크 토큰 (비로그인 참여용, 추측 불가 랜덤값)
+  shareToken  String?          @unique @db.VarChar(32)
+  /// 공유 링크 만료 시각 (지나면 비로그인 열람·투표 차단)
+  expiresAt   DateTime?
   /// 선택지 목록
   options     RoomPollOption[]
   /// 생성일
@@ -450,12 +454,36 @@ model RoomPollOption {
   poll         RoomPoll        @relation(fields: [pollId], references: [id], onDelete: Cascade)
   /// 투표 ID (FK)
   pollId       String
-  /// 투표 기록
+  /// 투표 기록 (로그인 멤버)
   votes        RoomPollVote[]
+  /// 투표 기록 (공유 링크로 참여한 비로그인 게스트)
+  guestVotes   RoomPollGuestVote[]
   /// 생성일
   createdAt    DateTime        @default(now())
 
   @@index([pollId])
+}
+
+/// 공유 링크로 참여한 비로그인 투표 기록.
+/// 기존 RoomPollVote(userId 필수)를 건드리지 않기 위해 테이블을 분리했다 —
+/// 운영 DB의 FK 컬럼 nullable 변경을 피하고, 게스트 데이터만 따로 정리할 수 있다.
+model RoomPollGuestVote {
+  /// 고유 식별자
+  id        String         @id @default(cuid())
+  /// 선택한 옵션
+  option    RoomPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  /// 옵션 ID (FK)
+  optionId  String
+  /// 브라우저에 저장되는 게스트 식별 토큰 (중복 투표 방지용, 개인정보 아님)
+  guestKey  String         @db.VarChar(64)
+  /// 표시 이름 (선택 입력, 없으면 '익명')
+  guestName String?        @db.VarChar(30)
+  /// 투표일
+  createdAt DateTime       @default(now())
+
+  /// 한 옵션에 같은 게스트 중복 투표 방지
+  @@unique([optionId, guestKey])
+  @@index([guestKey])
 }
 
 /// 투표 참여 기록
