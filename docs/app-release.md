@@ -73,6 +73,23 @@ pnpm --filter @repo/web cap:open:android
 pnpm --filter @repo/web android:debug
 ```
 
+### ⚠️ 앱 빌드 전 `apps/web/.env` 필수
+
+앱 번들은 **빌드 시점에 환경변수가 코드에 박힌다.** 웹은 Cloudflare Pages가
+대시보드 값을 주입하지만 앱은 로컬에서 빌드되므로, `.env` 가 없으면
+`PUBLIC_API_URL` 이 `localhost:4000` 으로 굳은 앱이 만들어진다(실제로 발생했다).
+
+`build:app` 이 필수값을 검사해 빌드를 중단시키지만, 값 자체는 직접 채워야 한다.
+출처: Cloudflare 대시보드 → Workers & Pages → 프로젝트 → Settings → Environment variables.
+
+```
+PUBLIC_API_URL, SITE_URL
+PUBLIC_KAKAO_MAP_KEY, PUBLIC_GA_ID
+PUBLIC_FIREBASE_{API_KEY,AUTH_DOMAIN,PROJECT_ID,MESSAGING_SENDER_ID,APP_ID,VAPID_KEY}
+```
+
+값이 비면 조용히 기능만 죽는다 — 지도 미표시, 푸시 등록 실패, **GA 퍼널 계측 누락**.
+
 > Capacitor CLI는 **Node 22+** 필요. nvm 사용 시 `nvm use 22` 선행.
 > Gradle은 Android Studio 번들 JDK 사용 권장:
 > `JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"`
