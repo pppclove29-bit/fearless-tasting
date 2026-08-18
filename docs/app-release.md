@@ -2,6 +2,31 @@
 
 Capacitor 기반 안드로이드 앱(`kr.fearlesstasting.app`)의 빌드 구조와 Play 스토어 출시 절차.
 
+## 진행 상황 (마지막 갱신: 2026-08-18)
+
+작업하면서 이 체크박스를 갱신해 커밋한다. 다음 세션은 이걸 보고 이어받는다.
+
+**코드 준비 — 완료**
+- [x] 로컬 정적 번들 전환 (`build:app` → `dist-app`, 원격 URL 로딩 폐기)
+- [x] OAuth 딥링크 (`client=app` → `kr.fearlesstasting.app://login`)
+- [x] `POST_NOTIFICATIONS` 권한 + App Links intent-filter
+- [x] 하드웨어 뒤로가기 · 외부 링크 시스템 브라우저 오픈 · 네이티브 SW 미등록
+- [x] versionCode/Name 주입, 맥용 gradlew 스크립트
+- [x] 디버그 APK 빌드 검증 (6.8MB)
+
+**출시 준비 — 남음**
+- [ ] 릴리스 keystore 생성 + `keystore.properties` (§5)
+- [ ] 실기기 테스트: 카카오·네이버 로그인 왕복 (§8)
+- [ ] Play Console 개발자 계정 등록 ($25)
+- [ ] 심사용 테스트 카카오 계정 생성 + 샘플 데이터 (§7 앱 액세스 권한)
+- [ ] 스토어 등록정보 (스크린샷·아이콘·설명)
+- [ ] 내부 테스트 트랙 업로드
+- [ ] 클로즈드 테스트 (테스터 12명 · 14일)
+- [ ] 프로덕션 액세스 신청 → 심사
+- [ ] `assetlinks.json` 지문 등록 (첫 업로드 후)
+
+> 제품 방향과 우선순위는 [product-direction.md](product-direction.md) 참고.
+
 ## 1. 구조
 
 앱은 **웹을 원격으로 띄우는 껍데기가 아니라 로컬 정적 번들**을 웹뷰에서 연다.

@@ -4,6 +4,13 @@
 
 ---
 
+## 제품 방향 (작업 전 필독)
+
+| 문서 | 설명 |
+|------|------|
+| [product-direction.md](product-direction.md) | 2026-08 방향 전환 · 동결 기능 · 3개월 판정 기준 · 계측 이벤트 |
+| [app-release.md](app-release.md) | 안드로이드 앱 빌드 구조 · 출시 진행 상황 · Play Console 체크리스트 |
+
 ## 시작하기
 
 | 문서 | 설명 | 대상 |

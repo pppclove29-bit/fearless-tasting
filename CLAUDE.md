@@ -2,6 +2,12 @@
 
 방(Room) 기반 맛집 리뷰 공유 플랫폼 모노레포 프로젝트. 초대 코드로 방 입장, 공유 링크로 비로그인 열람, 방 전용 식당/리뷰 리스트 운영.
 
+> **작업 전 필독**: [docs/product-direction.md](docs/product-direction.md)
+> 2026-08 방향 전환 — "공개 맛집 플랫폼"을 접고 프라이빗 그룹 도구에 집중한다.
+> 공개 방·커뮤니티·랭킹은 `apps/web/src/lib/features.ts` 플래그로 진입점을 숨긴 상태이고,
+> SEO는 성장 채널에서 내렸다(`/guide`·`/use`만 유지). 현재 우선순위는 **안드로이드 앱 출시**
+> ([docs/app-release.md](docs/app-release.md)).
+
 ## 프로젝트 구조
 
 - `apps/web/` - Astro 프론트엔드 (포트 4321)
