@@ -91,6 +91,20 @@ export function clearTokens() {
   }
 }
 
+/**
+ * 세션 만료 시 로그인으로 보낸다.
+ * 네이티브 앱에서는 웹뷰를 API로 직접 이동시키면 안 된다 — 웹 분기(state=web)로 진행돼
+ * 토큰이 웹 origin에 저장되고 앱은 로그인되지 않는다. 앱은 딥링크 경로를 타야 한다.
+ */
+function redirectToLogin(): void {
+  const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+  if (cap?.isNativePlatform?.()) {
+    location.href = '/login';
+    return;
+  }
+  location.href = `${API_BASE}/auth/kakao`;
+}
+
 /** Authorization 헤더 포함 fetch 래퍼 (토큰 만료 임박 시 선제 갱신, 만료 시 자동 갱신) */
 export async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
   // 만료 1분 전이면 선제적으로 토큰 갱신
@@ -124,12 +138,12 @@ export async function apiFetch(url: string, init?: RequestInit): Promise<Respons
         res = await fetch(url, { ...init, headers, credentials: 'omit' });
       } else {
         clearTokens();
-        if (!isPublicUrl) location.href = `${API_BASE}/auth/kakao`;
+        if (!isPublicUrl) redirectToLogin();
         return res;
       }
     } else if (!isPublicUrl) {
       clearTokens();
-      location.href = `${API_BASE}/auth/kakao`;
+      redirectToLogin();
       return res;
     }
   }

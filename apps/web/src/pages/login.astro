@@ -145,7 +145,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
 <script>
   import { saveTokens } from '@/lib/api';
-  import { isNativeApp, startLogin } from '@/lib/native';
 
   function initLoginPage() {
     const loginSuccessEl = document.getElementById('login-success');
@@ -167,27 +166,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       location.href = redirect || '/';
     } else {
       // 로그인 페이지: 카카오 버튼 표시
+      // 네이티브 앱의 OAuth 가로채기는 lib/native.ts 의 전역 클릭 핸들러가 처리한다
+      // (OAuth 링크가 여러 페이지에 흩어져 있어 페이지별 바인딩으로는 새어나간다)
       loginUiEl.hidden = false;
-      bindNativeLoginButtons(loginUiEl);
     }
-  }
-
-  /**
-   * 네이티브 앱에서는 <a> 이동 대신 시스템 브라우저로 OAuth를 연다.
-   * (웹뷰 내 OAuth는 제공사 정책·쿠키 문제가 있고, 콜백이 딥링크로 돌아와야 함)
-   */
-  function bindNativeLoginButtons(root: HTMLElement) {
-    if (!isNativeApp()) return;
-    root.querySelectorAll<HTMLAnchorElement>('a[data-provider]').forEach((el) => {
-      // View Transitions 재실행 시 리스너 중복 방지
-      const fresh = el.cloneNode(true) as HTMLAnchorElement;
-      el.replaceWith(fresh);
-      fresh.addEventListener('click', (e) => {
-        e.preventDefault();
-        const provider = fresh.dataset.provider === 'naver' ? 'naver' : 'kakao';
-        startLogin(provider);
-      });
-    });
   }
 
   document.addEventListener('astro:page-load', initLoginPage);

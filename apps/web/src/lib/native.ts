@@ -57,9 +57,11 @@ export function toInternalPath(rawUrl: string): string | null {
   }
 
   if (parsed.protocol === `${DEEP_LINK_SCHEME}:`) {
-    // 커스텀 스킴은 host가 경로 첫 조각으로 들어온다 (scheme://login?x → host=login)
-    const path = `/${parsed.host}${parsed.pathname === '/' ? '' : parsed.pathname}`;
-    return `${path}${parsed.search}`;
+    // 커스텀 스킴의 파싱 결과는 엔진마다 갈린다.
+    // Chromium: host='' , pathname='//login'  /  일부 엔진: host='login', pathname=''
+    // 그대로 이어붙이면 '///login' 같은 프로토콜 상대 URL이 되어 엉뚱한 호스트로 이동한다.
+    const rest = `${parsed.host}${parsed.pathname}`.replace(/^\/+/, '');
+    return `/${rest}${parsed.search}`;
   }
 
   if (parsed.origin === WEB_ORIGIN) {
@@ -80,7 +82,12 @@ export async function initNativeApp(): Promise<void> {
   const { App } = await import('@capacitor/app');
   const { Browser } = await import('@capacitor/browser');
 
-  App.addListener('appUrlOpen', async ({ url }) => {
+  // appUrlOpen 과 getLaunchUrl 이 같은 URL을 중복 전달할 수 있다 (콜드 스타트 시 둘 다 발생)
+  let lastHandledUrl = '';
+
+  const handleUrl = async (url: string) => {
+    if (url === lastHandledUrl) return;
+    lastHandledUrl = url;
     const internal = toInternalPath(url);
     if (!internal) {
       if (url.startsWith('http')) await Browser.open({ url });
@@ -89,15 +96,34 @@ export async function initNativeApp(): Promise<void> {
     // OAuth 복귀면 브라우저 창을 닫고 앱 화면으로 이동
     await Browser.close().catch(() => {});
     window.location.href = internal;
-  });
+  };
 
-  // 앱 번들에 없는 웹 전용 경로(/rooms/public, /community, /guide, /use) 링크는
-  // 로컬 404 대신 시스템 브라우저로 musikga.kr 을 연다.
+  App.addListener('appUrlOpen', ({ url }) => { handleUrl(url); });
+
+  // 앱이 꺼진 상태에서 딥링크로 실행되면 appUrlOpen이 리스너 등록 전에 지나간다.
+  // 그 경우 실행 URL을 직접 읽어 처리하지 않으면 홈만 뜨고 토큰이 유실된다.
+  const launch = await App.getLaunchUrl().catch(() => null);
+  if (launch?.url) await handleUrl(launch.url);
+
   document.addEventListener('click', (e) => {
     const anchor = (e.target as HTMLElement | null)?.closest?.('a');
     if (!anchor) return;
     const href = anchor.getAttribute('href');
-    if (!href || !href.startsWith('/')) return;
+    if (!href) return;
+
+    // OAuth 링크는 페이지 15곳에 흩어져 있다. 개별 바인딩 대신 여기서 한 번에 가로채야
+    // 앱에서 client=app 분기를 타고 딥링크로 복귀한다.
+    // (놓치면 웹뷰가 웹 로그인을 그대로 열어 토큰이 웹 origin에 저장되고 앱은 로그인되지 않는다)
+    const oauth = href.match(/\/auth\/(kakao|naver)(\?|$)/);
+    if (oauth) {
+      e.preventDefault();
+      startLogin(oauth[1] as 'kakao' | 'naver');
+      return;
+    }
+
+    // 앱 번들에 없는 웹 전용 경로(/rooms/public, /community, /guide, /use, /vote)는
+    // 로컬 404 대신 시스템 브라우저로 musikga.kr 을 연다.
+    if (!href.startsWith('/')) return;
     if (!WEB_ONLY_PREFIXES.some((p) => href.startsWith(p))) return;
     e.preventDefault();
     Browser.open({ url: `${WEB_ORIGIN}${href}` });
