@@ -15,8 +15,10 @@ Capacitor 기반 안드로이드 앱(`kr.fearlesstasting.app`)의 빌드 구조�
 - [x] 디버그 APK 빌드 검증 (6.8MB)
 
 **출시 준비 — 남음**
-- [ ] 릴리스 keystore 생성 + `keystore.properties` (§5)
-- [ ] 실기기 테스트: 카카오·네이버 로그인 왕복 (§8)
+- [x] 릴리스 keystore 생성 + `keystore.properties` (§5) — 2026-08-18
+      ⚠️ `apps/web/android/app/fearless-release.jks` 와 비밀번호를 **백업했는지 확인할 것**
+- [x] 서명된 릴리스 AAB 빌드 검증 (versionCode 1 / 1.0.0, 5.0MB)
+- [ ] 실기기·에뮬 테스트: 카카오·네이버 로그인 왕복 (§8)
 - [ ] Play Console 개발자 계정 등록 ($25)
 - [ ] 심사용 테스트 카카오 계정 생성 + 샘플 데이터 (§7 앱 액세스 권한)
 - [ ] 스토어 등록정보 (스크린샷·아이콘·설명)
