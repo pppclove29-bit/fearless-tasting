@@ -8,6 +8,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,mjs,astro,json,md,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,mjs,astro,json,md,yaml}\"",
     "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
     "clean": "turbo run clean"
   },
   "devDependencies": {
