@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
+import { buildAllowedOrigins } from './common/cors-origins';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -14,7 +15,9 @@ async function bootstrap() {
   });
   app.use(cookieParser());
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:4321',
+    origin: buildAllowedOrigins(),
+    // credentials 유지: POST /auth/logout 이 credentials: 'include' 로 호출한다(api.ts).
+    // 끄면 로그아웃 요청이 CORS로 막히는데, fire-and-forget 이라 조용히 실패한다.
     credentials: true,
     maxAge: 86400, // preflight 캐시 24시간 — 매 요청마다 OPTIONS 왕복 제거
     exposedHeaders: ['X-Places-Debug', 'X-Places-Start', 'X-Places-Has-More'],
