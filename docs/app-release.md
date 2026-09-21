@@ -2,7 +2,7 @@
 
 Capacitor 기반 안드로이드 앱(`kr.fearlesstasting.app`)의 빌드 구조와 Play 스토어 출시 절차.
 
-## 진행 상황 (마지막 갱신: 2026-08-18)
+## 진행 상황 (마지막 갱신: 2026-09-21)
 
 작업하면서 이 체크박스를 갱신해 커밋한다. 다음 세션은 이걸 보고 이어받는다.
 
@@ -19,6 +19,7 @@ Capacitor 기반 안드로이드 앱(`kr.fearlesstasting.app`)의 빌드 구조�
       ⚠️ `apps/web/android/app/fearless-release.jks` 와 비밀번호를 **백업했는지 확인할 것**
 - [x] 서명된 릴리스 AAB 빌드 검증 (versionCode 1 / 1.0.0, 5.0MB)
 - [ ] 실기기·에뮬 테스트: 카카오·네이버 로그인 왕복 (§8)
+      🚨 **2026-09-21 에뮬 검증에서 API CORS 차단 확인 — 앱이 데이터를 전혀 못 받는다 (§9)**
 - [ ] Play Console 개발자 계정 등록 ($25)
 - [ ] 심사용 테스트 카카오 계정 생성 + 샘플 데이터 (§7 앱 액세스 권한)
 - [ ] 스토어 등록정보 (스크린샷·아이콘·설명)
@@ -28,6 +29,39 @@ Capacitor 기반 안드로이드 앱(`kr.fearlesstasting.app`)의 빌드 구조�
 - [ ] `assetlinks.json` 지문 등록 (첫 업로드 후)
 
 > 제품 방향과 우선순위는 [product-direction.md](product-direction.md) 참고.
+
+### 검증 회차 기록
+
+| 회차 | 환경 | 결과 |
+| --- | --- | --- |
+| 2026-08-18 | 에뮬레이터 | 로그인 차단 버그 3종 발견·수정 (`ca98b3c`) |
+| 2026-09-21 | 에뮬레이터 `fearless_test` (Pixel 6 · Android 15 · arm64) | 빌드·설치·기동 OK. **API CORS 차단으로 전 기능 블로킹** (§9) |
+
+#### 2026-09-21 회차 상세
+
+재현에 쓴 명령 (Node 22 · Android Studio 번들 JDK 21 필요):
+
+```bash
+export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh" && nvm use 22
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+
+pnpm --filter @repo/web cap:sync       # 앱 번들 + 네이티브 동기화
+pnpm --filter @repo/web android:debug  # 디버그 APK
+
+adb install -r apps/web/android/app/build/outputs/apk/debug/app-debug.apk
+adb shell am start -n kr.fearlesstasting.app/.MainActivity
+```
+
+- APK: `apps/web/android/app/build/outputs/apk/debug/app-debug.apk` (6.6MB, versionCode 1 / 1.0.0)
+- `adb`는 PATH에 없을 수 있다 → `~/Library/Android/sdk/platform-tools/adb`
+- 시스템 JDK가 25면 AGP가 거부한다. 위 `JAVA_HOME` 필수.
+
+확인된 것:
+- 웹뷰가 로컬 번들(`https://localhost`)을 정상 로드, 스플래시 → 홈 렌더링
+- `appUrlOpen`·`backButton` 리스너 등록됨
+- OAuth 복귀 딥링크 동작: `kr.fearlesstasting.app://login?access_token=...` 주입 시
+  `https://localhost/login?access_token=...` 로 이동 확인 (intent-filter + `native.ts` 정상)
+- 하드웨어 뒤로가기: 루트에서 `canGoBack:false` → 앱 종료 (의도대로)
 
 ## 1. 구조
 
@@ -204,12 +238,61 @@ APP_VERSION_CODE=2 APP_VERSION_NAME=1.0.1 pnpm android:release
 > 참고: 카카오 로그인을 **시스템 브라우저**로 처리하므로 카카오 개발자 콘솔에
 > Android 플랫폼/키 해시를 등록할 필요가 없다 (네이티브 SDK 미사용).
 
-## 8. 출시 전 실기기 확인 항목
+## 8. 출시 전 확인 항목
 
-- [ ] 카카오 로그인 → 앱으로 복귀 → 토큰 저장 → 방 목록 진입
-- [ ] 네이버 로그인 동일
-- [ ] 하드웨어 뒤로가기: 화면 이동 후 뒤로 → 홈에서 뒤로 → 종료
-- [ ] 푸시 권한 요청 + FCM 수신
-- [ ] 공개 방/커뮤니티 링크 클릭 → 외부 브라우저 오픈
-- [ ] 초대 링크(`musikga.kr/join?code=...`) 클릭 → 앱 오픈 (assetlinks 배포 후)
-- [ ] 오프라인 상태에서 앱 실행 → 껍데기 UI는 뜨고 데이터 영역만 에러
+"확인 환경" 기준으로 나눠 둔다. 에뮬로 되는 건 굳이 실기기를 기다리지 말 것.
+**결과** 칸은 실제로 눌러 본 사람이 채운다 (`OK` / `NG + 증상` / `미확인`).
+
+### 8.1 에뮬레이터로 확인 가능
+
+| 항목 | 결과 (2026-09-21) |
+| --- | --- |
+| 앱 설치 → 기동 → 홈 렌더링 | OK |
+| 하드웨어 뒤로가기: 화면 이동 후 뒤로 → 홈에서 뒤로 → 종료 | OK (루트에서 `canGoBack:false` → 종료) |
+| OAuth 복귀 딥링크 (`kr.fearlesstasting.app://login?...`) → 토큰 저장 페이지 진입 | OK (adb 주입으로 확인) |
+| 카카오 로그인 왕복 (브라우저 → 앱 복귀 → 방 목록) | 미확인 — §9 CORS로 블로킹 |
+| 네이버 로그인 왕복 | 미확인 — §9 CORS로 블로킹 |
+| 방 생성 → 식당 등록 → 리뷰 작성 | 미확인 — §9 CORS로 블로킹 |
+| 푸시 권한 요청 팝업 + FCM 토큰 등록 | 미확인 (에뮬에 Play services 있음 → 확인 가능) |
+| 공개 방/커뮤니티 링크 클릭 → 시스템 브라우저 오픈 | 미확인 |
+| 오프라인(비행기 모드)에서 실행 → 껍데기 UI는 뜨고 데이터 영역만 에러 | 미확인 |
+
+> 에뮬레이터에서 카카오·네이버 로그인을 끝까지 보려면 **실제 계정 로그인이 필요**하다.
+> 심사용 테스트 계정(§7)을 만들어 두면 이 검증과 Play Console 제출에 같이 쓸 수 있다.
+
+### 8.2 실기기가 필요한 항목
+
+| 항목 | 이유 | 결과 |
+| --- | --- | --- |
+| 초대 링크(`musikga.kr/join?code=...`) 클릭 → 앱 자동 오픈 | App Links 검증에 `assetlinks.json` + **Play 앱 서명 지문**이 필요. 첫 AAB 업로드 전엔 불가 (§4) | 미확인 |
+| FCM 푸시 **실수신** (백그라운드/종료 상태 포함) | 에뮬에서 토큰 등록까지는 되지만 도즈·백그라운드 제한 동작이 실기기와 다름 | 미확인 |
+| 실제 네트워크 전환 (LTE ↔ WiFi ↔ 음영지역) | 에뮬 네트워크는 호스트 경유라 재현 안 됨 | 미확인 |
+| 저사양 기기 체감 성능 · 스크롤 프레임 | arm64 에뮬은 호스트 성능을 따라감 | 미확인 |
+| 카카오맵 SDK 실제 렌더링 · GPS 현재 위치 | 에뮬 GPS는 모킹 값 | 미확인 |
+
+## 9. 알려진 블로킹 이슈
+
+### API CORS가 앱 웹뷰 origin을 막는다 (2026-09-21 발견, 미해결)
+
+앱은 로컬 번들이라 웹뷰 origin이 **`https://localhost`**인데, API는 `FRONTEND_URL`
+하나만 허용한다 ([main.ts](../apps/api/src/main.ts) `enableCors`).
+
+```
+Access to fetch at 'https://api.musikga.kr/notices' from origin 'https://localhost'
+has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value
+'https://musikga.kr' that is not equal to the supplied origin.
+```
+
+앱에서 나가는 **모든 API 요청이 실패**한다 — 로그인·방 목록·리뷰 전부. 빌드는 통과하고
+웹은 멀쩡하므로 실행 전에는 드러나지 않는다(`ca98b3c`와 같은 부류의 버그).
+
+고치려면 `enableCors`의 `origin`을 배열/콜백으로 바꿔 Capacitor origin을 함께 허용해야 한다.
+프론트는 `credentials: 'omit'`로 호출하므로 쿠키 의존은 없다.
+
+```ts
+// 허용 대상: 웹(FRONTEND_URL) + Capacitor 웹뷰
+// Android: https://localhost, iOS: capacitor://localhost
+origin: [process.env.FRONTEND_URL ?? 'http://localhost:4321', 'https://localhost'],
+```
+
+> ⚠️ 코드만 고쳐선 안 되고 **API 재배포까지 해야** 앱 검증을 이어갈 수 있다.
