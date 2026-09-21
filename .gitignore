@@ -56,3 +56,7 @@ apps/web/android/app/*.keystore
 apps/web/android/app/*.jks
 apps/web/android/captured/
 apps/web/android/.idea/
+
+# Python (docs/store-assets 스크립트)
+__pycache__/
+*.pyc
