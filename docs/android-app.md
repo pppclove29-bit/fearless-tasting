@@ -1,5 +1,17 @@
 # Android 앱 (Capacitor APK) 빌드 가이드
 
+> 🚨 **이 문서는 낡았다. 현행 문서는 [app-release.md](app-release.md)다.**
+>
+> 아래 내용은 **원격 URL 로딩** 시절의 구조를 설명한다. 그 방식은 Play "minimum
+> functionality" 정책 리스크와 서버 장애 시 앱 백지 문제로 **폐기됐고**, 지금은
+> 로컬 정적 번들(`dist-app/`)을 웹뷰에서 연다 ([app-release.md](app-release.md) §1).
+>
+> 서명 설정도 실제와 다르다 — 파일명은 `key.properties`가 아니라 `keystore.properties`,
+> alias는 `fearless-tasting`이 아니라 `fearless`, 키 경로는 `~/keys/fearless-upload.jks`다
+> ([app-release.md](app-release.md) §5).
+>
+> 아래를 그대로 따라 하지 말 것. 참고용으로만 남겨 둔다.
+
 무모한 시식가 안드로이드 앱은 **Capacitor 기반 WebView 래퍼**입니다. 운영 사이트(`https://musikga.kr`)를 그대로 로드하고, FCM 푸시만 네이티브로 받는 구조입니다.
 
 > 참고: `fearless-tasting.pages.dev`는 `musikga.kr`로 301 리다이렉트되므로 Capacitor `server.url`은 반드시 최종 도메인(`musikga.kr`)을 직접 가리켜야 합니다. 리다이렉트 도메인을 쓰면 WebView가 외부 브라우저로 빠집니다.

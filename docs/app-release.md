@@ -20,9 +20,10 @@ Capacitor 기반 안드로이드 앱(`kr.fearlesstasting.app`)의 빌드 구조�
 처음부터 다시 센다. 깨진 빌드로 시작하면 2주가 날아가므로 아래는 타협하지 않는다.
 
 - [x] 릴리스 keystore 생성 + `keystore.properties` (§5) — 2026-08-18
-- [ ] ⚠️ **keystore 백업 확인** — `apps/web/android/app/fearless-release.jks` 와 비밀번호.
+- [ ] ⚠️ **keystore 백업 확인** — `~/keys/` 폴더 **그리고**
+      `apps/web/android/keystore.properties`(비밀번호가 여기에만 있다, §5).
       분실하면 같은 앱으로 **영구히 업데이트 불가**. 다른 무엇보다 먼저.
-- [x] 서명된 릴리스 AAB 빌드 검증 (versionCode 1 / 1.0.0, 5.0MB)
+- [x] 서명된 릴리스 AAB 빌드 검증 — 2026-09-21 키 이동 후 재검증 (4.8MB, §5)
 - [x] Play Console 개발자 계정 등록 ($25) — 2026-09-21, **계정 유형 개인**
 - [x] API CORS 허용 목록 수정 (§9) — 2026-09-21 커밋 완료
 - [x] **API 재배포** — 2026-09-21 배포·검증 완료. 기존 웹 무영향 확인 (§9)
@@ -197,46 +198,64 @@ PUBLIC_FIREBASE_{API_KEY,AUTH_DOMAIN,PROJECT_ID,MESSAGING_SENDER_ID,APP_ID,VAPID
 
 `apps/web/android/keystore.properties`(gitignore됨)가 있으면 release 서명이 활성화된다.
 
-```bash
-cd apps/web/android
-keytool -genkey -v -keystore app/fearless-release.jks \
-  -alias fearless -keyalg RSA -keysize 2048 -validity 10000
-```
-
 ```properties
-# keystore.properties
-storeFile=app/fearless-release.jks
+# keystore.properties — 비밀번호가 들어 있으므로 권한 600 유지
+storeFile=/Users/paakhyungjun/keys/fearless-upload.jks
 storePassword=<비밀번호>
 keyAlias=fearless
 keyPassword=<비밀번호>
 ```
 
-> ⚠️ `.jks` 파일과 비밀번호는 분실하면 **같은 앱으로 업데이트 불가**. 안전한 곳에 백업.
-
 ### 이 앱의 키스토어 (2026-09-21 확인)
+
+세 앱 키를 `~/keys/` 한 곳에 모았다 (2026-09-21 이전 경로:
+`apps/web/android/app/fearless-release.jks`).
 
 | 항목 | 값 |
 | --- | --- |
-| 경로 | `apps/web/android/app/fearless-release.jks` |
-| 생성일 | 2026-08-18 |
-| 크기 | 2764 bytes |
-| 설정 파일 | `apps/web/android/keystore.properties` |
-| git 추적 | **안 됨** — `.gitignore` 56행(`*.jks`) · 58행(`keystore.properties`)에서 제외 확인 |
-| 업로드 키 SHA-256 | **미확인** (아래 참고) |
-| 백업 여부 | **미확인 — 사람 확인 필요** |
+| 경로 | `~/keys/fearless-upload.jks` |
+| 권한 | `600` |
+| 생성일 | 2026-08-18 (2764 bytes — 이동만 했고 재생성 아님) |
+| keyAlias | `fearless` |
+| 인증서 소유자 | `CN=musikga.kr, OU=Development, O=Fearless Tasting, L=Seoul, ST=Seoul, C=KR` |
+| 서명 알고리즘 | SHA384withRSA |
+| **업로드 키 SHA-256** | `27:F1:37:39:22:39:8C:AD:76:B6:E4:C8:A9:23:A3:5E:64:F0:D8:3C:A0:F2:B7:08:3C:83:C2:B5:84:BB:76:41` |
+| 서명 AAB 빌드 검증 | ✅ 2026-09-21 새 경로로 `bundleRelease` 성공 (4.8MB) |
 
-지문은 스토어 비밀번호가 있어야 읽을 수 있어 확인하지 않았다. 필요하면 직접:
+지문은 **서명된 AAB에서 추출**했다. 비밀번호 없이 확인할 수 있다:
 
 ```bash
-cd apps/web/android
 JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" \
-  "$JAVA_HOME/bin/keytool" -list -v -keystore app/fearless-release.jks | grep -A1 SHA256
+  "$JAVA_HOME/bin/keytool" -printcert \
+  -jarfile apps/web/android/app/build/outputs/bundle/release/app-release.aab
 ```
 
-> ⚠️ **`assetlinks.json`에 넣을 지문은 이 업로드 키가 아니다.**
-> Play 앱 서명을 쓰면 Google이 별도의 앱 서명 키로 재서명하므로,
-> App Links 검증에 필요한 건 **Play Console → 설정 → 앱 서명**에 표시되는
-> 앱 서명 키 SHA-256이다 (§4). 업로드 키 지문을 넣으면 링크가 열리지 않는다.
+> ⚠️ **`assetlinks.json`에 넣을 지문은 위 업로드 키가 아니다.**
+> Play 앱 서명을 쓰면 Google이 별도의 앱 서명 키로 재서명하므로, App Links 검증에
+> 필요한 건 **Play Console → 설정 → 앱 서명**의 앱 서명 키 SHA-256이다 (§4).
+> 위 지문을 넣으면 링크가 열리지 않는다.
+
+### 백업 — 이 앱만 예외가 있다
+
+`~/keys/`에 세 앱 키가 모여 있어 **폴더 하나만 백업하면 키 파일은 전부 커버된다.**
+
+```
+~/keys/
+├── fearless-upload.jks      ← 이 앱
+├── typeright-upload.jks     + typeright.pass
+└── driverlabor-upload.jks   + driverlabor.pass
+```
+
+🚨 **단 이 앱의 비밀번호는 `~/keys/` 안에 없다.** 다른 두 앱은 `.pass` 파일이 같이 있지만,
+이 앱 비밀번호는 `apps/web/android/keystore.properties`(레포 안, gitignore됨)에만 있다.
+`~/keys/`만 백업하면 **키 파일은 남고 비밀번호는 사라진다** — 그러면 키가 있어도 못 쓴다.
+
+백업할 때 둘 다 챙길 것:
+- [ ] `~/keys/` 폴더 전체
+- [ ] `apps/web/android/keystore.properties` (또는 비밀번호를 `~/keys/fearless.pass`로 옮겨 통일)
+
+> ⚠️ 키와 비밀번호를 분실하면 **같은 앱으로 영구히 업데이트 불가**. 새 패키지명으로
+> 새 앱을 내야 하고 기존 설치자는 옮겨오지 못한다.
 
 ## 6. 릴리스 빌드
 
