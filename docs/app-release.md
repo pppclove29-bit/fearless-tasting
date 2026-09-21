@@ -25,8 +25,8 @@ Capacitor 기반 안드로이드 앱(`kr.fearlesstasting.app`)의 빌드 구조�
 - [x] 서명된 릴리스 AAB 빌드 검증 (versionCode 1 / 1.0.0, 5.0MB)
 - [x] Play Console 개발자 계정 등록 ($25) — 2026-09-21, **계정 유형 개인**
 - [x] API CORS 허용 목록 수정 (§9) — 2026-09-21 커밋 완료
-- [ ] **API 재배포** — 배포 전엔 앱이 로그인조차 안 된다. 이 앱의 임계 경로 (§9)
-- [ ] 배포 후 앱 실검증: 카카오 로그인 왕복 + 방 생성 (§8.1)
+- [x] **API 재배포** — 2026-09-21 배포·검증 완료. 기존 웹 무영향 확인 (§9)
+- [ ] 배포 후 앱 실검증: 카카오 로그인 왕복 + 방 생성 (§8.1) — **다음 차례**
 - [ ] 심사용 테스트 카카오 계정 + 샘플 데이터 (§10) — 심사자가 로그인 못 하면 거부된다
 - [ ] 스토어 등록정보 (스크린샷·아이콘·설명) — 업로드 폼의 필수 입력
 
@@ -37,7 +37,7 @@ Capacitor 기반 안드로이드 앱(`kr.fearlesstasting.app`)의 빌드 구조�
 - [ ] `assetlinks.json` 지문 등록 (§4) — 첫 업로드 후에야 지문을 받을 수 있다.
       없어도 앱은 정상 동작하고 초대 링크만 브라우저로 열린다
 - [ ] 데이터 안전 양식 · 콘텐츠 등급 설문(IARC) 등 콘텐츠 설정 (§7)
-- [ ] 네이버 로그인 왕복 검증 — 카카오만으로도 심사는 통과한다
+- [ ] 네이버 로그인 왕복 검증 — **심사 범위 아님**. 기능은 살아 있으니 여유 있을 때만
 - [ ] 푸시 실수신 검증 (실기기 필요, §8.2)
 - [ ] 스토어 설명 문구 다듬기 · 스크린샷 교체
 
@@ -57,7 +57,8 @@ Capacitor 기반 안드로이드 앱(`kr.fearlesstasting.app`)의 빌드 구조�
 | 회차 | 환경 | 결과 |
 | --- | --- | --- |
 | 2026-08-18 | 에뮬레이터 | 로그인 차단 버그 3종 발견·수정 (`ca98b3c`) |
-| 2026-09-21 | 에뮬레이터 `fearless_test` (Pixel 6 · Android 15 · arm64) | 빌드·설치·기동 OK. **API CORS 차단으로 전 기능 블로킹** (§9) |
+| 2026-09-21 | 에뮬레이터 `fearless_test` (Pixel 6 · Android 15 · arm64) | 빌드·설치·기동 OK. **API CORS 차단으로 전 기능 블로킹** 발견 (§9) |
+| 2026-09-21 | 운영 API (배포 후) | CORS 수정 배포·검증 통과. 기존 웹 무영향. **앱 실검증은 다음 차례** (§9) |
 
 #### 2026-09-21 회차 상세
 
@@ -212,6 +213,31 @@ keyPassword=<비밀번호>
 
 > ⚠️ `.jks` 파일과 비밀번호는 분실하면 **같은 앱으로 업데이트 불가**. 안전한 곳에 백업.
 
+### 이 앱의 키스토어 (2026-09-21 확인)
+
+| 항목 | 값 |
+| --- | --- |
+| 경로 | `apps/web/android/app/fearless-release.jks` |
+| 생성일 | 2026-08-18 |
+| 크기 | 2764 bytes |
+| 설정 파일 | `apps/web/android/keystore.properties` |
+| git 추적 | **안 됨** — `.gitignore` 56행(`*.jks`) · 58행(`keystore.properties`)에서 제외 확인 |
+| 업로드 키 SHA-256 | **미확인** (아래 참고) |
+| 백업 여부 | **미확인 — 사람 확인 필요** |
+
+지문은 스토어 비밀번호가 있어야 읽을 수 있어 확인하지 않았다. 필요하면 직접:
+
+```bash
+cd apps/web/android
+JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" \
+  "$JAVA_HOME/bin/keytool" -list -v -keystore app/fearless-release.jks | grep -A1 SHA256
+```
+
+> ⚠️ **`assetlinks.json`에 넣을 지문은 이 업로드 키가 아니다.**
+> Play 앱 서명을 쓰면 Google이 별도의 앱 서명 키로 재서명하므로,
+> App Links 검증에 필요한 건 **Play Console → 설정 → 앱 서명**에 표시되는
+> 앱 서명 키 SHA-256이다 (§4). 업로드 키 지문을 넣으면 링크가 열리지 않는다.
+
 ## 6. 릴리스 빌드
 
 ```bash
@@ -245,13 +271,13 @@ APP_VERSION_CODE=2 APP_VERSION_NAME=1.0.1 pnpm android:release
 
 ### 콘텐츠 설정
 - [ ] 개인정보처리방침 URL: `https://musikga.kr/privacy` — 운영 중, 별도 수정 불필요
-- [ ] **연락처 이메일 불일치 확인** — 세 앱 공용 문의처는 `musikga1116@gmail.com`으로
-      정해졌는데, 이 서비스는 아직 `pppclove29@naver.com`을 노출하고 있다:
-      - `apps/web/src/layouts/BaseLayout.astro` 푸터 (사용자에게 보임)
-      - `apps/web/src/pages/cs.astro` JSON-LD `contactPoint.email`
-      - 문의 알림 수신자는 코드가 아니라 Render 환경변수 `ADMIN_EMAIL`이다 (배포 설정에서 변경)
-
-      ⚠️ 바꾸기 전에 gmail 수신함을 실제로 보는지 확인할 것. 안 보면 문의가 그냥 사라진다.
+- [x] 연락처 이메일을 세 앱 공용 `musikga1116@gmail.com`으로 통일 — 2026-09-21
+      웹 푸터(`BaseLayout.astro`)와 고객센터 JSON-LD(`cs.astro`) 두 곳 교체 완료
+- [ ] ⚠️ **사람 작업: Render 환경변수 `ADMIN_EMAIL`을 `musikga1116@gmail.com`으로 변경**
+      문의 알림 **수신자는 코드가 아니라 이 환경변수**다 (`inquiries.service.ts`).
+      여기를 안 바꾸면 화면에는 새 주소가 보이는데 알림은 계속 옛 주소로 간다.
+      Render 대시보드 → 서비스 → Environment 에서 변경.
+- [ ] gmail 수신함을 실제로 보는지 확인 — 안 보면 문의가 그냥 사라진다
 - [ ] 데이터 안전: 이메일·닉네임·프로필 이미지(OAuth), 사용자 생성 콘텐츠(리뷰·사진), 기기 ID(FCM 토큰)
 - [ ] 계정 삭제 URL: `https://musikga.kr/profile/account` (앱 내 탈퇴도 제공 중)
 - [ ] 광고 포함 여부 (`PUBLIC_AD_CLIENT` 설정 시 "예")
@@ -281,7 +307,7 @@ APP_VERSION_CODE=2 APP_VERSION_NAME=1.0.1 pnpm android:release
 | 하드웨어 뒤로가기: 화면 이동 후 뒤로 → 홈에서 뒤로 → 종료 | OK (루트에서 `canGoBack:false` → 종료) |
 | OAuth 복귀 딥링크 (`kr.fearlesstasting.app://login?...`) → 토큰 저장 페이지 진입 | OK (adb 주입으로 확인) |
 | 카카오 로그인 왕복 (브라우저 → 앱 복귀 → 방 목록) | 미확인 — §9 CORS로 블로킹 |
-| 네이버 로그인 왕복 | 미확인 — §9 CORS로 블로킹 |
+| 네이버 로그인 왕복 | 미확인 — 심사 범위 아님 (§10) |
 | 방 생성 → 식당 등록 → 리뷰 작성 | 미확인 — §9 CORS로 블로킹 |
 | 푸시 권한 요청 팝업 + FCM 토큰 등록 | 미확인 (에뮬에 Play services 있음 → 확인 가능) |
 | 공개 방/커뮤니티 링크 클릭 → 시스템 브라우저 오픈 | 미확인 |
@@ -338,32 +364,54 @@ fire-and-forget이라 **조용히 실패**한다.
 ⚠️ 이 레포는 **`main`에 머지되면 Render가 자동 배포**한다. `main` push가 곧 운영 반영이다.
 운영 중인 서비스이므로 **사용자가 화면을 보고 있을 때** push한다.
 
+**2026-09-21 실측: push부터 새 응답이 나올 때까지 약 2분 30초.**
+(15초 간격으로 확인해 11번째에 바뀜.) 롤백을 판단할 때 이 값을 기준으로 삼는다 —
+3분이 지나도 안 바뀌면 배포가 실패한 것으로 보고 Render 로그를 본다.
+
 ### 배포 후 검증 (이 순서대로, 1분 안에 판정된다)
 
 1. **기존 웹 먼저** — `https://musikga.kr` 로그인 상태에서 방 목록이 뜨는지.
    깨지면 즉시 롤백하고 앱 검증은 중단한다 (영향받는 사람이 제일 많다)
-2. 기존 출처 생존 확인 — `access-control-allow-origin: https://musikga.kr` 가 나와야 한다
-   ```bash
-   curl -si -X OPTIONS https://api.musikga.kr/notices \
-     -H "Origin: https://musikga.kr" -H "Access-Control-Request-Method: GET" | grep -i access-control
-   ```
-3. 앱 출처 허용 확인 — 위 명령에서 `Origin: https://localhost` 로 바꿔
-   `access-control-allow-origin: https://localhost` 가 나오면 목표 달성
-4. 목록 밖 차단 확인 — `Origin: https://evil.example` 로 바꿔
-   `access-control-allow-origin` 헤더가 **안 나와야** 한다. 나오면 롤백
-5. 앱에서 실확인 — 홈에서 CORS 에러 없이 데이터 렌더링 → 카카오 로그인 왕복
+2. 출처별 `Access-Control-Allow-Origin` 확인
+
+```bash
+for o in "https://musikga.kr" "https://localhost" "https://evil.example"; do
+  printf "%-24s " "$o"
+  curl -si -X OPTIONS https://api.musikga.kr/notices \
+    -H "Origin: $o" -H "Access-Control-Request-Method: GET" \
+    | grep -i "^access-control-allow-origin" || echo "(헤더 없음)"
+done
+```
+
+3. 앱에서 실확인 — 홈에서 CORS 에러 없이 데이터 렌더링 → 카카오 로그인 왕복
+
+#### 2026-09-21 배포 검증 결과 — 전부 통과
+
+| Origin | 결과 | 기대 |
+| --- | --- | --- |
+| `https://musikga.kr` | `access-control-allow-origin: https://musikga.kr` | ✅ 기존 웹 생존 |
+| `https://localhost` | `access-control-allow-origin: https://localhost` | ✅ 앱 출처 허용 |
+| `capacitor://localhost` | `access-control-allow-origin: capacitor://localhost` | ✅ iOS 대비 |
+| `https://evil.example` | 헤더 없음 | ✅ 차단 |
+| `https://evil.musikga.kr` | 헤더 없음 | ✅ 서브도메인 차단 |
+| `http://musikga.kr` | 헤더 없음 | ✅ 스킴 불일치 차단 |
+
+`access-control-allow-credentials: true`, `max-age: 86400`, `expose-headers` 모두 유지됨을 확인.
+`https://musikga.kr` 200, `api.musikga.kr/notices` 200. **기존 웹 무영향.**
+
+단위 테스트가 예측한 차단 3종(서브도메인·접미·스킴)이 운영에서도 그대로 동작했다.
 
 ### 되돌리기
 
 | 경로 | 소요 | 비고 |
 | --- | --- | --- |
-| **A. Render 대시보드에서 이전 배포로 롤백** | 재빌드 없음 (수 분) | 1순위. 단 `main`에는 수정 커밋이 남아 Git과 배포 상태가 어긋난다 |
-| **B. revert 커밋을 `main`에 push** | 전체 파이프라인 재실행 | 정석. A로 급한 불을 끈 뒤 반드시 B로 정리한다 |
+| **A. Render 대시보드에서 이전 배포로 롤백** | 재빌드 없음 | 1순위. 단 `main`에는 수정 커밋이 남아 Git과 배포 상태가 어긋난다 |
+| **B. revert 커밋을 `main`에 push** | **약 2분 30초** (실측) | 정석. A로 급한 불을 끈 뒤 반드시 B로 정리한다 |
 
 이번 변경은 CORS 설정 범위이고 **DB 스키마·데이터 변경이 없어** 롤백에 정합성 위험이 없다.
 
-> 미확인: Render의 실제 빌드 소요 시간, 이 요금제에서 대시보드 롤백을 쓸 수 있는지.
-> A를 쓸 수 없으면 복구 경로가 B 하나뿐이므로 push 타이밍을 더 신중히 잡아야 한다.
+> 미확인: 이 요금제에서 Render 대시보드 롤백(A)을 쓸 수 있는지.
+> A를 쓸 수 없어도 B가 2분 30초라 복구 자체는 빠르다.
 
 ## 10. 심사용 테스트 계정 준비 (사람 작업)
 
@@ -375,7 +423,8 @@ fire-and-forget이라 **조용히 실패**한다.
 - [ ] **신규 전용 카카오 계정** — 개인 계정 금지 (ID/비밀번호를 콘솔에 평문으로 적는다)
 - [ ] **2단계 인증·기기 인증 해제** — 해외 IP의 심사자가 본인 인증에 막히면 그대로 거부된다.
       이 앱 심사에서 가장 흔한 탈락 지점
-- [ ] 네이버 계정은 선택 — **카카오 하나만 제공해도 심사는 통과**한다
+- [x] ~~네이버 계정~~ — **이번 심사 범위 아님** (2026-09-21 결정).
+      카카오 하나만 제공해도 심사는 통과한다. 네이버 계정은 만들지 않는다
 
 ### 채울 샘플 데이터
 
