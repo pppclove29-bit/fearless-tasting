@@ -3768,6 +3768,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const newPublic = publicCb?.checked;
       const newAnnouncement = announcementInput?.value.trim() || null;
 
+      // 최대 인원은 현재 인원 ~ 20명. 범위 밖이면 서버에 보내기 전에 이유를 알려준다
+      if (newMax !== undefined && newMax !== currentRoom.maxMembers) {
+        const minAllowed = Math.max(2, currentRoom.members.length);
+        if (!Number.isInteger(newMax) || newMax < minAllowed || newMax > 20) {
+          showToast(`최대 인원은 ${minAllowed}~20명 사이로 정해주세요.`, 'info');
+          maxInput?.focus();
+          return;
+        }
+      }
+
       const updates: Record<string, unknown> = {};
       if (newName && newName !== currentRoom.name) updates.name = newName;
       if (newMax && newMax !== currentRoom.maxMembers) updates.maxMembers = newMax;
@@ -3798,8 +3808,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         if (settingsModal) settingsModal.hidden = true;
         renderPage();
         showToast('방 설정이 변경되었습니다.', 'success');
-      } catch {
-        showToast('방 설정 변경에 실패했습니다.');
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : '방 설정 변경에 실패했습니다.');
       }
     });
 

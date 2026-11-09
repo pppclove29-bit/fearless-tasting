@@ -27,6 +27,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </button>
         </div>
         <p class="profile-email" id="profile-email"></p>
+        <button type="button" class="profile-avatar-remove" id="avatar-remove-btn" hidden>프로필 사진 삭제</button>
       </div>
       <div class="nickname-edit-area" id="nickname-edit" hidden>
         <input type="text" id="nickname-input" class="nickname-input" maxlength="50" placeholder="새 닉네임" />
@@ -146,6 +147,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     display: inline-block;
     margin: 0 auto 0.85rem;
   }
+
+  .profile-avatar-remove {
+    margin-top: 0.4rem;
+    padding: 0.2rem 0.5rem;
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    font-family: inherit;
+    color: var(--text-muted);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .profile-avatar-remove[hidden] { display: none; }
 
   .profile-avatar-edit {
     position: absolute;
@@ -471,12 +485,37 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const emailEl = document.getElementById('profile-email');
     if (!avatarEl || !nameEl || !emailEl) return;
 
-    if (user.profileImageUrl) {
-      avatarEl.innerHTML = `<img src="${user.profileImageUrl}" alt="프로필" />`;
-    } else {
-      avatarEl.textContent = user.nickname.charAt(0);
+    const removeBtn = document.getElementById('avatar-remove-btn');
+    let currentNickname = user.nickname;
+
+    // URL을 HTML 문자열로 끼우지 않고 DOM 속성으로 넣는다
+    function renderAvatar(url: string | null) {
+      if (!avatarEl) return;
+      avatarEl.replaceChildren();
+      if (url) {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = '프로필';
+        avatarEl.append(img);
+      } else {
+        avatarEl.textContent = currentNickname.charAt(0);
+      }
+      if (removeBtn) removeBtn.hidden = !url;
     }
+    renderAvatar(user.profileImageUrl ?? null);
     nameEl.textContent = user.nickname;
+
+    // 프로필 사진 삭제 → 기본(닉네임 첫 글자)으로
+    removeBtn?.addEventListener('click', async () => {
+      try {
+        const updated = await updateNickname(currentNickname, null);
+        user.profileImageUrl = updated.profileImageUrl ?? null;
+        renderAvatar(null);
+        showToast('프로필 사진을 삭제했습니다.', 'success');
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : '프로필 사진 삭제에 실패했습니다.');
+      }
+    });
     emailEl.textContent = user.email;
 
     // 프로필 사진 변경
@@ -488,8 +527,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         try {
           showToast('프로필 사진 업로드 중...', 'info');
           const { imageUrl } = await uploadImage(file, 'profiles');
-          await updateNickname(user.nickname, imageUrl);
-          avatarEl.innerHTML = `<img src="${imageUrl}" alt="프로필" />`;
+          const updated = await updateNickname(currentNickname, imageUrl);
+          user.profileImageUrl = updated.profileImageUrl ?? null;
+          renderAvatar(updated.profileImageUrl ?? null);
           showToast('프로필 사진이 변경되었습니다.', 'success');
         } catch {
           showToast('프로필 사진 변경에 실패했습니다.');
@@ -526,6 +566,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       }
       try {
         const updated = await updateNickname(newName);
+        currentNickname = updated.nickname;
         nameEl.textContent = updated.nickname;
         if (!user.profileImageUrl && avatarEl) {
           avatarEl.textContent = updated.nickname.charAt(0);

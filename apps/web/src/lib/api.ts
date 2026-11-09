@@ -188,8 +188,9 @@ async function refreshTokens(): Promise<boolean> {
 }
 
 /** 닉네임 수정 */
-export async function updateNickname(nickname: string, profileImageUrl?: string): Promise<AuthUser> {
-  const body: Record<string, string> = { nickname };
+/** 닉네임·프로필 사진 변경. profileImageUrl: 업로드 키로 변경, null이면 사진 삭제, 생략하면 유지 */
+export async function updateNickname(nickname: string, profileImageUrl?: string | null): Promise<AuthUser> {
+  const body: Record<string, string | null> = { nickname };
   if (profileImageUrl !== undefined) body.profileImageUrl = profileImageUrl;
   const res = await apiFetch(`${API_BASE}/users/me`, {
     method: 'PATCH',

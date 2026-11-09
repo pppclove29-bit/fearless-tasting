@@ -256,6 +256,9 @@ const resolvedOgImage = ogImage
 </html>
 
 <style is:global>
+  /* 로그인 상태에서 숨기는 가입 유도 버튼 — 버튼마다 display가 지정돼 있어 hidden 속성만으로는 안 숨는다 */
+  .login-only-cta[hidden] { display: none !important; }
+
   :root {
     --bg: #f7f8fa;
     --bg-card: #fff;

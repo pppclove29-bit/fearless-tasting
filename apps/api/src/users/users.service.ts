@@ -1,10 +1,15 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { withProfileImage } from '../common/image-url';
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** 업로드 API가 발급하는 본인 프로필 키인지 (profiles/{userId}.{webp|png|jpg}) */
+function isOwnProfileImageKey(userId: string, key: string): boolean {
+  return /^profiles\/[^/]+\.(webp|png|jpg)$/.test(key) && key.startsWith(`profiles/${userId}.`);
+}
 
 @Injectable()
 export class UsersService {
@@ -34,7 +39,12 @@ export class UsersService {
   }
 
   /** 프로필 수정 (닉네임 + 프로필 이미지) */
-  async updateProfile(userId: string, nickname: string, profileImageUrl?: string) {
+  async updateProfile(userId: string, nickname: string, profileImageUrl?: string | null) {
+    // 프로필 사진은 업로드 API가 발급한 본인 키만 허용한다 (임의 URL 저장 방지). null은 삭제
+    if (typeof profileImageUrl === 'string' && !isOwnProfileImageKey(userId, profileImageUrl)) {
+      throw new BadRequestException('잘못된 프로필 이미지입니다');
+    }
+
     const existing = await this.prisma.read.user.findFirst({
       where: { nickname, NOT: { id: userId } },
     });
@@ -44,7 +54,7 @@ export class UsersService {
 
     const data: {
       nickname: string;
-      profileImageUrl?: string;
+      profileImageUrl?: string | null;
       profileImageVersion?: { increment: number };
     } = { nickname };
     if (profileImageUrl !== undefined) {
@@ -54,11 +64,20 @@ export class UsersService {
       data.profileImageVersion = { increment: 1 };
     }
 
+    // 삭제 시 이전에 올린 사진 파일도 지운다 (카카오 CDN 등 외부 URL이면 지울 파일이 없다)
+    const previous = profileImageUrl === null
+      ? await this.prisma.read.user.findUnique({ where: { id: userId }, select: { profileImageUrl: true } })
+      : null;
+
     const user = await this.prisma.write.user.update({
       where: { id: userId },
       data,
       select: { id: true, email: true, nickname: true, role: true, profileImageUrl: true, profileImageVersion: true },
     });
+
+    if (previous?.profileImageUrl && isOwnProfileImageKey(userId, previous.profileImageUrl)) {
+      this.storageService.deleteImage(previous.profileImageUrl).catch(() => {});
+    }
     return withProfileImage(user);
   }
 

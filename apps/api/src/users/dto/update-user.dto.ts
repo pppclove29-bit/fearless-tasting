@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsOptional, MinLength, MaxLength, ValidateIf } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateUserDto {
@@ -8,9 +8,13 @@ export class UpdateUserDto {
   @MaxLength(50)
   nickname!: string;
 
-  @ApiPropertyOptional({ description: '프로필 이미지 URL' })
+  @ApiPropertyOptional({
+    description: '프로필 이미지 키 (업로드 API가 준 profiles/{userId}.{ext}). null이면 사진 삭제',
+    nullable: true,
+  })
   @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
   @IsString()
   @MaxLength(500)
-  profileImageUrl?: string;
+  profileImageUrl?: string | null;
 }
