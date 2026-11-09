@@ -556,6 +556,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         fetchActiveCategories(),
       ]);
       if (!user) { location.href = '/login'; return; }
+      // 초대 필수 방이 아직 혼자면 기록할 수 없으므로 초대 화면(방 페이지)으로 보낸다
+      if (room.inviteRequired) { location.replace(`/room?id=${roomId}`); return; }
       loadingMsg.hidden = true;
       content.hidden = false;
       renderWizard(user, room, categoryList);

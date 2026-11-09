@@ -212,6 +212,8 @@ export interface RoomListItem extends Room {
   myRole: string;
   memberCount: number;
   restaurantCount: number;
+  /** 초대 필수 방인데 아직 혼자라 기록을 추가할 수 없는 상태 */
+  inviteRequired: boolean;
 }
 
 export interface RoomMemberInfo {
@@ -231,6 +233,8 @@ export interface RoomRestaurantInfo extends RoomRestaurant {
 export interface RoomDetailResponse extends Room {
   members: RoomMemberInfo[];
   restaurants: RoomRestaurantInfo[];
+  /** 초대 필수 방인데 아직 혼자라 기록을 추가할 수 없는 상태 */
+  inviteRequired: boolean;
 }
 
 export interface RoomRestaurantDetailResponse {

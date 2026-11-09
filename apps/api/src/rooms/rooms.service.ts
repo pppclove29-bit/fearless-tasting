@@ -16,6 +16,7 @@ const MAX_ROOMS_PER_USER = 30;
 const CODE_GEN_MAX_RETRIES = 10;
 
 import { toImageUrl, withProfileImage } from '../common/image-url';
+import { isInviteRequired } from './invite-gate';
 
 
 @Injectable()
@@ -109,6 +110,7 @@ export class RoomsService {
       myRole: m.role,
       memberCount: m.room._count.members,
       restaurantCount: m.room._count.restaurants,
+      inviteRequired: isInviteRequired(m.room.createdAt, m.room._count.members),
     }));
   }
 
@@ -146,6 +148,8 @@ export class RoomsService {
 
     return {
       ...room,
+      // 초대 필수 방이 아직 혼자면 프론트가 기록 화면 대신 초대 화면을 보여준다
+      inviteRequired: isInviteRequired(room.createdAt, room.members.length),
       members: room.members.map((m) => ({ ...m, user: withProfileImage(m.user) })),
       restaurants: room.restaurants.map(({ visits, images, ...rest }) => {
         const allReviews = visits.flatMap((v) => v.reviews);

@@ -5,6 +5,7 @@ import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RoomMemberGuard } from './guards/room-member.guard';
+import { RoomUnlockedGuard } from './guards/room-unlocked.guard';
 import { RoomsService } from './rooms.service';
 import { RoomStatsService } from './room-stats.service';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -347,7 +348,7 @@ export class RoomsController {
   /** 방 내 식당 등록 */
   @Post(':id/restaurants')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
-  @UseGuards(RoomMemberGuard)
+  @UseGuards(RoomMemberGuard, RoomUnlockedGuard)
   @ApiOperation({ summary: '방 내 식당 등록' })
   @ApiParam({ name: 'id', description: '방 ID' })
   createRestaurant(
@@ -363,7 +364,7 @@ export class RoomsController {
   /** 식당 등록 위저드: (식당) + 방문 + 리뷰를 한 번에 저장 (전부 성공 또는 전부 실패) */
   @Post(':id/records')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
-  @UseGuards(RoomMemberGuard)
+  @UseGuards(RoomMemberGuard, RoomUnlockedGuard)
   @ApiOperation({ summary: '식당·방문·리뷰 한 번에 기록 (트랜잭션)' })
   @ApiParam({ name: 'id', description: '방 ID' })
   createRecord(
@@ -395,7 +396,7 @@ export class RoomsController {
   /** 커뮤니티 게시글에서 식당 추가 */
   @Post(':id/restaurants/from-community')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
-  @UseGuards(RoomMemberGuard)
+  @UseGuards(RoomMemberGuard, RoomUnlockedGuard)
   @ApiOperation({ summary: '커뮤니티 게시글에서 방에 식당 추가' })
   @ApiParam({ name: 'id', description: '방 ID' })
   createRestaurantFromCommunity(
@@ -477,7 +478,7 @@ export class RoomsController {
   /** 방문 기록 생성 */
   @Post(':id/restaurants/:rid/visits')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
-  @UseGuards(RoomMemberGuard)
+  @UseGuards(RoomMemberGuard, RoomUnlockedGuard)
   @ApiOperation({ summary: '방문 기록 생성' })
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'rid', description: '식당 ID' })
@@ -531,7 +532,7 @@ export class RoomsController {
   /** 방문 기록에 리뷰 작성 */
   @Post(':id/visits/:visitId/reviews')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
-  @UseGuards(RoomMemberGuard)
+  @UseGuards(RoomMemberGuard, RoomUnlockedGuard)
   @ApiOperation({ summary: '방문 기록에 리뷰 작성 (방문당 1인 1리뷰)' })
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'visitId', description: '방문 ID' })
@@ -595,7 +596,7 @@ export class RoomsController {
   /** 투표 생성 */
   @Post(':id/polls')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
-  @UseGuards(RoomMemberGuard)
+  @UseGuards(RoomMemberGuard, RoomUnlockedGuard)
   @ApiOperation({ summary: '투표 생성' })
   @ApiParam({ name: 'id', description: '방 ID' })
   createPoll(

@@ -8,10 +8,11 @@ import { RoomsController } from './rooms.controller';
 import { PollsController } from './polls.controller';
 import { RoomMemberGuard } from './guards/room-member.guard';
 import { RoomManagerGuard } from './guards/room-manager.guard';
+import { RoomUnlockedGuard } from './guards/room-unlocked.guard';
 
 @Module({
   imports: [PrismaModule, AuthModule, CategoriesModule],
   controllers: [RoomsController, PollsController],
-  providers: [RoomsService, RoomStatsService, RoomMemberGuard, RoomManagerGuard],
+  providers: [RoomsService, RoomStatsService, RoomMemberGuard, RoomManagerGuard, RoomUnlockedGuard],
 })
 export class RoomsModule {}
