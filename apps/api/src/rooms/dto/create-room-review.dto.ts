@@ -1,14 +1,7 @@
 import { IsString, IsNumber, IsInt, IsOptional, Min, Max, MaxLength, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-
-/** 0.5 단위로 반올림 (0.5, 1, 1.5, ..., 5) */
-const roundToHalf = ({ value }: { value: unknown }) => {
-  const n = Number(value);
-  return Number.isFinite(n) ? Math.round(n * 2) / 2 : value;
-};
-
-const VALID_RATINGS = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+import { roundToHalf, VALID_RATINGS } from './rating.transform';
 
 export class CreateRoomReviewDto {
   @ApiProperty({ description: '종합 평점 (0.5~5, 0.5 단위)', minimum: 0.5, maximum: 5 })

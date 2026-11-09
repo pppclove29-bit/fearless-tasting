@@ -1347,11 +1347,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           rating: mainRating,
           content: reviewContent,
           wouldRevisit: revisitValue,
-          tasteRating: detailRatings.taste || null,
-          valueRating: detailRatings.value || null,
-          serviceRating: detailRatings.service || null,
-          cleanlinessRating: detailRatings.cleanliness || null,
-          accessibilityRating: detailRatings.accessibility || null,
+          tasteRating: detailRatings.taste || undefined,
+          valueRating: detailRatings.value || undefined,
+          serviceRating: detailRatings.service || undefined,
+          cleanlinessRating: detailRatings.cleanliness || undefined,
+          accessibilityRating: detailRatings.accessibility || undefined,
         });
 
         // 위시리스트에서 온 경우: 위시리스트 상태 해제
