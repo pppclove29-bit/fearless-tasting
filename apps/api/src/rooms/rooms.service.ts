@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { FcmService } from '../fcm/fcm.service';
@@ -871,6 +871,121 @@ export class RoomsService {
     }
 
     return review;
+  }
+
+  /**
+   * 식당 등록 위저드 한 번에 저장: (새 식당) + 방문 + 리뷰를 하나의 트랜잭션으로.
+   * 따로 호출하면 리뷰만 실패했을 때 식당·방문이 남아 "리뷰 없는 방문"이 쌓인다.
+   * 알림은 커밋 후에 보낸다 (롤백된 기록에 대한 알림 방지).
+   */
+  async createRecord(
+    roomId: string,
+    userId: string,
+    input: {
+      restaurantId?: string;
+      restaurant?: {
+        name: string; address: string; province: string; city: string; neighborhood: string;
+        category: string; images?: string[]; latitude?: number; longitude?: number;
+      };
+      clearWishlist?: boolean;
+      visit: { visitedAt: string; memo?: string; waitTime?: string; isDelivery?: boolean };
+      review: {
+        rating: number; content?: string; wouldRevisit?: number;
+        tasteRating?: number; valueRating?: number; serviceRating?: number;
+        cleanlinessRating?: number; accessibilityRating?: number;
+        favoriteMenu?: string; tryNextMenu?: string; images?: string;
+      };
+    },
+  ) {
+    const { restaurantId, restaurant: newRestaurant, visit: v, review: r } = input;
+    if (!!restaurantId === !!newRestaurant) {
+      throw new BadRequestException('restaurantId와 restaurant 중 하나만 보내야 합니다');
+    }
+
+    // 카테고리 매핑은 트랜잭션 밖에서 (외부 조회 + 트랜잭션 시간 단축)
+    const resolved = newRestaurant ? await this.categoriesService.resolve(newRestaurant.category) : null;
+
+    const result = await measure('record.create.transaction', () =>
+      this.prisma.write.$transaction(async (tx) => {
+        let restaurant: { id: string; name: string };
+        if (newRestaurant) {
+          const duplicate = await tx.roomRestaurant.findFirst({
+            where: { roomId, name: newRestaurant.name, address: newRestaurant.address },
+            select: { id: true, isWishlist: true },
+          });
+          if (duplicate) {
+            throw new ConflictException({
+              message: duplicate.isWishlist ? '이미 위시리스트에 등록된 식당입니다.' : '이미 등록된 식당입니다.',
+              existingId: duplicate.id,
+              isWishlist: duplicate.isWishlist,
+            });
+          }
+          const imageList = (newRestaurant.images ?? []).slice(0, 3);
+          restaurant = await tx.roomRestaurant.create({
+            data: {
+              roomId, addedById: userId,
+              name: newRestaurant.name, address: newRestaurant.address,
+              province: newRestaurant.province, city: newRestaurant.city, neighborhood: newRestaurant.neighborhood,
+              category: resolved?.displayName || newRestaurant.category,
+              categoryId: resolved?.categoryId,
+              latitude: newRestaurant.latitude, longitude: newRestaurant.longitude,
+              images: imageList.length > 0 ? { create: imageList.map((url, i) => ({ url, sortOrder: i })) } : undefined,
+            },
+            select: { id: true, name: true },
+          });
+        } else {
+          const existing = await tx.roomRestaurant.findFirst({
+            where: { id: restaurantId, roomId },
+            select: { id: true, name: true, isWishlist: true },
+          });
+          if (!existing) throw new NotFoundException('식당을 찾을 수 없습니다');
+          if (input.clearWishlist && existing.isWishlist) {
+            await tx.roomRestaurant.update({ where: { id: existing.id }, data: { isWishlist: false } });
+          }
+          restaurant = existing;
+        }
+
+        const visit = await tx.roomVisit.create({
+          data: {
+            restaurantId: restaurant.id, createdById: userId,
+            visitedAt: new Date(v.visitedAt), memo: v.memo, waitTime: v.waitTime,
+            isDelivery: v.isDelivery ?? false,
+          },
+          select: { id: true },
+        });
+
+        const review = await tx.roomReview.create({
+          data: {
+            visitId: visit.id, userId, rating: r.rating, content: r.content ?? '', wouldRevisit: r.wouldRevisit ?? 4,
+            tasteRating: r.tasteRating, valueRating: r.valueRating, serviceRating: r.serviceRating,
+            cleanlinessRating: r.cleanlinessRating, accessibilityRating: r.accessibilityRating,
+            favoriteMenu: r.favoriteMenu, tryNextMenu: r.tryNextMenu, images: r.images,
+          },
+          select: { id: true },
+        });
+
+        return { restaurantId: restaurant.id, restaurantName: restaurant.name, visitId: visit.id, reviewId: review.id };
+      }),
+    );
+
+    // 알림: 기존 3단계 호출과 같은 알림을 커밋 후에 보낸다
+    const user = await this.prisma.read.user.findUnique({ where: { id: userId }, select: { nickname: true } });
+    if (user) {
+      const name = result.restaurantName;
+      const meta = { restaurantId: result.restaurantId };
+      if (newRestaurant) {
+        this.createNotificationForRoom(roomId, userId, 'restaurant_added', `${user.nickname}님이 "${name}" 식당을 등록했습니다.`, meta).catch(() => {});
+      }
+      this.createNotificationForRoom(roomId, userId, 'visit_added', `${user.nickname}님이 "${name}" 방문을 기록했습니다.`, meta).catch(() => {});
+      this.createNotificationForRoom(roomId, userId, 'review_added', `${user.nickname}님이 "${name}"에 리뷰를 남겼습니다. (${r.rating}점)`, meta).catch(() => {});
+    }
+
+    return {
+      restaurantId: result.restaurantId,
+      visitId: result.visitId,
+      reviewId: result.reviewId,
+      isNewRestaurant: !!newRestaurant,
+    };
   }
 
   /** 리뷰 수정 (본인만) */

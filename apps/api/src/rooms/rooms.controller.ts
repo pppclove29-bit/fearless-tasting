@@ -11,6 +11,7 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { CreateRoomRestaurantDto } from './dto/create-room-restaurant.dto';
 import { CreateRoomReviewDto } from './dto/create-room-review.dto';
+import { CreateRoomRecordDto } from './dto/create-room-record.dto';
 import { UpdateRoomReviewDto } from './dto/update-room-review.dto';
 import { CreateRoomVisitDto } from './dto/create-room-visit.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
@@ -357,6 +358,38 @@ export class RoomsController {
     return this.roomsService.createRestaurant(
       id, user.id, dto.name, dto.address, dto.province, dto.city, dto.neighborhood, dto.category, dto.images, dto.latitude, dto.longitude, dto.isWishlist,
     );
+  }
+
+  /** 식당 등록 위저드: (식당) + 방문 + 리뷰를 한 번에 저장 (전부 성공 또는 전부 실패) */
+  @Post(':id/records')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @UseGuards(RoomMemberGuard)
+  @ApiOperation({ summary: '식당·방문·리뷰 한 번에 기록 (트랜잭션)' })
+  @ApiParam({ name: 'id', description: '방 ID' })
+  createRecord(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+    @Body() dto: CreateRoomRecordDto,
+  ) {
+    const { restaurant: rest, visit, review } = dto;
+    return this.roomsService.createRecord(id, user.id, {
+      restaurantId: dto.restaurantId,
+      restaurant: rest && {
+        name: rest.name, address: rest.address, province: rest.province, city: rest.city,
+        neighborhood: rest.neighborhood, category: rest.category, images: rest.images,
+        latitude: rest.latitude, longitude: rest.longitude,
+      },
+      clearWishlist: dto.clearWishlist,
+      visit: {
+        visitedAt: visit.visitedAt, memo: visit.memo, waitTime: visit.waitTime, isDelivery: visit.isDelivery,
+      },
+      review: {
+        rating: review.rating, content: review.content, wouldRevisit: review.wouldRevisit,
+        tasteRating: review.tasteRating, valueRating: review.valueRating, serviceRating: review.serviceRating,
+        cleanlinessRating: review.cleanlinessRating, accessibilityRating: review.accessibilityRating,
+        favoriteMenu: review.favoriteMenu, tryNextMenu: review.tryNextMenu, images: review.images,
+      },
+    });
   }
 
   /** 커뮤니티 게시글에서 식당 추가 */

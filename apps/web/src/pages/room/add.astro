@@ -512,13 +512,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 <script>
   import {
     fetchCurrentUser, fetchRoom,
-    createRoomRestaurant, createRoomVisit, createRoomReview,
-    toggleRestaurantWishlist, searchNaverPlaces,
+    createRoomRecord, searchNaverPlaces,
     RestaurantDuplicateError,
     showToast,
     fetchActiveCategories,
   } from '@/lib/api';
-  import type { AuthUser, RoomDetailResponse, CategoryPublic } from '@/lib/api';
+  import type { AuthUser, RoomDetailResponse, CategoryPublic, RecordRestaurantInput } from '@/lib/api';
   import { maybeRequestPushAfterCommit } from '@/lib/push-onboard';
 
   function initAddPage() {
@@ -1266,12 +1265,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       submitBtn.textContent = '처리 중...';
 
       try {
-        // 1) 식당 등록 (기존 식당이면 건너뜀)
-        let restaurantId: string;
+        // 새 식당이면 식당 정보를, 기존 식당이면 ID만 보낸다.
+        // 식당·방문·리뷰는 서버에서 한 트랜잭션으로 저장된다 (중간 실패 시 아무것도 안 남음).
+        let restaurantInput: RecordRestaurantInput | undefined;
 
-        if (isExisting) {
-          restaurantId = existingRestId!;
-        } else {
+        if (!isExisting) {
           const kakaoArea = document.getElementById('kakao-area');
           const isKakao = kakaoArea && !kakaoArea.hidden;
 
@@ -1321,43 +1319,37 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             } catch { /* 지오코딩 실패해도 등록은 진행 */ }
           }
 
-          const restaurant = await createRoomRestaurant(roomId!, {
+          restaurantInput = {
             name: restName, address: restAddress, category: restCategory,
             province, city, neighborhood,
             latitude: lat, longitude: lng,
-            isClosed: false,
-          } as Parameters<typeof createRoomRestaurant>[1]);
-          restaurantId = restaurant.id;
+          };
         }
 
-        // 2) 방문 기록
         const visitDate = dateUnknown.checked ? today : dateInput.value;
-        const memo = dateUnknown.checked ? '(날짜 미상)' : undefined;
-
-        const visit = await createRoomVisit(roomId!, restaurantId, {
-          visitedAt: visitDate,
-          memo,
-          waitTime: selectedWait || undefined,
-        });
-
-        // 3) 리뷰
         const reviewContent = (document.getElementById('review-content') as HTMLTextAreaElement).value.trim();
 
-        await createRoomReview(roomId!, visit.id, {
-          rating: mainRating,
-          content: reviewContent,
-          wouldRevisit: revisitValue,
-          tasteRating: detailRatings.taste || undefined,
-          valueRating: detailRatings.value || undefined,
-          serviceRating: detailRatings.service || undefined,
-          cleanlinessRating: detailRatings.cleanliness || undefined,
-          accessibilityRating: detailRatings.accessibility || undefined,
+        await createRoomRecord(roomId!, {
+          restaurantId: isExisting ? existingRestId! : undefined,
+          restaurant: restaurantInput,
+          // 위시리스트에서 온 경우: 같은 트랜잭션에서 위시리스트 해제
+          clearWishlist: fromWishlist && isExisting,
+          visit: {
+            visitedAt: visitDate,
+            memo: dateUnknown.checked ? '(날짜 미상)' : undefined,
+            waitTime: selectedWait || undefined,
+          },
+          review: {
+            rating: mainRating,
+            content: reviewContent,
+            wouldRevisit: revisitValue,
+            tasteRating: detailRatings.taste || undefined,
+            valueRating: detailRatings.value || undefined,
+            serviceRating: detailRatings.service || undefined,
+            cleanlinessRating: detailRatings.cleanliness || undefined,
+            accessibilityRating: detailRatings.accessibility || undefined,
+          },
         });
-
-        // 위시리스트에서 온 경우: 위시리스트 상태 해제
-        if (fromWishlist && isExisting) {
-          try { await toggleRestaurantWishlist(roomId!, restaurantId); } catch { /* ignore */ }
-        }
 
         goToStep(3);
 

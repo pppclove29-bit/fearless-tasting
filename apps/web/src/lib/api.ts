@@ -547,6 +547,61 @@ export async function createRoomRestaurant(
   return restaurant;
 }
 
+/** 위저드 기록용 새 식당 정보 */
+export interface RecordRestaurantInput {
+  name: string;
+  address: string;
+  province: string;
+  city: string;
+  neighborhood: string;
+  category: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+/**
+ * 식당 등록 위저드: (새 식당) + 방문 + 리뷰를 한 번에 저장한다 (서버 트랜잭션).
+ * 중간 실패 시 아무것도 남지 않는다. 같은 식당이 이미 있으면 RestaurantDuplicateError.
+ */
+export async function createRoomRecord(
+  roomId: string,
+  input: {
+    restaurantId?: string;
+    restaurant?: RecordRestaurantInput;
+    clearWishlist?: boolean;
+    visit: { visitedAt: string; memo?: string; waitTime?: string };
+    review: ReviewData;
+  },
+): Promise<{ restaurantId: string; visitId: string; reviewId: string; isNewRestaurant: boolean }> {
+  const res = await apiFetch(`${API_BASE}/rooms/${roomId}/records`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (res.status === 409) {
+    const body = await res.json().catch(() => null);
+    if (body?.existingId) {
+      throw new RestaurantDuplicateError(body.message || '이미 등록된 식당입니다.', body.existingId, !!body.isWishlist);
+    }
+  }
+  await throwIfNotOk(res, '기록 저장에 실패했습니다.');
+  const result: { restaurantId: string; visitId: string; reviewId: string; isNewRestaurant: boolean } = await res.json();
+
+  // 3단계 호출 시절과 같은 퍼널 이벤트를 유지한다 (GA 퍼널 연속성)
+  const r = input.review;
+  if (result.isNewRestaurant) {
+    trackEvent('restaurant_added', { room_id: roomId, is_wishlist: false, has_category: !!input.restaurant?.category });
+  }
+  trackEvent('visit_created', { room_id: roomId, with_participants: false });
+  trackEvent('review_created', {
+    room_id: roomId,
+    rating: r.rating,
+    has_content: !!r.content?.trim(),
+    has_detail_rating: !!(r.tasteRating || r.valueRating || r.serviceRating || r.cleanlinessRating || r.accessibilityRating),
+  });
+  return result;
+}
+
 /** 방 내 식당 목록 (페이지네이션) */
 export async function fetchRoomRestaurants(
   roomId: string,
