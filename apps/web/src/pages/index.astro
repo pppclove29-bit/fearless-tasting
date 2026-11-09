@@ -1040,6 +1040,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import { fetchCurrentUser, getCachedUser, fetchMyRooms, createRoom, fetchNotices, showToast, fetchRevisitSuggestions } from '@/lib/api';
   import type { RoomListItem } from '@/lib/api';
   import { formatDate } from '@repo/utils';
+  import { shareOrigin } from '@/lib/native';
 
   async function initHomePage() {
     const landing = document.getElementById('landing');
@@ -1169,7 +1170,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           const code = btn.dataset.invite;
           const name = btn.dataset.name || '맛집 방';
           if (!code) return;
-          const url = `${location.origin}/join?code=${code}`;
+          const url = `${shareOrigin()}/join?code=${code}`;
           const text = `🍽️ "${name}" 맛집 리스트에 초대합니다!\n우리만의 맛집을 함께 기록해요\n\n${url}`;
           try {
             await navigator.clipboard.writeText(text);

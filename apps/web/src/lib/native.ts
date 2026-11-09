@@ -21,6 +21,30 @@ export function isNativeApp(): boolean {
   return cap?.isNativePlatform?.() ?? false;
 }
 
+/**
+ * 다른 사람에게 보내는 링크의 출처.
+ * 앱 웹뷰의 location.origin 은 https://localhost 라서 그대로 공유하면 받는 사람이 열 수 없다.
+ */
+export function shareOrigin(): string {
+  return isNativeApp() ? WEB_ORIGIN : location.origin;
+}
+
+/**
+ * 앱이면 안드로이드 공유 시트(카카오톡·문자 등)로 공유하고 true.
+ * 웹이면 false — 호출자가 기존 방식(카카오 JS SDK 등)을 쓴다.
+ * 카카오 JS SDK는 등록된 웹 도메인에서만 동작해서 앱(https://localhost)에서는 쓸 수 없다.
+ */
+export async function shareNative(opts: { title: string; text: string; url: string }): Promise<boolean> {
+  if (!isNativeApp()) return false;
+  const { Share } = await import('@capacitor/share');
+  try {
+    await Share.share({ title: opts.title, text: opts.text, url: opts.url, dialogTitle: '공유하기' });
+  } catch {
+    /* 사용자가 공유 시트를 닫으면 reject 된다 — 무시 */
+  }
+  return true;
+}
+
 /** 시스템 브라우저로 외부 URL 열기 (웹에서는 새 탭) */
 export async function openExternal(url: string): Promise<void> {
   if (!isNativeApp()) {
