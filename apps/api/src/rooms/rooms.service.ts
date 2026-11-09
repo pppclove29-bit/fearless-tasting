@@ -785,12 +785,14 @@ export class RoomsService {
 
   /** 방문 기록 수정 (생성자 or manager+) */
   async updateVisit(
+    roomId: string,
     visitId: string,
     userId: string,
     memberRole: 'owner' | 'manager' | 'member',
     data: { visitedAt?: string; memo?: string | null; waitTime?: string | null; isDelivery?: boolean },
   ) {
-    const visit = await this.prisma.read.roomVisit.findUnique({ where: { id: visitId } });
+    // 다른 방의 방문 기록은 존재 여부도 드러내지 않도록 404로 처리 (memberRole은 이 방 기준)
+    const visit = await this.prisma.read.roomVisit.findFirst({ where: { id: visitId, restaurant: { roomId } } });
     if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
 
     const isOwnerOrManager = this.isOwnerOrManager(memberRole);
@@ -810,8 +812,8 @@ export class RoomsService {
   }
 
   /** 방문 기록 삭제 (생성자 or manager+) */
-  async removeVisit(visitId: string, userId: string, memberRole: 'owner' | 'manager' | 'member') {
-    const visit = await this.prisma.read.roomVisit.findUnique({ where: { id: visitId } });
+  async removeVisit(roomId: string, visitId: string, userId: string, memberRole: 'owner' | 'manager' | 'member') {
+    const visit = await this.prisma.read.roomVisit.findFirst({ where: { id: visitId, restaurant: { roomId } } });
     if (!visit) throw new NotFoundException('방문 기록을 찾을 수 없습니다');
 
     const isOwnerOrManager = this.isOwnerOrManager(memberRole);
@@ -826,6 +828,7 @@ export class RoomsService {
 
   /** 방문 기록에 리뷰 작성 (방문당 1인 1리뷰) */
   async createReview(
+    roomId: string,
     visitId: string,
     userId: string,
     rating: number,
@@ -841,8 +844,8 @@ export class RoomsService {
     images?: string,
   ) {
     const [visit, existing] = await Promise.all([
-      this.prisma.read.roomVisit.findUnique({
-        where: { id: visitId },
+      this.prisma.read.roomVisit.findFirst({
+        where: { id: visitId, restaurant: { roomId } },
         include: { restaurant: { select: { name: true, roomId: true } } },
       }),
       this.prisma.read.roomReview.findUnique({
@@ -990,6 +993,7 @@ export class RoomsService {
 
   /** 리뷰 수정 (본인만) */
   async updateReview(
+    roomId: string,
     reviewId: string,
     userId: string,
     data: {
@@ -1005,7 +1009,9 @@ export class RoomsService {
       tryNextMenu?: string | null;
     },
   ) {
-    const review = await this.prisma.read.roomReview.findUnique({ where: { id: reviewId } });
+    const review = await this.prisma.read.roomReview.findFirst({
+      where: { id: reviewId, visit: { restaurant: { roomId } } },
+    });
     if (!review) throw new NotFoundException('리뷰를 찾을 수 없습니다');
     if (review.userId !== userId) throw new ForbiddenException('본인의 리뷰만 수정할 수 있습니다');
 
@@ -1027,8 +1033,10 @@ export class RoomsService {
   }
 
   /** 리뷰 삭제 (본인 or manager+) — R2 이미지도 정리 */
-  async removeReview(reviewId: string, userId: string, memberRole: 'owner' | 'manager' | 'member') {
-    const review = await this.prisma.read.roomReview.findUnique({ where: { id: reviewId } });
+  async removeReview(roomId: string, reviewId: string, userId: string, memberRole: 'owner' | 'manager' | 'member') {
+    const review = await this.prisma.read.roomReview.findFirst({
+      where: { id: reviewId, visit: { restaurant: { roomId } } },
+    });
     if (!review) throw new NotFoundException('리뷰를 찾을 수 없습니다');
 
     const isOwnerOrManager = this.isOwnerOrManager(memberRole);
@@ -1520,14 +1528,14 @@ export class RoomsService {
   // ──────────────── 리뷰 비교 ────────────────
 
   /** 같은 식당에 대한 멤버별 리뷰 비교 */
-  async compareReviews(restaurantId: string) {
+  async compareReviews(roomId: string, restaurantId: string) {
     const [restaurant, reviews] = await Promise.all([
-      this.prisma.read.roomRestaurant.findUnique({
-        where: { id: restaurantId },
+      this.prisma.read.roomRestaurant.findFirst({
+        where: { id: restaurantId, roomId },
         select: { id: true, name: true, roomId: true },
       }),
       this.prisma.read.roomReview.findMany({
-        where: { visit: { restaurantId } },
+        where: { visit: { restaurantId, restaurant: { roomId } } },
         include: {
           user: { select: { id: true, nickname: true } },
           visit: { select: { visitedAt: true } },

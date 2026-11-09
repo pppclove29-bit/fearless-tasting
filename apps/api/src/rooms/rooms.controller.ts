@@ -497,12 +497,13 @@ export class RoomsController {
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'visitId', description: '방문 ID' })
   updateVisit(
+    @Param('id') id: string,
     @Param('visitId') visitId: string,
     @CurrentUser() user: { id: string },
     @Req() req: RequestWithRoomMember,
     @Body() dto: UpdateRoomVisitDto,
   ) {
-    return this.roomsService.updateVisit(visitId, user.id, req.roomMember.role, {
+    return this.roomsService.updateVisit(id, visitId, user.id, req.roomMember.role, {
       visitedAt: dto.visitedAt,
       memo: dto.memo,
       waitTime: dto.waitTime,
@@ -517,11 +518,12 @@ export class RoomsController {
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'visitId', description: '방문 ID' })
   removeVisit(
+    @Param('id') id: string,
     @Param('visitId') visitId: string,
     @CurrentUser() user: { id: string },
     @Req() req: RequestWithRoomMember,
   ) {
-    return this.roomsService.removeVisit(visitId, user.id, req.roomMember.role);
+    return this.roomsService.removeVisit(id, visitId, user.id, req.roomMember.role);
   }
 
   // ─── 방 내 리뷰 ───
@@ -534,12 +536,13 @@ export class RoomsController {
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'visitId', description: '방문 ID' })
   createReview(
+    @Param('id') id: string,
     @Param('visitId') visitId: string,
     @CurrentUser() user: { id: string },
     @Body() dto: CreateRoomReviewDto,
   ) {
     return this.roomsService.createReview(
-      visitId, user.id, dto.rating, dto.content, dto.wouldRevisit,
+      id, visitId, user.id, dto.rating, dto.content, dto.wouldRevisit,
       dto.tasteRating, dto.valueRating, dto.serviceRating,
       dto.cleanlinessRating, dto.accessibilityRating,
       dto.favoriteMenu, dto.tryNextMenu, dto.images,
@@ -553,11 +556,12 @@ export class RoomsController {
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'revId', description: '리뷰 ID' })
   updateReview(
+    @Param('id') id: string,
     @Param('revId') revId: string,
     @CurrentUser() user: { id: string },
     @Body() dto: UpdateRoomReviewDto,
   ) {
-    return this.roomsService.updateReview(revId, user.id, {
+    return this.roomsService.updateReview(id, revId, user.id, {
       rating: dto.rating,
       content: dto.content,
       wouldRevisit: dto.wouldRevisit,
@@ -578,11 +582,12 @@ export class RoomsController {
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'revId', description: '리뷰 ID' })
   removeReview(
+    @Param('id') id: string,
     @Param('revId') revId: string,
     @CurrentUser() user: { id: string },
     @Req() req: RequestWithRoomMember,
   ) {
-    return this.roomsService.removeReview(revId, user.id, req.roomMember.role);
+    return this.roomsService.removeReview(id, revId, user.id, req.roomMember.role);
   }
 
   // ─── 투표 ───
@@ -656,8 +661,8 @@ export class RoomsController {
   @ApiOperation({ summary: '식당별 멤버 리뷰 비교' })
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'rid', description: '식당 ID' })
-  compareReviews(@Param('rid') rid: string) {
-    return this.roomsService.compareReviews(rid);
+  compareReviews(@Param('id') id: string, @Param('rid') rid: string) {
+    return this.roomsService.compareReviews(id, rid);
   }
 
 }
