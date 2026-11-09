@@ -6,8 +6,34 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 <BaseLayout title="방 입장" description="초대 링크로 방에 입장하세요" noindex>
   <div class="join-page">
     <div class="join-card">
-      <h1>방 입장</h1>
       <p id="join-status" class="join-status">입장 준비 중...</p>
+
+      <!-- 비로그인 초대 미리보기: 누가 어떤 방에 초대했는지 먼저 보여준 뒤 로그인으로 보낸다 -->
+      <div id="invite-preview" class="invite-preview" hidden>
+        <div class="invite-owner">
+          <img id="invite-owner-img" class="invite-owner-img" alt="" hidden />
+          <span id="invite-owner-initial" class="invite-owner-img invite-owner-initial"></span>
+          <span><strong id="invite-owner-name"></strong>님이 초대했어요</span>
+        </div>
+        <h1 id="invite-room-name" class="invite-room-name"></h1>
+        <p class="invite-stats">
+          식당 <strong id="invite-rest-count">0</strong>곳 · 리뷰 <strong id="invite-review-count"
+            >0</strong
+          >개 · 멤버 <strong id="invite-member-count">0</strong>명
+        </p>
+        <ul id="invite-restaurants" class="invite-restaurants"></ul>
+        <p id="invite-empty" class="invite-empty" hidden>
+          아직 기록이 없어요. 첫 맛집을 함께 채워보세요.
+        </p>
+        <button type="button" id="invite-login-btn" class="invite-login-btn"
+          >로그인하고 입장하기</button
+        >
+        <p id="invite-full" class="join-error" hidden>
+          방 인원이 가득 찼어요. 초대한 분께 인원 설정을 늘려달라고 해주세요.
+        </p>
+        <p id="invite-hint" class="invite-hint">카카오·네이버로 3초면 시작해요</p>
+      </div>
+
       <p id="join-error" class="join-error" hidden></p>
       <a href="/" class="join-home">홈으로 돌아가기</a>
     </div>
@@ -20,23 +46,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     justify-content: center;
     align-items: center;
     min-height: 60vh;
+    padding: 0 1rem;
   }
 
   .join-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 2.5rem 2rem;
+    padding: 2rem 1.5rem;
     max-width: 400px;
     width: 100%;
     text-align: center;
-  }
-
-  .join-card h1 {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--text-heading);
-    margin-bottom: 0.75rem;
   }
 
   .join-status {
@@ -62,10 +82,206 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .join-home:hover {
     color: var(--text-sub);
   }
+
+  .invite-preview[hidden] {
+    display: none;
+  }
+
+  .invite-owner {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-sub);
+  }
+
+  .invite-owner-img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .invite-owner-img[hidden] {
+    display: none;
+  }
+
+  .invite-owner-initial {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-light);
+    color: var(--text-sub);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .invite-room-name {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    margin: 0.75rem 0 0.4rem;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  .invite-stats {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .invite-stats strong {
+    color: var(--text-heading);
+  }
+
+  .invite-restaurants {
+    list-style: none;
+    margin: 1.2rem 0 0;
+    padding: 0;
+    text-align: left;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+  }
+
+  .invite-restaurants:empty {
+    display: none;
+  }
+
+  .invite-restaurants :global(li) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+  }
+
+  .invite-restaurants :global(li + li) {
+    border-top: 1px solid var(--border-light);
+  }
+
+  .invite-restaurants :global(.invite-rest-name) {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .invite-restaurants :global(.invite-rest-meta) {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .invite-restaurants :global(.invite-rest-rating) {
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .invite-empty {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .invite-login-btn {
+    width: 100%;
+    margin-top: 1.4rem;
+    padding: 0.85rem 1rem;
+    background: var(--text-heading);
+    color: var(--bg-card);
+    font-size: 0.95rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .invite-login-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .invite-hint {
+    margin-top: 0.6rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
 </style>
 
 <script>
-  import { fetchCurrentUser, joinRoom, showToast } from '@/lib/api';
+  import type { InvitePreview } from '@repo/types';
+  import { fetchCurrentUser, fetchInvitePreview, joinRoom, showToast } from '@/lib/api';
+  import { trackEvent } from '@/lib/analytics';
+
+  function renderPreview(code: string, preview: InvitePreview) {
+    const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+    el('invite-owner-name').textContent = preview.owner.nickname;
+    const img = el<HTMLImageElement>('invite-owner-img');
+    const initial = el('invite-owner-initial');
+    if (preview.owner.profileImageUrl) {
+      img.src = preview.owner.profileImageUrl;
+      img.hidden = false;
+      initial.hidden = true;
+    } else {
+      initial.textContent = preview.owner.nickname.slice(0, 1);
+    }
+
+    el('invite-room-name').textContent = preview.roomName;
+    el('invite-rest-count').textContent = String(preview.restaurantCount);
+    el('invite-review-count').textContent = String(preview.reviewCount);
+    el('invite-member-count').textContent = String(preview.memberCount);
+
+    // textContent로만 채워 사용자 입력(방·식당 이름)이 HTML로 해석되지 않게 한다
+    const list = el<HTMLUListElement>('invite-restaurants');
+    for (const r of preview.recentRestaurants) {
+      const li = document.createElement('li');
+      const info = document.createElement('div');
+      info.style.minWidth = '0';
+      const name = document.createElement('div');
+      name.className = 'invite-rest-name';
+      name.textContent = r.name;
+      const meta = document.createElement('div');
+      meta.className = 'invite-rest-meta';
+      meta.textContent = [r.category, r.neighborhood].filter(Boolean).join(' · ');
+      info.append(name, meta);
+      li.append(info);
+      if (r.avgRating !== null) {
+        const rating = document.createElement('span');
+        rating.className = 'invite-rest-rating';
+        rating.textContent = `★ ${r.avgRating.toFixed(1)}`;
+        li.append(rating);
+      }
+      list.append(li);
+    }
+    el('invite-empty').hidden = preview.restaurantCount > 0;
+
+    const btn = el<HTMLButtonElement>('invite-login-btn');
+    if (preview.isFull) {
+      // 꽉 찬 방이면 가입시켜봐야 입장에서 막히므로 로그인으로 보내지 않는다
+      btn.disabled = true;
+      el('invite-full').hidden = false;
+      el('invite-hint').hidden = true;
+    } else {
+      btn.addEventListener('click', () => {
+        trackEvent('invite_login_clicked', { restaurant_count: preview.restaurantCount });
+        localStorage.setItem('login_redirect', `/join?code=${encodeURIComponent(code)}`);
+        location.href = '/login';
+      });
+    }
+
+    el('invite-preview').hidden = false;
+    trackEvent('invite_preview_viewed', {
+      restaurant_count: preview.restaurantCount,
+      member_count: preview.memberCount,
+      is_full: preview.isFull,
+    });
+  }
 
   async function initJoinPage() {
     const statusEl = document.getElementById('join-status');
@@ -81,25 +297,39 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return;
     }
 
+    const showError = (message: string) => {
+      statusEl.hidden = true;
+      errorEl.textContent = message;
+      errorEl.hidden = false;
+    };
+
     const user = await fetchCurrentUser();
 
     if (!user) {
-      // 비로그인 → 로그인 선택 페이지 경유 (카카오/네이버 선택 가능)
-      localStorage.setItem('login_redirect', `/join?code=${code}`);
-      location.href = '/login';
+      // 비로그인 → 미리보기를 보여주고, 버튼을 눌렀을 때 로그인 페이지 경유
+      try {
+        const preview = await fetchInvitePreview(code);
+        statusEl.hidden = true;
+        renderPreview(code, preview);
+      } catch (err) {
+        showError(err instanceof Error ? err.message : '유효하지 않은 초대 링크입니다.');
+      }
       return;
     }
 
-    // 자동 입장 시도
+    // 로그인 상태 → 자동 입장
     statusEl.textContent = '입장 중...';
     try {
       const room = await joinRoom(code);
-      showToast(`"${room.name}" 방에 입장했습니다!`, 'success');
+      showToast(
+        room.alreadyMember
+          ? `이미 참여 중인 "${room.name}" 방이에요`
+          : `"${room.name}" 방에 입장했습니다!`,
+        'success',
+      );
       location.href = `/room?id=${room.id}`;
     } catch (err) {
-      statusEl.hidden = true;
-      errorEl.textContent = err instanceof Error ? err.message : '입장에 실패했습니다.';
-      errorEl.hidden = false;
+      showError(err instanceof Error ? err.message : '입장에 실패했습니다.');
     }
   }
 

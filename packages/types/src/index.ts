@@ -33,6 +33,8 @@ export type {
   CompareReviewsResponse,
   PublicRoomListItem,
   PaginatedPublicRooms,
+  InvitePreview,
+  InvitePreviewRestaurant,
 } from './room';
 export type { Inquiry } from './inquiry';
 export type { Notice } from './notice';

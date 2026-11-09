@@ -218,7 +218,8 @@ export class RoomsService {
     ]);
 
     if (kicked) throw new ForbiddenException('이 방에서 강퇴되어 재입장할 수 없습니다.');
-    if (existing) throw new ConflictException('이미 이 방에 참여하고 있습니다');
+    // 이미 멤버면 에러 대신 방을 돌려줘 초대 링크를 다시 눌러도 방으로 들어가게 한다
+    if (existing) return { ...room, alreadyMember: true };
     if (userRoomCount >= MAX_ROOMS_PER_USER) {
       throw new ForbiddenException(`참여할 수 있는 방은 최대 ${MAX_ROOMS_PER_USER}개입니다.`);
     }
@@ -236,7 +237,56 @@ export class RoomsService {
       this.createNotificationForRoom(room.id, userId, 'member_joined', `${joinedUser.nickname}님이 방에 참여했습니다.`).catch(() => {});
     }
 
-    return room;
+    return { ...room, alreadyMember: false };
+  }
+
+  /**
+   * 초대 링크 미리보기 (비로그인).
+   * 초대 코드를 가진 사람은 어차피 입장할 수 있으므로 방 이름·방장·식당 이름 수준만 노출하고,
+   * 리뷰 본문·멤버 목록·방 ID는 내려주지 않는다.
+   */
+  async getInvitePreview(inviteCode: string) {
+    const room = await this.prisma.read.room.findUnique({
+      where: { inviteCode },
+      select: {
+        name: true,
+        maxMembers: true,
+        owner: { select: { nickname: true, profileImageUrl: true, profileImageVersion: true } },
+        _count: { select: { members: true, restaurants: true } },
+        restaurants: {
+          select: {
+            name: true,
+            category: true,
+            neighborhood: true,
+            visits: { select: { reviews: { select: { rating: true } } } },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 3,
+        },
+      },
+    });
+    if (!room) throw new NotFoundException('유효하지 않은 초대 코드입니다');
+
+    const reviewCount = await this.prisma.read.roomReview.count({
+      where: { visit: { restaurant: { room: { inviteCode } } } },
+    });
+
+    const owner = withProfileImage(room.owner);
+    return {
+      roomName: room.name,
+      owner: { nickname: owner.nickname, profileImageUrl: owner.profileImageUrl },
+      memberCount: room._count.members,
+      maxMembers: room.maxMembers,
+      isFull: room._count.members >= room.maxMembers,
+      restaurantCount: room._count.restaurants,
+      reviewCount,
+      recentRestaurants: room.restaurants.map((r) => ({
+        name: r.name,
+        category: r.category,
+        neighborhood: r.neighborhood,
+        avgRating: calcAvgRating(r.visits.flatMap((v) => v.reviews.map((rev) => rev.rating))),
+      })),
+    };
   }
 
   /** 방 설정 수정 (owner만) */

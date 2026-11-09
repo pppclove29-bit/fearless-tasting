@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards, Req, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
@@ -78,6 +78,16 @@ export class RoomsController {
   }
 
   // ─── 공개 API (비로그인) ───
+
+  /** 초대 링크 미리보기 — 로그인 전에 방 이름·방장·식당 일부를 보여준다 */
+  @Get('invite/:code')
+  @Throttle({ default: { ttl: 60000, limit: 20 } })
+  @ApiOperation({ summary: '초대 코드로 방 미리보기 (비로그인 가능)' })
+  @ApiParam({ name: 'code', description: '8자 초대 코드' })
+  getInvitePreview(@Param('code') code: string) {
+    if (!/^[0-9a-zA-Z]{8}$/.test(code)) throw new NotFoundException('유효하지 않은 초대 코드입니다');
+    return this.roomsService.getInvitePreview(code);
+  }
 
   /** 플랫폼 공개 통계 */
   @Get('platform-stats')

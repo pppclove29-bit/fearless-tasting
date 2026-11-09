@@ -314,3 +314,25 @@ export interface PaginatedPublicRooms {
   page: number;
   pageSize: number;
 }
+
+// ─── 초대 링크 미리보기 (비로그인) ───
+
+export interface InvitePreviewRestaurant {
+  name: string;
+  category: string;
+  neighborhood: string;
+  avgRating: number | null;
+}
+
+/** 초대 코드로 조회하는 방 미리보기. 로그인 전 "누가 어떤 방에 초대했는지" 보여주는 용도 */
+export interface InvitePreview {
+  roomName: string;
+  owner: { nickname: string; profileImageUrl: string | null };
+  memberCount: number;
+  maxMembers: number;
+  isFull: boolean;
+  restaurantCount: number;
+  reviewCount: number;
+  /** 최근 추가된 식당 최대 3곳 */
+  recentRestaurants: InvitePreviewRestaurant[];
+}

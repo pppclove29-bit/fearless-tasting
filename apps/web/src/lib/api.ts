@@ -7,7 +7,7 @@ import type {
   Inquiry, Notice, PollOption, Poll, SharedPoll, TimelineItem,
   AppNotification, RoomStats, PlatformStats,
   RankingUser, RankingsResponse, DiscoverRestaurant, DiscoverResponse,
-  PublicRoomListItem, PaginatedPublicRooms,
+  PublicRoomListItem, PaginatedPublicRooms, InvitePreview,
   Board, BoardListItem, PostAuthor, PostListItem, PaginatedPosts, PostDetail, PostRestaurant,
 } from '@repo/types';
 
@@ -18,7 +18,7 @@ export type {
   Inquiry, Notice, PollOption, Poll, SharedPoll, TimelineItem,
   RoomStats, PlatformStats, RankingUser, RankingsResponse,
   DiscoverRestaurant, DiscoverResponse,
-  PublicRoomListItem, PaginatedPublicRooms,
+  PublicRoomListItem, PaginatedPublicRooms, InvitePreview,
   Board, BoardListItem, PostAuthor, PostListItem, PaginatedPosts, PostDetail, PostRestaurant,
 };
 export type { AppNotification as Notification } from '@repo/types';
@@ -433,17 +433,24 @@ export async function createRoom(
   return room;
 }
 
-/** 초대 코드로 입장 */
-export async function joinRoom(inviteCode: string): Promise<Room> {
+/** 초대 코드로 입장. 이미 멤버면 alreadyMember=true로 방을 돌려준다 */
+export async function joinRoom(inviteCode: string): Promise<Room & { alreadyMember: boolean }> {
   const res = await apiFetch(`${API_BASE}/rooms/join`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ inviteCode }),
   });
   await throwIfNotOk(res, '입장에 실패했습니다.');
-  const room: Room = await res.json();
-  trackEvent('room_joined', { room_id: room.id, method: 'invite_code' });
+  const room: Room & { alreadyMember: boolean } = await res.json();
+  if (!room.alreadyMember) trackEvent('room_joined', { room_id: room.id, method: 'invite_code' });
   return room;
+}
+
+/** 초대 링크 미리보기 (비로그인 가능) */
+export async function fetchInvitePreview(inviteCode: string): Promise<InvitePreview> {
+  const res = await apiFetch(`${API_BASE}/rooms/invite/${encodeURIComponent(inviteCode)}`);
+  await throwIfNotOk(res, '초대 정보를 불러오지 못했습니다.');
+  return res.json();
 }
 
 /** 공개 방 참여 (초대 코드 없이, 로그인 필수) */
