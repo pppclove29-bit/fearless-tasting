@@ -40,11 +40,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <label class="modal-label" for="create-name">방 이름</label>
             <input type="text" id="create-name" class="modal-input" placeholder="예: 우리 동네 맛집" required maxlength="100" />
           </div>
-          <div class="modal-field">
+          <!-- 방 만들기는 이름만 묻는다: 인원은 템플릿 기본값, 공개 여부는 숨긴 기능이라 방 설정에서만 바꾼다 -->
+          <div class="modal-field" hidden style="display:none">
             <label class="modal-label" for="create-max-members">최대 인원 <span style="font-weight:400;color:var(--text-muted);font-size:0.75rem;">(2~20명)</span></label>
-            <input type="number" id="create-max-members" class="modal-input modal-input-short" min="2" max="20" value="4" />
+            <input type="number" id="create-max-members" class="modal-input modal-input-short" min="2" max="20" value="8" />
           </div>
-          <div class="modal-field">
+          <div class="modal-field" hidden style="display:none">
             <label class="modal-checkbox-label">
               <input type="checkbox" id="create-public" />
               <span>공개 방으로 만들기</span>
@@ -1207,7 +1208,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const name = createNameInput?.value.trim();
       if (!name) return;
       const isPublic = createPublicCheckbox?.checked ?? false;
-      const maxMembers = createMaxMembersInput ? parseInt(createMaxMembersInput.value, 10) || 4 : undefined;
+      const maxMembers = createMaxMembersInput ? parseInt(createMaxMembersInput.value, 10) || 8 : undefined;
 
       creating = true;
       const submitBtn = createForm.querySelector<HTMLButtonElement>('button[type="submit"]');
@@ -1222,7 +1223,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         }
         if (createNameInput) createNameInput.value = '';
         if (createPublicCheckbox) createPublicCheckbox.checked = false;
-        if (createMaxMembersInput) createMaxMembersInput.value = '4';
+        if (createMaxMembersInput) createMaxMembersInput.value = '8';
         if (createModal) createModal.hidden = true;
         allRooms = await fetchMyRooms();
         applyAndRenderHome();

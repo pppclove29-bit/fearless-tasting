@@ -64,11 +64,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <label class="modal-label" for="create-name">방 이름</label>
             <input type="text" id="create-name" class="modal-input" placeholder="예: 우리 동네 맛집" required maxlength="100" />
           </div>
-          <div class="modal-field">
+          <!-- 방 만들기는 이름만 묻는다: 인원은 템플릿 기본값, 공개 여부는 숨긴 기능이라 방 설정에서만 바꾼다 -->
+          <div class="modal-field" hidden style="display:none">
             <label class="modal-label" for="create-max-members">최대 인원 <span style="font-weight:400;color:var(--text-muted);font-size:0.75rem;">(2~20명)</span></label>
-            <input type="number" id="create-max-members" class="modal-input modal-input-short" min="2" max="20" value="4" />
+            <input type="number" id="create-max-members" class="modal-input modal-input-short" min="2" max="20" value="8" />
           </div>
-          <div class="modal-field">
+          <div class="modal-field" hidden style="display:none">
             <label class="modal-checkbox-label">
               <input type="checkbox" id="create-public" />
               <span>공개 방으로 만들기</span>
@@ -539,7 +540,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     maxMembers: number;
   }
   const ROOM_TEMPLATES: Record<TemplateKey, RoomTemplate> = {
-    empty:    { defaultName: '',              tabs: { wishlist: true,  region: true,  poll: false, stats: false }, maxMembers: 4 },
+    empty:    { defaultName: '',              tabs: { wishlist: true,  region: true,  poll: false, stats: false }, maxMembers: 8 },
     meal:     { defaultName: '회식 맛집',     tabs: { wishlist: false, region: false, poll: true,  stats: false }, seedPoll: true, maxMembers: 15 },
     couple:   { defaultName: '우리 데이트 맛집', tabs: { wishlist: true,  region: true,  poll: false, stats: true  }, maxMembers: 2 },
     newlywed: { defaultName: '신혼 맛집 지도',  tabs: { wishlist: true,  region: true,  poll: false, stats: false }, maxMembers: 2 },
@@ -547,7 +548,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     friends:  { defaultName: '친구들 맛집 모음',tabs: { wishlist: true,  region: false, poll: true,  stats: false }, maxMembers: 8 },
   };
   import type { RoomListItem } from '@/lib/api';
-  import { runTutorial } from '@/lib/tutorial';
 
   function initRoomsPage() {
     const loadingMsg = document.getElementById('loading-msg');
@@ -782,7 +782,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         }
         if (createNameInput) createNameInput.value = '';
         if (createPublicCheckbox) createPublicCheckbox.checked = false;
-        if (createMaxMembersInput) createMaxMembersInput.value = '4';
+        if (createMaxMembersInput) createMaxMembersInput.value = '8';
         selectedTemplate = 'empty';
         if (templateGrid) {
           for (const b of templateGrid.querySelectorAll('.template-card')) b.classList.remove('active');
@@ -815,14 +815,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       updateSearchVisibility();
       applyAndRender();
 
-      // "방 만들기" 코치마크 (처음 들어온 유저 1회)
-      runTutorial('create_room', [
-        {
-          target: '#create-room-btn',
-          title: '여기서 방을 만들 수 있어요',
-          description: '방을 만들면 친구·가족과 함께 맛집 리스트를 공유할 수 있어요. 이 버튼을 눌러 시작해보세요.',
-        },
-      ]).catch(() => {});
+      // 코치마크는 2026-11에 제거했다 (오버레이가 너무 많아 첫 사용 흐름을 끊었다. 빈 상태 CTA·펄스가 같은 역할을 한다)
     })();
   }
 

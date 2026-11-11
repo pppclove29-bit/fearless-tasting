@@ -8,7 +8,6 @@
 import { completeOnboarding, apiFetch, showPermissionDeniedGuide } from './api';
 import { registerPushToken } from './firebase';
 import { trackEvent } from './analytics';
-import { getVariant } from './ab-test';
 
 const ONBOARDING_VARIANTS = ['full', 'minimal'] as const;
 type OnboardingVariant = typeof ONBOARDING_VARIANTS[number];
@@ -27,7 +26,9 @@ export async function startOnboarding(): Promise<void> {
   // 이미 열려있으면 중복 방지
   if (document.getElementById('onboarding-overlay')) return;
 
-  const variant: OnboardingVariant = getVariant('onboarding', ONBOARDING_VARIANTS);
+  // 2026-11: 짧은 버전(minimal)으로 고정. 맥락 없이 알림·위치 권한을 연달아 묻는 full 변형은 진입장벽이었다.
+  // 권한은 리뷰 작성 직후(push-onboard)·지도 내 위치 버튼처럼 필요한 순간에 요청한다.
+  const variant: OnboardingVariant = 'minimal';
 
   const allSteps: Step[] = [
     {
@@ -41,9 +42,9 @@ export async function startOnboarding(): Promise<void> {
     {
       id: 'room',
       icon: '🏠',
-      title: '방을 만들거나 참여하세요',
+      title: '방을 만들고 같이 먹을 사람을 초대하세요',
       description:
-        '내 방은 언제든 홈 화면에서 확인할 수 있어요. 초대 코드를 받으셨다면 "방 참여"로 바로 들어올 수 있습니다.',
+        '혼자서도 맛집 3곳까지 먼저 기록해볼 수 있어요. 친구가 초대 링크로 들어오면 함께 기록하고 서로의 리뷰를 비교할 수 있어요.',
       actionLabel: variant === 'minimal' ? '시작하기' : '다음',
     },
     {
