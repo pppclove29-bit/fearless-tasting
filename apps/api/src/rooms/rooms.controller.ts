@@ -478,7 +478,7 @@ export class RoomsController {
   /** 방문 기록 생성 */
   @Post(':id/restaurants/:rid/visits')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
-  @UseGuards(RoomMemberGuard, RoomUnlockedGuard)
+  @UseGuards(RoomMemberGuard)
   @ApiOperation({ summary: '방문 기록 생성' })
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'rid', description: '식당 ID' })
@@ -532,7 +532,7 @@ export class RoomsController {
   /** 방문 기록에 리뷰 작성 */
   @Post(':id/visits/:visitId/reviews')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
-  @UseGuards(RoomMemberGuard, RoomUnlockedGuard)
+  @UseGuards(RoomMemberGuard)
   @ApiOperation({ summary: '방문 기록에 리뷰 작성 (방문당 1인 1리뷰)' })
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'visitId', description: '방문 ID' })

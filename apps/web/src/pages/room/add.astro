@@ -558,8 +558,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         fetchActiveCategories(),
       ]);
       if (!user) { location.href = '/login'; return; }
-      // 초대 필수 방이 아직 혼자면 기록할 수 없으므로 초대 화면(방 페이지)으로 보낸다
-      if (room.inviteRequired) { location.replace(`/room?id=${roomId}`); return; }
+      // 혼자 기록할 수 있는 식당 한도를 채운 방은 새 식당을 추가할 수 없으므로 초대 카드가 있는 방 화면으로 보낸다
+      // (이미 있는 식당에 방문·리뷰를 남기는 경우는 허용)
+      if (room.inviteRequired && !existingRestId) { location.replace(`/room?id=${roomId}`); return; }
       loadingMsg.hidden = true;
       content.hidden = false;
       renderWizard(user, room, categoryList);
@@ -665,11 +666,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <!-- 스텝 2: 리뷰 (방문 정보 포함) -->
       <div class="step-panel ${isExisting ? 'active' : ''}" id="step-2">
         <div class="step-title">어땠나요?</div>
-        <div class="step-desc">방문 정보와 후기를 남겨주세요.</div>
+        <div class="step-desc">총점만 남기면 끝나요. 나머지는 원할 때만 채우세요.</div>
 
         <details class="accordion-card" open>
           <summary class="accordion-header">
-            <span>🗓️ 방문 정보</span>
+            <span>⭐ 총점</span>
+            <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </summary>
+          <div class="accordion-body">
+            <div class="main-rating-area">
+              <div class="star-rating" id="main-stars">
+                ${[1,2,3,4,5].map((n) => `<span class="star-wrap" data-star="${n}"><svg class="star-bg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg><svg class="star-half-fill" viewBox="0 0 24 24" fill="currentColor"><defs><clipPath id="half-clip"><rect x="0" y="0" width="12" height="24"/></clipPath></defs><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" clip-path="url(#half-clip)"/></svg><svg class="star-full-fill" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg></span>`).join('')}
+                <span class="star-rating-value" id="main-stars-value"></span>
+              </div>
+              <span class="main-rating-hint">별을 눌러 평가하세요</span>
+            </div>
+          </div>
+        </details>
+
+        <details class="accordion-card">
+          <summary class="accordion-header">
+            <span>🗓️ 방문일·웨이팅 <span class="optional-hint">(기본: 오늘)</span></span>
             <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </summary>
           <div class="accordion-body">
@@ -685,22 +702,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <div class="wait-chips" id="wait-chips">
                 ${waitOptions.map((w) => `<button type="button" class="wait-chip" data-wait="${w}">${w}</button>`).join('')}
               </div>
-            </div>
-          </div>
-        </details>
-
-        <details class="accordion-card" open>
-          <summary class="accordion-header">
-            <span>⭐ 총점</span>
-            <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </summary>
-          <div class="accordion-body">
-            <div class="main-rating-area">
-              <div class="star-rating" id="main-stars">
-                ${[1,2,3,4,5].map((n) => `<span class="star-wrap" data-star="${n}"><svg class="star-bg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg><svg class="star-half-fill" viewBox="0 0 24 24" fill="currentColor"><defs><clipPath id="half-clip"><rect x="0" y="0" width="12" height="24"/></clipPath></defs><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" clip-path="url(#half-clip)"/></svg><svg class="star-full-fill" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg></span>`).join('')}
-                <span class="star-rating-value" id="main-stars-value"></span>
-              </div>
-              <span class="main-rating-hint">별을 눌러 평가하세요</span>
             </div>
           </div>
         </details>
@@ -745,7 +746,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         <details class="accordion-card">
           <summary class="accordion-header">
-            <span>📍 재방문 의사</span>
+            <span>📍 재방문 의사 <span class="optional-hint">(선택)</span></span>
             <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </summary>
           <div class="accordion-body">
@@ -830,23 +831,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      // 스텝 2 진입 시 리뷰 단계 튜토리얼 발동
-      if (step === 2) {
-        import('@/lib/tutorial').then(({ runTutorial }) => {
-          runTutorial('register_restaurant_step2', [
-            {
-              target: '#main-stars',
-              title: '별점을 눌러 평가하세요',
-              description: '별을 클릭해 총점을 매깁니다. 반 별(0.5)도 가능하고, 같은 별을 다시 누르면 취소돼요.',
-            },
-            {
-              target: '#btn-submit',
-              title: '마지막으로 등록 완료',
-              description: '모두 입력했으면 이 버튼을 눌러 식당·방문·리뷰를 한 번에 저장하세요.',
-            },
-          ]).catch(() => {});
-        }).catch(() => {});
-      }
+      // 코치마크는 2026-11에 제거했다 (오버레이가 너무 많아 첫 사용 흐름을 끊었다. 빈 상태 CTA·펄스가 같은 역할을 한다)
     }
 
     // ── 스텝 1: 식당 검색 ──
@@ -1375,28 +1360,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     document.getElementById('btn-add-more')?.addEventListener('click', () => { location.reload(); });
 
-    // 신규 등록일 때만 스텝 1 튜토리얼 (기존 식당 리뷰 추가는 바로 스텝 2에서 시작)
-    if (!isExisting) {
-      import('@/lib/tutorial').then(({ runTutorial }) => {
-        const searchTarget = hasKakaoMap ? '#place-search' : '#manual-name';
-        runTutorial('register_restaurant_step1', [
-          {
-            target: searchTarget,
-            title: '식당을 검색하거나 직접 입력',
-            description: hasKakaoMap
-              ? '2글자 이상 입력하면 카카오·네이버 결과가 탭으로 표시돼요. 없으면 "직접 입력"으로 전환할 수 있어요.'
-              : '식당 이름과 주소를 입력하세요.',
-            placement: 'bottom',
-          },
-          {
-            target: '#btn-step1-next',
-            title: '리뷰 단계로 이동',
-            description: '식당을 선택하거나 정보를 모두 입력하면 이 버튼이 활성화됩니다.',
-            placement: 'top',
-          },
-        ]).catch(() => {});
-      }).catch(() => {});
-    }
+    // 코치마크는 2026-11에 제거했다 (오버레이가 너무 많아 첫 사용 흐름을 끊었다. 빈 상태 CTA·펄스가 같은 역할을 한다)
   }
   }
 
