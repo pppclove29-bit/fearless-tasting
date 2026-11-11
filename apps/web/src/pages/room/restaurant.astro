@@ -1554,6 +1554,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-family: inherit;
     transition: color 0.12s;
   }
+  /* ★ 글자는 일부 기기 폰트에서 안 보여 SVG로 그린다 (2026-04 피드백) */
+  .detail-star svg { display: block; width: 100%; height: 100%; pointer-events: none; }
   .detail-star.filled { color: #f59e0b; }
   .detail-star.preview { color: #fbbf24; opacity: 0.75; }
   .detail-star:hover { transform: scale(1.08); }
@@ -1929,7 +1931,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const keyPart = name.split('-').pop() || '';
       const guides = detailGuides[keyPart] || [];
       const stars = [1, 2, 3, 4, 5].map((n) =>
-        `<button type="button" class="detail-star${n <= v ? ' filled' : ''}" data-val="${n}" aria-label="${n}점">★</button>`,
+        `<button type="button" class="detail-star${n <= v ? ' filled' : ''}" data-val="${n}" aria-label="${n}점"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg></button>`,
       ).join('');
       const guideText = v > 0 ? `${v}. ${guides[v - 1] ?? ''}` : '별을 눌러 평가해주세요 · 같은 별 재클릭 시 취소';
       const guideClass = v > 0 ? 'detail-rating-guide' : 'detail-rating-guide is-empty';
