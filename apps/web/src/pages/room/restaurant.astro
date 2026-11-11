@@ -736,8 +736,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   .more-menu-btn {
-    background: var(--bg-card);
-    border: 1px solid var(--border-mid);
+    background: transparent;
+    border: 1px solid transparent;
     border-radius: 6px;
     cursor: pointer;
     font-size: 1.1rem;
@@ -1836,11 +1836,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     cursor: not-allowed;
   }
   .visit-nav-label {
-    font-size: 0.92rem;
+    font-size: 0.88rem;
     font-weight: 600;
     color: var(--text-heading);
-    min-width: 150px;
+    min-width: 0;
+    flex: 1;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .visit-slide {
     animation: visitFadeIn 0.2s ease;
@@ -2126,16 +2130,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${detailRatings.length > 0 ? `<div class="review-detail-chips">${detailRatings.map(r => `<span class="review-detail-chip">${r}</span>`).join('')}</div>` : ''}
           ${rev.tryNextMenu ? `<div class="review-meta-row">다음에 시켜볼: ${escapeHtml(rev.tryNextMenu)}</div>` : ''}
         </div>
-        <button type="button" class="review-toggle-extras">전체보기</button>
+        <button type="button" class="review-toggle-extras">세부 평점 보기</button>
       ` : '';
 
       const avatarHtml = rev.user.profileImageUrl
         ? `<img src="${escapeHtml(rev.user.profileImageUrl)}" alt="${escapeHtml(rev.user.nickname)}" />`
         : `<span class="avatar-initial">${escapeHtml(rev.user.nickname.charAt(0))}</span>`;
 
-      const speechContent = rev.content
-        ? escapeHtml(rev.content)
-        : '<span style="color:var(--text-muted);font-style:italic;">별점만 남긴 리뷰</span>';
+      // 별점만 남긴 리뷰는 말풍선 없이 별점만 보여준다 (빈 상자가 반복되면 화면이 비어 보임)
+      const speechHtml = rev.content ? `<div class="review-speech">${escapeHtml(rev.content)}</div>` : '';
 
       const bigStars = formatRating(rev.rating);
 
@@ -2155,7 +2158,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="review-avatar">${avatarHtml}</div>
           <div class="review-bubble-body">
             <div class="review-nickname">${escapeHtml(rev.user.nickname)} ${revisitBadge} ${actionsHtml}</div>
-            <div class="review-speech">${speechContent}</div>
+            ${speechHtml}
             ${imagesHtml}
             <div class="review-stars-big">${bigStars} <span class="rating-num">${rev.rating}</span></div>
             ${favMenuHtml}
@@ -2186,13 +2189,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                </div>
              </div>
              <div class="review-form-card">
-               <div class="review-form-card-header">💬 한줄 리뷰 <span class="optional-hint">(선택)</span></div>
+               <div class="review-form-card-header">한줄 리뷰 <span class="optional-hint">(선택)</span></div>
                <div class="review-form-card-body">
                  <textarea class="new-review-content auto-grow" placeholder="이 식당을 한마디로 표현한다면?" rows="2"></textarea>
                </div>
              </div>
              <details class="review-form-card">
-               <summary class="review-form-card-header" style="cursor:pointer;list-style:none;">🔍 세부 평점 <span class="optional-hint">(선택 · 펼쳐서 입력)</span></summary>
+               <summary class="review-form-card-header" style="cursor:pointer;list-style:none;">세부 평점 <span class="optional-hint">(선택 · 펼쳐서 입력)</span></summary>
                <div class="review-form-card-body">
                  ${detailSliderHtml('맛', 'new-review-taste', 0)}
                  ${detailSliderHtml('가성비', 'new-review-value', 0)}
@@ -2202,7 +2205,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                </div>
              </details>
              <div class="review-form-card">
-               <div class="review-form-card-header">🔄 재방문 의사</div>
+               <div class="review-form-card-header">재방문 의사</div>
                <div class="review-form-card-body">
                  <div class="revisit-btns new-review-revisit-btns">
                    <button type="button" class="revisit-btn" data-val="5">꼭 다시 갈 거예요</button>
@@ -2414,10 +2417,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               const googleUrl = `https://www.google.com/search?q=${q}+%EB%A6%AC%EB%B7%B0`;
               return `
                 <div class="rest-ext-links">
-                  <a class="rest-ext-link" href="${kakaoUrl}" target="_blank" rel="noopener"><span class="rest-ext-icon">🗺️</span>카카오맵</a>
-                  <a class="rest-ext-link" href="${naverMapUrl}" target="_blank" rel="noopener"><span class="rest-ext-icon">🧭</span>네이버 지도</a>
-                  <a class="rest-ext-link" href="${naverBookingUrl}" target="_blank" rel="noopener"><span class="rest-ext-icon">📅</span>예약 확인</a>
-                  <a class="rest-ext-link" href="${googleUrl}" target="_blank" rel="noopener"><span class="rest-ext-icon">🔎</span>리뷰 찾기</a>
+                  <a class="rest-ext-link" href="${kakaoUrl}" target="_blank" rel="noopener">카카오맵</a>
+                  <a class="rest-ext-link" href="${naverMapUrl}" target="_blank" rel="noopener">네이버 지도</a>
+                  <a class="rest-ext-link" href="${naverBookingUrl}" target="_blank" rel="noopener">예약 확인</a>
+                  <a class="rest-ext-link" href="${googleUrl}" target="_blank" rel="noopener">리뷰 찾기</a>
                 </div>`;
             })()}
             ${sortedVisits.length > 0 ? `
@@ -2472,14 +2475,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               if (sameCategory.length > 0) {
                 sections.push(`
                   <div class="similar-rest-section">
-                    <h3 class="similar-rest-heading">🍽️ 같은 카테고리 식당</h3>
+                    <h3 class="similar-rest-heading">같은 카테고리 식당</h3>
                     <div class="similar-rest-grid">${sameCategory.map(renderCard).join('')}</div>
                   </div>`);
               }
               if (nearby.length > 0) {
                 sections.push(`
                   <div class="similar-rest-section">
-                    <h3 class="similar-rest-heading">📍 근처 식당 둘러보기</h3>
+                    <h3 class="similar-rest-heading">근처 식당 둘러보기</h3>
                     <div class="similar-rest-grid">${nearby.map(renderCard).join('')}</div>
                   </div>`);
               }
@@ -2920,13 +2923,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 </div>
               </div>
               <div class="review-form-card">
-                <div class="review-form-card-header">💬 한줄 리뷰 <span class="optional-hint">(선택)</span></div>
+                <div class="review-form-card-header">한줄 리뷰 <span class="optional-hint">(선택)</span></div>
                 <div class="review-form-card-body">
                   <textarea class="edit-content auto-grow" rows="2">${escapeHtml(origContent)}</textarea>
                 </div>
               </div>
               <details class="review-form-card">
-                <summary class="review-form-card-header" style="cursor:pointer;list-style:none;">🔍 세부 평점 <span class="optional-hint">(선택 · 펼쳐서 입력)</span></summary>
+                <summary class="review-form-card-header" style="cursor:pointer;list-style:none;">세부 평점 <span class="optional-hint">(선택 · 펼쳐서 입력)</span></summary>
                 <div class="review-form-card-body">
                   ${detailSliderHtml('맛', 'edit-taste', btn.dataset.taste || '')}
                   ${detailSliderHtml('가성비', 'edit-value', btn.dataset.value || '')}
@@ -2936,7 +2939,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 </div>
               </details>
               <div class="review-form-card">
-                <div class="review-form-card-header">🔄 재방문 의사</div>
+                <div class="review-form-card-header">재방문 의사</div>
                 <div class="review-form-card-body">
                   <div class="revisit-btns edit-revisit-btns">
                     <button type="button" class="revisit-btn ${origRevisit === 5 ? 'active' : ''}" data-val="5">꼭 다시 갈 거예요</button>
@@ -2994,7 +2997,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           if (!extras) return;
           const isHidden = extras.hidden;
           extras.hidden = !isHidden;
-          btn.textContent = isHidden ? '접기' : '전체보기';
+          btn.textContent = isHidden ? '접기' : '세부 평점 보기';
         });
       }
 

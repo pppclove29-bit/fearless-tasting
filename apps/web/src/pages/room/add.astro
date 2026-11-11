@@ -652,7 +652,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <label class="form-label">카테고리</label>
             <div class="cat-chips" id="manual-cat-chips">
               ${categoryList.map((c) => `<button type="button" class="cat-chip" data-cat="${escapeHtml(c.name)}">${c.emoji ? escapeHtml(c.emoji) + ' ' : ''}${escapeHtml(c.name)}</button>`).join('')}
-              <button type="button" class="cat-chip" data-cat="__custom__">✏️ 직접 입력</button>
+              <button type="button" class="cat-chip" data-cat="__custom__">직접 입력</button>
             </div>
             <input type="text" class="form-input" id="manual-cat-custom" placeholder="직접 입력 (예: 패스트푸드)" hidden style="margin-top:0.4rem" />
           </div>
@@ -686,7 +686,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         <details class="accordion-card">
           <summary class="accordion-header">
-            <span>🗓️ 방문일·웨이팅 <span class="optional-hint">(기본: 오늘)</span></span>
+            <span>방문일·웨이팅 <span class="optional-hint">(기본: 오늘)</span></span>
             <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </summary>
           <div class="accordion-body">
@@ -708,7 +708,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         <details class="accordion-card">
           <summary class="accordion-header">
-            <span>💬 리뷰 및 메모 <span class="optional-hint">(선택)</span></span>
+            <span>리뷰 및 메모 <span class="optional-hint">(선택)</span></span>
             <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </summary>
           <div class="accordion-body">
@@ -718,7 +718,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         <details class="accordion-card">
           <summary class="accordion-header">
-            <span>🔍 세부 평점 <span class="optional-hint">(선택)</span></span>
+            <span>세부 평점 <span class="optional-hint">(선택)</span></span>
             <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </summary>
           <div class="accordion-body">
@@ -746,7 +746,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         <details class="accordion-card">
           <summary class="accordion-header">
-            <span>📍 재방문 의사 <span class="optional-hint">(선택)</span></span>
+            <span>재방문 의사 <span class="optional-hint">(선택)</span></span>
             <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </summary>
           <div class="accordion-body">

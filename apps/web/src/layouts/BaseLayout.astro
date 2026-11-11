@@ -722,6 +722,9 @@ const resolvedOgImage = ogImage
     }
   }
 
+  html.native-app footer { display: none; }
+  html.native-app main { min-height: 0; }
+
   footer {
     border-top: 1px solid var(--border);
     padding: 2.5rem 1.5rem 0;
@@ -1125,6 +1128,8 @@ const resolvedOgImage = ogImage
 
   // 네이티브 앱: 딥링크 수신(OAuth 복귀·초대 링크) + 하드웨어 뒤로가기 처리
   initNativeApp();
+  // 앱에서는 웹사이트용 푸터(가이드·SEO 링크)를 숨긴다
+  if (isNativeApp()) document.documentElement.classList.add('native-app');
 
   // PWA Service Worker 등록 + 업데이트 자동 적용
   // 네이티브 앱(Capacitor)은 번들 자체가 로컬이라 SW가 불필요하고,
