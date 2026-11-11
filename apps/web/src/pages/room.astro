@@ -32,6 +32,23 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <style is:global>
+  /* 선 아이콘 정렬 (lib/icons.ts) */
+  .ui-icon { flex-shrink: 0; display: inline-block; vertical-align: -0.15em; }
+  .room-tab-btn, .rec-open-btn, .viewport-filter-btn { display: inline-flex; align-items: center; gap: 0.3rem; }
+  .room-tab-btn .ui-icon { opacity: 0.85; }
+  .member-crown { display: inline-flex; color: #f59e0b; }
+  .stat-card-icon { display: inline-flex; color: var(--text-muted); }
+  .active-poll-icon { display: inline-flex; }
+  .room-announcement-icon { display: inline-flex; color: var(--text-muted); }
+  .timeline-icon .ui-icon { display: block; }
+  /* 방 설정 안의 위험 구역 */
+  .stg-danger { margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid var(--border); }
+  .stg-danger-btn {
+    width: 100%; padding: 0.55rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem;
+    background: transparent; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px;
+    font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .stg-danger-btn:hover { background: rgba(239, 68, 68, 0.08); }
   /* 브레드크럼 */
   .breadcrumb {
     display: flex;
@@ -121,12 +138,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .btn-settings:hover { color: var(--text-heading); background: var(--bg-hover); }
   .btn-settings svg { width: 20px; height: 20px; }
 
+  /* 방 설정은 화면 위에 뜨는 모달 (이 페이지엔 .modal-overlay 스타일이 없어 제목 옆에 끼어 열리던 문제) */
+  #settings-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.55);
+  }
+  #settings-modal[hidden] { display: none; }
   .stg {
     background: var(--bg-card);
     border-radius: 14px;
     padding: 1.2rem;
     width: 100%;
     max-width: 340px;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    border: 1px solid var(--border);
   }
   .stg-header {
     display: flex;
@@ -895,6 +927,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.75rem;
     color: var(--text-muted);
   }
+  .room-rest-meta { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
+  .room-rest-meta .room-rest-category {
+    flex-shrink: 0; padding: 0.05rem 0.4rem; border-radius: 4px;
+    background: var(--bg-hover); color: var(--text-sub); font-size: 0.7rem; font-weight: 600;
+  }
+  .room-rest-meta .room-rest-address {
+    margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
 
   .room-rest-score {
     font-size: 1rem;
@@ -917,6 +957,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     font-size: 0.75rem;
     color: var(--text-muted);
   }
+  .room-rest-info .room-rest-reviews-count { margin-top: 0.3rem; font-size: 0.72rem; }
+  .room-rest-top { align-items: center; }
 
   .wishlist-help {
     font-size: 0.75rem;
@@ -1040,6 +1082,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .rest-list-header .section-subtitle { margin-bottom: 0; }
 
   .rest-list-actions { display: inline-flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end; }
+  /* 모바일: 제목 아래 한 줄에 두 버튼을 반씩 */
+  @media (max-width: 480px) {
+    .rest-list-header { flex-wrap: wrap; gap: 0.6rem; }
+    .rest-list-header .rest-list-actions { width: 100%; flex-wrap: nowrap; }
+    .rest-list-header .rest-list-actions > * { flex: 1; justify-content: center; }
+  }
   .rec-open-btn {
     padding: 0.55rem 0.9rem;
     background: transparent;
@@ -2250,7 +2298,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   .unreviewed-item:last-child { border-bottom: none; }
 
   @media (max-width: 600px) {
-    .stats-grid { grid-template-columns: 1fr 1fr; }
+    /* 요약 카드 3개는 모바일에서도 한 줄: 아이콘을 숨기고 숫자만 크게 */
+    .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+    .stats-grid .stat-card { padding: 0.8rem 0.9rem; }
+    .stats-grid .stat-card-icon { display: none; }
     .form-row { grid-template-columns: 1fr; }
   }
 
@@ -2772,6 +2823,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     min-height: 300px;
     max-height: 500px;
   }
+  /* 방 첫 화면 지도는 낮게: 기록·추천 버튼이 첫 화면에 보이도록 */
+  .map-container #main-kakao-map { height: 30vh; min-height: 200px; max-height: 300px; }
 
   .map-no-data {
     text-align: center;
@@ -3059,6 +3112,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   import { renderSVG } from 'uqr';
   import { shareOrigin, shareNative } from '@/lib/native';
   import { openRecommendSheet } from '@/lib/recommend-ui';
+  import { icon } from '@/lib/icons';
 
   function initRoomPage() {
 
@@ -3164,14 +3218,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     if (src) {
       return `<img class="room-rest-thumb" src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" />`;
     }
-    const initial = (r.category || r.name || '·').trim().charAt(0);
-    return `<div class="room-rest-thumb room-rest-thumb--empty">${escapeHtml(initial)}</div>`;
+    return `<div class="room-rest-thumb room-rest-thumb--empty">${icon('utensils', 20)}</div>`;
   }
 
   function renderRestaurantCard(r: RoomRestaurantInfo): string {
     const closedBadge = r.isClosed ? '<span class="closed-badge">폐점</span> ' : '';
     const unreviewedBadge = r.hasMyReview === false
-      ? '<span class="unreviewed-badge" title="아직 내 리뷰가 없는 식당">📝 미작성</span> '
+      ? '<span class="unreviewed-badge" title="아직 내 리뷰가 없는 식당">미작성</span> '
       : '';
     return `
       <div class="room-restaurant-card${r.isClosed ? ' is-closed' : ''}" data-rid="${r.id}">
@@ -3179,13 +3232,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${renderRestThumb(r)}
           <div class="room-rest-info">
             <div class="room-rest-name">${closedBadge}${unreviewedBadge}${escapeHtml(r.name)}</div>
-            <div class="room-rest-address">${escapeHtml(r.address)}</div>
-            <div class="room-rest-category">· ${escapeHtml(r.category)}</div>
+            <div class="room-rest-meta"><span class="room-rest-category">${escapeHtml(r.category)}</span><span class="room-rest-address">${escapeHtml(r.address)}</span></div>
+            <div class="room-rest-reviews-count">방문 ${r._count.visits}회 · 리뷰 ${r._count.reviews}개</div>
           </div>
           ${r.avgRating ? `<div class="room-rest-score">${svgStar} ${r.avgRating}</div>` : ''}
-        </div>
-        <div class="room-rest-footer">
-          <span class="room-rest-reviews-count">방문 ${r._count.visits}회 · 리뷰 ${r._count.reviews}개</span>
         </div>
       </div>`;
   }
@@ -3198,8 +3248,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           ${renderRestThumb(r)}
           <div class="room-rest-info">
             <div class="room-rest-name">${closedBadge}${escapeHtml(r.name)}</div>
-            <div class="room-rest-address">${escapeHtml(r.address)}</div>
-            <div class="room-rest-category">· ${escapeHtml(r.category)}</div>
+            <div class="room-rest-meta"><span class="room-rest-category">${escapeHtml(r.category)}</span><span class="room-rest-address">${escapeHtml(r.address)}</span></div>
           </div>
         </div>
         <div class="room-rest-footer">
@@ -3312,7 +3361,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const svgLink = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
 
     const svgExit = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
-    const svgTrash = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
     const svgGlobe = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
 
     const expiryText = '';
@@ -3363,32 +3411,35 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 <div class="stg-tab-toggles">
                   <label class="stg-tab-toggle">
                     <input type="checkbox" id="settings-tab-wishlist" ${currentRoom.tabWishlistEnabled ? 'checked' : ''} />
-                    <span>💛 위시리스트</span>
+                    <span>위시리스트</span>
                   </label>
                   <label class="stg-tab-toggle">
                     <input type="checkbox" id="settings-tab-region" ${currentRoom.tabRegionEnabled ? 'checked' : ''} />
-                    <span>📍 지역</span>
+                    <span>지역</span>
                   </label>
                   <label class="stg-tab-toggle">
                     <input type="checkbox" id="settings-tab-poll" ${currentRoom.tabPollEnabled ? 'checked' : ''} />
-                    <span>🗳️ 투표</span>
+                    <span>투표</span>
                   </label>
                   <label class="stg-tab-toggle">
                     <input type="checkbox" id="settings-tab-stats" ${currentRoom.tabStatsEnabled ? 'checked' : ''} />
-                    <span>📊 통계</span>
+                    <span>통계</span>
                   </label>
                 </div>
                 <span class="stg-sub">식당·멤버·활동 탭은 항상 표시됩니다</span>
               </div>
               <button type="button" class="stg-save" id="settings-save-btn">저장</button>
+              <div class="stg-danger">
+                <button type="button" class="stg-danger-btn" id="delete-room-btn">${icon('trash', 14)}방 삭제</button>
+              </div>
             </div>
           </div>` : ''}
         </div>
         <div class="room-header-actions">
           <button type="button" class="room-action-chip" id="share-popover-btn">${svgLink} 공유</button>
           ${isOwner()
-            ? `<button type="button" class="room-action-chip room-action-chip--danger room-action-chip--right" id="delete-room-btn">${svgTrash} 방 삭제</button>`
-            : `<button type="button" class="room-action-chip room-action-chip--danger room-action-chip--right" id="leave-room-btn">${svgExit} 방 나가기</button>`}
+            ? ''
+            : `<button type="button" class="room-action-chip room-action-chip--right" id="leave-room-btn">${svgExit} 방 나가기</button>`}
         </div>
 
         <!-- Notion식 공유 팝오버 -->
@@ -3458,7 +3509,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
       ${currentRoom.announcement ? `
       <div class="room-announcement">
-        <span class="room-announcement-icon">📢</span>
+        <span class="room-announcement-icon">${icon('megaphone', 16)}</span>
         <span class="room-announcement-text">${escapeHtml(currentRoom.announcement)}</span>
       </div>` : ''}
 
@@ -3476,13 +3527,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <div id="active-poll-banner" hidden></div>
 
       <div class="room-tab-bar">
-        <button type="button" class="room-tab-btn active" data-tab="restaurants">🍽️ 식당</button>
-        ${currentRoom.tabWishlistEnabled ? '<button type="button" class="room-tab-btn" data-tab="wishlist">💛 위시리스트</button>' : ''}
-        ${currentRoom.tabRegionEnabled ? '<button type="button" class="room-tab-btn" data-tab="region">📍 지역</button>' : ''}
-        <button type="button" class="room-tab-btn" data-tab="timeline">📋 활동</button>
-        ${currentRoom.tabPollEnabled ? '<button type="button" class="room-tab-btn" data-tab="poll">🗳️ 투표</button>' : ''}
-        ${currentRoom.tabStatsEnabled ? '<button type="button" class="room-tab-btn" data-tab="stats">📊 통계</button>' : ''}
-        <button type="button" class="room-tab-btn" data-tab="members">👥 멤버 (${currentRoom.members.length}/${currentRoom.maxMembers})</button>
+        <button type="button" class="room-tab-btn active" data-tab="restaurants">${icon('utensils', 15)}식당</button>
+        ${currentRoom.tabWishlistEnabled ? `<button type="button" class="room-tab-btn" data-tab="wishlist">${icon('heart', 15)}위시리스트</button>` : ''}
+        ${currentRoom.tabRegionEnabled ? `<button type="button" class="room-tab-btn" data-tab="region">${icon('mapPin', 15)}지역</button>` : ''}
+        <button type="button" class="room-tab-btn" data-tab="timeline">${icon('activity', 15)}활동</button>
+        ${currentRoom.tabPollEnabled ? `<button type="button" class="room-tab-btn" data-tab="poll">${icon('vote', 15)}투표</button>` : ''}
+        ${currentRoom.tabStatsEnabled ? `<button type="button" class="room-tab-btn" data-tab="stats">${icon('chart', 15)}통계</button>` : ''}
+        <button type="button" class="room-tab-btn" data-tab="members">${icon('users', 15)}멤버 (${currentRoom.members.length}/${currentRoom.maxMembers})</button>
       </div>
 
       <div id="tab-restaurants" class="room-tab-panel"></div>
@@ -3539,7 +3590,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         : `아직 투표 안 함 · ${voters.size}/${currentRoom.members.length}명 참여`;
       return `
         <div class="active-poll-card" data-poll-id="${p.id}">
-          <span class="active-poll-icon">🗳️</span>
+          <span class="active-poll-icon">${icon('vote', 18)}</span>
           <div class="active-poll-body">
             <div class="active-poll-title">${escapeHtml(p.title)}</div>
             <div class="${metaClass}">${metaText}</div>
@@ -4227,7 +4278,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <div class="member-name-row">
                 <span class="member-nickname">${nick}</span>
                 ${isMe ? '<span class="member-me-badge">나</span>' : ''}
-                ${m.role === 'owner' ? '<span>👑</span>' : ''}
+                ${m.role === 'owner' ? `<span class="member-crown">${icon('crown', 14)}</span>` : ''}
                 <span class="member-role-badge ${m.role}">${roleLabel[m.role]}</span>
               </div>
             </div>
@@ -4399,9 +4450,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     // ── 기본 요약 ──
     const summaryHtml = `
       <div class="stats-grid">
-        <div class="stat-card"><span class="stat-card-icon">🍽</span><div class="stat-card-body"><div class="stat-card-label">총 식당</div><div class="stat-value">${summary.totalRestaurants}</div></div></div>
-        <div class="stat-card"><span class="stat-card-icon">📍</span><div class="stat-card-body"><div class="stat-card-label">총 방문</div><div class="stat-value">${summary.totalVisits}</div></div></div>
-        <div class="stat-card"><span class="stat-card-icon">👥</span><div class="stat-card-body"><div class="stat-card-label">멤버</div><div class="stat-value">${currentRoom.members.length}</div></div></div>
+        <div class="stat-card"><span class="stat-card-icon">${icon('utensils', 20)}</span><div class="stat-card-body"><div class="stat-card-label">총 식당</div><div class="stat-value">${summary.totalRestaurants}</div></div></div>
+        <div class="stat-card"><span class="stat-card-icon">${icon('mapPin', 20)}</span><div class="stat-card-body"><div class="stat-card-label">총 방문</div><div class="stat-value">${summary.totalVisits}</div></div></div>
+        <div class="stat-card"><span class="stat-card-icon">${icon('users', 20)}</span><div class="stat-card-body"><div class="stat-card-label">멤버</div><div class="stat-value">${currentRoom.members.length}</div></div></div>
       </div>`;
 
 
@@ -4508,7 +4559,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     // ── 월별 트렌드 (Chart.js) ──
     const monthHtml = monthlyVisits.length > 0 ? `
       <div class="stat-section">
-        <h3 class="stat-section-title">📈 월별 방문 추이</h3>
+        <h3 class="stat-section-title">월별 방문 추이</h3>
         <div class="chart-container"><canvas id="chart-monthly"></canvas></div>
       </div>` : '';
 
@@ -4742,7 +4793,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     const createFormHtml = `
       <div class="poll-create-form">
-        <h3>🗳️ 새 투표 만들기</h3>
+        <h3>새 투표 만들기</h3>
 
         <div class="poll-quick-templates">
           <span class="poll-qt-label">템플릿</span>
@@ -5067,12 +5118,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
 
     const iconMap: Record<string, { emoji: string; cls: string }> = {
-      restaurant_added: { emoji: '🍽', cls: 'restaurant' },
-      visit_added: { emoji: '👣', cls: 'visit' },
-      review_added: { emoji: '⭐', cls: 'review' },
-      member_joined: { emoji: '👤', cls: 'member' },
+      restaurant_added: { emoji: icon('utensils', 16), cls: 'restaurant' },
+      visit_added: { emoji: icon('mapPin', 16), cls: 'visit' },
+      review_added: { emoji: icon('star', 16), cls: 'review' },
+      member_joined: { emoji: icon('users', 16), cls: 'member' },
     };
-    const defaultIcon = { emoji: '📌', cls: 'restaurant' };
+    const defaultIcon = { emoji: icon('mapPin', 16), cls: 'restaurant' };
 
     const getUserName = (d: Record<string, unknown>): string => {
       const user = d.user as { nickname?: string } | null;
@@ -5141,7 +5192,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <div class="category-chips" id="add-rest-category-chips">
         <span class="category-chips-label">카테고리</span>
         ${chipButtonsHtml}
-        <button type="button" class="cat-chip" data-cat="__custom__">✏️ 직접 입력</button>
+        <button type="button" class="cat-chip" data-cat="__custom__">직접 입력</button>
         <input type="text" class="cat-chip-custom" id="add-rest-category-custom" placeholder="직접 입력 (예: 패스트푸드)" maxlength="30" hidden />
       </div>
       <input type="hidden" id="add-rest-category" />
@@ -5216,13 +5267,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const restSortLabels: Record<string, string> = { latest: '최신순', 'rating-high': '평점 높은순', 'rating-low': '평점 낮은순', reviews: '리뷰 많은순', visits: '방문 많은순', name: '이름순' };
 
     panel.innerHTML = addFormHtml
-      + `<div class="rest-list-header"><h3 class="section-subtitle">식당 목록 <span class="section-count" id="rest-total-count">-</span></h3><div class="rest-list-actions"><button type="button" class="rec-open-btn" id="rec-open-btn">🎲 오늘 뭐 먹지?</button><a href="/room/add?roomId=${currentRoom.id}" class="add-rest-fab" id="add-rest-btn">+ 식당 등록</a></div></div>`
+      + `<div class="rest-list-header"><h3 class="section-subtitle">식당 목록 <span class="section-count" id="rest-total-count">-</span></h3><div class="rest-list-actions"><button type="button" class="rec-open-btn" id="rec-open-btn">${icon('dice', 15)}오늘 뭐 먹지?</button><a href="/room/add?roomId=${currentRoom.id}" class="add-rest-fab" id="add-rest-btn">${icon('plus', 15)}식당 등록</a></div></div>`
       + `<div class="review-sort-row">
           ${hasKakaoMap ? `<button type="button" class="viewport-filter-btn${restViewportFilter ? ' active' : ''}" id="rest-viewport-filter">
-            🗺 지도 영역만
+            ${icon('map', 13)}지도 영역만
           </button>` : ''}
           <button type="button" class="viewport-filter-btn${restUnreviewedOnly ? ' active' : ''}" id="rest-unreviewed-filter" title="아직 내 리뷰가 없는 식당만">
-            📝 내 미작성만
+            ${icon('pencil', 13)}내 미작성만
           </button>
           <button type="button" class="sort-trigger-btn" id="rest-sort-trigger">
             ${restSortLabels[sortOrder] || '최신순'}
@@ -5267,7 +5318,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>
       <p class="wishlist-help">아직 가보지 않았지만 가고 싶은 식당을 기록해 두세요. 방문 후 "가본 식당으로 등록" 버튼을 누르면 일반 식당 목록으로 이동합니다.</p>
       ${hasKakaoMap ? `<div class="review-sort-row" style="margin-bottom:0.5rem;">
-        <button type="button" class="viewport-filter-btn${wishlistViewportFilter ? ' active' : ''}" id="wishlist-viewport-filter">🗺 지도 영역만</button>
+        <button type="button" class="viewport-filter-btn${wishlistViewportFilter ? ' active' : ''}" id="wishlist-viewport-filter">${icon('map', 13)}지도 영역만</button>
       </div>` : ''}
       <div id="wishlist-list"><p class="empty-text">로딩 중...</p></div>
 
