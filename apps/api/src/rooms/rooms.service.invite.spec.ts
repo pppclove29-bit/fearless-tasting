@@ -87,6 +87,16 @@ describe('RoomsService.join', () => {
     expect(write.roomMember.create).not.toHaveBeenCalled();
   });
 
+  it('동시에 두 번 입장해 unique 위반(P2002)이 나도 에러 대신 alreadyMember=true', async () => {
+    const { service, read, write } = setup();
+    read.room.findUnique.mockResolvedValue(ROOM);
+    write.roomMember.create.mockRejectedValue(Object.assign(new Error('dup'), { code: 'P2002' }));
+
+    const result = await service.join('abcd1234', 'user1');
+
+    expect(result).toMatchObject({ id: 'room1', alreadyMember: true });
+  });
+
   it('새로 입장하면 멤버를 만들고 alreadyMember=false', async () => {
     const { service, read, write } = setup();
     read.room.findUnique.mockResolvedValue(ROOM);

@@ -1123,7 +1123,8 @@ const resolvedOgImage = ogImage
   // PWA Service Worker 등록 + 업데이트 자동 적용
   // 네이티브 앱(Capacitor)은 번들 자체가 로컬이라 SW가 불필요하고,
   // 앱 업데이트 후 옛 캐시를 서빙할 위험이 있어 등록하지 않는다.
-  if (!isNativeApp() && 'serviceWorker' in navigator) {
+  // 개발 서버는 모듈 URL이 고정이라 SW가 캐시하면 수정이 반영되지 않는다 → 개발 모드에서는 등록 안 함
+  if (!isNativeApp() && !import.meta.env.DEV && 'serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').then((reg) => {
       // 페이지 로드 시마다 업데이트 체크
       reg.update().catch(() => {});

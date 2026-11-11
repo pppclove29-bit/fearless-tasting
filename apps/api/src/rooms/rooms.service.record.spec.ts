@@ -76,11 +76,9 @@ describe('RoomsService.createRecord', () => {
         data: expect.objectContaining({ visitId: 'visit1', rating: 4.5, wouldRevisit: 4 }),
       }),
     );
-    expect(notify.mock.calls.map((c) => c[2])).toEqual([
-      'restaurant_added',
-      'visit_added',
-      'review_added',
-    ]);
+    // 기록 1건 = 알림 1개
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(notify.mock.calls[0][3]).toContain('새 식당');
   });
 
   it('기존 식당이면 식당을 만들지 않고, clearWishlist면 위시리스트를 해제한다', async () => {
@@ -107,7 +105,8 @@ describe('RoomsService.createRecord', () => {
       where: { id: 'rest9' },
       data: { isWishlist: false },
     });
-    expect(notify.mock.calls.map((c) => c[2])).toEqual(['visit_added', 'review_added']);
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(notify.mock.calls[0][3]).toContain('리뷰를 남겼어요');
   });
 
   it('다른 방의 식당 ID면 404이고 방문·리뷰를 만들지 않는다', async () => {

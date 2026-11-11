@@ -389,6 +389,7 @@ python3 docs/store-assets/make-screenshots.py /tmp/shot1.png /tmp/shot2.png
       Render 대시보드 → 서비스 → Environment 에서 변경.
 - [ ] gmail 수신함을 실제로 보는지 확인 — 안 보면 문의가 그냥 사라진다
 - [ ] 데이터 안전: 이메일·닉네임·프로필 이미지(OAuth), 사용자 생성 콘텐츠(리뷰·사진), 기기 ID(FCM 토큰)
+      + **위치(대략·정확)**: 앱 기능(지도 내 위치·근처 추천) 용도, 기기 안에서만 쓰고 서버로 전송·저장하지 않음 → "수집" 아님으로 신고 가능한지 확인 (2026-11-11 위치 권한 추가)
 - [ ] 계정 삭제 URL: `https://musikga.kr/profile/account` (앱 내 탈퇴도 제공 중)
 - [ ] 광고 포함 여부 (`PUBLIC_AD_CLIENT` 설정 시 "예")
 - [ ] 콘텐츠 등급 설문 (IARC)

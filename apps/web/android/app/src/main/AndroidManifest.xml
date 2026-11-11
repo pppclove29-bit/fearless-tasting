@@ -53,4 +53,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Android 13+ 푸시 알림 표시 권한 (FCM) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 지도 "내 위치", 위시리스트 근처 배너, "오늘 뭐 먹지?" 내 주변 추천 (웹뷰 geolocation). 위치는 서버로 보내지 않는다 -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 </manifest>

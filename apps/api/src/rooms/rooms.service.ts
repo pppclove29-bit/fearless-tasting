@@ -110,7 +110,7 @@ export class RoomsService {
       myRole: m.role,
       memberCount: m.room._count.members,
       restaurantCount: m.room._count.restaurants,
-      inviteRequired: isInviteRequired(m.room.createdAt, m.room._count.members),
+      inviteRequired: isInviteRequired(m.room.createdAt, m.room._count.members, m.room._count.restaurants),
     }));
   }
 
@@ -149,7 +149,7 @@ export class RoomsService {
     return {
       ...room,
       // 초대 필수 방이 아직 혼자면 프론트가 기록 화면 대신 초대 화면을 보여준다
-      inviteRequired: isInviteRequired(room.createdAt, room.members.length),
+      inviteRequired: isInviteRequired(room.createdAt, room.members.length, room.restaurants.length),
       members: room.members.map((m) => ({ ...m, user: withProfileImage(m.user) })),
       restaurants: room.restaurants.map(({ visits, images, ...rest }) => {
         const allReviews = visits.flatMap((v) => v.reviews);
@@ -231,9 +231,15 @@ export class RoomsService {
       throw new ForbiddenException(`방 인원이 가득 찼습니다 (최대 ${room.maxMembers}명)`);
     }
 
-    await this.prisma.write.roomMember.create({
-      data: { role: 'member', roomId: room.id, userId },
-    });
+    try {
+      await this.prisma.write.roomMember.create({
+        data: { role: 'member', roomId: room.id, userId },
+      });
+    } catch (err) {
+      // 링크 연타·복제 지연으로 이미 멤버가 된 경우 (unique 위반) → 에러 대신 입장 성공으로 처리
+      if ((err as { code?: string }).code === 'P2002') return { ...room, alreadyMember: true };
+      throw err;
+    }
 
     // 알림: 새 멤버 참여
     const joinedUser = await this.prisma.read.user.findUnique({ where: { id: userId }, select: { nickname: true } });
@@ -978,13 +984,11 @@ export class RoomsService {
     // 알림: 기존 3단계 호출과 같은 알림을 커밋 후에 보낸다
     const user = await this.prisma.read.user.findUnique({ where: { id: userId }, select: { nickname: true } });
     if (user) {
-      const name = result.restaurantName;
-      const meta = { restaurantId: result.restaurantId };
-      if (newRestaurant) {
-        this.createNotificationForRoom(roomId, userId, 'restaurant_added', `${user.nickname}님이 "${name}" 식당을 등록했습니다.`, meta).catch(() => {});
-      }
-      this.createNotificationForRoom(roomId, userId, 'visit_added', `${user.nickname}님이 "${name}" 방문을 기록했습니다.`, meta).catch(() => {});
-      this.createNotificationForRoom(roomId, userId, 'review_added', `${user.nickname}님이 "${name}"에 리뷰를 남겼습니다. (${r.rating}점)`, meta).catch(() => {});
+      // 기록 1건 = 알림 1개 (식당·방문·리뷰를 따로 보내면 멤버마다 푸시가 3개씩 간다)
+      const message = newRestaurant
+        ? `${user.nickname}님이 새 식당 "${result.restaurantName}"을 기록했어요. (★${r.rating})`
+        : `${user.nickname}님이 "${result.restaurantName}"에 리뷰를 남겼어요. (★${r.rating})`;
+      this.createNotificationForRoom(roomId, userId, 'review_added', message, { restaurantId: result.restaurantId }).catch(() => {});
     }
 
     return {
@@ -1221,9 +1225,9 @@ export class RoomsService {
   }
 
   /** 투표 참여 (선택지에 투표) */
-  async votePoll(pollId: string, optionId: string, userId: string) {
-    const poll = await this.prisma.read.roomPoll.findUnique({
-      where: { id: pollId },
+  async votePoll(roomId: string, pollId: string, optionId: string, userId: string) {
+    const poll = await this.prisma.read.roomPoll.findFirst({
+      where: { id: pollId, roomId },
       include: { options: true },
     });
     if (!poll) throw new NotFoundException('투표를 찾을 수 없습니다.');
@@ -1323,8 +1327,8 @@ export class RoomsService {
   }
 
   /** 투표 마감 */
-  async closePoll(pollId: string, userId: string) {
-    const poll = await this.prisma.read.roomPoll.findUnique({ where: { id: pollId } });
+  async closePoll(roomId: string, pollId: string, userId: string) {
+    const poll = await this.prisma.read.roomPoll.findFirst({ where: { id: pollId, roomId } });
     if (!poll) throw new NotFoundException('투표를 찾을 수 없습니다.');
     if (poll.createdById !== userId) throw new ForbiddenException('투표 생성자만 마감할 수 있습니다.');
 

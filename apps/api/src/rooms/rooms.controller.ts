@@ -596,7 +596,9 @@ export class RoomsController {
   /** 투표 생성 */
   @Post(':id/polls')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
-  @UseGuards(RoomMemberGuard, RoomUnlockedGuard)
+  // 투표는 강제 초대에서 제외한다: 비회원도 링크로 투표할 수 있어 사람을 모으는 수단이고,
+  // 회식 템플릿이 방 생성 직후(멤버 1명) 기본 투표를 만든다
+  @UseGuards(RoomMemberGuard)
   @ApiOperation({ summary: '투표 생성' })
   @ApiParam({ name: 'id', description: '방 ID' })
   createPoll(
@@ -623,11 +625,12 @@ export class RoomsController {
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'pollId', description: '투표 ID' })
   votePoll(
+    @Param('id') id: string,
     @Param('pollId') pollId: string,
     @CurrentUser() user: { id: string },
     @Body() body: { optionId: string },
   ) {
-    return this.roomsService.votePoll(pollId, body.optionId, user.id);
+    return this.roomsService.votePoll(id, pollId, body.optionId, user.id);
   }
 
   /** 투표 마감 */
@@ -637,10 +640,11 @@ export class RoomsController {
   @ApiParam({ name: 'id', description: '방 ID' })
   @ApiParam({ name: 'pollId', description: '투표 ID' })
   closePoll(
+    @Param('id') id: string,
     @Param('pollId') pollId: string,
     @CurrentUser() user: { id: string },
   ) {
-    return this.roomsService.closePoll(pollId, user.id);
+    return this.roomsService.closePoll(id, pollId, user.id);
   }
 
   // ─── 타임라인 ───

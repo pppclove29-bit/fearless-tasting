@@ -20,10 +20,12 @@ function setup() {
       findMany: jest.fn().mockResolvedValue([]),
     },
     roomRestaurant: { findFirst: jest.fn().mockResolvedValue(null) },
+    roomPoll: { findFirst: jest.fn().mockResolvedValue(null) },
   };
   const write = {
     roomVisit: { update: jest.fn(), delete: jest.fn() },
     roomReview: { create: jest.fn(), update: jest.fn(), delete: jest.fn() },
+    roomPoll: { update: jest.fn() },
   };
   const prisma: PrismaService = { read, write } as never;
   const service = new RoomsService(
@@ -106,5 +108,19 @@ describe('방문·리뷰 API의 방 범위 확인', () => {
         where: { visit: { restaurantId: 'restInB', restaurant: { roomId: ROOM_A } } },
       }),
     );
+  });
+
+  it('votePoll/closePoll: 다른 방 투표면 404, 투표·마감하지 않는다', async () => {
+    const { service, read, write } = setup();
+    await expect(service.votePoll(ROOM_A, 'pollInB', 'opt1', 'u1')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    await expect(service.closePoll(ROOM_A, 'pollInB', 'u1')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(read.roomPoll.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'pollInB', roomId: ROOM_A } }),
+    );
+    expect(write.roomPoll.update).not.toHaveBeenCalled();
   });
 });
