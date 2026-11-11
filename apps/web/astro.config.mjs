@@ -16,6 +16,9 @@ export default defineConfig({
       filter: (page) => {
         const path = new URL(page).pathname;
         if (path === '/rooms/public') return true;
+        // 진입점을 숨긴 기능 페이지는 noindex 라 사이트맵에서도 뺀다 (src/lib/features.ts).
+        // /discover 는 추천 데이터가 쌓이면 스스로 색인 허용으로 바뀌지만, 빌드 시점엔 알 수 없어 일단 제외.
+        if (['/community', '/rankings', '/discover'].includes(path) || path.startsWith('/community/')) return false;
         return (
           !path.startsWith('/admin') &&
           !path.startsWith('/login') &&
