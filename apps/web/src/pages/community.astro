@@ -1,9 +1,10 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { SHOW_COMMUNITY } from '@/lib/features';
 import AdSlot from '@/components/AdSlot.astro';
 ---
 
-<BaseLayout title="커뮤니티" description="맛집 정보를 공유하고 소통하세요.">
+<BaseLayout noindex={!SHOW_COMMUNITY} title="커뮤니티" description="맛집 정보를 공유하고 소통하세요.">
   <div class="community-page">
     <div class="community-header">
       <div>

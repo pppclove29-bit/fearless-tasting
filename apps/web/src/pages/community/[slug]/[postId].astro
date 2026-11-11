@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { SHOW_COMMUNITY } from '@/lib/features';
 import AdSlot from '@/components/AdSlot.astro';
 export const prerender = false;
 
@@ -37,7 +38,7 @@ const pageDescription = ssrPost
 const canonicalUrl = `${siteUrl}/community/${slug}/${postId}`;
 ---
 
-<BaseLayout title={pageTitle} description={pageDescription}>
+<BaseLayout noindex={!SHOW_COMMUNITY} title={pageTitle} description={pageDescription}>
   {ssrPost && (
     <Fragment slot="head">
       <script type="application/ld+json" set:html={JSON.stringify({

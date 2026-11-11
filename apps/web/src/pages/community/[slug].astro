@@ -1,9 +1,10 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { SHOW_COMMUNITY } from '@/lib/features';
 export const prerender = false;
 ---
 
-<BaseLayout title="커뮤니티">
+<BaseLayout noindex={!SHOW_COMMUNITY} title="커뮤니티">
   <div class="board-page">
     <div class="board-tabs" id="board-tabs">
       <div class="tabs-scroll" id="tabs-scroll"></div>
